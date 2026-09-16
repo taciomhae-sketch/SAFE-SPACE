@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C5CE7"/>
+      <stop offset="100%" stop-color="#4834D4"/>
+    </linearGradient>
+    <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF5E5E"/>
+      <stop offset="20%" stop-color="#FF9F43"/>
+      <stop offset="40%" stop-color="#FECA57"/>
+      <stop offset="60%" stop-color="#1DD1A1"/>
+      <stop offset="80%" stop-color="#54A0FF"/>
+      <stop offset="100%" stop-color="#A29BFE"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Background with subtle shadow -->
+  <rect width="512" height="512" rx="128" fill="url(#bg)" filter="url(#glow)"/>
+  
+  <!-- Rainbow accent arc at the bottom -->
+  <path d="M 64 430 Q 256 360 448 430" fill="none" stroke="url(#rainbow)" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+  
+  <!-- Heart Symbol -->
+  <g transform="translate(256, 230) scale(1.15)">
+    <path d="M 0 -70 
+             C -60 -150, -170 -110, -170 0 
+             C -170 80, -90 135, 0 200 
+             C 90 135, 170 80, 170 0 
+             C 170 -110, 60 -150, 0 -70 Z" 
+          fill="#FFFFFF" />
+    <!-- Inner heart with gentle gradient -->
+    <path d="M 0 -50 
+             C -45 -115, -130 -85, -130 0 
+             C -130 60, -70 105, 0 160 
+             C 70 105, 130 60, 130 0 
+             C 130 -85, 45 -115, 0 -50 Z" 
+          fill="#FEEAFA" />
+  </g>
+  
+  <!-- Helping hands motif / wings -->
+  <path d="M 120 310 C 170 290, 220 310, 256 335 C 292 310, 342 290, 392 310 C 370 350, 320 365, 256 380 C 192 365, 142 350, 120 310 Z" fill="#A29BFE" opacity="0.9"/>
+</svg>
+

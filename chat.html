@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Chats — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Custom Page Header from UI screenshot -->
+    <header class="page-header" style="height: auto; padding: 16px 20px 12px; align-items: flex-start;">
+      <div class="chat-header-info">
+        <h1>Chats</h1>
+        <p>Connect with people in your Safe Space</p>
+      </div>
+      <button class="add-person-btn" id="openAddPersonBtn" aria-label="Find People">
+        <i class="fas fa-user-plus"></i>
+      </button>
+    </header>
+
+    <!-- Search Bar -->
+    <div class="search-bar" style="margin-top: 4px;">
+      <i class="fas fa-magnifying-glass"></i>
+      <input
+        type="text"
+        class="search-input"
+        id="chatSearchInput"
+        placeholder="Search people to chat with..."
+      />
+    </div>
+
+    <!-- Scrollable Main View -->
+    <main class="page-content" id="chatMainContent">
+      <!-- Section: Recent Conversations -->
+      <div class="section-header">
+        <span class="section-title">Recent conversations</span>
+        <span class="section-count" id="recentCount">0</span>
+      </div>
+      <div id="recentConversationsContainer">
+        <!-- Rendered dynamically -->
+        <div class="empty-state">
+          <i class="fa-regular fa-comment-dots" style="font-size: 52px;"></i>
+          <h3>Your inbox is empty</h3>
+          <p>Search for a person below and send your first message.</p>
+        </div>
+      </div>
+
+      <!-- Section: Find People -->
+      <div class="section-header" style="margin-top: 8px;">
+        <span class="section-title">Find people</span>
+        <span class="section-count" id="contactsCount">0</span>
+      </div>
+      <div id="findContactsContainer">
+        <!-- Rendered dynamically -->
+        <div class="empty-state">
+          <i class="fa-regular fa-user" style="font-size: 52px;"></i>
+          <h3>No contacts yet</h3>
+          <p>Use the search box above to find another Safe Space user.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item active">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Slide-in Chat Thread Overlay -->
+  <div class="thread-overlay" id="chatThreadOverlay">
+    <div class="thread-header">
+      <button class="thread-back" id="closeThreadBtn" aria-label="Back to inbox">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="post-avatar" id="threadAvatar" style="width: 38px; height: 38px;">
+        <i class="fas fa-user"></i>
+      </div>
+      <div class="thread-user-info">
+        <div class="thread-username" id="threadUsername">User</div>
+        <div class="thread-status" id="threadStatus">Active in Safe Space</div>
+      </div>
+      <button class="header-btn" style="color: var(--text-muted);">
+        <i class="fas fa-ellipsis-vertical"></i>
+      </button>
+    </div>
+
+    <!-- Messages Scroll Area -->
+    <div class="thread-messages" id="threadMessagesContainer">
+      <!-- Bubbles rendered here -->
+    </div>
+
+    <!-- Message Input Bar -->
+    <div class="thread-input-bar">
+      <input
+        type="text"
+        class="thread-input"
+        id="chatMessageInput"
+        placeholder="Type a safe message..."
+        autocomplete="off"
+      />
+      <button class="thread-send" id="sendMessageBtn" aria-label="Send Message">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    let currentUser = null;
+    let allMembers = [];
+    let conversations = [];
+    let activeChatUser = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth();
+      if (!currentUser) return;
+
+      setupSearch();
+      setupThread();
+      await loadInitialData();
+
+      // Check if URL specifies a user to chat with (?user=userId)
+      const params = new URLSearchParams(window.location.search);
+      const targetUserId = params.get('user');
+      if (targetUserId) {
+        const targetMember = allMembers.find(m => m.id === targetUserId);
+        if (targetMember) {
+          openThread(targetMember);
+        }
+      }
+    });
+
+    async function loadInitialData() {
+      try {
+        const [members, convos] = await Promise.all([
+          SafeSpaceDB.community.getMembers(),
+          SafeSpaceDB.messages.getConversations()
+        ]);
+        allMembers = (members || []).filter(m => m.id !== currentUser.id);
+        conversations = convos || [];
+
+        renderRecentConversations();
+        renderFindPeople(allMembers);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function setupSearch() {
+      const input = document.getElementById('chatSearchInput');
+      input.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        if (!q) {
+          renderFindPeople(allMembers);
+          return;
+        }
+        const filtered = allMembers.filter(m => 
+          (m.username || '').toLowerCase().includes(q) ||
+          (m.first_name || '').toLowerCase().includes(q)
+        );
+        renderFindPeople(filtered);
+      });
+
+      document.getElementById('openAddPersonBtn').addEventListener('click', () => {
+        input.focus();
+      });
+    }
+
+    function renderRecentConversations() {
+      const container = document.getElementById('recentConversationsContainer');
+      const countEl = document.getElementById('recentCount');
+      countEl.textContent = conversations.length;
+
+      if (conversations.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-comment-dots" style="font-size: 52px;"></i>
+            <h3>Your inbox is empty</h3>
+            <p>Search for a person below and send your first message.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = conversations.map(c => {
+        const avatarHtml = c.avatar_url
+          ? `<img src="${escapeHTML(c.avatar_url)}" alt="${escapeHTML(c.username)}" />`
+          : `<i class="fas fa-user"></i>`;
+
+        return `
+          <div class="conversation-item" onclick="handleOpenChatById('${c.user_id}')">
+            <div class="conversation-avatar">
+              ${avatarHtml}
+              <span class="online-dot"></span>
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-name">${escapeHTML(c.username || 'User')}</div>
+              <div class="conversation-preview">${escapeHTML(c.last_message || 'Tap to chat')}</div>
+            </div>
+            <div class="conversation-meta">
+              <span class="conversation-time">${formatRelativeTime(c.last_message_at)}</span>
+              ${c.unread_count > 0 ? `<span class="unread-badge">${c.unread_count}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFindPeople(members) {
+      const container = document.getElementById('findContactsContainer');
+      const countEl = document.getElementById('contactsCount');
+      countEl.textContent = members.length;
+
+      if (members.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-user" style="font-size: 52px;"></i>
+            <h3>No contacts found</h3>
+            <p>No user matches your search term.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = members.map(m => {
+        const avatarHtml = m.avatar_url
+          ? `<img src="${escapeHTML(m.avatar_url)}" alt="${escapeHTML(m.username)}" />`
+          : `<i class="fas fa-user"></i>`;
+
+        return `
+          <div class="member-card" style="cursor:pointer;" onclick="handleOpenChatById('${m.id}')">
+            <div class="member-avatar">${avatarHtml}</div>
+            <div class="member-info">
+              <div class="member-name">${escapeHTML(m.username || 'Member')}</div>
+              <div class="member-bio">${escapeHTML(m.bio || 'Safe Space Member')}</div>
+            </div>
+            <button class="btn-add" style="pointer-events:none;">Message</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleOpenChatById(userId) {
+      const member = allMembers.find(m => m.id === userId) || { id: userId, username: 'User' };
+      openThread(member);
+    }
+
+    function setupThread() {
+      const overlay = document.getElementById('chatThreadOverlay');
+      const closeBtn = document.getElementById('closeThreadBtn');
+      const sendBtn = document.getElementById('sendMessageBtn');
+      const input = document.getElementById('chatMessageInput');
+
+      closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+
+      sendBtn.addEventListener('click', async () => {
+        const text = input.value.trim();
+        if (!text || !activeChatUser) return;
+
+        input.value = '';
+        appendMessageBubble({ message: text, sender_id: currentUser.id, created_at: new Date().toISOString() });
+
+        try {
+          await SafeSpaceDB.messages.sendMessage(activeChatUser.id, text);
+          // Refresh conversation list
+          conversations = await SafeSpaceDB.messages.getConversations();
+          renderRecentConversations();
+        } catch (err) {
+          showToast('Failed to send message', 'error');
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendBtn.click();
+      });
+    }
+
+    async function openThread(member) {
+      activeChatUser = member;
+      const overlay = document.getElementById('chatThreadOverlay');
+      document.getElementById('threadUsername').textContent = member.username || 'User';
+
+      const avatarContainer = document.getElementById('threadAvatar');
+      avatarContainer.innerHTML = member.avatar_url
+        ? `<img src="${escapeHTML(member.avatar_url)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`
+        : `<i class="fas fa-user"></i>`;
+
+      const msgContainer = document.getElementById('threadMessagesContainer');
+      msgContainer.innerHTML = '<div class="spinner"></div>';
+      overlay.classList.add('open');
+
+      try {
+        const messages = await SafeSpaceDB.messages.getMessages(member.id);
+        msgContainer.innerHTML = '';
+        if (!messages || messages.length === 0) {
+          msgContainer.innerHTML = `
+            <div style="text-align:center; padding: 40px 16px; color: var(--text-muted); font-size: 13px;">
+              This is the beginning of your safe and encrypted chat with ${escapeHTML(member.username || 'User')}. Say hello! 👋
+            </div>
+          `;
+        } else {
+          messages.forEach(msg => appendMessageBubble(msg));
+        }
+        scrollThreadToBottom();
+      } catch (err) {
+        msgContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load messages</div>';
+      }
+    }
+
+    function appendMessageBubble(msg) {
+      const container = document.getElementById('threadMessagesContainer');
+      const isSent = msg.sender_id === currentUser.id;
+      const bubble = document.createElement('div');
+      bubble.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
+      bubble.innerHTML = `
+        <div>${escapeHTML(msg.message)}</div>
+        <div class="message-time ${isSent ? '' : 'received-time'}">${formatRelativeTime(msg.created_at)}</div>
+      `;
+      container.appendChild(bubble);
+      scrollThreadToBottom();
+    }
+
+    function scrollThreadToBottom() {
+      const container = document.getElementById('threadMessagesContainer');
+      container.scrollTop = container.scrollHeight;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Profile — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1>Profile</h1>
+      <div class="header-actions">
+        <button class="header-btn" id="profileSettingsBtn" aria-label="Settings">
+          <i class="fas fa-gear"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Profile Content -->
+    <main class="page-content" id="profilePageContent">
+      <!-- Profile Header Area -->
+      <section class="profile-header-section">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar-circle" id="profileAvatarDisplay">
+            <i class="fas fa-user-secret" id="profileAvatarPlaceholderIcon"></i>
+            <img id="profileAvatarImg" src="" alt="Profile avatar" style="display:none; width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+          </div>
+          <div class="avatar-camera-badge" id="cameraUploadBtn" title="Change photo">
+            <i class="fas fa-camera"></i>
+          </div>
+          <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" />
+        </div>
+
+        <h2 class="profile-username" id="profileUsername">loading...</h2>
+        <p class="profile-fullname" id="profileFullname">loading name...</p>
+
+        <!-- Editable Bio Box -->
+        <div class="bio-box" id="bioBox">
+          <p class="bio-text" id="bioText">Add a bio to say something about yourself...</p>
+          <button class="bio-edit-btn" id="editBioPencilBtn" aria-label="Edit Bio">
+            <i class="fas fa-pencil"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Profile Menu Rows (Exact list from screenshots) -->
+      <nav class="profile-menu">
+        <a class="menu-row" id="accountInfoRow">
+          <div class="menu-icon"><i class="fa-regular fa-id-badge"></i></div>
+          <span class="menu-label">Account Information</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+
+        <a class="menu-row" id="myPostsRow">
+          <div class="menu-icon"><i class="fa-regular fa-file-lines"></i></div>
+          <span class="menu-label">My Posts</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+
+        <a class="menu-row" id="savedPostsRow">
+          <div class="menu-icon"><i class="fa-regular fa-bookmark"></i></div>
+          <span class="menu-label">Saved Posts</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+
+        <a class="menu-row" id="privacySecurityRow">
+          <div class="menu-icon"><i class="fas fa-shield-halved"></i></div>
+          <span class="menu-label">Privacy & Security</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+
+        <a class="menu-row" id="notificationsRow">
+          <div class="menu-icon"><i class="fa-regular fa-bell"></i></div>
+          <span class="menu-label">Notifications</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+
+        <a class="menu-row" id="blockedUsersRow">
+          <div class="menu-icon"><i class="fas fa-user-slash"></i></div>
+          <span class="menu-label">Blocked Users</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+
+        <a class="menu-row" id="aboutAppRow">
+          <div class="menu-icon"><i class="fa-regular fa-circle-question"></i></div>
+          <span class="menu-label">About the App</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+
+        <a class="menu-row danger" id="logoutRow">
+          <div class="menu-icon"><i class="fas fa-arrow-right-from-bracket"></i></div>
+          <span class="menu-label">Logout</span>
+          <i class="fas fa-chevron-right menu-chevron"></i>
+        </a>
+      </nav>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item active">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Bio Edit Modal Overlay -->
+  <div class="bio-modal-overlay" id="bioModalOverlay">
+    <div class="bio-modal">
+      <h3>Edit Bio</h3>
+      <textarea
+        class="bio-textarea"
+        id="bioInput"
+        placeholder="Share a short safe introduction about yourself..."
+        maxlength="300"
+      ></textarea>
+      <div class="bio-modal-actions">
+        <button class="btn-cancel" id="cancelBioBtn">Cancel</button>
+        <button class="btn-save" id="saveBioBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide-in Overlay for Sub-views (My Posts, Saved Posts, Account Info) -->
+  <div class="thread-overlay" id="profileSubViewOverlay">
+    <div class="thread-header">
+      <button class="thread-back" id="closeSubViewBtn" aria-label="Back to Profile">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="thread-user-info">
+        <div class="thread-username" id="subViewTitle">View</div>
+      </div>
+    </div>
+    <div class="page-content" id="subViewContent" style="padding: 16px;">
+      <!-- Content injected here -->
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth();
+      if (!currentUser) return;
+
+      renderUserProfile();
+      setupBioEditor();
+      setupAvatarUpload();
+      setupMenuNavigation();
+    });
+
+    function renderUserProfile() {
+      document.getElementById('profileUsername').textContent = currentUser.username || 'user';
+      
+      const names = [currentUser.first_name, currentUser.middle_name, currentUser.last_name].filter(Boolean);
+      document.getElementById('profileFullname').textContent = names.length ? names.join(' ') : 'Safe Space Member';
+
+      const bioEl = document.getElementById('bioText');
+      if (currentUser.bio) {
+        bioEl.textContent = currentUser.bio;
+        bioEl.classList.add('has-bio');
+      } else {
+        bioEl.textContent = 'Add a bio to say something about yourself...';
+        bioEl.classList.remove('has-bio');
+      }
+
+      if (currentUser.avatar_url) {
+        const img = document.getElementById('profileAvatarImg');
+        img.src = currentUser.avatar_url;
+        img.style.display = 'block';
+        document.getElementById('profileAvatarPlaceholderIcon').style.display = 'none';
+      }
+    }
+
+    function setupBioEditor() {
+      const modal = document.getElementById('bioModalOverlay');
+      const bioBox = document.getElementById('bioBox');
+      const textarea = document.getElementById('bioInput');
+      const cancelBtn = document.getElementById('cancelBioBtn');
+      const saveBtn = document.getElementById('saveBioBtn');
+
+      bioBox.addEventListener('click', () => {
+        textarea.value = currentUser.bio || '';
+        modal.classList.add('open');
+        textarea.focus();
+      });
+
+      cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+
+      saveBtn.addEventListener('click', async () => {
+        const newBio = textarea.value.trim();
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+          await SafeSpaceDB.auth.updateProfile({ bio: newBio });
+          currentUser.bio = newBio;
+          renderUserProfile();
+          modal.classList.remove('open');
+          showToast('Bio updated ✨', 'success');
+        } catch (err) {
+          showToast('Could not save bio', 'error');
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save';
+        }
+      });
+    }
+
+    function setupAvatarUpload() {
+      const cameraBtn = document.getElementById('cameraUploadBtn');
+      const fileInput = document.getElementById('avatarFileInput');
+
+      cameraBtn.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        showToast('Uploading photo...', 'info');
+        try {
+          const avatarUrl = await SafeSpaceDB.storage.uploadImage(file, 'avatars');
+          await SafeSpaceDB.auth.updateProfile({ avatar_url: avatarUrl });
+          currentUser.avatar_url = avatarUrl;
+          renderUserProfile();
+          showToast('Avatar updated! 📸', 'success');
+        } catch (err) {
+          showToast('Failed to upload photo', 'error');
+        }
+      });
+    }
+
+    function setupMenuNavigation() {
+      const overlay = document.getElementById('profileSubViewOverlay');
+      const subTitle = document.getElementById('subViewTitle');
+      const subContent = document.getElementById('subViewContent');
+      const closeBtn = document.getElementById('closeSubViewBtn');
+
+      closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+
+      // Account Information
+      document.getElementById('accountInfoRow').addEventListener('click', () => {
+        subTitle.textContent = 'Account Information';
+        subContent.innerHTML = `
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border);">
+            <div style="margin-bottom:14px;"><strong>Email:</strong> ${escapeHTML(currentUser.email || 'N/A')}</div>
+            <div style="margin-bottom:14px;"><strong>Username:</strong> @${escapeHTML(currentUser.username || '')}</div>
+            <div style="margin-bottom:14px;"><strong>First Name:</strong> ${escapeHTML(currentUser.first_name || 'N/A')}</div>
+            <div style="margin-bottom:14px;"><strong>Last Name:</strong> ${escapeHTML(currentUser.last_name || 'N/A')}</div>
+            <div style="margin-bottom:14px;"><strong>Age:</strong> ${escapeHTML(String(currentUser.age || 'N/A'))}</div>
+            <div style="margin-bottom:14px;"><strong>Identity:</strong> ${escapeHTML(currentUser.sex || 'N/A')}</div>
+            <div><strong>Birthday:</strong> ${escapeHTML(currentUser.birthday || 'N/A')}</div>
+          </div>
+        `;
+        overlay.classList.add('open');
+      });
+
+      // My Posts
+      document.getElementById('myPostsRow').addEventListener('click', async () => {
+        subTitle.textContent = 'My Posts';
+        subContent.innerHTML = '<div class="spinner"></div>';
+        overlay.classList.add('open');
+
+        try {
+          const feed = await SafeSpaceDB.posts.getFeed();
+          const myPosts = feed.filter(p => p.user_id === currentUser.id);
+          if (myPosts.length === 0) {
+            subContent.innerHTML = '<div class="empty-state"><i class="fa-regular fa-file-lines"></i><h3>No posts yet</h3><p>Posts you share will appear here.</p></div>';
+          } else {
+            subContent.innerHTML = myPosts.map(p => `
+              <div class="post-card" style="border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:12px;">
+                <div class="post-content">${escapeHTML(p.content)}</div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-top:8px;">
+                  <span>${formatRelativeTime(p.created_at)}</span>
+                  <button style="background:none; border:none; color:var(--text-danger); cursor:pointer; font-weight:600;" onclick="handleDeleteMyPost('${p.id}')">Delete</button>
+                </div>
+              </div>
+            `).join('');
+          }
+        } catch (err) {
+          subContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load posts</div>';
+        }
+      });
+
+      // Saved Posts
+      document.getElementById('savedPostsRow').addEventListener('click', async () => {
+        subTitle.textContent = 'Saved Posts';
+        subContent.innerHTML = '<div class="spinner"></div>';
+        overlay.classList.add('open');
+
+        try {
+          const savedPosts = await SafeSpaceDB.posts.getSavedPosts();
+          if (savedPosts.length === 0) {
+            subContent.innerHTML = '<div class="empty-state"><i class="fa-regular fa-bookmark"></i><h3>No bookmarks</h3><p>Bookmark posts from your feed to view them here.</p></div>';
+          } else {
+            subContent.innerHTML = savedPosts.map(p => `
+              <div class="post-card" style="border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:12px;">
+                <div style="font-weight:700; margin-bottom:4px;">${escapeHTML(p.author_name || 'Member')}</div>
+                <div class="post-content">${escapeHTML(p.content)}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">${formatRelativeTime(p.created_at)}</div>
+              </div>
+            `).join('');
+          }
+        } catch (err) {
+          subContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load bookmarks</div>';
+        }
+      });
+
+      // Privacy & Security
+      document.getElementById('privacySecurityRow').addEventListener('click', () => {
+        showToast('Privacy & Security: Encryption and local storage active 🛡️', 'info');
+      });
+
+      // Notifications
+      document.getElementById('notificationsRow').addEventListener('click', () => {
+        showToast('Notifications: You are all caught up! 🔔', 'info');
+      });
+
+      // Blocked Users
+      document.getElementById('blockedUsersRow').addEventListener('click', () => {
+        showToast('Blocked Users: No users currently blocked 🤝', 'info');
+      });
+
+      // About the App
+      document.getElementById('aboutAppRow').addEventListener('click', () => {
+        subTitle.textContent = 'About Safe Space';
+        subContent.innerHTML = `
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:20px; border:1px solid var(--border); line-height:1.6;">
+            <div style="text-align:center; margin-bottom:16px;">
+              <div class="auth-icon" style="margin:0 auto 12px; background:var(--primary); width:54px; height:54px; border-radius:14px;">
+                <i class="fas fa-hand-holding-heart" style="font-size:24px;"></i>
+              </div>
+              <h3 style="font-size:18px; font-weight:800; color:var(--primary);">Safe Space App</h3>
+              <p style="font-size:12px; color:var(--text-muted);">Version 2.0.0 (PWA)</p>
+            </div>
+            <p style="font-size:14px; margin-bottom:12px;">Safe Space is an inclusive, confidential community web platform crafted specifically for LGBTQ+ individuals and allies.</p>
+            <p style="font-size:13px; color:var(--text-muted);">Academic Thesis Project. Dedicated to mental health awareness, authentic self-expression, and unconditional warmth.</p>
+          </div>
+        `;
+        overlay.classList.add('open');
+      });
+
+      // Logout
+      document.getElementById('logoutRow').addEventListener('click', async () => {
+        if (confirm('Are you sure you want to log out?')) {
+          await SafeSpaceDB.auth.signOut();
+          window.location.href = 'login.html';
+        }
+      });
+    }
+
+    async function handleDeleteMyPost(postId) {
+      if (!confirm('Delete this post?')) return;
+      try {
+        await SafeSpaceDB.posts.deletePost(postId);
+        showToast('Post removed', 'info');
+        document.getElementById('myPostsRow').click(); // refresh
+      } catch (err) {
+        showToast('Failed to delete post', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

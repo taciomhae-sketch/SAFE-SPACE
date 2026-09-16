@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Community — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1>Community</h1>
+      <div class="header-actions">
+        <button class="header-btn" id="communityNotificationBtn" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Pills: People / Requests / Friends -->
+    <div class="pill-row" id="communityPills">
+      <button class="pill active" data-tab="people">People</button>
+      <button class="pill" data-tab="requests">Requests</button>
+      <button class="pill" data-tab="friends">Friends</button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <i class="fas fa-magnifying-glass"></i>
+      <input
+        type="text"
+        class="search-input"
+        id="communitySearchInput"
+        placeholder="Search people..."
+      />
+    </div>
+
+    <!-- Scrollable Content -->
+    <main class="page-content" id="communityContent">
+      <div class="member-list" id="memberListContainer">
+        <!-- Rendered dynamically -->
+        <div class="spinner"></div>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item active">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    let currentUser = null;
+    let allMembers = [];
+    let allFriendships = [];
+    let activeTab = 'people';
+    let searchQuery = '';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth();
+      if (!currentUser) return;
+
+      setupTabs();
+      setupSearch();
+      await loadCommunityData();
+    });
+
+    function setupTabs() {
+      const pills = document.querySelectorAll('#communityPills .pill');
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          pills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          activeTab = pill.dataset.tab;
+          renderList();
+        });
+      });
+    }
+
+    function setupSearch() {
+      const input = document.getElementById('communitySearchInput');
+      input.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        renderList();
+      });
+    }
+
+    async function loadCommunityData() {
+      try {
+        const [members, friendships] = await Promise.all([
+          SafeSpaceDB.community.getMembers(),
+          SafeSpaceDB.community.getFriendships()
+        ]);
+        allMembers = (members || []).filter(m => m.id !== currentUser.id);
+        allFriendships = friendships || [];
+        renderList();
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to load community members', 'error');
+      }
+    }
+
+    function getFriendshipStatus(otherUserId) {
+      const found = allFriendships.find(f => 
+        (f.requester_id === currentUser.id && f.receiver_id === otherUserId) ||
+        (f.receiver_id === currentUser.id && f.requester_id === otherUserId)
+      );
+      if (!found) return 'none';
+      return found.status; // 'pending' | 'accepted' | 'declined'
+    }
+
+    function renderList() {
+      const container = document.getElementById('memberListContainer');
+
+      if (activeTab === 'people') {
+        renderPeopleTab(container);
+      } else if (activeTab === 'requests') {
+        renderRequestsTab(container);
+      } else if (activeTab === 'friends') {
+        renderFriendsTab(container);
+      }
+    }
+
+    function renderPeopleTab(container) {
+      let filtered = allMembers;
+      if (searchQuery) {
+        filtered = filtered.filter(m => 
+          (m.username || '').toLowerCase().includes(searchQuery) ||
+          (m.first_name || '').toLowerCase().includes(searchQuery) ||
+          (m.bio || '').toLowerCase().includes(searchQuery)
+        );
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h3>No people found</h3>
+            <p>Try a different keyword or check back later.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(member => {
+        const status = getFriendshipStatus(member.id);
+        let buttonHtml = '';
+
+        if (status === 'accepted') {
+          buttonHtml = `<button class="btn-add friends" disabled>Friends</button>`;
+        } else if (status === 'pending') {
+          buttonHtml = `<button class="btn-add pending" disabled>Pending</button>`;
+        } else {
+          buttonHtml = `<button class="btn-add" onclick="handleAddFriend('${member.id}', this)">Add</button>`;
+        }
+
+        const avatarHtml = member.avatar_url
+          ? `<img src="${escapeHTML(member.avatar_url)}" alt="${escapeHTML(member.username)}" />`
+          : `<i class="fas fa-user"></i>`;
+
+        return `
+          <div class="member-card">
+            <div class="member-avatar">${avatarHtml}</div>
+            <div class="member-info">
+              <div class="member-name">${escapeHTML(member.username || 'Member')}</div>
+              <div class="member-bio">${escapeHTML(member.bio || 'Safe Space Member')}</div>
+            </div>
+            ${buttonHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRequestsTab(container) {
+      const pendingRequests = allFriendships.filter(f => 
+        f.receiver_id === currentUser.id && f.status === 'pending'
+      );
+
+      if (pendingRequests.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-clock"></i>
+            <h3>No requests</h3>
+            <p>You don't have any pending friend requests right now.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = pendingRequests.map(req => {
+        const sender = allMembers.find(m => m.id === req.requester_id) || { username: 'A member' };
+        return `
+          <div class="member-card">
+            <div class="member-avatar"><i class="fas fa-user"></i></div>
+            <div class="member-info">
+              <div class="member-name">${escapeHTML(sender.username)}</div>
+              <div class="member-bio">Sent you a friend request</div>
+            </div>
+            <button class="btn-add" style="margin-right: 6px;" onclick="respondFriendRequest('${req.id}', 'accepted')">Accept</button>
+            <button class="btn-add pending" onclick="respondFriendRequest('${req.id}', 'declined')">Decline</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFriendsTab(container) {
+      const friendIds = allFriendships
+        .filter(f => f.status === 'accepted' && (f.requester_id === currentUser.id || f.receiver_id === currentUser.id))
+        .map(f => f.requester_id === currentUser.id ? f.receiver_id : f.requester_id);
+
+      const friends = allMembers.filter(m => friendIds.includes(m.id));
+
+      if (friends.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-user-group"></i>
+            <h3>No friends yet</h3>
+            <p>Connect with people in the People tab to grow your circle!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = friends.map(friend => `
+        <div class="member-card">
+          <div class="member-avatar">
+            ${friend.avatar_url ? `<img src="${escapeHTML(friend.avatar_url)}" alt="${escapeHTML(friend.username)}" />` : `<i class="fas fa-user"></i>`}
+          </div>
+          <div class="member-info">
+            <div class="member-name">${escapeHTML(friend.username)}</div>
+            <div class="member-bio">${escapeHTML(friend.bio || '')}</div>
+          </div>
+          <a href="chat.html?user=${friend.id}" class="btn-add" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Chat</a>
+        </div>
+      `).join('');
+    }
+
+    async function handleAddFriend(targetId, btnElement) {
+      try {
+        btnElement.disabled = true;
+        btnElement.textContent = '...';
+        await SafeSpaceDB.community.sendFriendRequest(targetId);
+        btnElement.className = 'btn-add pending';
+        btnElement.textContent = 'Pending';
+        showToast('Friend request sent! ✨', 'success');
+        allFriendships.push({
+          requester_id: currentUser.id,
+          receiver_id: targetId,
+          status: 'pending'
+        });
+      } catch (err) {
+        btnElement.disabled = false;
+        btnElement.textContent = 'Add';
+        showToast('Failed to send request', 'error');
+      }
+    }
+
+    async function respondFriendRequest(requestId, newStatus) {
+      showToast(newStatus === 'accepted' ? 'Friend request accepted!' : 'Request declined', 'info');
+      const req = allFriendships.find(f => f.id === requestId);
+      if (req) req.status = newStatus;
+      renderList();
+    }
+  </script>
+</body>
+</html>

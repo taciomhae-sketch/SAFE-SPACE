@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+
+    <!-- App Icon -->
+    <div class="auth-icon">
+      <i class="fas fa-hand-holding-heart"></i>
+    </div>
+
+    <!-- Title -->
+    <h1 class="auth-title">LOGIN</h1>
+    <p class="auth-subtitle">TO CONTINUE</p>
+    <p class="auth-welcome">Welcome to Safe Space App</p>
+
+    <!-- Form -->
+    <form class="auth-form" id="loginForm" novalidate>
+
+      <!-- Email -->
+      <div class="input-group">
+        <span class="input-icon"><i class="fas fa-envelope"></i></span>
+        <input
+          class="auth-input"
+          type="email"
+          id="emailInput"
+          placeholder="someone@gmail.com"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <!-- Password -->
+      <div class="input-group">
+        <span class="input-icon"><i class="fas fa-lock"></i></span>
+        <input
+          class="auth-input"
+          type="password"
+          id="passwordInput"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+        />
+        <button
+          type="button"
+          class="input-icon-right"
+          id="eyeToggle"
+          aria-label="Toggle password visibility"
+          tabindex="-1"
+        >
+          <i class="fas fa-eye" id="eyeIcon"></i>
+        </button>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-auth-primary" id="loginBtn">
+        <span id="loginBtnText">LOGIN</span>
+        <span id="loginBtnSpinner" class="hidden" style="display:none;">
+          <i class="fas fa-circle-notch fa-spin"></i> Signing in…
+        </span>
+      </button>
+
+    </form>
+
+    <!-- Register link -->
+    <div class="auth-link-row">
+      New here? <a href="register.html">Create an account</a>
+    </div>
+
+    <!-- Demo login -->
+    <div style="text-align:center; margin-top: 10px;">
+      <button
+        type="button"
+        id="demoBtn"
+        style="background:none;border:none;color:rgba(255,255,255,0.65);font-size:0.8rem;cursor:pointer;text-decoration:underline;padding:4px 0;"
+      >
+        Demo Login
+      </button>
+    </div>
+
+    <!-- Wave -->
+    <div class="auth-wave"></div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    /* ── Eye toggle ── */
+    const passwordInput = document.getElementById('passwordInput');
+    const eyeToggle     = document.getElementById('eyeToggle');
+    const eyeIcon       = document.getElementById('eyeIcon');
+
+    eyeToggle.addEventListener('click', () => {
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      eyeIcon.className  = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+    });
+
+    /* ── Helpers ── */
+    function setLoading(loading) {
+      const btn     = document.getElementById('loginBtn');
+      const text    = document.getElementById('loginBtnText');
+      const spinner = document.getElementById('loginBtnSpinner');
+      btn.disabled        = loading;
+      text.style.display    = loading ? 'none'         : '';
+      spinner.style.display = loading ? 'inline-flex'  : 'none';
+    }
+
+    async function doLogin(email, password) {
+      setLoading(true);
+      try {
+        const { error } = await SafeSpaceDB.auth.signIn(email, password);
+        if (error) throw error;
+        window.location.href = 'index.html';
+      } catch (err) {
+        const msg = err?.message || 'Login failed. Please try again.';
+        if (typeof showToast === 'function') {
+          showToast(msg, 'error');
+        } else {
+          alert(msg);
+        }
+        setLoading(false);
+      }
+    }
+
+    /* ── Form submit ── */
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email    = document.getElementById('emailInput').value.trim();
+      const password = passwordInput.value;
+
+      if (!email || !password) {
+        if (typeof showToast === 'function') showToast('Please fill in all fields.', 'error');
+        else alert('Please fill in all fields.');
+        return;
+      }
+
+      await doLogin(email, password);
+    });
+
+    /* ── Demo login ── */
+    document.getElementById('demoBtn').addEventListener('click', async () => {
+      document.getElementById('emailInput').value = 'demo@safespace.org';
+      passwordInput.value = 'demo123456';
+      await doLogin('demo@safespace.org', 'demo123456');
+    });
+  </script>
+</body>
+</html>

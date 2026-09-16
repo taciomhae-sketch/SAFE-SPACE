@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Resources — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Header (from screenshot: Resources + purple heart on right) -->
+    <header class="page-header">
+      <h1>Resources</h1>
+      <div class="header-actions">
+        <button class="header-btn" style="color: var(--primary);" aria-label="Favorite Resources">
+          <i class="fas fa-heart"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable 3 Resource Cards (Exact layout from screenshot) -->
+    <main class="page-content" id="resourcesPageContent">
+      <div class="resources-list">
+        <!-- 1. Mental Health -->
+        <article class="resource-card" id="cardMentalHealth">
+          <div class="resource-icon">
+            <i class="fas fa-brain"></i>
+          </div>
+          <div class="resource-info">
+            <h2 class="resource-title">Mental Health</h2>
+            <p class="resource-desc">Articles and tips for your mental well-being.</p>
+          </div>
+        </article>
+
+        <!-- 2. Find Support -->
+        <article class="resource-card" id="cardFindSupport">
+          <div class="resource-icon">
+            <i class="fas fa-hands-holding-child" style="font-size:24px;"></i>
+          </div>
+          <div class="resource-info">
+            <h2 class="resource-title">Find Support</h2>
+            <p class="resource-desc">Find hotlines and organizations that can help.</p>
+          </div>
+        </article>
+
+        <!-- 3. Self Care -->
+        <article class="resource-card" id="cardSelfCare">
+          <div class="resource-icon">
+            <i class="fas fa-heart"></i>
+          </div>
+          <div class="resource-info">
+            <h2 class="resource-title">Self Care</h2>
+            <p class="resource-desc">Tips and activities for self-love.</p>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item active">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Resource Detail Slide-in Overlay -->
+  <div class="thread-overlay" id="resourceDetailOverlay">
+    <div class="thread-header">
+      <button class="thread-back" id="closeDetailBtn" aria-label="Back to Resources">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="thread-user-info">
+        <div class="thread-username" id="detailTitle">Details</div>
+      </div>
+    </div>
+    <div class="page-content" id="detailContent" style="padding: 20px;">
+      <!-- Details loaded dynamically -->
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await requireAuth();
+
+      const overlay = document.getElementById('resourceDetailOverlay');
+      const detailTitle = document.getElementById('detailTitle');
+      const detailContent = document.getElementById('detailContent');
+      const closeBtn = document.getElementById('closeDetailBtn');
+
+      closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+
+      // 1. Mental Health Card
+      document.getElementById('cardMentalHealth').addEventListener('click', () => {
+        detailTitle.textContent = 'Mental Health';
+        detailContent.innerHTML = `
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:20px; border:1px solid var(--border); line-height:1.6;">
+            <h3 style="color:var(--primary); font-size:18px; margin-bottom:10px;">Affirming Your Mental Well-Being</h3>
+            <p style="font-size:14px; color:var(--text-mid); margin-bottom:14px;">
+              Navigating identity, family acceptance, and personal growth can be an emotional journey. Your emotions are completely valid, and prioritizing yourself is a strength, not a weakness.
+            </p>
+            <h4 style="font-size:15px; font-weight:700; margin-bottom:8px;">Quick Grounding Tips:</h4>
+            <ul style="padding-left:20px; font-size:13px; color:var(--text-mid); margin-bottom:14px; display:flex; flex-direction:column; gap:6px;">
+              <li><strong>Take mindful pauses:</strong> Inhale deeply for 4 seconds, hold for 4, exhale slowly for 4.</li>
+              <li><strong>Set digital boundaries:</strong> Step away from unsupportive online spaces when you feel overwhelmed.</li>
+              <li><strong>Find your circle:</strong> Engage with trusted friends in this Safe Space who uplift you unconditionally.</li>
+            </ul>
+          </div>
+        `;
+        overlay.classList.add('open');
+      });
+
+      // 2. Find Support Card
+      document.getElementById('cardFindSupport').addEventListener('click', () => {
+        detailTitle.textContent = 'Crisis Hotlines & Support';
+        detailContent.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border);">
+              <h4 style="color:var(--primary); font-size:16px; margin-bottom:4px;">The Trevor Project (LGBTQ+)</h4>
+              <p style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">Free, confidential suicide prevention and crisis intervention 24/7.</p>
+              <a href="tel:18664887386" style="display:inline-block; background:var(--primary-light); color:var(--primary); padding:6px 14px; border-radius:var(--radius-full); font-weight:700; text-decoration:none; font-size:13px;">📞 1-866-488-7386</a>
+            </div>
+
+            <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border);">
+              <h4 style="color:var(--primary); font-size:16px; margin-bottom:4px;">Trans Lifeline</h4>
+              <p style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">Peer support service run by trans individuals, for trans individuals.</p>
+              <a href="tel:8775658860" style="display:inline-block; background:var(--primary-light); color:var(--primary); padding:6px 14px; border-radius:var(--radius-full); font-weight:700; text-decoration:none; font-size:13px;">📞 877-565-8860</a>
+            </div>
+
+            <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border);">
+              <h4 style="color:var(--primary); font-size:16px; margin-bottom:4px;">National Suicide Prevention Lifeline</h4>
+              <p style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">24/7, free and confidential support for people in distress.</p>
+              <a href="tel:988" style="display:inline-block; background:var(--primary-light); color:var(--primary); padding:6px 14px; border-radius:var(--radius-full); font-weight:700; text-decoration:none; font-size:13px;">📞 Dial 988</a>
+            </div>
+
+            <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border);">
+              <h4 style="color:var(--primary); font-size:16px; margin-bottom:4px;">Hopeline Philippines (NCMH)</h4>
+              <p style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">National Center for Mental Health crisis hotline.</p>
+              <a href="tel:1553" style="display:inline-block; background:var(--primary-light); color:var(--primary); padding:6px 14px; border-radius:var(--radius-full); font-weight:700; text-decoration:none; font-size:13px;">📞 Dial 1553</a>
+            </div>
+          </div>
+        `;
+        overlay.classList.add('open');
+      });
+
+      // 3. Self Care Card
+      document.getElementById('cardSelfCare').addEventListener('click', () => {
+        detailTitle.textContent = 'Self Care';
+        detailContent.innerHTML = `
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:20px; border:1px solid var(--border); line-height:1.6;">
+            <h3 style="color:var(--primary); font-size:18px; margin-bottom:10px;">Self-Love & Daily Rituals</h3>
+            <p style="font-size:14px; color:var(--text-mid); margin-bottom:14px;">
+              Self-care isn't selfish — it's self-preservation. Small moments of gentleness can restore your peace.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="padding:10px 14px; background:var(--primary-ultra); border-radius:var(--radius-md);">
+                <strong>💧 Hydrate & Nourish:</strong> Drink a glass of water and enjoy a nutritious meal without screens.
+              </div>
+              <div style="padding:10px 14px; background:var(--primary-ultra); border-radius:var(--radius-md);">
+                <strong>🎶 Sound Therapy:</strong> Listen to your favorite calming playlist or ambient rainfall sounds.
+              </div>
+              <div style="padding:10px 14px; background:var(--primary-ultra); border-radius:var(--radius-md);">
+                <strong>📝 Expressive Writing:</strong> Journal your honest thoughts without judging what comes up.
+              </div>
+            </div>
+          </div>
+        `;
+        overlay.classList.add('open');
+      });
+    });
+  </script>
+</body>
+</html>
