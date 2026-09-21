@@ -3,8 +3,9 @@
  */
 
 // Toast notification helper
-function showToast(message, type = 'info') {
-  let container = document.getElementById('toastContainer');
+function showToast(message, type) {
+  type = type || 'info';
+  var container = document.getElementById('toastContainer');
   if (!container) {
     container = document.createElement('div');
     container.id = 'toastContainer';
@@ -12,31 +13,31 @@ function showToast(message, type = 'info') {
     document.body.appendChild(container);
   }
 
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
   
-  let icon = 'info-circle';
+  var icon = 'info-circle';
   if (type === 'success') icon = 'check-circle';
   if (type === 'warning') icon = 'exclamation-triangle';
   if (type === 'error') icon = 'times-circle';
 
-  toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${escapeHTML(message)}</span>`;
+  toast.innerHTML = '<i class="fas fa-' + icon + '"></i> <span>' + escapeHTML(message) + '</span>';
   container.appendChild(toast);
 
-  setTimeout(() => {
+  setTimeout(function() {
     toast.classList.add('toast-show');
   }, 10);
 
-  setTimeout(() => {
+  setTimeout(function() {
     toast.classList.remove('toast-show');
-    setTimeout(() => toast.remove(), 300);
+    setTimeout(function() { toast.remove(); }, 300);
   }, 3500);
 }
 
 // Escape HTML utility to prevent XSS
 function escapeHTML(str) {
   if (!str) return '';
-  const div = document.createElement('div');
+  var div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
@@ -44,19 +45,19 @@ function escapeHTML(str) {
 // Relative timestamp helper
 function formatRelativeTime(dateInput) {
   if (!dateInput) return 'Just now';
-  const now = new Date();
-  const date = new Date(dateInput);
-  const diffSec = Math.floor((now - date) / 1000);
+  var now = new Date();
+  var date = new Date(dateInput);
+  var diffSec = Math.floor((now - date) / 1000);
 
   if (diffSec < 60) return 'Just now';
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-  if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}d ago`;
+  if (diffSec < 3600) return Math.floor(diffSec / 60) + 'm ago';
+  if (diffSec < 86400) return Math.floor(diffSec / 3600) + 'h ago';
+  if (diffSec < 604800) return Math.floor(diffSec / 86400) + 'd ago';
   return date.toLocaleDateString();
 }
 
 // Mood configurations
-const MOOD_MAP = {
+var MOOD_MAP = {
   like: { emoji: '👍', label: 'Feeling good' },
   haha: { emoji: '😆', label: 'Feeling funny' },
   sad: { emoji: '😢', label: 'Feeling sad' },
@@ -66,11 +67,12 @@ const MOOD_MAP = {
 };
 
 // Common Bottom Navigation Generator
-function renderBottomNav(activePage = 'home') {
-  const nav = document.createElement('div');
+function renderBottomNav(activePage) {
+  activePage = activePage || 'home';
+  var nav = document.createElement('div');
   nav.className = 'bottom-nav';
   nav.innerHTML = `
-    <a href="index.html" class="nav-item ${activePage === 'home' ? 'active' : ''}">
+    <a href="home.html" class="nav-item ${activePage === 'home' ? 'active' : ''}">
       <i class="fas fa-home"></i>
       <span>Feed</span>
     </a>
@@ -96,17 +98,63 @@ function renderBottomNav(activePage = 'home') {
 
 // Require Login Guard
 async function requireAuth() {
-  const user = await SafeSpaceDB.auth.getCurrentUser();
-  if (!user && !window.location.pathname.endsWith('login.html') && !window.location.pathname.endsWith('register.html')) {
-    window.location.href = 'login.html';
+  var path = window.location.pathname;
+  var publicPages = ['login.html', 'register.html', 'welcome.html', 'index.html'];
+  var isPublic = publicPages.some(function(p) { return path.endsWith(p); });
+  if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
+    if (!isPublic) window.location.href = 'welcome.html';
+    return null;
   }
-  return user;
+  try {
+    var user = await SafeSpaceDB.auth.getCurrentUser();
+    if (!user && !isPublic) {
+      window.location.href = 'welcome.html';
+    }
+    return user;
+  } catch (err) {
+    console.warn('[Auth] Session check error:', err);
+    if (!isPublic) window.location.href = 'welcome.html';
+    return null;
+  }
 }
 
 // Global modal closer
-window.addEventListener('click', (e) => {
+window.addEventListener('click', function(e) {
   if (e.target.classList.contains('modal-backdrop')) {
     e.target.style.display = 'none';
   }
+});
+
+// ============================================================
+// Page Loader Management
+// ============================================================
+function hidePageLoader() {
+  var loader = document.getElementById('pageLoader');
+  if (loader && !loader.classList.contains('fade-out')) {
+    loader.classList.add('fade-out');
+    setTimeout(function() {
+      if (loader && loader.classList.contains('fade-out')) {
+        loader.style.display = 'none';
+      }
+    }, 380);
+  }
+}
+
+function showPageLoader(sublabel) {
+  var loader = document.getElementById('pageLoader');
+  if (loader) {
+    loader.style.display = 'flex';
+    void loader.offsetWidth;
+    loader.classList.remove('fade-out');
+    if (sublabel) {
+      var sub = loader.querySelector('.loader-sublabel');
+      if (sub) sub.textContent = sublabel;
+    }
+  }
+}
+
+// Ensure loader fades out cleanly after assets load
+window.addEventListener('load', function() {
+  setTimeout(hidePageLoader, 350);
 });
 

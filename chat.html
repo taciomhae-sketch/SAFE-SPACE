@@ -8,9 +8,24 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 </head>
 <body>
   <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading chats...</div>
+      </div>
+    </div>
+
     <!-- Custom Page Header from UI screenshot -->
     <header class="page-header" style="height: auto; padding: 16px 20px 12px; align-items: flex-start;">
       <div class="chat-header-info">
@@ -66,7 +81,7 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-      <a href="index.html" class="nav-item">
+      <a href="home.html" class="nav-item">
         <i class="fas fa-home"></i>
         <span>Home</span>
       </a>
@@ -128,7 +143,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/lib/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/app.js"></script>
@@ -138,6 +153,7 @@
     let allMembers = [];
     let conversations = [];
     let activeChatUser = null;
+    let messageUnsubscribe = null;
 
     document.addEventListener('DOMContentLoaded', async () => {
       currentUser = await requireAuth();
@@ -146,12 +162,19 @@
       setupSearch();
       setupThread();
       await loadInitialData();
+      hidePageLoader();
 
       // Check if URL specifies a user to chat with (?user=userId)
       const params = new URLSearchParams(window.location.search);
       const targetUserId = params.get('user');
       if (targetUserId) {
-        const targetMember = allMembers.find(m => m.id === targetUserId);
+        let targetMember = allMembers.find(m => m.id === targetUserId);
+        if (!targetMember) {
+          try {
+            const all = await SafeSpaceDB.community.getMembers();
+            targetMember = all.find(m => m.id === targetUserId);
+          } catch (e) {}
+        }
         if (targetMember) {
           openThread(targetMember);
         }
@@ -211,23 +234,30 @@
       }
 
       container.innerHTML = conversations.map(c => {
-        const avatarHtml = c.avatar_url
-          ? `<img src="${escapeHTML(c.avatar_url)}" alt="${escapeHTML(c.username)}" />`
+        const uid = c.user_id || (c.contact && c.contact.id);
+        const uname = c.username || (c.contact && c.contact.username) || 'User';
+        const uavatar = c.avatar_url || (c.contact && c.contact.avatar_url);
+        const lastMsg = c.last_message || (c.lastMessage) || 'Tap to chat';
+        const lastTime = c.last_message_at || c.lastMessageTime;
+        const unread = c.unread_count || (c.unread ? 1 : 0);
+
+        const avatarHtml = uavatar
+          ? `<img src="${escapeHTML(uavatar)}" alt="${escapeHTML(uname)}" />`
           : `<i class="fas fa-user"></i>`;
 
         return `
-          <div class="conversation-item" onclick="handleOpenChatById('${c.user_id}')">
+          <div class="conversation-item" onclick="handleOpenChatById('${uid}')">
             <div class="conversation-avatar">
               ${avatarHtml}
               <span class="online-dot"></span>
             </div>
             <div class="conversation-info">
-              <div class="conversation-name">${escapeHTML(c.username || 'User')}</div>
-              <div class="conversation-preview">${escapeHTML(c.last_message || 'Tap to chat')}</div>
+              <div class="conversation-name">${escapeHTML(uname)}</div>
+              <div class="conversation-preview">${escapeHTML(lastMsg)}</div>
             </div>
             <div class="conversation-meta">
-              <span class="conversation-time">${formatRelativeTime(c.last_message_at)}</span>
-              ${c.unread_count > 0 ? `<span class="unread-badge">${c.unread_count}</span>` : ''}
+              <span class="conversation-time">${formatRelativeTime(lastTime)}</span>
+              ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
             </div>
           </div>
         `;
@@ -272,6 +302,7 @@
       const member = allMembers.find(m => m.id === userId) || { id: userId, username: 'User' };
       openThread(member);
     }
+    window.handleOpenChatById = handleOpenChatById;
 
     function setupThread() {
       const overlay = document.getElementById('chatThreadOverlay');
@@ -279,7 +310,13 @@
       const sendBtn = document.getElementById('sendMessageBtn');
       const input = document.getElementById('chatMessageInput');
 
-      closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+      closeBtn.addEventListener('click', () => {
+        if (messageUnsubscribe) {
+          messageUnsubscribe();
+          messageUnsubscribe = null;
+        }
+        overlay.classList.remove('open');
+      });
 
       sendBtn.addEventListener('click', async () => {
         const text = input.value.trim();
@@ -290,9 +327,11 @@
 
         try {
           await SafeSpaceDB.messages.sendMessage(activeChatUser.id, text);
-          // Refresh conversation list
-          conversations = await SafeSpaceDB.messages.getConversations();
-          renderRecentConversations();
+          // Refresh conversation list in background
+          SafeSpaceDB.messages.getConversations().then(res => {
+            conversations = res || [];
+            renderRecentConversations();
+          });
         } catch (err) {
           showToast('Failed to send message', 'error');
         }
@@ -317,6 +356,18 @@
       msgContainer.innerHTML = '<div class="spinner"></div>';
       overlay.classList.add('open');
 
+      if (messageUnsubscribe) {
+        messageUnsubscribe();
+        messageUnsubscribe = null;
+      }
+
+      // Subscribe to real-time incoming messages for this user
+      messageUnsubscribe = SafeSpaceDB.messages.subscribeToMessages(member.id, (incomingMsg) => {
+        if (incomingMsg.sender_id === member.id) {
+          appendMessageBubble(incomingMsg);
+        }
+      });
+
       try {
         const messages = await SafeSpaceDB.messages.getMessages(member.id);
         msgContainer.innerHTML = '';
@@ -334,6 +385,7 @@
         msgContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load messages</div>';
       }
     }
+    window.openThread = openThread;
 
     function appendMessageBubble(msg) {
       const container = document.getElementById('threadMessagesContainer');

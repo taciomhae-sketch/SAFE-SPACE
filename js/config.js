@@ -1,27 +1,28 @@
 /**
  * Safe Space - Supabase Configuration
- * 
- * Replace the values below with your Supabase Project settings:
- * Supabase Dashboard -> Project Settings -> API
- * 1. SUPABASE_URL: Project URL (e.g. https://xyzcompany.supabase.co)
- * 2. SUPABASE_ANON_KEY: Project API anon/public key (eyJh...)
- * 
- * NOTE: If left blank or using placeholders, Safe Space automatically runs
- * in zero-dependency Local Demo Mode so you can test on your laptop immediately!
+ * Project: ssqswqqfsbfgjsrllprq
  */
-const SAFE_SPACE_CONFIG = {
-  // Enter your Supabase Project URL:
-  SUPABASE_URL: "",
+var SAFE_SPACE_CONFIG = {
+  // Supabase Project URL:
+  SUPABASE_URL: "https://ssqswqqfsbfgjsrllprq.supabase.co",
 
-  // Enter your Supabase Public Anon Key:
-  SUPABASE_ANON_KEY: "",
+  // Supabase Public Anon Key:
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzcXN3cXFmc2JmZ2pzcmxscHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1NTI4NDcsImV4cCI6MjEwNTEyODg0N30.edh6s4TqNS8b8dzZyE-kLPzhw8YWtgWpKFf-zU3rVLg",
+
+  // Supabase Service Role Key:
+  SUPABASE_SERVICE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzcXN3cXFmc2JmZ2pzcmxscHJxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTU1Mjg0NywiZXhwIjoyMTA1MTI4ODQ3fQ.LLtIHwdrA3wYCqVc1Ep7gO9z-vABKF47OYO7nxxfqzk",
+
+  // EMAIL AUTHENTICATION SETTING:
+  // Set to true to require real SMTP confirmation emails sent to students' actual email inboxes.
+  // Requires setting up SMTP in your Supabase Dashboard (e.g. via Resend or Gmail).
+  REQUIRE_EMAIL_CONFIRMATION: true,
 
   // App Metadata
   APP_NAME: "Safe Space",
   VERSION: "2.0.0",
 
-  // Demo Mode is automatically active if Supabase keys are not set
-  isConfigured() {
+  // Check if live Supabase is properly configured
+  isConfigured: function() {
     return (
       Boolean(this.SUPABASE_URL) &&
       Boolean(this.SUPABASE_ANON_KEY) &&
@@ -31,3 +32,6 @@ const SAFE_SPACE_CONFIG = {
   }
 };
 
+if (typeof window !== 'undefined') {
+  window.SAFE_SPACE_CONFIG = SAFE_SPACE_CONFIG;
+}

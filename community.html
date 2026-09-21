@@ -8,9 +8,24 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 </head>
 <body>
   <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading community...</div>
+      </div>
+    </div>
+
     <!-- Page Header -->
     <header class="page-header">
       <h1>Community</h1>
@@ -49,7 +64,7 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-      <a href="index.html" class="nav-item">
+      <a href="home.html" class="nav-item">
         <i class="fas fa-home"></i>
         <span>Home</span>
       </a>
@@ -73,7 +88,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/lib/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/app.js"></script>
@@ -92,6 +107,7 @@
       setupTabs();
       setupSearch();
       await loadCommunityData();
+      hidePageLoader();
     });
 
     function setupTabs() {
@@ -138,7 +154,30 @@
       return found.status; // 'pending' | 'accepted' | 'declined'
     }
 
+    function updateTabBadges() {
+      const pendingCount = allFriendships.filter(f => 
+        f.receiver_id === currentUser.id && f.status === 'pending'
+      ).length;
+      
+      const friendCount = allFriendships.filter(f => 
+        f.status === 'accepted' && (f.requester_id === currentUser.id || f.receiver_id === currentUser.id)
+      ).length;
+
+      const pills = document.querySelectorAll('#communityPills .pill');
+      pills.forEach(pill => {
+        const tab = pill.dataset.tab;
+        if (tab === 'people') {
+          pill.textContent = `People (${allMembers.length})`;
+        } else if (tab === 'requests') {
+          pill.textContent = pendingCount > 0 ? `Requests (${pendingCount})` : 'Requests';
+        } else if (tab === 'friends') {
+          pill.textContent = friendCount > 0 ? `Friends (${friendCount})` : 'Friends';
+        }
+      });
+    }
+
     function renderList() {
+      updateTabBadges();
       const container = document.getElementById('memberListContainer');
 
       if (activeTab === 'people') {
@@ -176,11 +215,11 @@
         let buttonHtml = '';
 
         if (status === 'accepted') {
-          buttonHtml = `<button class="btn-add friends" disabled>Friends</button>`;
+          buttonHtml = `<button class="btn-add friends" disabled><i class="fas fa-check"></i> Friends</button>`;
         } else if (status === 'pending') {
-          buttonHtml = `<button class="btn-add pending" disabled>Pending</button>`;
+          buttonHtml = `<button class="btn-add pending" disabled><i class="fa-regular fa-clock"></i> Pending</button>`;
         } else {
-          buttonHtml = `<button class="btn-add" onclick="handleAddFriend('${member.id}', this)">Add</button>`;
+          buttonHtml = `<button class="btn-add" onclick="handleAddFriend('${member.id}', this)"><i class="fas fa-user-plus"></i> Add</button>`;
         }
 
         const avatarHtml = member.avatar_url
@@ -217,12 +256,16 @@
       }
 
       container.innerHTML = pendingRequests.map(req => {
-        const sender = allMembers.find(m => m.id === req.requester_id) || { username: 'A member' };
+        let sender = req.requester || allMembers.find(m => m.id === req.requester_id) || { username: 'A member' };
+        const avatarHtml = sender.avatar_url
+          ? `<img src="${escapeHTML(sender.avatar_url)}" alt="${escapeHTML(sender.username)}" />`
+          : `<i class="fas fa-user"></i>`;
+
         return `
-          <div class="member-card">
-            <div class="member-avatar"><i class="fas fa-user"></i></div>
+          <div class="member-card" id="req-card-${req.id}">
+            <div class="member-avatar">${avatarHtml}</div>
             <div class="member-info">
-              <div class="member-name">${escapeHTML(sender.username)}</div>
+              <div class="member-name">${escapeHTML(sender.username || 'A member')}</div>
               <div class="member-bio">Sent you a friend request</div>
             </div>
             <button class="btn-add" style="margin-right: 6px;" onclick="respondFriendRequest('${req.id}', 'accepted')">Accept</button>
@@ -259,7 +302,9 @@
             <div class="member-name">${escapeHTML(friend.username)}</div>
             <div class="member-bio">${escapeHTML(friend.bio || '')}</div>
           </div>
-          <a href="chat.html?user=${friend.id}" class="btn-add" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Chat</a>
+          <a href="chat.html?user=${friend.id}" class="btn-add" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap: 4px;">
+            <i class="fas fa-comment"></i> Chat
+          </a>
         </div>
       `).join('');
     }
@@ -268,28 +313,39 @@
       try {
         btnElement.disabled = true;
         btnElement.textContent = '...';
-        await SafeSpaceDB.community.sendFriendRequest(targetId);
+        const res = await SafeSpaceDB.community.sendFriendRequest(targetId);
         btnElement.className = 'btn-add pending';
-        btnElement.textContent = 'Pending';
+        btnElement.innerHTML = '<i class="fa-regular fa-clock"></i> Pending';
         showToast('Friend request sent! ✨', 'success');
+        
         allFriendships.push({
+          id: (res && res.id) || ('f-' + Date.now()),
           requester_id: currentUser.id,
           receiver_id: targetId,
           status: 'pending'
         });
+        updateTabBadges();
       } catch (err) {
         btnElement.disabled = false;
-        btnElement.textContent = 'Add';
+        btnElement.innerHTML = '<i class="fas fa-user-plus"></i> Add';
         showToast('Failed to send request', 'error');
       }
     }
+    window.handleAddFriend = handleAddFriend;
 
     async function respondFriendRequest(requestId, newStatus) {
-      showToast(newStatus === 'accepted' ? 'Friend request accepted!' : 'Request declined', 'info');
-      const req = allFriendships.find(f => f.id === requestId);
-      if (req) req.status = newStatus;
-      renderList();
+      try {
+        await SafeSpaceDB.community.respondFriendRequest(requestId, newStatus);
+        showToast(newStatus === 'accepted' ? 'Friend request accepted! 🎉' : 'Request declined', 'info');
+        const req = allFriendships.find(f => f.id === requestId);
+        if (req) req.status = newStatus;
+        renderList();
+      } catch (err) {
+        console.error('Failed to respond to friend request:', err);
+        showToast('Could not process request', 'error');
+      }
     }
+    window.respondFriendRequest = respondFriendRequest;
   </script>
 </body>
 </html>

@@ -8,8 +8,27 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 </head>
 <body class="auth-page">
+  <!-- Page Loading Overlay -->
+  <div class="page-loader" id="pageLoader">
+    <div class="loader-content">
+      <div class="loader-spinner-ring">
+        <div class="loader-icon-center">
+          <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+        </div>
+      </div>
+      <div class="loader-label">Safe Space</div>
+      <div class="loader-sublabel">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Back to Welcome -->
+  <a href="welcome.html" style="position:fixed;top:16px;left:16px;z-index:10;color:rgba(255,255,255,0.85);font-size:22px;text-decoration:none;" aria-label="Back">
+    <i class="fas fa-chevron-left"></i>
+  </a>
   <div class="auth-container">
 
     <!-- Title -->
@@ -139,30 +158,36 @@
     <div class="auth-wave"></div>
   </div>
 
+  <script src="js/lib/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/app.js"></script>
   <script src="js/pwa.js"></script>
   <script>
+    /* Hide page loader once register page is ready */
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() { if (typeof hidePageLoader === 'function') hidePageLoader(); }, 200);
+    });
+
     /* ────────────────────────────────
        Avatar Upload
     ──────────────────────────────── */
-    const avatarCircle  = document.getElementById('avatarCircle');
-    const cameraBadge   = document.getElementById('cameraBadge');
-    const avatarFile    = document.getElementById('avatarFile');
-    const avatarPreview = document.getElementById('avatarPreview');
-    const avatarIcon    = document.getElementById('avatarIcon');
-    let avatarDataURL   = null;
+    var avatarCircle  = document.getElementById('avatarCircle');
+    var cameraBadge   = document.getElementById('cameraBadge');
+    var avatarFile    = document.getElementById('avatarFile');
+    var avatarPreview = document.getElementById('avatarPreview');
+    var avatarIcon    = document.getElementById('avatarIcon');
+    var avatarDataURL   = null;
 
     function triggerAvatarPicker() { avatarFile.click(); }
     avatarCircle.addEventListener('click', triggerAvatarPicker);
     cameraBadge.addEventListener('click', triggerAvatarPicker);
 
-    avatarFile.addEventListener('change', () => {
-      const file = avatarFile.files[0];
+    avatarFile.addEventListener('change', function() {
+      var file = avatarFile.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
+      var reader = new FileReader();
+      reader.onload = function(e) {
         avatarDataURL = e.target.result;
         avatarPreview.src = avatarDataURL;
         avatarPreview.style.display = 'block';
@@ -175,11 +200,11 @@
        Eye Toggles
     ──────────────────────────────── */
     function setupEye(inputId, toggleId, iconId) {
-      const input  = document.getElementById(inputId);
-      const toggle = document.getElementById(toggleId);
-      const icon   = document.getElementById(iconId);
-      toggle.addEventListener('click', () => {
-        const hidden = input.type === 'password';
+      var input  = document.getElementById(inputId);
+      var toggle = document.getElementById(toggleId);
+      var icon   = document.getElementById(iconId);
+      toggle.addEventListener('click', function() {
+        var hidden = input.type === 'password';
         input.type   = hidden ? 'text'    : 'password';
         icon.className = hidden ? 'fas fa-eye-slash' : 'fas fa-eye';
       });
@@ -195,9 +220,9 @@
     }
 
     function setLoading(loading) {
-      const btn     = document.getElementById('signupBtn');
-      const text    = document.getElementById('signupBtnText');
-      const spinner = document.getElementById('signupBtnSpinner');
+      var btn     = document.getElementById('signupBtn');
+      var text    = document.getElementById('signupBtnText');
+      var spinner = document.getElementById('signupBtnSpinner');
       btn.disabled        = loading;
       text.style.display    = loading ? 'none'        : '';
       spinner.style.display = loading ? 'inline-flex' : 'none';
@@ -210,20 +235,20 @@
     /* ────────────────────────────────
        Form Submit
     ──────────────────────────────── */
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       showError('');
 
-      const firstName      = val('firstName');
-      const lastName       = val('lastName');
-      const middleName     = val('middleName');
-      const age            = val('age');
-      const sex            = val('sex');
-      const birthday       = val('birthday');
-      const username       = val('username');
-      const email          = val('email');
-      const password       = document.getElementById('password').value;
-      const confirmPwd     = document.getElementById('confirmPassword').value;
+      var firstName      = val('firstName');
+      var lastName       = val('lastName');
+      var middleName     = val('middleName');
+      var age            = val('age');
+      var sex            = val('sex');
+      var birthday       = val('birthday');
+      var username       = val('username');
+      var email          = val('email');
+      var password       = document.getElementById('password').value;
+      var confirmPwd     = document.getElementById('confirmPassword').value;
 
       /* ── Validation ── */
       if (!firstName || !lastName || !age || !sex || !birthday || !username || !email || !password || !confirmPwd) {
@@ -250,25 +275,59 @@
       setLoading(true);
 
       try {
-        const payload = {
-          email,
-          password,
-          username,
+        if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
+          throw new Error('Database client initializing... please try again in a second.');
+        }
+
+        var payload = {
+          email:       email,
+          password:    password,
+          username:    username,
           first_name:  firstName,
           last_name:   lastName,
           middle_name: middleName || null,
           age:         parseInt(age, 10),
-          sex,
-          birthday,
-          avatar_url:  avatarDataURL || null,
+          sex:         sex,
+          birthday:    birthday,
+          avatar_url:  avatarDataURL || null
         };
 
-        const { error } = await SafeSpaceDB.auth.signUp(payload);
-        if (error) throw error;
+        var result = await SafeSpaceDB.auth.signUp(payload);
+        if (result && result.error) throw result.error;
 
-        window.location.href = 'index.html';
+        // If a real confirmation email was sent via SMTP
+        if (result && result.needsEmailConfirmation) {
+          var container = document.querySelector('.auth-container');
+          if (container) {
+            container.innerHTML = `
+              <div style="width:72px; height:72px; background:rgba(255,255,255,0.22); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 30px auto 20px; font-size:32px; color:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.15);">
+                <i class="fas fa-envelope-circle-check"></i>
+              </div>
+              <h1 class="auth-title" style="font-size:24px;">CONFIRM EMAIL</h1>
+              <p class="auth-subtitle">CHECK YOUR INBOX</p>
+              <div style="background:rgba(255,255,255,0.15); border-radius:18px; padding:20px; margin:20px 0; text-align:center; border:1px solid rgba(255,255,255,0.25);">
+                <p style="color:#fff; font-size:14px; line-height:1.6; margin-bottom:12px;">
+                  We have sent a confirmation link to:
+                </p>
+                <div style="background:rgba(0,0,0,0.2); border-radius:30px; padding:8px 16px; display:inline-block; color:#fff; font-weight:700; font-size:13px; word-break:break-all;">
+                  ${escapeHTML(email)}
+                </div>
+                <p style="color:rgba(255,255,255,0.8); font-size:12px; line-height:1.5; margin-top:14px;">
+                  Please check your inbox (or spam folder) and click the link to activate your student account.
+                </p>
+              </div>
+              <a href="login.html" class="btn-auth-primary" style="display:flex; align-items:center; justify-content:center; text-decoration:none; height:48px; font-weight:700; gap:8px;">
+                <i class="fas fa-right-to-bracket"></i> GO TO LOGIN
+              </a>
+              <div class="auth-wave"></div>
+            `;
+          }
+          return;
+        }
+
+        window.location.href = 'home.html';
       } catch (err) {
-        const msg = err?.message || 'Registration failed. Please try again.';
+        var msg = (err && err.message) ? err.message : 'Registration failed. Please try again.';
         showError(msg);
         if (typeof showToast === 'function') showToast(msg, 'error');
         setLoading(false);

@@ -145,13 +145,22 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, username, email, first_name, last_name, avatar_url, bio)
+    INSERT INTO public.profiles (
+        id, username, email,
+        first_name, middle_name, last_name,
+        age, sex, birthday,
+        avatar_url, bio
+    )
     VALUES (
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
         NEW.email,
         NEW.raw_user_meta_data->>'first_name',
+        NEW.raw_user_meta_data->>'middle_name',
         NEW.raw_user_meta_data->>'last_name',
+        (NEW.raw_user_meta_data->>'age')::INTEGER,
+        NEW.raw_user_meta_data->>'sex',
+        (NEW.raw_user_meta_data->>'birthday')::DATE,
         NEW.raw_user_meta_data->>'avatar_url',
         COALESCE(NEW.raw_user_meta_data->>'bio', 'Hello, Safe Space!')
     )
@@ -179,11 +188,57 @@ ALTER TABLE public.blocks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_nicknames ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- Profiles: Public can view profiles; users can update their own
+-- =====================================================================
+-- DROP existing policies first (safe to re-run)
+-- =====================================================================
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+
+DROP POLICY IF EXISTS "Posts viewable by everyone" ON public.posts;
+DROP POLICY IF EXISTS "Users can create posts" ON public.posts;
+DROP POLICY IF EXISTS "Users can update own posts" ON public.posts;
+DROP POLICY IF EXISTS "Users can delete own posts" ON public.posts;
+
+DROP POLICY IF EXISTS "Likes viewable by everyone" ON public.post_likes;
+DROP POLICY IF EXISTS "Users can insert like" ON public.post_likes;
+DROP POLICY IF EXISTS "Users can delete own like" ON public.post_likes;
+
+DROP POLICY IF EXISTS "Comments viewable by everyone" ON public.post_comments;
+DROP POLICY IF EXISTS "Users can insert comment" ON public.post_comments;
+DROP POLICY IF EXISTS "Users can delete own comment" ON public.post_comments;
+
+DROP POLICY IF EXISTS "Users can view own saved posts" ON public.saved_posts;
+DROP POLICY IF EXISTS "Users can save posts" ON public.saved_posts;
+DROP POLICY IF EXISTS "Users can remove saved posts" ON public.saved_posts;
+
+DROP POLICY IF EXISTS "Users can view messages they sent or received" ON public.messages;
+DROP POLICY IF EXISTS "Users can insert messages" ON public.messages;
+DROP POLICY IF EXISTS "Users can update messages" ON public.messages;
+
+DROP POLICY IF EXISTS "Users view relevant friendships" ON public.friendships;
+DROP POLICY IF EXISTS "Users can send friend requests" ON public.friendships;
+DROP POLICY IF EXISTS "Users can update received requests" ON public.friendships;
+
+DROP POLICY IF EXISTS "Users can manage blocks" ON public.blocks;
+
+DROP POLICY IF EXISTS "Users view own notifications" ON public.notifications;
+DROP POLICY IF EXISTS "System/Users insert notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Users update own notifications" ON public.notifications;
+
+DROP POLICY IF EXISTS "Public image access" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users upload images" ON storage.objects;
+
+-- =====================================================================
+-- CREATE policies (fresh)
+-- =====================================================================
+
+-- Profiles: Public can view; users can update their own; users insert their own on signup
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Posts: Everyone can view non-archived posts; authenticated users can insert
+-- Posts: Everyone can view non-archived posts; authenticated users can insert/edit/delete their own
 CREATE POLICY "Posts viewable by everyone" ON public.posts FOR SELECT USING (archived = FALSE OR auth.uid() = user_id);
 CREATE POLICY "Users can create posts" ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own posts" ON public.posts FOR UPDATE USING (auth.uid() = user_id);

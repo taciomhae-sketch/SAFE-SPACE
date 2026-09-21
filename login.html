@@ -8,8 +8,27 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 </head>
 <body class="auth-page">
+  <!-- Page Loading Overlay -->
+  <div class="page-loader" id="pageLoader">
+    <div class="loader-content">
+      <div class="loader-spinner-ring">
+        <div class="loader-icon-center">
+          <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+        </div>
+      </div>
+      <div class="loader-label">Safe Space</div>
+      <div class="loader-sublabel">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Back to Welcome -->
+  <a href="welcome.html" style="position:fixed;top:16px;left:16px;z-index:10;color:rgba(255,255,255,0.85);font-size:22px;text-decoration:none;" aria-label="Back">
+    <i class="fas fa-chevron-left"></i>
+  </a>
   <div class="auth-container">
 
     <!-- App Icon -->
@@ -90,27 +109,32 @@
     <div class="auth-wave"></div>
   </div>
 
+  <script src="js/lib/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/app.js"></script>
   <script src="js/pwa.js"></script>
   <script>
-    /* ── Eye toggle ── */
-    const passwordInput = document.getElementById('passwordInput');
-    const eyeToggle     = document.getElementById('eyeToggle');
-    const eyeIcon       = document.getElementById('eyeIcon');
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(hidePageLoader, 200);
+    });
 
-    eyeToggle.addEventListener('click', () => {
-      const isHidden = passwordInput.type === 'password';
+    /* ── Eye toggle ── */
+    var passwordInput = document.getElementById('passwordInput');
+    var eyeToggle     = document.getElementById('eyeToggle');
+    var eyeIcon       = document.getElementById('eyeIcon');
+
+    eyeToggle.addEventListener('click', function() {
+      var isHidden = passwordInput.type === 'password';
       passwordInput.type = isHidden ? 'text' : 'password';
       eyeIcon.className  = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
     });
 
     /* ── Helpers ── */
     function setLoading(loading) {
-      const btn     = document.getElementById('loginBtn');
-      const text    = document.getElementById('loginBtnText');
-      const spinner = document.getElementById('loginBtnSpinner');
+      var btn     = document.getElementById('loginBtn');
+      var text    = document.getElementById('loginBtnText');
+      var spinner = document.getElementById('loginBtnSpinner');
       btn.disabled        = loading;
       text.style.display    = loading ? 'none'         : '';
       spinner.style.display = loading ? 'inline-flex'  : 'none';
@@ -119,11 +143,17 @@
     async function doLogin(email, password) {
       setLoading(true);
       try {
-        const { error } = await SafeSpaceDB.auth.signIn(email, password);
-        if (error) throw error;
-        window.location.href = 'index.html';
+        if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
+          throw new Error('Database client initializing... please try again.');
+        }
+        var result = await SafeSpaceDB.auth.signIn(email, password);
+        if (result && result.error) throw result.error;
+        window.location.href = 'home.html';
       } catch (err) {
-        const msg = err?.message || 'Login failed. Please try again.';
+        var msg = (err && err.message) ? err.message : 'Login failed. Please try again.';
+        if (msg.toLowerCase().includes('email not confirmed')) {
+          msg = 'Your email is not confirmed yet. Please check your inbox for the activation link.';
+        }
         if (typeof showToast === 'function') {
           showToast(msg, 'error');
         } else {
@@ -134,10 +164,10 @@
     }
 
     /* ── Form submit ── */
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const email    = document.getElementById('emailInput').value.trim();
-      const password = passwordInput.value;
+      var email    = document.getElementById('emailInput').value.trim();
+      var password = passwordInput.value;
 
       if (!email || !password) {
         if (typeof showToast === 'function') showToast('Please fill in all fields.', 'error');
@@ -149,7 +179,7 @@
     });
 
     /* ── Demo login ── */
-    document.getElementById('demoBtn').addEventListener('click', async () => {
+    document.getElementById('demoBtn').addEventListener('click', async function() {
       document.getElementById('emailInput').value = 'demo@safespace.org';
       passwordInput.value = 'demo123456';
       await doLogin('demo@safespace.org', 'demo123456');
