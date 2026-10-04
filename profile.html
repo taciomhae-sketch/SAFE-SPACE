@@ -1,0 +1,2557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Profile — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <style>
+    #profileSubViewOverlay {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 1100 !important;
+      background: var(--page-bg) !important;
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    #profileSubViewOverlay.open {
+      display: flex !important;
+    }
+    #profileSubViewOverlay .thread-header {
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      flex-shrink: 0;
+    }
+    #profileSubViewOverlay .thread-back {
+      display: flex !important;
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-dark);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+    }
+    #profileSubViewOverlay .thread-back:hover {
+      background: var(--primary-ultra);
+      color: var(--primary);
+    }
+    #profileSubViewOverlay .thread-username {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+    #profileSubViewOverlay .page-content {
+      flex: 1;
+      max-width: 680px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    /* Toggle switches for Privacy Settings */
+    .privacy-setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .privacy-setting-row:last-child {
+      border-bottom: none;
+    }
+    .privacy-setting-info h5 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 3px 0;
+    }
+    .privacy-setting-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+    .safe-toggle {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .safe-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .safe-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--border, #e5e7eb);
+      transition: .3s;
+      border-radius: 26px;
+    }
+    .safe-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .safe-toggle input:checked + .safe-slider {
+      background-color: var(--primary, #6C4FD1);
+    }
+    .safe-toggle input:checked + .safe-slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Danger zone */
+    .danger-zone-card {
+      background: rgba(239, 68, 68, 0.04);
+      border: 1.5px solid rgba(239, 68, 68, 0.22);
+      border-radius: var(--radius-lg, 16px);
+      padding: 18px;
+      margin-top: 24px;
+    }
+    .danger-zone-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-danger, #ef4444);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .danger-btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--text-danger, #ef4444);
+      color: var(--text-danger, #ef4444);
+      padding: 7px 16px;
+      border-radius: var(--radius-full, 999px);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .danger-btn-outline:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Blocked user card */
+    .blocked-user-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 10px;
+    }
+
+    /* Edit form input helpers */
+    .edit-form-group {
+      margin-bottom: 12px;
+    }
+    .edit-form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-mid);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .edit-form-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 14px;
+      border-radius: var(--radius-md, 10px);
+      border: 1px solid var(--border);
+      background: var(--page-bg);
+      color: var(--text-dark);
+      font-size: 14px;
+      outline: none;
+      transition: border-color var(--transition);
+      box-sizing: border-box;
+    }
+    .edit-form-input:focus {
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading profile...</div>
+      </div>
+    </div>
+
+    <!-- Desktop & Tablet Sidebar -->
+    <aside class="desktop-sidebar">
+      <a href="home.html" class="sidebar-brand">
+        <img class="sidebar-logo" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+        <div>
+          <div class="sidebar-brand-name">SAFE SPACE</div>
+          <span class="sidebar-brand-tag">Student Support</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="home.html" class="sidebar-link" data-page="home">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="community.html" class="sidebar-link" data-page="community">
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </a>
+        <a href="chat.html" class="sidebar-link" data-page="chat">
+          <i class="fas fa-comment-dots"></i>
+          <span>Chat</span>
+        </a>
+        <a href="resources.html" class="sidebar-link" data-page="resources">
+          <i class="fas fa-book-open"></i>
+          <span>Resources</span>
+        </a>
+        <a href="profile.html" class="sidebar-link active" data-page="profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-actions">
+        <button type="button" class="sidebar-create-btn" id="sidebarCreatePostBtn">
+          <i class="fas fa-plus"></i>
+          <span>Create Post</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="sidebar-user-card" id="sidebarUserCard" title="View Profile">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">Account</span>
+            <span class="sidebar-user-role">Student</span>
+          </div>
+          <i class="fas fa-gear sidebar-settings-icon"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Column -->
+    <div class="main-content-column">
+      <!-- Page Header -->
+      <header class="page-header">
+        <h1>Profile</h1>
+        <div class="header-actions">
+          <button class="header-btn" id="profileSettingsBtn" aria-label="Settings">
+            <i class="fas fa-gear"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Profile Content -->
+      <main class="page-content" id="profilePageContent">
+        <!-- Profile Header Area -->
+        <section class="profile-header-section">
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar-circle" id="profileAvatarDisplay">
+              <i class="fas fa-user-secret" id="profileAvatarPlaceholderIcon"></i>
+              <img id="profileAvatarImg" src="" alt="Profile avatar" style="display:none; width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+            </div>
+            <div class="avatar-camera-badge" id="cameraUploadBtn" title="Change photo">
+              <i class="fas fa-camera"></i>
+            </div>
+            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" />
+          </div>
+
+          <h2 class="profile-username" id="profileUsername">loading...</h2>
+          <p class="profile-fullname" id="profileFullname">loading name...</p>
+
+          <!-- Editable Bio Box -->
+          <div class="bio-box" id="bioBox">
+            <p class="bio-text" id="bioText">Add a bio to say something about yourself...</p>
+            <button class="bio-edit-btn" id="editBioPencilBtn" aria-label="Edit Bio">
+              <i class="fas fa-pencil"></i>
+            </button>
+          </div>
+        </section>
+
+        <!-- Profile Menu Rows (Exact list from screenshots) -->
+        <nav class="profile-menu">
+          <a class="menu-row" id="accountInfoRow">
+            <div class="menu-icon"><i class="fa-regular fa-id-badge"></i></div>
+            <span class="menu-label">Account Information</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="myPostsRow">
+            <div class="menu-icon"><i class="fa-regular fa-file-lines"></i></div>
+            <span class="menu-label">My Posts</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="savedPostsRow">
+            <div class="menu-icon"><i class="fa-regular fa-bookmark"></i></div>
+            <span class="menu-label">Saved Posts</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="privacySecurityRow">
+            <div class="menu-icon"><i class="fas fa-shield-halved"></i></div>
+            <span class="menu-label">Privacy & Security</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="themeAppearanceRow">
+            <div class="menu-icon"><i class="fas fa-palette"></i></div>
+            <span class="menu-label">Theme & Appearance</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="notificationsRow">
+            <div class="menu-icon"><i class="fa-regular fa-bell"></i></div>
+            <span class="menu-label">Notifications</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="blockedUsersRow">
+            <div class="menu-icon"><i class="fas fa-user-slash"></i></div>
+            <span class="menu-label">Blocked Users</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="aboutAppRow">
+            <div class="menu-icon"><i class="fa-regular fa-circle-question"></i></div>
+            <span class="menu-label">About the App</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a class="menu-row" id="accountStatusRow">
+            <div class="menu-icon"><i class="fas fa-user-shield"></i></div>
+            <span class="menu-label">Account Status</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+
+          <a href="admin.html" class="menu-row" id="adminPortalRow" style="border: 1px solid rgba(108, 79, 209, 0.2); background: rgba(108, 79, 209, 0.04);">
+            <div class="menu-icon" style="background: rgba(108, 79, 209, 0.15); color: var(--primary);"><i class="fas fa-shield-halved"></i></div>
+            <span class="menu-label" style="font-weight: 700; color: var(--primary);">Admin &amp; AI Dashboard</span>
+            <span style="margin-left:auto; font-size:10px; font-weight:800; background:var(--primary); color:#fff; padding:2px 7px; border-radius:10px;">PORTAL</span>
+            <i class="fas fa-chevron-right menu-chevron" style="color:var(--primary); margin-left:6px;"></i>
+          </a>
+
+          <a class="menu-row danger" id="logoutRow">
+            <div class="menu-icon"><i class="fas fa-arrow-right-from-bracket"></i></div>
+            <span class="menu-label">Logout</span>
+            <i class="fas fa-chevron-right menu-chevron"></i>
+          </a>
+        </nav>
+      </main>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="home.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item active">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Bio Edit Modal Overlay -->
+  <div class="bio-modal-overlay" id="bioModalOverlay">
+    <div class="bio-modal">
+      <h3>Edit Bio</h3>
+      <textarea
+        class="bio-textarea"
+        id="bioInput"
+        placeholder="Share a short safe introduction about yourself..."
+        maxlength="300"
+      ></textarea>
+      <div class="bio-modal-actions">
+        <button class="btn-cancel" id="cancelBioBtn">Cancel</button>
+        <button class="btn-save" id="saveBioBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avatar Options Modal Overlay -->
+  <div class="modal-overlay" id="avatarModalOverlay">
+    <div class="modal-sheet" style="max-width: 520px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-image" style="color:var(--primary); margin-right:8px;"></i>Choose Profile Avatar</span>
+        <button class="modal-close" id="closeAvatarModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <!-- Current Avatar Preview Box -->
+        <div class="avatar-preview-box">
+          <div class="avatar-preview-circle" id="avatarModalCurrentDisplay">
+            <i class="fas fa-user-secret" style="font-size:36px; color:var(--primary);"></i>
+          </div>
+          <div class="avatar-preview-title" id="avatarModalCurrentTitle">Default Safe Space Avatar</div>
+          <div class="avatar-preview-subtitle">Profile photos and avatars are 100% optional.</div>
+        </div>
+
+        <p style="font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:10px;">Choose how you want to appear:</p>
+
+        <!-- 3 Avatar Choices -->
+        <div class="avatar-choice-list">
+          <button type="button" class="avatar-choice-card" id="choiceUploadPhotoBtn">
+            <div class="avatar-choice-icon"><i class="fas fa-camera"></i></div>
+            <div class="avatar-choice-info">
+              <h4>Upload My Own Photo</h4>
+              <p>Select a personal profile image from your device (JPG, PNG, WEBP)</p>
+            </div>
+            <i class="fas fa-chevron-right" style="margin-left:auto; color:var(--text-muted); font-size:13px;"></i>
+          </button>
+
+          <button type="button" class="avatar-choice-card" id="choiceCuteAvatarBtn">
+            <div class="avatar-choice-icon"><i class="fas fa-cat"></i></div>
+            <div class="avatar-choice-info">
+              <h4>Choose Avatar</h4>
+              <p>Choose an avatar you like.</p>
+            </div>
+            <i class="fas fa-chevron-right" style="margin-left:auto; color:var(--text-muted); font-size:13px;"></i>
+          </button>
+
+          <button type="button" class="avatar-choice-card" id="choiceDefaultAvatarBtn">
+            <div class="avatar-choice-icon" style="background:var(--pill-inactive); color:var(--text-mid);"><i class="fas fa-user-shield"></i></div>
+            <div class="avatar-choice-info">
+              <h4>Keep Default Avatar</h4>
+              <p>Use the default Safe Space private avatar without personal photo.</p>
+            </div>
+            <i class="fas fa-chevron-right" style="margin-left:auto; color:var(--text-muted); font-size:13px;"></i>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px;">
+        <button type="button" class="btn-cancel" id="cancelAvatarOptionsBtn" style="width:100%; height:44px; border-radius:var(--radius-full);">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cute Avatar Collection Modal Overlay -->
+  <div class="modal-overlay" id="cuteAvatarModalOverlay">
+    <div class="modal-sheet" style="max-width: 560px;">
+      <div class="modal-header">
+        <button class="modal-close" id="backToAvatarOptionsBtn" aria-label="Back"><i class="fas fa-arrow-left"></i></button>
+        <span class="modal-title">Choose Avatar</span>
+        <button class="modal-close" id="closeCuteAvatarModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <!-- Filter Pills -->
+        <div class="cute-avatar-filters">
+          <button type="button" class="pill active" data-avatar-filter="all">All (18)</button>
+          <button type="button" class="pill" data-avatar-filter="animals">Animals (12)</button>
+          <button type="button" class="pill" data-avatar-filter="characters">Characters (6)</button>
+        </div>
+
+        <!-- Grid of Cute Avatars -->
+        <div class="cute-avatar-grid" id="cuteAvatarGridContainer">
+          <!-- Dynamically populated from AVATARS -->
+        </div>
+
+        <!-- Selected Preview Area -->
+        <div class="avatar-preview-box" id="cuteAvatarPreviewArea" style="margin-top:16px; margin-bottom:0; display:flex;">
+          <div class="avatar-preview-container avatar-preview-circle" id="cuteAvatarSelectedPreviewCircle">
+            <img class="avatar-preview-image" src="assets/avatars/default-avatar.png" alt="Default Safe Space Avatar" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" />
+          </div>
+          <div class="avatar-preview-title" id="cuteAvatarSelectedName">Default Safe Space Avatar</div>
+          <div class="avatar-preview-subtitle" id="cuteAvatarSelectedDesc">Choose an avatar you like from above</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; gap:10px; padding:14px 20px;">
+        <button type="button" class="btn-cancel" id="cancelCuteAvatarBtn" style="flex:1; height:44px; border-radius:var(--radius-full);">Cancel</button>
+        <button type="button" class="btn-save" id="confirmCuteAvatarBtn" style="flex:1; height:44px; border-radius:var(--radius-full);" disabled>Use This Avatar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Upload Preview Modal Overlay -->
+  <div class="modal-overlay" id="photoPreviewModalOverlay">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-crop-simple" style="color:var(--primary); margin-right:8px;"></i>Photo Preview</span>
+        <button class="modal-close" id="closePhotoPreviewBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div class="photo-upload-preview-box">
+          <img src="" id="photoPreviewImg" class="photo-preview-image" alt="Uploaded photo preview" />
+          <div style="font-weight:700; font-size:14px; color:var(--text-dark);" id="photoPreviewFileName">photo.jpg</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:2px;" id="photoPreviewFileSize">1.2 MB</div>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); text-align:center;">
+          <i class="fas fa-shield-halved" style="color:var(--primary); margin-right:4px;"></i> Safe Space never requires a real photograph. You can change or remove this at any time.
+        </p>
+      </div>
+      <div class="modal-footer" style="display:flex; gap:10px; padding:14px 20px;">
+        <button type="button" class="btn-cancel" id="cancelPhotoPreviewBtn" style="flex:1; height:44px; border-radius:var(--radius-full);">Cancel</button>
+        <button type="button" class="btn-save" id="savePhotoPreviewBtn" style="flex:1; height:44px; border-radius:var(--radius-full);">Save Photo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theme & Appearance Modal Overlay -->
+  <div class="modal-overlay" id="themeModalOverlay">
+    <div class="modal-sheet" style="max-width: 520px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-palette" style="color:var(--primary); margin-right:8px;"></i>Theme & Appearance</span>
+        <button class="modal-close" id="closeThemeModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
+          Customize the appearance of your Safe Space experience. Changes apply immediately across all pages.
+        </p>
+
+        <!-- Appearance Section: Light & Dark -->
+        <div class="theme-section">
+          <div class="theme-section-title"><i class="fas fa-circle-half-stroke"></i> Appearance</div>
+          <div class="theme-mode-grid">
+            <div class="theme-mode-card selected" id="themeModeLight" data-mode="light">
+              <div class="theme-mode-icon"><i class="fas fa-sun"></i></div>
+              <div>
+                <div class="theme-mode-title">Light</div>
+                <div class="theme-mode-desc">Clean & bright</div>
+              </div>
+            </div>
+            <div class="theme-mode-card" id="themeModeDark" data-mode="dark">
+              <div class="theme-mode-icon" style="background:#2C283E; color:#A78BFA;"><i class="fas fa-moon"></i></div>
+              <div>
+                <div class="theme-mode-title">Dark</div>
+                <div class="theme-mode-desc">Easy on the eyes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color Theme Section: 6 Accent Colors -->
+        <div class="theme-section">
+          <div class="theme-section-title"><i class="fas fa-droplet"></i> Color Theme</div>
+          <div class="theme-colors-grid">
+            <div class="theme-color-card selected" data-color="purple">
+              <div class="color-swatch-circle" style="background:#6C4FD1;"></div>
+              <span class="theme-color-name">Purple</span>
+            </div>
+            <div class="theme-color-card" data-color="blue">
+              <div class="color-swatch-circle" style="background:#2563EB;"></div>
+              <span class="theme-color-name">Blue</span>
+            </div>
+            <div class="theme-color-card" data-color="green">
+              <div class="color-swatch-circle" style="background:#059669;"></div>
+              <span class="theme-color-name">Green</span>
+            </div>
+            <div class="theme-color-card" data-color="pink">
+              <div class="color-swatch-circle" style="background:#DB2777;"></div>
+              <span class="theme-color-name">Pink</span>
+            </div>
+            <div class="theme-color-card" data-color="orange">
+              <div class="color-swatch-circle" style="background:#EA580C;"></div>
+              <span class="theme-color-name">Orange</span>
+            </div>
+            <div class="theme-color-card" data-color="teal">
+              <div class="color-swatch-circle" style="background:#0D9488;"></div>
+              <span class="theme-color-name">Teal</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reset to Default Button -->
+        <button type="button" class="btn-reset-theme" id="resetThemeBtn">
+          <i class="fas fa-rotate-left"></i> Reset to Default (Light • Purple)
+        </button>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px;">
+        <button type="button" class="btn-save" id="doneThemeBtn" style="width:100%; height:44px; border-radius:var(--radius-full);">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Modal Overlay -->
+  <div class="modal-overlay" id="logoutModalOverlay">
+    <div class="modal-sheet" style="max-width: 420px; text-align: center;">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 8px auto 16px;">
+        <i class="fas fa-arrow-right-from-bracket"></i>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 8px;">Logout?</h3>
+      <p style="font-size: 14px; color: var(--text-mid); margin-bottom: 24px; line-height: 1.5;">
+        Are you sure you want to log out of Safe Space?
+      </p>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-cancel" id="cancelLogoutBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full);">Cancel</button>
+        <button type="button" class="btn-save" id="confirmLogoutBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full); background: #DC2626; border-color: #DC2626;">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deactivate Account Confirmation Modal -->
+  <div class="modal-overlay" id="deactivateModalOverlay">
+    <div class="modal-sheet" style="max-width: 460px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-user-clock" style="color:#D97706; margin-right:8px;"></i>Deactivate Account</span>
+        <button class="modal-close" id="closeDeactivateModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">
+          Are you sure you want to deactivate your Safe Space account?
+        </p>
+        <p style="font-size: 13px; color: var(--text-mid); line-height: 1.5; margin-bottom: 14px;">
+          Your account will be temporarily disabled. You can return and reactivate your account later by signing in again.
+        </p>
+        <div style="font-size: 12px; color: var(--text-muted); background: var(--bg-hover); padding: 10px 12px; border-radius: 8px;">
+          <i class="fas fa-info-circle" style="color:var(--primary); margin-right:4px;"></i> Your posts, messages, and profile data will remain safe while you are away.
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; gap: 10px; padding: 14px 20px;">
+        <button type="button" class="btn-cancel" id="cancelDeactivateBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full);">Cancel</button>
+        <button type="button" class="btn-save" id="confirmDeactivateBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full); background: #F59E0B; border-color: #F59E0B;">Deactivate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Account Danger Modal -->
+  <div class="modal-overlay" id="deleteAccountModalOverlay">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-header">
+        <span class="modal-title" style="color:#DC2626;"><i class="fas fa-triangle-exclamation" style="margin-right:8px;"></i>Delete Account</span>
+        <button class="modal-close" id="closeDeleteAccountModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 12px 14px; border-radius: 6px; margin-bottom: 16px;">
+          <p style="font-size: 13px; font-weight: 700; color: #991B1B; margin-bottom: 4px;">Permanently delete your account?</p>
+          <p style="font-size: 12px; color: #B91C1C; margin: 0; line-height: 1.4;">
+            This action cannot be undone. Your account and applicable personal information will be permanently removed according to the application's data-retention rules.
+          </p>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px;">
+            Type <span style="color:#DC2626; font-family:monospace; font-weight:900;">DELETE</span> to continue:
+          </label>
+          <input type="text" id="deleteConfirmInput" class="edit-form-input" placeholder="Type DELETE" style="border-color: #FCA5A5;" autocomplete="off" />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px;">
+            Current Password:
+          </label>
+          <input type="password" id="deletePasswordInput" class="edit-form-input" placeholder="Enter your current password" />
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; gap: 10px; padding: 14px 20px;">
+        <button type="button" class="btn-cancel" id="cancelDeleteAccountBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full);">Cancel</button>
+        <button type="button" class="btn-save" id="confirmDeleteAccountBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full); background: #DC2626; border-color: #DC2626;" disabled>Permanently Delete Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unblock User Confirmation Modal -->
+  <div class="modal-overlay" id="unblockModalOverlay">
+    <div class="modal-sheet" style="max-width: 420px; text-align: center;">
+      <div style="width: 52px; height: 52px; border-radius: 50%; background: #E0E7FF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 8px auto 16px;">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 8px;">Unblock User?</h3>
+      <p style="font-size: 14px; color: var(--text-mid); margin-bottom: 24px; line-height: 1.5;" id="unblockConfirmPrompt">
+        Are you sure you want to unblock this user?
+      </p>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-cancel" id="cancelUnblockBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full);">Cancel</button>
+        <button type="button" class="btn-save" id="confirmUnblockBtn" style="flex: 1; height: 44px; border-radius: var(--radius-full);">Unblock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide-in Overlay for Sub-views (My Posts, Saved Posts, Account Info) -->
+  <div class="thread-overlay" id="profileSubViewOverlay">
+    <div class="thread-header">
+      <button class="thread-back" id="closeSubViewBtn" aria-label="Back to Profile">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="thread-user-info">
+        <div class="thread-username" id="subViewTitle">View</div>
+      </div>
+    </div>
+    <div class="page-content" id="subViewContent" style="padding: 16px;">
+      <!-- Content injected here -->
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth();
+      if (!currentUser) return;
+
+      renderUserProfile();
+      setupBioEditor();
+      setupAvatarCustomization();
+      setupThemeCustomization();
+      setupMenuNavigation();
+      hidePageLoader();
+    });
+
+    function renderUserProfile() {
+      document.getElementById('profileUsername').textContent = currentUser.username || 'user';
+      
+      const names = [currentUser.first_name, currentUser.middle_name, currentUser.last_name].filter(Boolean);
+      document.getElementById('profileFullname').textContent = names.length ? names.join(' ') : 'Safe Space Member';
+
+      const bioEl = document.getElementById('bioText');
+      if (currentUser.bio) {
+        bioEl.textContent = currentUser.bio;
+        bioEl.classList.add('has-bio');
+      } else {
+        bioEl.textContent = 'Add a bio to say something about yourself...';
+        bioEl.classList.remove('has-bio');
+      }
+
+      // Profile avatar display
+      const img = document.getElementById('profileAvatarImg');
+      const placeholder = document.getElementById('profileAvatarPlaceholderIcon');
+      const modalCurrentDisplay = document.getElementById('avatarModalCurrentDisplay');
+      const modalCurrentTitle = document.getElementById('avatarModalCurrentTitle');
+
+      const avatarMeta = window.SafeSpaceAvatars ? window.SafeSpaceAvatars.getAvatar(currentUser) : null;
+      const resolvedUrl = (avatarMeta && avatarMeta.image) ? avatarMeta.image : (window.getUserAvatarUrl ? window.getUserAvatarUrl(currentUser) : 'assets/avatars/default-avatar.png');
+
+      if (avatarMeta && avatarMeta.type !== 'default') {
+        img.src = resolvedUrl;
+        img.onerror = function() {
+          this.onerror = null;
+          this.src = window.DEFAULT_AVATAR || 'assets/avatars/default-avatar.png';
+        };
+        img.style.display = 'block';
+        img.style.objectFit = 'cover';
+        img.style.objectPosition = 'center';
+        placeholder.style.display = 'none';
+
+        if (modalCurrentDisplay) {
+          modalCurrentDisplay.innerHTML = `<img src="${resolvedUrl}" style="width:100%; height:100%; object-fit:cover; object-position:center; border-radius:50%;" alt="${escapeHTML(avatarMeta.name)}" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.png';" />`;
+        }
+        if (modalCurrentTitle) {
+          modalCurrentTitle.textContent = avatarMeta.name;
+        }
+      } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+
+        if (modalCurrentDisplay) {
+          modalCurrentDisplay.innerHTML = '<i class="fas fa-user-secret" style="font-size:36px; color:var(--primary);"></i>';
+        }
+        if (modalCurrentTitle) {
+          modalCurrentTitle.textContent = 'Default Safe Space Avatar';
+        }
+      }
+
+      // Synchronize desktop sidebar avatar if available
+      if (window.initDesktopSidebar) {
+        window.initDesktopSidebar();
+      }
+    }
+
+    function setupBioEditor() {
+      const modal = document.getElementById('bioModalOverlay');
+      const bioBox = document.getElementById('bioBox');
+      const textarea = document.getElementById('bioInput');
+      const cancelBtn = document.getElementById('cancelBioBtn');
+      const saveBtn = document.getElementById('saveBioBtn');
+
+      bioBox.addEventListener('click', () => {
+        textarea.value = currentUser.bio || '';
+        modal.classList.add('open');
+        textarea.focus();
+      });
+
+      cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+
+      saveBtn.addEventListener('click', async () => {
+        const newBio = textarea.value.trim();
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+          await SafeSpaceDB.auth.updateProfile({ bio: newBio });
+          currentUser.bio = newBio;
+          renderUserProfile();
+          modal.classList.remove('open');
+          showToast('Bio updated ✨', 'success');
+        } catch (err) {
+          showToast('Could not save bio', 'error');
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save';
+        }
+      });
+    }
+
+    // =========================================================================
+    // PART 1: OPTIONAL PROFILE AVATAR (Upload Photo / Cute Avatar / Default)
+    // =========================================================================
+    function setupAvatarCustomization() {
+      const avatarDisplay = document.getElementById('profileAvatarDisplay');
+      const cameraBtn = document.getElementById('cameraUploadBtn');
+      const fileInput = document.getElementById('avatarFileInput');
+
+      // Modals
+      const avatarModal = document.getElementById('avatarModalOverlay');
+      const closeAvatarModalBtn = document.getElementById('closeAvatarModalBtn');
+      const cancelAvatarOptionsBtn = document.getElementById('cancelAvatarOptionsBtn');
+
+      const photoModal = document.getElementById('photoPreviewModalOverlay');
+      const photoPreviewImg = document.getElementById('photoPreviewImg');
+      const photoFileName = document.getElementById('photoPreviewFileName');
+      const photoFileSize = document.getElementById('photoPreviewFileSize');
+      const closePhotoBtn = document.getElementById('closePhotoPreviewBtn');
+      const cancelPhotoBtn = document.getElementById('cancelPhotoPreviewBtn');
+      const savePhotoBtn = document.getElementById('savePhotoPreviewBtn');
+
+      const cuteModal = document.getElementById('cuteAvatarModalOverlay');
+      const backToOptionsBtn = document.getElementById('backToAvatarOptionsBtn');
+      const closeCuteModalBtn = document.getElementById('closeCuteAvatarModalBtn');
+      const cancelCuteBtn = document.getElementById('cancelCuteAvatarBtn');
+      const confirmCuteBtn = document.getElementById('confirmCuteAvatarBtn');
+      const cuteGrid = document.getElementById('cuteAvatarGridContainer');
+      const filterPills = document.querySelectorAll('[data-avatar-filter]');
+      const previewCircle = document.getElementById('cuteAvatarSelectedPreviewCircle');
+      const previewName = document.getElementById('cuteAvatarSelectedName');
+      const previewDesc = document.getElementById('cuteAvatarSelectedDesc');
+
+      let pendingPhotoFile = null;
+      let selectedCuteAvatar = null;
+
+      // Open main choice modal
+      function openAvatarModal() {
+        avatarModal.classList.add('open');
+      }
+
+      function closeAvatarModal() {
+        avatarModal.classList.remove('open');
+      }
+
+      if (avatarDisplay) avatarDisplay.addEventListener('click', openAvatarModal);
+      if (cameraBtn) cameraBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openAvatarModal();
+      });
+
+      if (closeAvatarModalBtn) closeAvatarModalBtn.addEventListener('click', closeAvatarModal);
+      if (cancelAvatarOptionsBtn) cancelAvatarOptionsBtn.addEventListener('click', closeAvatarModal);
+
+      // --- OPTION 1: Upload My Own Photo ---
+      const choiceUploadBtn = document.getElementById('choiceUploadPhotoBtn');
+      if (choiceUploadBtn) {
+        choiceUploadBtn.addEventListener('click', () => {
+          fileInput.click();
+        });
+      }
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Security & validation checks: extension and MIME type
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const fileName = (file.name || '').toLowerCase();
+        const validExts = ['.jpg', '.jpeg', '.png', '.webp'];
+        const hasValidExt = validExts.some(ext => fileName.endsWith(ext));
+
+        if (!hasValidExt || !validTypes.includes(file.type.toLowerCase())) {
+          showToast('Please select a valid image file (.jpg, .jpeg, .png, or .webp).', 'error');
+          fileInput.value = '';
+          return;
+        }
+
+        // 5 MB limit
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          showToast('Image file size must be 5MB or less.', 'error');
+          fileInput.value = '';
+          return;
+        }
+
+        pendingPhotoFile = file;
+
+        // Preview before saving
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          photoPreviewImg.src = event.target.result;
+          photoFileName.textContent = file.name;
+          const sizeKb = Math.round(file.size / 1024);
+          photoFileSize.textContent = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(2)} MB` : `${sizeKb} KB`;
+
+          closeAvatarModal();
+          photoModal.classList.add('open');
+        };
+        reader.readAsDataURL(file);
+      });
+
+      function closePhotoModal() {
+        photoModal.classList.remove('open');
+        fileInput.value = '';
+        pendingPhotoFile = null;
+      }
+
+      if (closePhotoBtn) closePhotoBtn.addEventListener('click', closePhotoModal);
+      if (cancelPhotoBtn) cancelPhotoBtn.addEventListener('click', closePhotoModal);
+
+      if (savePhotoBtn) {
+        savePhotoBtn.addEventListener('click', async () => {
+          if (!pendingPhotoFile) return;
+
+          savePhotoBtn.disabled = true;
+          savePhotoBtn.textContent = 'Saving...';
+          showToast('Uploading photo...', 'info');
+
+          try {
+            let uploadedUrl = null;
+            try {
+              uploadedUrl = await SafeSpaceDB.storage.uploadImage(pendingPhotoFile, 'avatars');
+            } catch (storageErr) {
+              console.warn('Storage upload fallback to Data URL:', storageErr);
+              uploadedUrl = photoPreviewImg.src;
+            }
+
+            const updates = {
+              avatar_url: uploadedUrl,
+              avatar_type: 'uploaded',
+              avatar_value: pendingPhotoFile.name
+            };
+
+            await SafeSpaceDB.auth.updateProfile(updates);
+            Object.assign(currentUser, updates);
+            renderUserProfile();
+            closePhotoModal();
+            showToast('Profile photo saved successfully! 📸', 'success');
+          } catch (err) {
+            console.error('Photo save error:', err);
+            showToast('Failed to save profile photo', 'error');
+          } finally {
+            savePhotoBtn.disabled = false;
+            savePhotoBtn.textContent = 'Save Photo';
+          }
+        });
+      }
+
+      // --- OPTION 2: Choose a Cute Avatar ---
+      const choiceCuteBtn = document.getElementById('choiceCuteAvatarBtn');
+      if (choiceCuteBtn) {
+        choiceCuteBtn.addEventListener('click', () => {
+          closeAvatarModal();
+          openCuteAvatarModal();
+        });
+      }
+
+      function openCuteAvatarModal() {
+        renderCuteGrid('all');
+        cuteModal.classList.add('open');
+      }
+
+      function closeCuteModal() {
+        cuteModal.classList.remove('open');
+      }
+
+      if (backToOptionsBtn) {
+        backToOptionsBtn.addEventListener('click', () => {
+          closeCuteModal();
+          openAvatarModal();
+        });
+      }
+      if (closeCuteModalBtn) closeCuteModalBtn.addEventListener('click', closeCuteModal);
+      if (cancelCuteBtn) cancelCuteBtn.addEventListener('click', closeCuteModal);
+
+      // Populate avatar selection grid
+      function renderCuteGrid(categoryFilter) {
+        const avatarsList = window.AVATARS || window.CUTE_AVATARS;
+        if (!cuteGrid || !avatarsList) return;
+        cuteGrid.innerHTML = '';
+
+        const avatars = avatarsList.filter(a => {
+          if (categoryFilter === 'all') return true;
+          return a.category === categoryFilter || a.categorySingular === categoryFilter || (categoryFilter === 'animals' && a.category === 'animal') || (categoryFilter === 'characters' && a.category === 'character');
+        });
+
+        avatars.forEach(avatar => {
+          const item = document.createElement('div');
+          item.className = 'cute-avatar-item avatar-card';
+          item.dataset.avatarId = avatar.id;
+          item.setAttribute('role', 'button');
+          item.setAttribute('tabindex', '0');
+          item.setAttribute('aria-label', `${avatar.name} avatar`);
+
+          const currentMeta = window.SafeSpaceAvatars ? window.SafeSpaceAvatars.getAvatar(currentUser) : null;
+          const isCurrent = (currentMeta && currentMeta.type === 'preset' && (currentMeta.id === avatar.id || currentMeta.shortId === avatar.id));
+          if (isCurrent || (selectedCuteAvatar && (selectedCuteAvatar.id === avatar.id || selectedCuteAvatar.shortId === avatar.id))) {
+            item.classList.add('selected');
+          }
+
+          const fallbackSrc = avatar.svgImage || avatar.dataUrl || 'assets/avatars/default-avatar.png';
+
+          item.innerHTML = `
+            <div class="avatar-card-check"><i class="fas fa-check"></i></div>
+            <div class="avatar-image-container cute-avatar-img-wrap">
+              <img
+                src="${avatar.image}"
+                alt="${escapeHTML(avatar.name)}"
+                class="avatar-image"
+                loading="lazy"
+                onerror="this.onerror=null; this.src='${fallbackSrc}';"
+              />
+            </div>
+            <span class="avatar-name cute-avatar-label">${escapeHTML(avatar.name)}</span>
+          `;
+
+          const selectAvatar = () => {
+            document.querySelectorAll('.cute-avatar-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedCuteAvatar = avatar;
+
+            // Live preview in modal bottom
+            previewCircle.innerHTML = `
+              <img
+                src="${avatar.image}"
+                class="avatar-preview-image"
+                alt="${escapeHTML(avatar.name)}"
+                onerror="this.onerror=null; this.src='${fallbackSrc}';"
+              />
+            `;
+            previewName.textContent = avatar.name;
+            previewDesc.textContent = `${(avatar.category === 'animals' || avatar.category === 'animal') ? 'Animal' : 'Character'} • Safe Space Avatar`;
+            confirmCuteBtn.disabled = false;
+          };
+
+          item.addEventListener('click', selectAvatar);
+          item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              selectAvatar();
+            }
+          });
+
+          cuteGrid.appendChild(item);
+        });
+
+        // Initialize preview: if user currently has an avatar, auto-highlight and preview it
+        const currentMeta = window.SafeSpaceAvatars ? window.SafeSpaceAvatars.getAvatar(currentUser) : null;
+        const currentAvatarId = selectedCuteAvatar ? selectedCuteAvatar.id : (
+          (currentMeta && currentMeta.type === 'preset') ? currentMeta.id : null
+        );
+
+        if (currentAvatarId) {
+          const cur = window.getAvatarById ? window.getAvatarById(currentAvatarId) : null;
+          if (cur) {
+            selectedCuteAvatar = cur;
+            const fallbackCur = cur.svgImage || cur.dataUrl || 'assets/avatars/default-avatar.png';
+            previewCircle.innerHTML = `
+              <img
+                src="${cur.image}"
+                class="avatar-preview-image"
+                alt="${escapeHTML(cur.name)}"
+                onerror="this.onerror=null; this.src='${fallbackCur}';"
+              />
+            `;
+            const isUserCurrent = (currentMeta && currentMeta.type === 'preset' && (currentMeta.id === cur.id || currentMeta.shortId === cur.id));
+            previewName.textContent = isUserCurrent ? `${cur.name} (Current)` : cur.name;
+            previewDesc.textContent = isUserCurrent ? 'Currently applied to your profile' : 'Selected avatar preview';
+            confirmCuteBtn.disabled = false;
+          }
+        } else {
+          previewCircle.innerHTML = `
+            <img
+              src="assets/avatars/default-avatar.png"
+              class="avatar-preview-image"
+              alt="Default Safe Space Avatar"
+              onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';"
+            />
+          `;
+          previewName.textContent = 'Default Safe Space Avatar';
+          previewDesc.textContent = 'Choose an avatar you like from above';
+          confirmCuteBtn.disabled = true;
+        }
+      }
+
+      filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          filterPills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          renderCuteGrid(pill.dataset.avatarFilter || 'all');
+        });
+      });
+
+      if (confirmCuteBtn) {
+        confirmCuteBtn.addEventListener('click', async () => {
+          if (!selectedCuteAvatar) return;
+
+          confirmCuteBtn.disabled = true;
+          confirmCuteBtn.textContent = 'Saving...';
+
+          try {
+            const updates = {
+              avatar_url: selectedCuteAvatar.image,
+              avatar_type: 'predefined',
+              avatar_value: selectedCuteAvatar.id
+            };
+
+            await SafeSpaceDB.auth.updateProfile(updates);
+            Object.assign(currentUser, updates);
+            renderUserProfile();
+            closeCuteModal();
+            showToast(`${selectedCuteAvatar.name} avatar saved! ✨`, 'success');
+          } catch (err) {
+            console.error('Avatar save error:', err);
+            showToast('Could not save avatar', 'error');
+          } finally {
+            confirmCuteBtn.disabled = false;
+            confirmCuteBtn.textContent = 'Use This Avatar';
+          }
+        });
+      }
+
+      // --- OPTION 3: Keep Default Avatar ---
+      const choiceDefaultBtn = document.getElementById('choiceDefaultAvatarBtn');
+      if (choiceDefaultBtn) {
+        choiceDefaultBtn.addEventListener('click', async () => {
+          if (!confirm('Revert to the default Safe Space private avatar?\n\nThis removes your custom avatar without affecting your posts, messages, or account.')) {
+            return;
+          }
+
+          try {
+            const updates = {
+              avatar_url: null,
+              avatar_type: 'default',
+              avatar_value: 'default'
+            };
+
+            await SafeSpaceDB.auth.updateProfile(updates);
+            Object.assign(currentUser, updates);
+            selectedCuteAvatar = null;
+            renderUserProfile();
+            closeAvatarModal();
+            showToast('Restored default Safe Space avatar 👤', 'info');
+          } catch (err) {
+            console.error('Default avatar reset error:', err);
+            showToast('Could not reset avatar', 'error');
+          }
+        });
+      }
+
+      // Close on backdrop click for all avatar modals
+      [avatarModal, photoModal, cuteModal].forEach(modal => {
+        if (modal) {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('open');
+          });
+        }
+      });
+    }
+
+    // =========================================================================
+    // PART 2: THEME & COLOR CUSTOMIZATION (Light/Dark + 6 Colors + Reset)
+    // =========================================================================
+    function setupThemeCustomization() {
+      const themeRow = document.getElementById('themeAppearanceRow');
+      const settingsHeaderBtn = document.getElementById('profileSettingsBtn');
+      const themeModal = document.getElementById('themeModalOverlay');
+      const closeThemeModalBtn = document.getElementById('closeThemeModalBtn');
+      const doneThemeBtn = document.getElementById('doneThemeBtn');
+      const resetThemeBtn = document.getElementById('resetThemeBtn');
+
+      const modeCards = document.querySelectorAll('.theme-mode-card');
+      const colorCards = document.querySelectorAll('.theme-color-card');
+
+      function openThemeModal() {
+        syncThemeModalUI();
+        themeModal.classList.add('open');
+      }
+
+      function closeThemeModal() {
+        themeModal.classList.remove('open');
+      }
+
+      if (themeRow) themeRow.addEventListener('click', openThemeModal);
+      if (settingsHeaderBtn) settingsHeaderBtn.addEventListener('click', openThemeModal);
+      if (closeThemeModalBtn) closeThemeModalBtn.addEventListener('click', closeThemeModal);
+      if (doneThemeBtn) {
+        doneThemeBtn.addEventListener('click', () => {
+          closeThemeModal();
+          showToast('✓ Theme preference saved.', 'success');
+        });
+      }
+
+      if (themeModal) {
+        themeModal.addEventListener('click', (e) => {
+          if (e.target === themeModal) closeThemeModal();
+        });
+      }
+
+      function syncThemeModalUI() {
+        const cur = window.getThemeSettings ? window.getThemeSettings() : { mode: 'light', color: 'purple' };
+        const activeMode = currentUser.theme_mode || cur.mode || 'light';
+        const activeColor = currentUser.theme_color || cur.color || 'purple';
+
+        modeCards.forEach(card => {
+          if (card.dataset.mode === activeMode) {
+            card.classList.add('selected');
+          } else {
+            card.classList.remove('selected');
+          }
+        });
+
+        colorCards.forEach(card => {
+          if (card.dataset.color === activeColor) {
+            card.classList.add('selected');
+          } else {
+            card.classList.remove('selected');
+          }
+        });
+      }
+
+      // Handle Appearance Mode Selection (Light / Dark)
+      modeCards.forEach(card => {
+        card.addEventListener('click', async () => {
+          const newMode = card.dataset.mode;
+          modeCards.forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+
+          const curSettings = window.getThemeSettings ? window.getThemeSettings() : { color: 'purple' };
+          const activeColor = currentUser.theme_color || curSettings.color || 'purple';
+
+          // Live immediate preview
+          if (window.applyTheme) {
+            window.applyTheme(newMode, activeColor);
+          }
+
+          currentUser.theme_mode = newMode;
+
+          // Save preference to database
+          try {
+            await SafeSpaceDB.auth.updateProfile({ theme_mode: newMode });
+          } catch (err) {
+            console.warn('Could not persist theme_mode to server:', err);
+          }
+        });
+      });
+
+      // Handle Accent Color Selection (Purple, Blue, Green, Pink, Orange, Teal)
+      colorCards.forEach(card => {
+        card.addEventListener('click', async () => {
+          const newColor = card.dataset.color;
+          colorCards.forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+
+          const curSettings = window.getThemeSettings ? window.getThemeSettings() : { mode: 'light' };
+          const activeMode = currentUser.theme_mode || curSettings.mode || 'light';
+
+          // Live immediate preview
+          if (window.applyTheme) {
+            window.applyTheme(activeMode, newColor);
+          }
+
+          currentUser.theme_color = newColor;
+
+          // Save preference to database
+          try {
+            await SafeSpaceDB.auth.updateProfile({ theme_color: newColor });
+          } catch (err) {
+            console.warn('Could not persist theme_color to server:', err);
+          }
+        });
+      });
+
+      // Reset to Default: Light Mode + Purple Accent
+      if (resetThemeBtn) {
+        resetThemeBtn.addEventListener('click', async () => {
+          if (window.applyTheme) {
+            window.applyTheme('light', 'purple');
+          }
+
+          currentUser.theme_mode = 'light';
+          currentUser.theme_color = 'purple';
+          syncThemeModalUI();
+
+          try {
+            await SafeSpaceDB.auth.updateProfile({ theme_mode: 'light', theme_color: 'purple' });
+          } catch (err) {
+            console.warn('Could not persist theme reset to server:', err);
+          }
+
+          showToast('Restored default Safe Space purple theme ✨', 'info');
+        });
+      }
+    }
+
+    function setupMenuNavigation() {
+      const overlay = document.getElementById('profileSubViewOverlay');
+      const subTitle = document.getElementById('subViewTitle');
+      const subContent = document.getElementById('subViewContent');
+      const closeBtn = document.getElementById('closeSubViewBtn');
+
+      closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+
+      // Helper to render user avatar HTML
+      function getUserAvatarHtml(user, size) {
+        size = size || 44;
+        if (window.SafeSpaceAvatars && typeof SafeSpaceAvatars.renderHtml === 'function') {
+          return SafeSpaceAvatars.renderHtml(user.avatar_url, { alt: user.username || 'User' });
+        }
+        if (user.avatar_url) {
+          return `<img src="${escapeHTML(user.avatar_url)}" alt="${escapeHTML(user.username || 'User')}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />`;
+        }
+        return `<i class="fas fa-user-secret" style="font-size:${Math.round(size * 0.5)}px; color:var(--primary);"></i>`;
+      }
+
+      // =======================================================================
+      // 1. ACCOUNT INFORMATION & EDIT
+      // =======================================================================
+      document.getElementById('accountInfoRow').addEventListener('click', () => {
+        subTitle.textContent = 'Account Information';
+        renderAccountInfoView();
+        overlay.classList.add('open');
+      });
+
+      function renderAccountInfoView() {
+        const fullName = [currentUser.first_name, currentUser.middle_name, currentUser.last_name].filter(Boolean).join(' ') || 'Safe Space Member';
+        const avatarPreview = getUserAvatarHtml(currentUser, 64);
+
+        subContent.innerHTML = `
+          <!-- View Account Information Card -->
+          <div id="accountInfoDisplayCard" style="background:var(--card-bg); border-radius:var(--radius-lg); padding:22px; border:1px solid var(--border); margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;">
+              <h3 style="font-size:17px; font-weight:800; color:var(--text-dark); margin:0;">Account Information</h3>
+              <button type="button" class="btn-post" id="openEditInfoBtn" style="padding:7px 16px; font-size:12px; height:auto; border-radius:var(--radius-full);">
+                <i class="fas fa-pen-to-square" style="margin-right:5px;"></i> Edit Information
+              </button>
+            </div>
+
+            <!-- Profile Picture Section -->
+            <div style="display:flex; align-items:center; gap:16px; padding:14px 16px; background:var(--bg-hover); border-radius:12px; margin-bottom:18px; border:1px solid var(--border);">
+              <div style="width:60px; height:60px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--primary-ultra); flex-shrink:0;">
+                ${avatarPreview}
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Profile Picture</div>
+                <div style="font-size:14px; font-weight:700; color:var(--text-dark); margin-top:2px;">${escapeHTML(currentUser.username || 'Safe Space Member')}</div>
+                <div style="font-size:12px; color:var(--primary); cursor:pointer;" id="changeAvatarFromInfoLink">Tap to change avatar in Profile</div>
+              </div>
+            </div>
+
+            <!-- Account Details Grid -->
+            <div style="display:grid; grid-template-columns:1fr; gap:12px; font-size:13px;">
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">First Name</span>
+                <strong style="color:var(--text-dark);">${escapeHTML(currentUser.first_name || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">Last Name</span>
+                <strong style="color:var(--text-dark);">${escapeHTML(currentUser.last_name || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">Middle Name</span>
+                <strong style="color:var(--text-dark);">${escapeHTML(currentUser.middle_name || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">Age</span>
+                <strong style="color:var(--text-dark);">${escapeHTML(String(currentUser.age || '—'))}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">Sex</span>
+                <strong style="color:var(--text-dark);">${escapeHTML(currentUser.sex || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">Birth Date</span>
+                <strong style="color:var(--text-dark);">${escapeHTML(currentUser.birthday || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">Username</span>
+                <strong style="color:var(--primary);">@${escapeHTML(currentUser.username || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-muted); font-weight:600;">Email Address</span>
+                <strong style="color:var(--text-dark);">${escapeHTML(currentUser.email || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0;">
+                <span style="color:var(--text-muted); font-weight:600;">Password</span>
+                <strong style="color:var(--text-muted); font-family:monospace; letter-spacing:2px;">••••••••</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit Account Information Form (Hidden by default) -->
+          <div id="editInfoSection" style="display:none; background:var(--card-bg); border-radius:var(--radius-lg); padding:22px; border:1px solid var(--border); margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="font-size:17px; font-weight:800; color:var(--primary); margin:0;">Edit Account Information</h3>
+              <span style="font-size:12px; color:var(--text-muted);">Update and save changes</span>
+            </div>
+
+            <form id="editAccountInfoForm">
+              <div class="edit-form-group">
+                <label>First Name <span style="color:var(--primary);">*</span></label>
+                <input type="text" class="edit-form-input" id="editFirstName" value="${escapeHTML(currentUser.first_name || '')}" required />
+              </div>
+              <div class="edit-form-group">
+                <label>Last Name <span style="color:var(--primary);">*</span></label>
+                <input type="text" class="edit-form-input" id="editLastName" value="${escapeHTML(currentUser.last_name || '')}" required />
+              </div>
+              <div class="edit-form-group">
+                <label>Middle Name (Optional)</label>
+                <input type="text" class="edit-form-input" id="editMiddleName" value="${escapeHTML(currentUser.middle_name || '')}" />
+              </div>
+              <div class="edit-form-group">
+                <label>Age</label>
+                <input type="number" class="edit-form-input" id="editAge" min="1" max="120" value="${escapeHTML(String(currentUser.age || ''))}" />
+              </div>
+              <div class="edit-form-group">
+                <label>Sex</label>
+                <select class="edit-form-input" id="editSex">
+                  <option value="Male" ${currentUser.sex === 'Male' ? 'selected' : ''}>Male</option>
+                  <option value="Female" ${currentUser.sex === 'Female' ? 'selected' : ''}>Female</option>
+                  <option value="Non-binary" ${currentUser.sex === 'Non-binary' ? 'selected' : ''}>Non-binary</option>
+                  <option value="Prefer not to say" ${currentUser.sex === 'Prefer not to say' ? 'selected' : ''}>Prefer not to say</option>
+                </select>
+              </div>
+              <div class="edit-form-group">
+                <label>Birth Date</label>
+                <input type="date" class="edit-form-input" id="editBirthDate" value="${escapeHTML(currentUser.birthday || '')}" />
+              </div>
+              <div class="edit-form-group">
+                <label>Username <span style="color:var(--primary);">*</span></label>
+                <input type="text" class="edit-form-input" id="editUsername" value="${escapeHTML(currentUser.username || '')}" required />
+              </div>
+              <div class="edit-form-group">
+                <label>Email Address <span style="color:var(--primary);">*</span></label>
+                <input type="email" class="edit-form-input" id="editEmail" value="${escapeHTML(currentUser.email || '')}" required />
+              </div>
+
+              <div style="display:flex; gap:10px; margin-top:20px;">
+                <button type="button" class="btn-cancel" id="cancelEditInfoBtn" style="flex:1; height:44px; border-radius:var(--radius-full);">Cancel</button>
+                <button type="submit" class="btn-save" id="saveAccountInfoBtn" style="flex:1; height:44px; border-radius:var(--radius-full);">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        `;
+
+        const openBtn = document.getElementById('openEditInfoBtn');
+        const displayCard = document.getElementById('accountInfoDisplayCard');
+        const editSec = document.getElementById('editInfoSection');
+        const cancelBtn = document.getElementById('cancelEditInfoBtn');
+        const form = document.getElementById('editAccountInfoForm');
+        const changeAvatarLink = document.getElementById('changeAvatarFromInfoLink');
+
+        if (changeAvatarLink) {
+          changeAvatarLink.addEventListener('click', () => {
+            overlay.classList.remove('open');
+            const avatarChoiceBtn = document.getElementById('profileAvatarDisplay');
+            if (avatarChoiceBtn) avatarChoiceBtn.click();
+          });
+        }
+
+        openBtn.addEventListener('click', () => {
+          editSec.style.display = 'block';
+          displayCard.style.display = 'none';
+          editSec.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        cancelBtn.addEventListener('click', () => {
+          editSec.style.display = 'none';
+          displayCard.style.display = 'block';
+        });
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const firstName = document.getElementById('editFirstName').value.trim();
+          const lastName = document.getElementById('editLastName').value.trim();
+          const middleName = document.getElementById('editMiddleName').value.trim();
+          const age = parseInt(document.getElementById('editAge').value, 10);
+          const sex = document.getElementById('editSex').value;
+          const birthDate = document.getElementById('editBirthDate').value;
+          const username = document.getElementById('editUsername').value.trim();
+          const email = document.getElementById('editEmail').value.trim();
+
+          if (!firstName || !lastName || !username || !email) {
+            showToast('First name, last name, username, and email are required.', 'warning');
+            return;
+          }
+
+          const saveBtn = document.getElementById('saveAccountInfoBtn');
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving...';
+
+          try {
+            const updates = {
+              first_name: firstName,
+              last_name: lastName,
+              middle_name: middleName || null,
+              age: isNaN(age) ? null : age,
+              sex: sex,
+              birthday: birthDate || null,
+              username: username,
+              email: email
+            };
+
+            await SafeSpaceDB.auth.updateProfile(updates);
+            Object.assign(currentUser, updates);
+
+            renderUserProfile();
+            renderAccountInfoView();
+            showToast('✓ Account information updated successfully.', 'success');
+          } catch (err) {
+            showToast(err.message || 'Unable to update your information. Please try again.', 'error');
+          } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+          }
+        });
+      }
+
+      // =======================================================================
+      // 2. MY POSTS
+      // =======================================================================
+      document.getElementById('myPostsRow').addEventListener('click', async () => {
+        subTitle.textContent = 'My Posts';
+        renderMyPostsView();
+        overlay.classList.add('open');
+      });
+
+      async function renderMyPostsView() {
+        subContent.innerHTML = `
+          <div class="skeleton-post" style="border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:12px; padding:14px; background:var(--card-bg);">
+            <div class="sk-header">
+              <div class="skeleton sk-avatar"></div>
+              <div class="sk-lines">
+                <div class="skeleton sk-line" style="width: 45%;"></div>
+                <div class="skeleton sk-line short"></div>
+              </div>
+            </div>
+            <div class="skeleton sk-line" style="margin-bottom: 8px;"></div>
+            <div class="skeleton sk-line" style="width: 75%;"></div>
+          </div>
+        `;
+
+        try {
+          const feed = await SafeSpaceDB.posts.getFeed();
+          const myPosts = feed.filter(p => p.user_id === currentUser.id || p.author_id === currentUser.id || p.author_name === currentUser.username);
+
+          if (myPosts.length === 0) {
+            subContent.innerHTML = `
+              <div class="empty-state">
+                <i class="fa-regular fa-file-lines"></i>
+                <h3>No Posts Yet</h3>
+                <p>You haven't shared any community posts yet.</p>
+              </div>
+            `;
+            return;
+          }
+
+          subContent.innerHTML = myPosts.map(post => {
+            const isAnon = post.is_anonymous;
+            const authorDisplay = isAnon ? 'Anonymous' : (post.author_name || currentUser.username || 'Member');
+            const avatarHtml = window.SafeSpaceAvatars
+              ? window.SafeSpaceAvatars.renderHtml(post.author_avatar || currentUser.avatar_url, { alt: authorDisplay, isAnonymous: isAnon })
+              : (isAnon ? '<i class="fas fa-user-secret"></i>' : '<i class="fas fa-user"></i>');
+
+            const moodMeta = post.mood && MOOD_MAP[post.mood] ? MOOD_MAP[post.mood] : null;
+            const rawCat = (post.category || 'general').toLowerCase();
+            const catLabel = rawCat.toUpperCase();
+            const isLiked = Array.isArray(post.likes) && post.likes.includes(currentUser.id);
+            const likeCount = Array.isArray(post.likes) ? post.likes.length : 0;
+            const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
+            const isSaved = Array.isArray(post.saved_by) && post.saved_by.includes(currentUser.id);
+
+            return `
+              <article class="post-card" id="my-post-${post.id}" style="margin-bottom:16px;">
+                <div class="post-header">
+                  <div class="post-avatar">
+                    ${avatarHtml}
+                  </div>
+                  <div class="post-meta">
+                    <div class="post-author">${escapeHTML(authorDisplay)}</div>
+                    <div class="post-time-mood">
+                      <span>${formatRelativeTime(post.created_at)}</span>
+                      <span class="post-category-tag ${escapeHTML(rawCat)}">${escapeHTML(catLabel)}</span>
+                      ${moodMeta ? `<span class="post-mood-tag">· ${moodMeta.emoji} ${moodMeta.label}</span>` : ''}
+                    </div>
+                  </div>
+                  <button type="button" class="post-menu-btn" style="color:var(--text-danger);" onclick="handleDeleteMyPost('${post.id}')" title="Delete post">
+                    <i class="fa-regular fa-trash-can"></i>
+                  </button>
+                </div>
+
+                <div class="post-content">${escapeHTML(post.content)}</div>
+
+                ${post.photo_url ? `
+                  <div class="post-image" style="margin-bottom:10px; border-radius:8px; overflow:hidden;">
+                    <img src="${escapeHTML(post.photo_url)}" alt="Post image" style="width:100%; max-height:260px; object-fit:cover; display:block;" />
+                  </div>
+                ` : ''}
+
+                <div class="post-actions">
+                  <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="handlePostLikeInline('${post.id}', this)" aria-label="Like post">
+                    <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+                    <span class="like-count">${likeCount}</span>
+                  </button>
+                  <button class="post-action-btn" aria-label="Comments">
+                    <i class="fa-regular fa-comment"></i>
+                    <span>${commentCount}</span>
+                  </button>
+                  <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="handlePostSaveInline('${post.id}', this)" aria-label="Save post">
+                    <i class="${isSaved ? 'fas' : 'fa-regular'} fa-bookmark"></i>
+                  </button>
+                </div>
+              </article>
+            `;
+          }).join('');
+        } catch (err) {
+          subContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load posts</div>';
+        }
+      }
+
+      // =======================================================================
+      // 3. SAVED POSTS
+      // =======================================================================
+      document.getElementById('savedPostsRow').addEventListener('click', async () => {
+        subTitle.textContent = 'Saved Posts';
+        renderSavedPostsView();
+        overlay.classList.add('open');
+      });
+
+      async function renderSavedPostsView() {
+        subContent.innerHTML = `
+          <div class="skeleton-post" style="border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:12px; padding:14px; background:var(--card-bg);">
+            <div class="sk-header">
+              <div class="skeleton sk-avatar"></div>
+              <div class="sk-lines">
+                <div class="skeleton sk-line" style="width: 45%;"></div>
+                <div class="skeleton sk-line short"></div>
+              </div>
+            </div>
+            <div class="skeleton sk-line" style="margin-bottom: 8px;"></div>
+            <div class="skeleton sk-line" style="width: 75%;"></div>
+          </div>
+        `;
+
+        try {
+          const savedPosts = await SafeSpaceDB.posts.getSavedPosts();
+
+          if (savedPosts.length === 0) {
+            subContent.innerHTML = `
+              <div class="empty-state">
+                <i class="fa-regular fa-bookmark"></i>
+                <h3>No Saved Posts</h3>
+                <p>You haven't saved any posts yet.<br>Save posts you want to easily find later.</p>
+              </div>
+            `;
+            return;
+          }
+
+          subContent.innerHTML = savedPosts.map(post => {
+            const isAnon = post.is_anonymous;
+            const authorDisplay = isAnon ? 'Anonymous' : (post.author_name || 'Member');
+            const avatarHtml = window.SafeSpaceAvatars
+              ? window.SafeSpaceAvatars.renderHtml(post.author_avatar, { alt: authorDisplay, isAnonymous: isAnon })
+              : (isAnon ? '<i class="fas fa-user-secret"></i>' : '<i class="fas fa-user"></i>');
+
+            const rawCat = (post.category || 'general').toLowerCase();
+            const catLabel = rawCat.toUpperCase();
+            const isLiked = Array.isArray(post.likes) && post.likes.includes(currentUser.id);
+            const likeCount = Array.isArray(post.likes) ? post.likes.length : 0;
+            const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
+
+            return `
+              <article class="post-card" id="saved-card-${post.id}" style="margin-bottom:16px;">
+                <div class="post-header">
+                  <div class="post-avatar">
+                    ${avatarHtml}
+                  </div>
+                  <div class="post-meta">
+                    <div class="post-author">${escapeHTML(authorDisplay)}</div>
+                    <div class="post-time-mood">
+                      <span>${formatRelativeTime(post.created_at)}</span>
+                      <span class="post-category-tag ${escapeHTML(rawCat)}">${escapeHTML(catLabel)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="post-content">${escapeHTML(post.content)}</div>
+
+                ${post.photo_url ? `
+                  <div class="post-image" style="margin-bottom:10px; border-radius:8px; overflow:hidden;">
+                    <img src="${escapeHTML(post.photo_url)}" alt="Post image" style="width:100%; max-height:260px; object-fit:cover; display:block;" />
+                  </div>
+                ` : ''}
+
+                <div class="post-actions">
+                  <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="handlePostLikeInline('${post.id}', this)" aria-label="Like post">
+                    <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+                    <span class="like-count">${likeCount}</span>
+                  </button>
+                  <button class="post-action-btn" aria-label="Comments">
+                    <i class="fa-regular fa-comment"></i>
+                    <span>${commentCount}</span>
+                  </button>
+                  <button class="post-action-btn saved" onclick="handleRemoveBookmark('${post.id}')" aria-label="Remove saved post" title="Remove from Saved Posts">
+                    <i class="fas fa-bookmark" style="color:var(--primary);"></i>
+                    <span style="font-size:12px; font-weight:700; color:var(--primary);">Saved</span>
+                  </button>
+                </div>
+              </article>
+            `;
+          }).join('');
+        } catch (err) {
+          subContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load bookmarks</div>';
+        }
+      }
+
+      // =======================================================================
+      // 4. PRIVACY & SECURITY
+      // =======================================================================
+      document.getElementById('privacySecurityRow').addEventListener('click', () => {
+        subTitle.textContent = 'Privacy & Security';
+        renderPrivacySecurityView();
+        overlay.classList.add('open');
+      });
+
+      function renderPrivacySecurityView() {
+        const isAnon = currentUser.privacy_anonymous_posting !== false;
+        const isDiscovery = currentUser.privacy_allow_discovery !== false;
+        const isShowProfile = currentUser.privacy_show_profile !== false;
+
+        subContent.innerHTML = `
+          <!-- Account Privacy Section -->
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:20px; border:1px solid var(--border); margin-bottom:16px;">
+            <h4 style="font-size:15px; font-weight:800; color:var(--text-dark); margin:0 0 14px 0;">
+              <i class="fas fa-shield-halved" style="color:var(--primary); margin-right:6px;"></i> Account Privacy
+            </h4>
+
+            <div class="privacy-setting-row">
+              <div class="privacy-setting-info">
+                <h5>Anonymous Posting</h5>
+                <p>Allow your identity to be hidden by default when sharing community thoughts.</p>
+              </div>
+              <label class="safe-toggle">
+                <input type="checkbox" id="privacyAnonToggle" ${isAnon ? 'checked' : ''} />
+                <span class="safe-toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="privacy-setting-row">
+              <div class="privacy-setting-info">
+                <h5>Allow other students to find me</h5>
+                <p>Permit classmates to find your profile in Student Search and Community.</p>
+              </div>
+              <label class="safe-toggle">
+                <input type="checkbox" id="privacyDiscoveryToggle" ${isDiscovery ? 'checked' : ''} />
+                <span class="safe-toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="privacy-setting-row">
+              <div class="privacy-setting-info">
+                <h5>Show my profile information</h5>
+                <p>Display your basic profile details on your public card.</p>
+              </div>
+              <label class="safe-toggle">
+                <input type="checkbox" id="privacyShowProfileToggle" ${isShowProfile ? 'checked' : ''} />
+                <span class="safe-toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="privacy-setting-row">
+              <div class="privacy-setting-info">
+                <h5>Online status visibility</h5>
+                <p>Display a green active indicator (🟢 Online) to other students when you are active.</p>
+              </div>
+              <label class="safe-toggle">
+                <input type="checkbox" id="privacyOnlineStatusToggle" ${currentUser.privacy_show_online_status !== false ? 'checked' : ''} />
+                <span class="safe-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Password & Account Security -->
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:20px; border:1px solid var(--border); margin-bottom:16px;">
+            <h4 style="font-size:15px; font-weight:800; color:var(--text-dark); margin:0 0 14px 0;">
+              <i class="fas fa-key" style="color:var(--primary); margin-right:6px;"></i> Password & Account Security
+            </h4>
+
+            <form id="changePasswordSecurityForm">
+              <div class="edit-form-group">
+                <label>Current Password</label>
+                <input type="password" class="edit-form-input" id="secCurrentPassword" placeholder="Enter current password" required />
+              </div>
+              <div class="edit-form-group">
+                <label>New Password (minimum 8 characters)</label>
+                <input type="password" class="edit-form-input" id="secNewPassword" placeholder="Enter new password" minlength="8" required />
+              </div>
+              <div class="edit-form-group">
+                <label>Confirm New Password</label>
+                <input type="password" class="edit-form-input" id="secConfirmPassword" placeholder="Repeat new password" required />
+              </div>
+
+              <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                <button type="submit" class="btn-save" id="savePasswordSecurityBtn" style="padding:10px 24px; border-radius:var(--radius-full); height:auto;">
+                  Change Password
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Privacy Information Notice -->
+          <div style="background:var(--bg-hover); border-radius:var(--radius-md); padding:16px; border:1px solid var(--border); font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:20px;">
+            <p style="margin:0 0 6px 0; font-weight:700; color:var(--text-dark);">
+              <i class="fas fa-circle-info" style="color:var(--primary); margin-right:5px;"></i> Privacy Information
+            </p>
+            <p style="margin:0 0 6px 0;">
+              Your personal information is protected and should only be used for the purposes necessary to operate Safe Space.
+            </p>
+            <p style="margin:0;">
+              Your account information should not be publicly exposed without appropriate permission.
+            </p>
+          </div>
+
+          <!-- Section 22: Account Management / Danger Zone -->
+          <div class="danger-zone-card" style="padding:20px; border-radius:var(--radius-lg); border:1px solid #FECACA; background:#FFF5F5;">
+            <h4 style="font-size:15px; font-weight:800; color:#991B1B; margin:0 0 4px 0;">
+              <i class="fas fa-triangle-exclamation" style="margin-right:6px;"></i> Account Management
+            </h4>
+            <p style="font-size:12px; color:#7F1D1D; margin:0 0 16px 0;">
+              Manage the status of your Safe Space account.
+            </p>
+            
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <!-- Deactivate -->
+              <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:14px 16px; border-radius:12px; border:1px solid #FEE2E2;">
+                <div>
+                  <div style="font-size:14px; font-weight:700; color:var(--text-dark);">Deactivate Account</div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Temporarily disable your account.</div>
+                </div>
+                <button type="button" class="btn-deactivate-trigger" id="openDeactivateModalTriggerBtn" style="padding:8px 16px; border-radius:20px; border:1px solid #F59E0B; background:#FFFBEB; color:#D97706; font-size:12px; font-weight:700; cursor:pointer;">
+                  Deactivate Account
+                </button>
+              </div>
+
+              <!-- Delete -->
+              <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:14px 16px; border-radius:12px; border:1px solid #FEE2E2;">
+                <div>
+                  <div style="font-size:14px; font-weight:700; color:#DC2626;">Delete Account</div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Permanently delete your account and data.</div>
+                </div>
+                <button type="button" class="btn-delete-trigger" id="openDeleteAccountModalTriggerBtn" style="padding:8px 16px; border-radius:20px; border:1px solid #DC2626; background:#FEF2F2; color:#DC2626; font-size:12px; font-weight:700; cursor:pointer;">
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Toggle handlers
+        const anonToggle = document.getElementById('privacyAnonToggle');
+        const discToggle = document.getElementById('privacyDiscoveryToggle');
+        const showProfToggle = document.getElementById('privacyShowProfileToggle');
+
+        if (anonToggle) {
+          anonToggle.addEventListener('change', async () => {
+            currentUser.privacy_anonymous_posting = anonToggle.checked;
+            await SafeSpaceDB.auth.updateProfile({ privacy_anonymous_posting: anonToggle.checked });
+            showToast('Privacy preference updated 🛡️', 'success');
+          });
+        }
+
+        if (discToggle) {
+          discToggle.addEventListener('change', async () => {
+            currentUser.privacy_allow_discovery = discToggle.checked;
+            await SafeSpaceDB.auth.updateProfile({ privacy_allow_discovery: discToggle.checked });
+            showToast('Privacy preference updated 🛡️', 'success');
+          });
+        }
+
+        if (showProfToggle) {
+          showProfToggle.addEventListener('change', async () => {
+            currentUser.privacy_show_profile = showProfToggle.checked;
+            await SafeSpaceDB.auth.updateProfile({ privacy_show_profile: showProfToggle.checked });
+            showToast('Privacy preference updated 🛡️', 'success');
+          });
+        }
+
+        const onlineToggle = document.getElementById('privacyOnlineStatusToggle');
+        if (onlineToggle) {
+          onlineToggle.addEventListener('change', async () => {
+            currentUser.privacy_show_online_status = onlineToggle.checked;
+            await SafeSpaceDB.auth.updateProfile({ privacy_show_online_status: onlineToggle.checked });
+            showToast('Online status preference updated 🟢', 'success');
+          });
+        }
+
+        // Change Password Form
+        const passForm = document.getElementById('changePasswordSecurityForm');
+        if (passForm) {
+          passForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const curPass = document.getElementById('secCurrentPassword').value;
+            const newPass = document.getElementById('secNewPassword').value;
+            const confPass = document.getElementById('secConfirmPassword').value;
+
+            if (newPass.length < 8) {
+              showToast('New password must be at least 8 characters long.', 'warning');
+              return;
+            }
+            if (newPass !== confPass) {
+              showToast('New passwords do not match.', 'warning');
+              return;
+            }
+
+            const btn = document.getElementById('savePasswordSecurityBtn');
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+
+            try {
+              await SafeSpaceDB.auth.updatePassword(curPass, newPass);
+              showToast('✓ Password changed successfully.', 'success');
+              passForm.reset();
+            } catch (err) {
+              showToast(err.message || 'Unable to update password. Please check current password.', 'error');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = 'Change Password';
+            }
+          });
+        }
+
+        // Danger zone modal openers
+        const openDeactBtn = document.getElementById('openDeactivateModalTriggerBtn');
+        const openDelBtn = document.getElementById('openDeleteAccountModalTriggerBtn');
+
+        if (openDeactBtn) {
+          openDeactBtn.addEventListener('click', () => {
+            const deactModal = document.getElementById('deactivateModalOverlay');
+            if (deactModal) deactModal.classList.add('open');
+          });
+        }
+
+        if (openDelBtn) {
+          openDelBtn.addEventListener('click', () => {
+            const delModal = document.getElementById('deleteAccountModalOverlay');
+            const confirmInput = document.getElementById('deleteConfirmInput');
+            const passInput = document.getElementById('deletePasswordInput');
+            const confirmBtn = document.getElementById('confirmDeleteAccountBtn');
+            if (confirmInput) confirmInput.value = '';
+            if (passInput) passInput.value = '';
+            if (confirmBtn) confirmBtn.disabled = true;
+            if (delModal) delModal.classList.add('open');
+          });
+        }
+      }
+
+      // =======================================================================
+      // 6. NOTIFICATIONS
+      // =======================================================================
+      document.getElementById('notificationsRow').addEventListener('click', () => {
+        subTitle.textContent = 'Notifications';
+        renderNotificationsView();
+        overlay.classList.add('open');
+      });
+
+      async function renderNotificationsView() {
+        subContent.innerHTML = `
+          <div class="skeleton-post" style="border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:12px; padding:14px; background:var(--card-bg);">
+            <div class="skeleton sk-line" style="width:50%; margin-bottom:8px;"></div>
+            <div class="skeleton sk-line" style="width:80%;"></div>
+          </div>
+        `;
+
+        try {
+          const notifs = await SafeSpaceDB.notifications.getNotifications();
+
+          if (notifs.length === 0) {
+            subContent.innerHTML = `
+              <div class="empty-state">
+                <i class="fa-regular fa-bell"></i>
+                <h3>No Notifications</h3>
+                <p>You're all caught up!</p>
+              </div>
+            `;
+            return;
+          }
+
+          subContent.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <span style="font-size:13px; font-weight:700; color:var(--text-muted);">Recent Updates</span>
+              <button type="button" id="markAllReadBtn" style="background:none; border:none; font-size:12px; font-weight:700; color:var(--primary); cursor:pointer;">
+                <i class="fas fa-check-double" style="margin-right:4px;"></i> Mark All as Read
+              </button>
+            </div>
+            <div id="notificationsListContainer" style="display:flex; flex-direction:column; gap:10px;">
+              ${notifs.map(n => {
+                const isUnread = !n.is_read;
+                let iconClass = 'fa-bell';
+                if (n.type === 'reaction') iconClass = 'fa-heart';
+                else if (n.type === 'comment') iconClass = 'fa-comment';
+                else if (n.type === 'moderation' || n.type === 'moderation_warning') iconClass = 'fa-shield-halved';
+
+                return `
+                  <div class="notification-item ${isUnread ? 'unread' : ''}" id="notif-card-${n.id}" onclick="handleReadNotification('${n.id}', this)" style="background:${isUnread ? 'var(--primary-ultra)' : 'var(--card-bg)'}; border:1px solid ${isUnread ? 'var(--primary-light)' : 'var(--border)'}; border-radius:12px; padding:14px; display:flex; align-items:flex-start; gap:12px; cursor:pointer; transition:background 0.2s;">
+                    <div style="width:36px; height:36px; border-radius:50%; background:${isUnread ? 'var(--primary)' : 'var(--bg-hover)'}; color:${isUnread ? '#fff' : 'var(--text-muted)'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                      <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div style="flex:1;">
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        ${isUnread ? '<span class="unread-dot" style="width:8px; height:8px; border-radius:50%; background:var(--primary); display:inline-block;"></span>' : ''}
+                        <p style="font-size:13px; font-weight:${isUnread ? '700' : '500'}; color:var(--text-dark); margin:0; line-height:1.4;">${escapeHTML(n.message)}</p>
+                      </div>
+                      <span style="font-size:11px; color:var(--text-muted); display:inline-block; margin-top:4px;">${formatRelativeTime(n.created_at)}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+
+          const markAllBtn = document.getElementById('markAllReadBtn');
+          if (markAllBtn) {
+            markAllBtn.addEventListener('click', async () => {
+              await SafeSpaceDB.notifications.markAllAsRead();
+              showToast('✓ All notifications marked as read.', 'success');
+              renderNotificationsView();
+            });
+          }
+        } catch (err) {
+          subContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load notifications</div>';
+        }
+      }
+
+      // =======================================================================
+      // 7. BLOCKED USERS
+      // =======================================================================
+      document.getElementById('blockedUsersRow').addEventListener('click', () => {
+        subTitle.textContent = 'Blocked Users';
+        renderBlockedUsersView();
+        overlay.classList.add('open');
+      });
+
+      async function renderBlockedUsersView() {
+        subContent.innerHTML = `
+          <div class="skeleton-post" style="border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:12px; padding:14px; background:var(--card-bg);">
+            <div class="sk-header">
+              <div class="skeleton sk-avatar"></div>
+              <div class="sk-lines"><div class="skeleton sk-line" style="width:50%;"></div></div>
+            </div>
+          </div>
+        `;
+
+        try {
+          const blockedUsers = await SafeSpaceDB.blocks.getBlockedUsers();
+
+          if (blockedUsers.length === 0) {
+            subContent.innerHTML = `
+              <div class="empty-state">
+                <i class="fa-regular fa-circle-user"></i>
+                <h3>No Blocked Users</h3>
+                <p>You haven't blocked any users.</p>
+              </div>
+            `;
+            return;
+          }
+
+          subContent.innerHTML = `
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+              Blocked users cannot direct message you or view your updates.
+            </p>
+            <div id="blockedUsersListContainer" style="display:flex; flex-direction:column; gap:12px;">
+              ${blockedUsers.map(user => {
+                const nameDisplay = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || 'Safe Space Member';
+                const avatarHtml = getUserAvatarHtml(user, 48);
+
+                return `
+                  <div class="blocked-user-card" id="blocked-card-${user.id}" style="background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                      <div style="width:48px; height:48px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--bg-hover); flex-shrink:0;">
+                        ${avatarHtml}
+                      </div>
+                      <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text-dark);">${escapeHTML(nameDisplay)}</div>
+                        <div style="font-size:12px; color:var(--text-muted);">@${escapeHTML(user.username || 'user')}</div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-cancel" onclick="triggerUnblock('${user.id}', '${escapeHTML(user.username || 'user')}')" style="padding:6px 16px; font-size:12px; font-weight:700; height:auto; border-radius:var(--radius-full);">
+                      Unblock
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        } catch (err) {
+          subContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load blocked users</div>';
+        }
+      }
+
+      // =======================================================================
+      // 9. ABOUT THE APP
+      // =======================================================================
+      document.getElementById('aboutAppRow').addEventListener('click', () => {
+        subTitle.textContent = 'About Safe Space';
+        renderAboutAppView();
+        overlay.classList.add('open');
+      });
+
+      function renderAboutAppView() {
+        subContent.innerHTML = `
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:24px; border:1px solid var(--border); line-height:1.65;">
+            <div style="text-align:center; margin-bottom:20px;">
+              <div class="auth-icon" style="margin:0 auto 12px; background:var(--primary); width:56px; height:56px; border-radius:16px; display:flex; align-items:center; justify-content:center; color:#fff;">
+                <i class="fas fa-shield-heart" style="font-size:28px;"></i>
+              </div>
+              <h3 style="font-size:22px; font-weight:800; color:var(--text-dark); margin:0 0 4px 0;">Safe Space</h3>
+              <p style="font-size:13px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin:0 0 16px 0;">Student Support Platform</p>
+              
+              <div style="display:inline-flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-mid); background:var(--bg-hover); padding:10px 16px; border-radius:10px; border:1px solid var(--border);">
+                <div><strong>Version:</strong> 1.0.0</div>
+                <div><strong>Developed for:</strong> Aklan State University – Ibajay Campus</div>
+                <div><strong>Academic Year:</strong> 2025–2026</div>
+              </div>
+            </div>
+
+            <p style="font-size:14px; font-weight:700; color:var(--text-dark); margin-bottom:14px; background:var(--primary-ultra); padding:14px; border-radius:12px; border-left:4px solid var(--primary); line-height:1.5;">
+              Safe Space is an inclusive, confidential community web platform crafted specifically for all students.
+            </p>
+
+            <p style="font-size:13px; color:var(--text-mid); margin-bottom:12px;">
+              The platform provides students with a supportive digital environment where they can:
+            </p>
+            <ul style="font-size:13px; color:var(--text-dark); margin:0 0 16px 20px; padding:0; line-height:1.8;">
+              <li>Express their thoughts</li>
+              <li>Connect with other students</li>
+              <li>Participate in community discussions</li>
+              <li>Access wellbeing resources</li>
+              <li>Find support information</li>
+              <li>Use anonymous posting when available</li>
+              <li>Receive basic AI-powered support and guidance</li>
+            </ul>
+
+            <p style="font-size:13px; color:var(--text-mid); margin-bottom:16px;">
+              The system is designed to promote a respectful, supportive, and safer online environment for students.
+            </p>
+
+            <div style="font-size:11px; color:var(--text-muted); background:#F3F4F6; padding:10px 12px; border-radius:8px; border:1px solid #E5E7EB; line-height:1.5;">
+              <strong>Important Disclaimer:</strong> Safe Space is a student support and safe-expression platform. It is not a professional counseling, medical care, or emergency service. In cases of immediate danger, please reach out to school counselors or emergency hotlines.
+            </div>
+          </div>
+        `;
+      }
+
+      // =======================================================================
+      // 10. ACCOUNT STATUS
+      // =======================================================================
+      const accountStatusRow = document.getElementById('accountStatusRow');
+      if (accountStatusRow) {
+        accountStatusRow.addEventListener('click', () => {
+          subTitle.textContent = 'Account Status';
+          renderAccountStatusView();
+          overlay.classList.add('open');
+        });
+      }
+
+      function renderAccountStatusView() {
+        subContent.innerHTML = `
+          <div style="background:var(--card-bg); border-radius:var(--radius-lg); padding:24px; border:1px solid var(--border); line-height:1.6;">
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+              <div style="width:48px; height:48px; border-radius:50%; background:rgba(34, 197, 94, 0.12); color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fas fa-circle-check"></i>
+              </div>
+              <div>
+                <h3 style="font-size:18px; font-weight:800; color:var(--text-dark); margin:0 0 2px 0;">Account Status: Active</h3>
+                <span style="font-size:12px; color:var(--text-muted);">Your Safe Space account is in good standing and fully active.</span>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px; font-size:13px;">
+              <div style="display:flex; justify-content:space-between; padding:12px 14px; background:var(--bg-hover); border-radius:10px;">
+                <span style="color:var(--text-muted); font-weight:600;">Account Role</span>
+                <strong style="color:var(--primary); font-weight:700;">Student Community Member</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:12px 14px; background:var(--bg-hover); border-radius:10px;">
+                <span style="color:var(--text-muted); font-weight:600;">Verification</span>
+                <strong style="color:#16a34a; font-weight:700;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Verified ASU Student</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:12px 14px; background:var(--bg-hover); border-radius:10px;">
+                <span style="color:var(--text-muted); font-weight:600;">Email Address</span>
+                <strong style="color:var(--text-dark); font-weight:700;">${escapeHTML(currentUser.email || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:12px 14px; background:var(--bg-hover); border-radius:10px;">
+                <span style="color:var(--text-muted); font-weight:600;">Community Standing</span>
+                <strong style="color:#16a34a; font-weight:700;">Safe & Compliant</strong>
+              </div>
+            </div>
+
+            <h4 style="font-size:14px; font-weight:800; color:var(--text-dark); margin:0 0 12px 0;">Account Management</h4>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <!-- Deactivate -->
+              <div style="display:flex; justify-content:space-between; align-items:center; background:#FFFBEB; padding:16px; border-radius:14px; border:1px solid #FDE68A;">
+                <div style="max-width:70%;">
+                  <div style="font-size:14px; font-weight:800; color:#92400E;">Deactivate Account</div>
+                  <div style="font-size:12px; color:#B45309; margin-top:2px;">The account becomes temporarily inactive. You can reactivate it anytime by logging in again.</div>
+                </div>
+                <button type="button" id="statusViewDeactBtn" style="padding:8px 16px; border-radius:20px; border:1px solid #F59E0B; background:#fff; color:#D97706; font-size:12px; font-weight:700; cursor:pointer;">
+                  Deactivate Account
+                </button>
+              </div>
+
+              <!-- Delete -->
+              <div style="display:flex; justify-content:space-between; align-items:center; background:#FEF2F2; padding:16px; border-radius:14px; border:1px solid #FECACA;">
+                <div style="max-width:70%;">
+                  <div style="font-size:14px; font-weight:800; color:#991B1B;">Delete Account</div>
+                  <div style="font-size:12px; color:#B91C1C; margin-top:2px;">Permanently delete your account, posts, and personal data. This action cannot be undone.</div>
+                </div>
+                <button type="button" id="statusViewDelBtn" style="padding:8px 16px; border-radius:20px; border:1px solid #DC2626; background:#fff; color:#DC2626; font-size:12px; font-weight:700; cursor:pointer;">
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        const deactBtn = document.getElementById('statusViewDeactBtn');
+        const delBtn = document.getElementById('statusViewDelBtn');
+
+        if (deactBtn) {
+          deactBtn.addEventListener('click', () => {
+            const deactModal = document.getElementById('deactivateModalOverlay');
+            if (deactModal) deactModal.classList.add('open');
+          });
+        }
+
+        if (delBtn) {
+          delBtn.addEventListener('click', () => {
+            const delModal = document.getElementById('deleteAccountModalOverlay');
+            const confirmInput = document.getElementById('deleteConfirmInput');
+            const passInput = document.getElementById('deletePasswordInput');
+            const confirmBtn = document.getElementById('confirmDeleteAccountBtn');
+            if (confirmInput) confirmInput.value = '';
+            if (passInput) passInput.value = '';
+            if (confirmBtn) confirmBtn.disabled = true;
+            if (delModal) delModal.classList.add('open');
+          });
+        }
+      }
+
+      // =======================================================================
+      // 11. LOGOUT
+      // =======================================================================
+      const logoutModal = document.getElementById('logoutModalOverlay');
+      const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+      const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+      document.getElementById('logoutRow').addEventListener('click', () => {
+        logoutModal.classList.add('open');
+      });
+
+      if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', () => logoutModal.classList.remove('open'));
+      }
+
+      if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', async () => {
+          confirmLogoutBtn.disabled = true;
+          confirmLogoutBtn.textContent = 'Logging out...';
+          await SafeSpaceDB.auth.signOut();
+          window.location.href = 'login.html';
+        });
+      }
+
+      // =======================================================================
+      // ACTION MODALS SETUP (Deactivate, Delete, Unblock)
+      // =======================================================================
+      // Deactivate Modal
+      const deactivateModal = document.getElementById('deactivateModalOverlay');
+      const closeDeactivateModalBtn = document.getElementById('closeDeactivateModalBtn');
+      const cancelDeactivateBtn = document.getElementById('cancelDeactivateBtn');
+      const confirmDeactivateBtn = document.getElementById('confirmDeactivateBtn');
+
+      function closeDeactivateModal() {
+        deactivateModal.classList.remove('open');
+      }
+
+      if (closeDeactivateModalBtn) closeDeactivateModalBtn.addEventListener('click', closeDeactivateModal);
+      if (cancelDeactivateBtn) cancelDeactivateBtn.addEventListener('click', closeDeactivateModal);
+
+      if (confirmDeactivateBtn) {
+        confirmDeactivateBtn.addEventListener('click', async () => {
+          confirmDeactivateBtn.disabled = true;
+          confirmDeactivateBtn.textContent = 'Deactivating...';
+          try {
+            await SafeSpaceDB.auth.deactivateAccount();
+            window.location.href = 'login.html?message=deactivated';
+          } catch (err) {
+            confirmDeactivateBtn.disabled = false;
+            confirmDeactivateBtn.textContent = 'Deactivate';
+            showToast(err.message || 'Failed to deactivate account', 'error');
+          }
+        });
+      }
+
+      // Delete Account Modal
+      const deleteModal = document.getElementById('deleteAccountModalOverlay');
+      const closeDeleteAccountModalBtn = document.getElementById('closeDeleteAccountModalBtn');
+      const cancelDeleteAccountBtn = document.getElementById('cancelDeleteAccountBtn');
+      const confirmDeleteAccountBtn = document.getElementById('confirmDeleteAccountBtn');
+      const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+      const deletePasswordInput = document.getElementById('deletePasswordInput');
+
+      function closeDeleteModal() {
+        deleteModal.classList.remove('open');
+      }
+
+      if (deleteConfirmInput) {
+        deleteConfirmInput.addEventListener('input', () => {
+          confirmDeleteAccountBtn.disabled = (deleteConfirmInput.value !== 'DELETE');
+        });
+      }
+
+      if (closeDeleteAccountModalBtn) closeDeleteAccountModalBtn.addEventListener('click', closeDeleteModal);
+      if (cancelDeleteAccountBtn) cancelDeleteAccountBtn.addEventListener('click', closeDeleteModal);
+
+      if (confirmDeleteAccountBtn) {
+        confirmDeleteAccountBtn.addEventListener('click', async () => {
+          if (deleteConfirmInput.value !== 'DELETE') return;
+          const pass = deletePasswordInput.value;
+          if (!pass) {
+            showToast('Please enter your current password to confirm deletion.', 'warning');
+            deletePasswordInput.focus();
+            return;
+          }
+
+          confirmDeleteAccountBtn.disabled = true;
+          confirmDeleteAccountBtn.textContent = 'Deleting...';
+          try {
+            await SafeSpaceDB.auth.deleteAccount(pass);
+            window.location.href = 'login.html?message=deleted';
+          } catch (err) {
+            confirmDeleteAccountBtn.disabled = false;
+            confirmDeleteAccountBtn.textContent = 'Permanently Delete Account';
+            showToast(err.message || 'Failed to delete account. Please verify password.', 'error');
+          }
+        });
+      }
+
+      // Unblock Modal
+      let pendingUnblockUserId = null;
+      let pendingUnblockUsername = '';
+      const unblockModal = document.getElementById('unblockModalOverlay');
+      const cancelUnblockBtn = document.getElementById('cancelUnblockBtn');
+      const confirmUnblockBtn = document.getElementById('confirmUnblockBtn');
+      const unblockPrompt = document.getElementById('unblockConfirmPrompt');
+
+      window.triggerUnblock = function(userId, username) {
+        pendingUnblockUserId = userId;
+        pendingUnblockUsername = username;
+        if (unblockPrompt) {
+          unblockPrompt.textContent = `Are you sure you want to unblock @${username}?`;
+        }
+        unblockModal.classList.add('open');
+      };
+
+      if (cancelUnblockBtn) {
+        cancelUnblockBtn.addEventListener('click', () => {
+          unblockModal.classList.remove('open');
+          pendingUnblockUserId = null;
+        });
+      }
+
+      if (confirmUnblockBtn) {
+        confirmUnblockBtn.addEventListener('click', async () => {
+          if (!pendingUnblockUserId) return;
+          try {
+            await SafeSpaceDB.blocks.unblockUser(pendingUnblockUserId);
+            showToast('✓ User has been unblocked.', 'success');
+            unblockModal.classList.remove('open');
+            const card = document.getElementById(`blocked-card-${pendingUnblockUserId}`);
+            if (card) card.remove();
+            const list = document.getElementById('blockedUsersListContainer');
+            if (list && list.children.length === 0) {
+              list.innerHTML = `
+                <div class="empty-state">
+                  <i class="fa-regular fa-circle-user"></i>
+                  <h3>No Blocked Users</h3>
+                  <p>You haven't blocked any users.</p>
+                </div>
+              `;
+            }
+          } catch (err) {
+            showToast('Failed to unblock user', 'error');
+          } finally {
+            pendingUnblockUserId = null;
+          }
+        });
+      }
+
+      // Close all action modals on backdrop click
+      [logoutModal, deactivateModal, deleteModal, unblockModal].forEach(m => {
+        if (m) {
+          m.addEventListener('click', (e) => {
+            if (e.target === m) m.classList.remove('open');
+          });
+        }
+      });
+    }
+
+    // Global Post Action Helpers for Sub-views
+    async function handleDeleteMyPost(postId) {
+      if (!confirm('Are you sure you want to delete this post?')) return;
+      try {
+        await SafeSpaceDB.posts.deletePost(postId);
+        showToast('✓ Post removed', 'info');
+        const card = document.getElementById(`my-post-${postId}`);
+        if (card) card.remove();
+        const content = document.getElementById('subViewContent');
+        if (content && !content.querySelector('.post-card')) {
+          content.innerHTML = '<div class="empty-state"><i class="fa-regular fa-file-lines"></i><h3>No posts yet</h3><p>Posts you share will appear here.</p></div>';
+        }
+      } catch (err) {
+        showToast('Failed to delete post', 'error');
+      }
+    }
+
+    async function handleRemoveBookmark(postId) {
+      try {
+        await SafeSpaceDB.posts.toggleSave(postId);
+        showToast('✓ Post removed from Saved Posts.', 'success');
+        const card = document.getElementById(`saved-card-${postId}`);
+        if (card) card.remove();
+        const content = document.getElementById('subViewContent');
+        if (content && !content.querySelector('.post-card')) {
+          content.innerHTML = `
+            <div class="empty-state">
+              <i class="fa-regular fa-bookmark"></i>
+              <h3>No Saved Posts</h3>
+              <p>You haven't saved any posts yet.<br>Save posts you want to easily find later.</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        showToast('Failed to remove bookmark', 'error');
+      }
+    }
+
+    async function handlePostLikeInline(postId, btn) {
+      try {
+        const res = await SafeSpaceDB.posts.toggleLike(postId);
+        const icon = btn.querySelector('i');
+        const span = btn.querySelector('.like-count');
+        if (res.liked) {
+          btn.classList.add('liked');
+          if (icon) icon.className = 'fas fa-heart';
+        } else {
+          btn.classList.remove('liked');
+          if (icon) icon.className = 'fa-regular fa-heart';
+        }
+        if (span && res.count !== undefined) span.textContent = res.count;
+      } catch (err) {
+        showToast('Could not update like', 'error');
+      }
+    }
+
+    async function handlePostSaveInline(postId, btn) {
+      try {
+        const res = await SafeSpaceDB.posts.toggleSave(postId);
+        const icon = btn.querySelector('i');
+        if (res.saved) {
+          btn.classList.add('saved');
+          if (icon) icon.className = 'fas fa-bookmark';
+          showToast('✓ Post saved to bookmarks.', 'success');
+        } else {
+          btn.classList.remove('saved');
+          if (icon) icon.className = 'fa-regular fa-bookmark';
+          showToast('✓ Post removed from Saved Posts.', 'info');
+        }
+      } catch (err) {
+        showToast('Could not update save', 'error');
+      }
+    }
+
+    async function handleReadNotification(notifId, el) {
+      try {
+        await SafeSpaceDB.notifications.markAsRead(notifId);
+        if (el) {
+          el.style.background = 'var(--card-bg)';
+          el.style.borderColor = 'var(--border)';
+          const dot = el.querySelector('.unread-dot');
+          if (dot) dot.remove();
+          const p = el.querySelector('p');
+          if (p) p.style.fontWeight = '500';
+          const iconBox = el.querySelector('div');
+          if (iconBox) {
+            iconBox.style.background = 'var(--bg-hover)';
+            iconBox.style.color = 'var(--text-muted)';
+          }
+        }
+        showToast('✓ Notification marked as read.', 'success');
+      } catch (err) {}
+    }
+
+    // Listen for avatar updates across views/components
+    window.addEventListener('safespace:avatar-changed', function(e) {
+      if (e.detail && e.detail.user && currentUser && e.detail.user.id === currentUser.id) {
+        Object.assign(currentUser, e.detail.user);
+        renderUserProfile();
+      }
+    });
+  </script>
+</body>
+</html>

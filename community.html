@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Community — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading community...</div>
+      </div>
+    </div>
+
+    <!-- Desktop & Tablet Sidebar -->
+    <aside class="desktop-sidebar">
+      <a href="home.html" class="sidebar-brand">
+        <img class="sidebar-logo" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+        <div>
+          <div class="sidebar-brand-name">SAFE SPACE</div>
+          <span class="sidebar-brand-tag">Student Support</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="home.html" class="sidebar-link" data-page="home">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="community.html" class="sidebar-link active" data-page="community">
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </a>
+        <a href="chat.html" class="sidebar-link" data-page="chat">
+          <i class="fas fa-comment-dots"></i>
+          <span>Chat</span>
+        </a>
+        <a href="resources.html" class="sidebar-link" data-page="resources">
+          <i class="fas fa-book-open"></i>
+          <span>Resources</span>
+        </a>
+        <a href="profile.html" class="sidebar-link" data-page="profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-actions">
+        <button type="button" class="sidebar-create-btn" id="sidebarCreatePostBtn">
+          <i class="fas fa-plus"></i>
+          <span>Create Post</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="sidebar-user-card" id="sidebarUserCard" title="View Profile">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">Account</span>
+            <span class="sidebar-user-role">Student</span>
+          </div>
+          <i class="fas fa-gear sidebar-settings-icon"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Column -->
+    <div class="main-content-column">
+      <!-- Page Header -->
+      <header class="page-header">
+        <h1>Community</h1>
+        <div class="header-actions">
+          <button class="header-btn" id="communityNotificationBtn" aria-label="Notifications">
+            <i class="fa-regular fa-bell"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Navigation Pills: People / Requests / Friends -->
+      <div class="pill-row" id="communityPills">
+        <button class="pill active" data-tab="people">People</button>
+        <button class="pill" data-tab="requests">Requests</button>
+        <button class="pill" data-tab="friends">Friends</button>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <i class="fas fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="search-input"
+          id="communitySearchInput"
+          placeholder="Search people..."
+        />
+      </div>
+
+      <!-- Scrollable Content -->
+      <main class="page-content" id="communityContent">
+        <div class="member-list" id="memberListContainer">
+          <!-- Skeleton Loading -->
+          <div class="skeleton-card">
+            <div class="skeleton sk-avatar"></div>
+            <div class="sk-info">
+              <div class="skeleton sk-title"></div>
+              <div class="skeleton sk-subtitle"></div>
+            </div>
+            <div class="skeleton sk-button"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton sk-avatar"></div>
+            <div class="sk-info">
+              <div class="skeleton sk-title" style="width: 55%;"></div>
+              <div class="skeleton sk-subtitle" style="width: 40%;"></div>
+            </div>
+            <div class="skeleton sk-button"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton sk-avatar"></div>
+            <div class="sk-info">
+              <div class="skeleton sk-title" style="width: 40%;"></div>
+              <div class="skeleton sk-subtitle" style="width: 60%;"></div>
+            </div>
+            <div class="skeleton sk-button"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="home.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item active">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    let currentUser = null;
+    let allMembers = [];
+    let allFriendships = [];
+    let activeTab = 'people';
+    let searchQuery = '';
+    let isLoading = true;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth();
+      if (!currentUser) return;
+
+      setupTabs();
+      setupSearch();
+      await loadCommunityData();
+      hidePageLoader();
+    });
+
+    function setupTabs() {
+      const pills = document.querySelectorAll('#communityPills .pill');
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          pills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          activeTab = pill.dataset.tab;
+          renderList();
+        });
+      });
+    }
+
+    let communitySearchDebounce = null;
+    function setupSearch() {
+      const input = document.getElementById('communitySearchInput');
+      input.addEventListener('input', (e) => {
+        clearTimeout(communitySearchDebounce);
+        communitySearchDebounce = setTimeout(() => {
+          searchQuery = e.target.value.toLowerCase().trim();
+          renderList();
+        }, 250);
+      });
+    }
+
+    async function loadCommunityData() {
+      try {
+        const [members, friendships] = await Promise.all([
+          SafeSpaceDB.community.getMembers(),
+          SafeSpaceDB.community.getFriendships()
+        ]);
+        allMembers = (members || []).filter(m => m.id !== currentUser.id);
+        allFriendships = friendships || [];
+        isLoading = false;
+        renderList();
+      } catch (err) {
+        console.error(err);
+        isLoading = false;
+        showToast('Failed to load community members', 'error');
+      }
+    }
+
+    function getFriendshipStatus(otherUserId) {
+      const found = allFriendships.find(f => 
+        (f.requester_id === currentUser.id && f.receiver_id === otherUserId) ||
+        (f.receiver_id === currentUser.id && f.requester_id === otherUserId)
+      );
+      if (!found) return 'none';
+      return found.status; // 'pending' | 'accepted' | 'declined'
+    }
+
+    function updateTabBadges() {
+      const pendingCount = allFriendships.filter(f => 
+        f.receiver_id === currentUser.id && f.status === 'pending'
+      ).length;
+      
+      const friendCount = allFriendships.filter(f => 
+        f.status === 'accepted' && (f.requester_id === currentUser.id || f.receiver_id === currentUser.id)
+      ).length;
+
+      const pills = document.querySelectorAll('#communityPills .pill');
+      pills.forEach(pill => {
+        const tab = pill.dataset.tab;
+        if (tab === 'people') {
+          pill.textContent = isLoading ? 'People' : `People (${allMembers.length})`;
+        } else if (tab === 'requests') {
+          pill.textContent = pendingCount > 0 ? `Requests (${pendingCount})` : 'Requests';
+        } else if (tab === 'friends') {
+          pill.textContent = (!isLoading && friendCount > 0) ? `Friends (${friendCount})` : 'Friends';
+        }
+      });
+    }
+
+    function renderSkeletonCards(container, count) {
+      count = count || 3;
+      let html = '';
+      for (let i = 0; i < count; i++) {
+        html += `
+          <div class="skeleton-card">
+            <div class="skeleton sk-avatar"></div>
+            <div class="sk-info">
+              <div class="skeleton sk-title" style="width: ${45 + (i * 10)}%;"></div>
+              <div class="skeleton sk-subtitle" style="width: ${60 - (i * 10)}%;"></div>
+            </div>
+            <div class="skeleton sk-button"></div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    function renderList() {
+      updateTabBadges();
+      const container = document.getElementById('memberListContainer');
+
+      if (activeTab === 'people') {
+        renderPeopleTab(container);
+      } else if (activeTab === 'requests') {
+        renderRequestsTab(container);
+      } else if (activeTab === 'friends') {
+        renderFriendsTab(container);
+      }
+    }
+
+    function renderPeopleTab(container) {
+      if (isLoading) {
+        renderSkeletonCards(container, 3);
+        return;
+      }
+
+      let filtered = allMembers;
+      if (searchQuery) {
+        filtered = filtered.filter(m => 
+          (m.username || '').toLowerCase().includes(searchQuery) ||
+          (m.first_name || '').toLowerCase().includes(searchQuery) ||
+          (m.bio || '').toLowerCase().includes(searchQuery)
+        );
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h3>No people found</h3>
+            <p>Try a different keyword or check back later.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(member => {
+        const status = getFriendshipStatus(member.id);
+        let buttonHtml = '';
+
+        if (status === 'accepted') {
+          buttonHtml = `<button class="btn-add friends" disabled><i class="fas fa-check"></i> Friends</button>`;
+        } else if (status === 'pending') {
+          buttonHtml = `<button class="btn-add pending" disabled><i class="fa-regular fa-clock"></i> Pending</button>`;
+        } else {
+          buttonHtml = `<button class="btn-add" onclick="handleAddFriend('${member.id}', this)"><i class="fas fa-user-plus"></i> Add</button>`;
+        }
+
+        const avatarHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(member, { alt: member.username || 'Member' })
+          : (member.avatar_url
+            ? `<img src="${escapeHTML(member.avatar_url)}" alt="${escapeHTML(member.username)}" />`
+            : `<i class="fas fa-user"></i>`);
+
+        return `
+          <div class="member-card">
+            <div class="member-avatar">${avatarHtml}</div>
+            <div class="member-info">
+              <div class="member-name">${escapeHTML(member.username || 'Member')}</div>
+              <div class="member-bio">${escapeHTML(member.bio || 'Safe Space Member')}</div>
+            </div>
+            ${buttonHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRequestsTab(container) {
+      if (isLoading) {
+        renderSkeletonCards(container, 2);
+        return;
+      }
+
+      const pendingRequests = allFriendships.filter(f => 
+        f.receiver_id === currentUser.id && f.status === 'pending'
+      );
+
+      if (pendingRequests.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-clock"></i>
+            <h3>No requests</h3>
+            <p>You don't have any pending friend requests right now.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = pendingRequests.map(req => {
+        let sender = req.requester || allMembers.find(m => m.id === req.requester_id) || { username: 'A member' };
+        const avatarHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(sender, { alt: sender.username || 'A member' })
+          : (sender.avatar_url
+            ? `<img src="${escapeHTML(sender.avatar_url)}" alt="${escapeHTML(sender.username)}" />`
+            : `<i class="fas fa-user"></i>`);
+
+        return `
+          <div class="member-card" id="req-card-${req.id}">
+            <div class="member-avatar">${avatarHtml}</div>
+            <div class="member-info">
+              <div class="member-name">${escapeHTML(sender.username || 'A member')}</div>
+              <div class="member-bio">Sent you a friend request</div>
+            </div>
+            <button class="btn-add" style="margin-right: 6px;" onclick="respondFriendRequest('${req.id}', 'accepted')">Accept</button>
+            <button class="btn-add pending" onclick="respondFriendRequest('${req.id}', 'declined')">Decline</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFriendsTab(container) {
+      if (isLoading) {
+        renderSkeletonCards(container, 3);
+        return;
+      }
+
+      const acceptedFriendships = allFriendships.filter(f => 
+        f.status === 'accepted' && (f.requester_id === currentUser.id || f.receiver_id === currentUser.id)
+      );
+
+      const friends = [];
+      acceptedFriendships.forEach(f => {
+        const otherId = f.requester_id === currentUser.id ? f.receiver_id : f.requester_id;
+        let friend = allMembers.find(m => m.id === otherId);
+        if (!friend) {
+          friend = f.requester_id === currentUser.id ? f.receiver : f.requester;
+        }
+        if (friend) {
+          const fid = friend.id || otherId;
+          if (!friends.some(x => x.id === fid)) {
+            friends.push({
+              id: fid,
+              username: friend.username || friend.first_name || 'Member',
+              bio: friend.bio || (friend.last_name ? friend.first_name + ' ' + friend.last_name : 'Safe Space Member'),
+              avatar_url: friend.avatar_url || ''
+            });
+          }
+        }
+      });
+
+      let filtered = friends;
+      if (searchQuery) {
+        filtered = filtered.filter(f => 
+          (f.username || '').toLowerCase().includes(searchQuery) ||
+          (f.bio || '').toLowerCase().includes(searchQuery)
+        );
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-user-group"></i>
+            <h3>${friends.length === 0 ? 'No friends yet' : 'No matching friends'}</h3>
+            <p>${friends.length === 0 ? 'Connect with people in the People tab to grow your circle!' : 'Try a different search query.'}</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(friend => `
+        <div class="member-card">
+          <div class="member-avatar">
+            ${window.SafeSpaceAvatars
+              ? window.SafeSpaceAvatars.renderHtml(friend, { alt: friend.username || 'Friend' })
+              : (friend.avatar_url ? `<img src="${escapeHTML(friend.avatar_url)}" alt="${escapeHTML(friend.username)}" />` : `<i class="fas fa-user"></i>`)}
+          </div>
+          <div class="member-info">
+            <div class="member-name">${escapeHTML(friend.username)}</div>
+            <div class="member-bio">${escapeHTML(friend.bio || '')}</div>
+          </div>
+          <a href="chat.html?user=${friend.id}" class="btn-add" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap: 4px;">
+            <i class="fas fa-comment"></i> Chat
+          </a>
+        </div>
+      `).join('');
+    }
+
+    async function handleAddFriend(targetId, btnElement) {
+      try {
+        btnElement.disabled = true;
+        btnElement.textContent = '...';
+        const res = await SafeSpaceDB.community.sendFriendRequest(targetId);
+        btnElement.className = 'btn-add pending';
+        btnElement.innerHTML = '<i class="fa-regular fa-clock"></i> Pending';
+        showToast('Friend request sent! ✨', 'success');
+        
+        allFriendships.push({
+          id: (res && res.id) || ('f-' + Date.now()),
+          requester_id: currentUser.id,
+          receiver_id: targetId,
+          status: 'pending'
+        });
+        updateTabBadges();
+      } catch (err) {
+        btnElement.disabled = false;
+        btnElement.innerHTML = '<i class="fas fa-user-plus"></i> Add';
+        showToast('Failed to send request', 'error');
+      }
+    }
+    window.handleAddFriend = handleAddFriend;
+
+    async function respondFriendRequest(requestId, newStatus) {
+      try {
+        await SafeSpaceDB.community.respondFriendRequest(requestId, newStatus);
+        showToast(newStatus === 'accepted' ? 'Friend request accepted! 🎉' : 'Request declined', 'info');
+        const req = allFriendships.find(f => f.id === requestId);
+        if (req) req.status = newStatus;
+        renderList();
+      } catch (err) {
+        console.error('Failed to respond to friend request:', err);
+        showToast('Could not process request', 'error');
+      }
+    }
+    window.respondFriendRequest = respondFriendRequest;
+
+    window.addEventListener('safespace:avatar-changed', () => {
+      loadCommunityData().catch(() => {});
+    });
+  </script>
+</body>
+</html>

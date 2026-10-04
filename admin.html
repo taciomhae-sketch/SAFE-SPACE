@@ -1,0 +1,3886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Admin & AI Governance Dashboard — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <style>
+    /* ========================================================
+       SAFE SPACE ADMIN & AI GOVERNANCE DASHBOARD STYLES
+       ======================================================== */
+    :root {
+      --admin-sidebar-w: 260px;
+    }
+    body {
+      background: #F8F6FD;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      color: var(--text-dark, #1A1A2E);
+    }
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Admin Sidebar */
+    .admin-sidebar {
+      width: var(--admin-sidebar-w);
+      background: var(--card-bg, #FFFFFF);
+      border-right: 1px solid var(--border, #EFEFFA);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      transition: transform var(--transition, 0.22s);
+    }
+    .admin-brand {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border, #EFEFFA);
+      text-decoration: none;
+    }
+    .admin-brand img {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+    }
+    .admin-brand-info h4 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary, #6C4FD1);
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .admin-brand-info span {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted, #8888AA);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .admin-nav {
+      flex: 1;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow-y: auto;
+    }
+    .admin-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      color: var(--text-mid, #444466);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-nav-item i {
+      font-size: 15px;
+      width: 22px;
+      text-align: center;
+      color: var(--text-muted, #8888AA);
+      transition: color 0.2s;
+    }
+    .admin-nav-item:hover {
+      background: var(--primary-ultra, rgba(108, 79, 209, 0.07));
+      color: var(--primary, #6C4FD1);
+    }
+    .admin-nav-item:hover i {
+      color: var(--primary, #6C4FD1);
+    }
+    .admin-nav-item.active {
+      background: var(--primary, #6C4FD1);
+      color: #fff;
+    }
+    .admin-nav-item.active i {
+      color: #fff;
+    }
+    .admin-nav-item .badge-count {
+      margin-left: auto;
+      background: rgba(239, 68, 68, 0.15);
+      color: #EF4444;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .admin-nav-item.active .badge-count {
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+    .admin-sidebar-footer {
+      padding: 16px 16px;
+      border-top: 1px solid var(--border, #EFEFFA);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .admin-user-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .admin-user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary-light, rgba(108, 79, 209, 0.14));
+      color: var(--primary, #6C4FD1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    /* Main Area */
+    .admin-main {
+      flex: 1;
+      margin-left: var(--admin-sidebar-w);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .admin-topbar {
+      height: 70px;
+      background: var(--card-bg, #FFFFFF);
+      border-bottom: 1px solid var(--border, #EFEFFA);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      gap: 14px;
+    }
+    .admin-title-area h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-dark, #1A1A2E);
+      margin: 0;
+    }
+    .admin-title-area span {
+      font-size: 12px;
+      color: var(--text-muted, #8888AA);
+    }
+    .admin-topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-full, 999px);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+    }
+    .admin-btn-primary {
+      background: var(--primary, #6C4FD1);
+      color: #fff;
+    }
+    .admin-btn-primary:hover {
+      background: var(--primary-dark, #5438B0);
+    }
+    .admin-btn-outline {
+      background: #fff;
+      border: 1px solid var(--border, #EFEFFA);
+      color: var(--text-mid, #444466);
+    }
+    .admin-btn-outline:hover {
+      background: var(--primary-ultra, rgba(108, 79, 209, 0.07));
+      color: var(--primary, #6C4FD1);
+      border-color: var(--primary-light);
+    }
+    .admin-btn-danger {
+      background: #FEE2E2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+    }
+    .admin-btn-danger:hover {
+      background: #FCA5A5;
+    }
+    .admin-btn-success {
+      background: #DCFCE7;
+      color: #16A34A;
+      border: 1px solid #BBF7D0;
+    }
+
+    .admin-content {
+      padding: 24px 28px;
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    /* Metric Cards Grid */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      background: var(--card-bg, #FFFFFF);
+      border-radius: var(--radius-lg, 20px);
+      padding: 18px 20px;
+      border: 1px solid var(--border, #EFEFFA);
+      box-shadow: 0 2px 10px rgba(108, 79, 209, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(108, 79, 209, 0.08);
+    }
+    .metric-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .metric-info h3 {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-dark, #1A1A2E);
+      line-height: 1.2;
+    }
+    .metric-info span {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted, #8888AA);
+    }
+
+    /* Panels & Tables */
+    .admin-panel {
+      background: var(--card-bg, #FFFFFF);
+      border-radius: var(--radius-lg, 20px);
+      border: 1px solid var(--border, #EFEFFA);
+      box-shadow: 0 2px 10px rgba(108, 79, 209, 0.04);
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .panel-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-dark, #1A1A2E);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-table-wrap {
+      overflow-x: auto;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    .admin-table th {
+      padding: 12px 14px;
+      border-bottom: 1.5px solid var(--border, #EFEFFA);
+      color: var(--text-muted, #8888AA);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .admin-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border, #EFEFFA);
+      color: var(--text-dark, #1A1A2E);
+      vertical-align: middle;
+    }
+    .admin-table tr:hover td {
+      background: var(--bg-hover, #FBF9FF);
+    }
+
+    /* Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: var(--radius-full, 999px);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+    .status-pending { background: #FEF3C7; color: #D97706; }
+    .status-reviewed { background: #DBEAFE; color: #2563EB; }
+    .status-resolved { background: #DCFCE7; color: #16A34A; }
+    .status-dismissed { background: #F3F4F6; color: #6B7280; }
+    .status-approved { background: #DCFCE7; color: #16A34A; }
+    .status-blocked { background: #FEE2E2; color: #DC2626; }
+    .status-flagged { background: #FEE2E2; color: #DC2626; }
+
+    /* Filter pills */
+    .filter-pills-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .filter-pill {
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: #F1F0F7;
+      border: 1px solid transparent;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-mid, #444466);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-pill:hover {
+      background: var(--primary-ultra);
+      color: var(--primary);
+    }
+    .filter-pill.active {
+      background: var(--primary, #6C4FD1);
+      color: #fff;
+    }
+
+    /* AI Governance Specific */
+    .ai-hero-card {
+      background: linear-gradient(135deg, #6C4FD1, #8B5CF6);
+      color: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .ai-hero-text h3 {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 6px 0;
+    }
+    .ai-hero-text p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.9;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+    .ai-status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .ai-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 8px #22C55E;
+    }
+    .ai-status-dot.offline {
+      background: #EF4444;
+      box-shadow: 0 0 8px #EF4444;
+    }
+
+    .ai-control-box {
+      background: #FBF9FF;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .ai-control-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .ai-slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .ai-slider {
+      flex: 1;
+      height: 6px;
+      border-radius: 4px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .ai-keyword-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #F3F0FA;
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      margin: 4px;
+      border: 1px solid var(--border);
+    }
+    .ai-keyword-tag i {
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+    .ai-keyword-tag i:hover {
+      color: #EF4444;
+    }
+
+    /* Modal Sheet */
+    .admin-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .admin-modal-overlay.open {
+      display: flex;
+    }
+    .admin-modal-card {
+      background: #fff;
+      border-radius: 20px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+    }
+    .admin-modal-card.admin-modal-lg {
+      max-width: 920px;
+    }
+    .mod-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .mod-kpi-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .mod-kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .mod-dossier-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 768px) {
+      .mod-dossier-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .mod-content-card {
+      background: #FBF9FF;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .mod-timeline-item {
+      position: relative;
+      padding-left: 20px;
+      padding-bottom: 12px;
+      border-left: 2px solid var(--border);
+      font-size: 12px;
+    }
+    .mod-timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .admin-modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .admin-modal-header h3 {
+      font-size: 16px;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-dark);
+    }
+    .admin-modal-body {
+      padding: 20px 24px;
+    }
+    .admin-form-group {
+      margin-bottom: 16px;
+    }
+    .admin-form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+    }
+    .admin-form-control {
+      width: 100%;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #FBF9FF;
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+      color: var(--text-dark);
+    }
+    .admin-form-control:focus {
+      border-color: var(--primary);
+      background: #fff;
+    }
+    textarea.admin-form-control {
+      height: 90px;
+      padding: 10px 14px;
+    }
+
+    @media (max-width: 900px) {
+      .admin-sidebar {
+        transform: translateX(-100%);
+      }
+      .admin-sidebar.open {
+        transform: translateX(0);
+      }
+      .admin-main {
+        margin-left: 0;
+      }
+      .mobile-menu-toggle {
+        display: block !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Page Loader -->
+  <div class="page-loader" id="pageLoader">
+    <div class="loader-content">
+      <div class="loader-spinner-ring">
+        <div class="loader-icon-center">
+          <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+        </div>
+      </div>
+      <div class="loader-label">Safe Space Admin</div>
+      <div class="loader-sublabel">Loading system &amp; AI monitoring data...</div>
+    </div>
+  </div>
+
+  <!-- Access Denied Screen (Passcode unlock for Thesis Evaluation) -->
+  <div id="accessDeniedView" style="display:none;" class="access-denied-container">
+    <div class="access-denied-card">
+      <div style="width:64px; height:64px; border-radius:50%; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 16px;">
+        <i class="fas fa-lock"></i>
+      </div>
+      <h3 style="font-size:20px; font-weight:800; color:var(--text-dark); margin:0 0 8px 0;">Admin Portal Authentication</h3>
+      <p style="font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:20px;">
+        This portal allows administrators and counselors to supervise the Safe Space platform, moderate students, and govern the AI engine.
+      </p>
+
+      <div style="background:var(--bg-hover, #F8F6FD); border-radius:14px; padding:16px; margin-bottom:20px; text-align:left; border:1px solid var(--border);">
+        <label style="font-size:12px; font-weight:700; color:var(--text-dark); display:block; margin-bottom:6px;">
+          <i class="fas fa-key" style="color:var(--primary); margin-right:4px;"></i> Evaluator / Faculty Passcode:
+        </label>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="adminPasscodeInput" placeholder="safespace2026" style="flex:1; height:38px; border-radius:8px; border:1px solid var(--border); padding:0 12px; font-size:13px;" />
+          <button type="button" id="adminPasscodeSubmitBtn" class="admin-btn admin-btn-primary" style="height:38px; padding:0 16px;">Unlock</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+          Thesis Demo Code: <strong>safespace2026</strong> or log in with an Administrator account.
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <a href="home.html" class="admin-btn admin-btn-outline" style="flex:1; justify-content:center;">
+          <i class="fas fa-arrow-left"></i> Return to Feed
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authenticated Admin Interface -->
+  <div id="adminInterface" style="display:none;" class="admin-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <a href="#overview" onclick="switchAdminTab('overview'); return false;" class="admin-brand">
+        <img src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+        <div class="admin-brand-info">
+          <h4>SAFE SPACE</h4>
+          <span>Admin &amp; AI Portal</span>
+        </div>
+      </a>
+
+      <nav class="admin-nav">
+        <div class="admin-nav-item active" data-tab="overview">
+          <i class="fas fa-chart-pie"></i>
+          <span>Overview</span>
+        </div>
+        <div class="admin-nav-item" data-tab="users">
+          <i class="fas fa-users-gear"></i>
+          <span>Users &amp; Roles</span>
+          <span class="badge-count" id="navUsersBadge" style="display:none; background:#E0E7FF; color:var(--primary);">0</span>
+        </div>
+        <div class="admin-nav-item" data-tab="posts">
+          <i class="fas fa-newspaper"></i>
+          <span>Community Posts</span>
+        </div>
+        <div class="admin-nav-item" data-tab="reports">
+          <i class="fas fa-shield-halved"></i>
+          <span>Reports &amp; Safety</span>
+          <span class="badge-count" id="navReportsBadge" style="display:none;">0</span>
+        </div>
+        <div class="admin-nav-item" data-tab="ai-governance" style="border-left: 3px solid var(--primary); padding-left: 11px;">
+          <i class="fas fa-robot" style="color:var(--primary);"></i>
+          <span>AI Governance</span>
+          <span class="badge-count" id="navFlaggedBadge" style="display:none; background:#FEF3C7; color:#D97706;">0</span>
+        </div>
+        <div class="admin-nav-item" data-tab="chat-supervision">
+          <i class="fas fa-comments"></i>
+          <span>Chat Supervision</span>
+        </div>
+        <div class="admin-nav-item" data-tab="resources">
+          <i class="fas fa-book-medical"></i>
+          <span>Resources &amp; Bible</span>
+        </div>
+
+        <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border);">
+          <a href="home.html" class="admin-nav-item" style="color:var(--primary);">
+            <i class="fas fa-arrow-left" style="color:var(--primary);"></i>
+            <span>Exit to Safe Space</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <div class="admin-user-pill">
+          <div class="admin-user-avatar" id="adminAvatarDisplay">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <div>
+            <div style="font-size:13px; font-weight:800; color:var(--text-dark);" id="adminUserName">Admin</div>
+            <div style="font-size:11px; color:var(--text-muted);" id="adminUserRoleTag">Administrator</div>
+          </div>
+        </div>
+        <button type="button" id="adminLogoutBtn" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" title="Lock Admin Portal">
+          <i class="fas fa-lock"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+      <!-- Topbar Header -->
+      <header class="admin-topbar">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" style="display:none; background:none; border:none; font-size:18px; cursor:pointer;" aria-label="Toggle Menu">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-title-area">
+            <h2 id="currentTabTitle">Dashboard Overview</h2>
+            <span id="currentTabSubtitle">Safe Space System, Community &amp; AI Health</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <div class="ai-status-indicator" id="topbarAiIndicator" style="background:var(--card-bg); border:1px solid var(--border); color:var(--text-mid);">
+            <div class="ai-status-dot" id="topbarAiDot"></div>
+            <span id="topbarAiLabel">AI Moderation Active</span>
+          </div>
+
+          <button type="button" class="admin-btn admin-btn-outline" id="refreshDataBtn" title="Refresh Live Database">
+            <i class="fas fa-rotate"></i>
+            <span>Refresh</span>
+          </button>
+
+          <button type="button" class="admin-btn admin-btn-primary" id="openCreateUserBtn" title="Add User">
+            <i class="fas fa-user-plus"></i>
+            <span class="d-none-sm">New User</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Tab Content Area -->
+      <div class="admin-content">
+
+        <!-- ==========================================
+             TAB 1: OVERVIEW & SYSTEM VITALS
+             ========================================== -->
+        <section id="tab-overview" class="admin-tab-pane">
+          <!-- Metric KPI Grid -->
+          <div class="metric-grid">
+            <div class="metric-card" onclick="switchAdminTab('users')" style="cursor:pointer;">
+              <div class="metric-icon-wrap" style="background:rgba(108, 79, 209, 0.12); color:var(--primary);">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="metric-info">
+                <h3 id="statTotalUsers">0</h3>
+                <span>Total Accounts</span>
+              </div>
+            </div>
+
+            <div class="metric-card" onclick="switchAdminTab('posts')" style="cursor:pointer;">
+              <div class="metric-icon-wrap" style="background:rgba(37, 99, 235, 0.12); color:#2563EB;">
+                <i class="fas fa-file-lines"></i>
+              </div>
+              <div class="metric-info">
+                <h3 id="statTotalPosts">0</h3>
+                <span>Feed Posts</span>
+              </div>
+            </div>
+
+            <div class="metric-card" onclick="switchAdminTab('reports')" style="cursor:pointer;">
+              <div class="metric-icon-wrap" style="background:rgba(239, 68, 68, 0.12); color:#EF4444;">
+                <i class="fas fa-flag"></i>
+              </div>
+              <div class="metric-info">
+                <h3 id="statTotalReports">0</h3>
+                <span>Safety Reports</span>
+              </div>
+            </div>
+
+            <div class="metric-card" onclick="switchAdminTab('ai-governance')" style="cursor:pointer;">
+              <div class="metric-icon-wrap" style="background:rgba(245, 158, 11, 0.12); color:#F59E0B;">
+                <i class="fas fa-robot"></i>
+              </div>
+              <div class="metric-info">
+                <h3 id="statFlaggedContent">0</h3>
+                <span>AI Flagged Items</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-wrap" style="background:rgba(34, 197, 94, 0.12); color:#22C55E;">
+                <i class="fas fa-bolt"></i>
+              </div>
+              <div class="metric-info">
+                <h3 id="statActiveUsers">0</h3>
+                <span>Active Today</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overview Split Grid: Sentiment & Live Incidents -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px;">
+            <!-- Campus Sentiment Analytics Panel -->
+            <div class="admin-panel" style="margin-bottom:0;">
+              <div class="panel-header">
+                <h4 class="panel-title"><i class="fas fa-heart-pulse" style="color:var(--primary);"></i> Campus Sentiment Analytics</h4>
+                <span style="font-size:11px; font-weight:700; color:var(--text-muted);">AI RoBERTa Engine</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin:0 0 16px 0;">
+                Real-time emotional wellness distribution extracted from student posts across campus.
+              </p>
+
+              <!-- Sentiment Bars -->
+              <div style="display:flex; flex-direction:column; gap:12px;" id="sentimentBarsContainer">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                    <span style="color:#16A34A;"><i class="fas fa-face-smile"></i> Positive &amp; Encouraging</span>
+                    <span id="sentimentPosPct">0%</span>
+                  </div>
+                  <div style="background:#E2E8F0; height:8px; border-radius:4px; overflow:hidden;">
+                    <div id="sentimentPosBar" style="background:#22C55E; width:0%; height:100%; transition:width 0.5s;"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                    <span style="color:#64748B;"><i class="fas fa-face-meh"></i> Neutral / Informational</span>
+                    <span id="sentimentNeuPct">0%</span>
+                  </div>
+                  <div style="background:#E2E8F0; height:8px; border-radius:4px; overflow:hidden;">
+                    <div id="sentimentNeuBar" style="background:#94A3B8; width:0%; height:100%; transition:width 0.5s;"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                    <span style="color:#EA580C;"><i class="fas fa-hand-holding-heart"></i> Seeking Support / Academic Stress</span>
+                    <span id="sentimentNegPct">0%</span>
+                  </div>
+                  <div style="background:#E2E8F0; height:8px; border-radius:4px; overflow:hidden;">
+                    <div id="sentimentNegBar" style="background:#F97316; width:0%; height:100%; transition:width 0.5s;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:20px; padding:12px; background:var(--bg-hover); border-radius:12px; font-size:11px; color:var(--text-mid); display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-circle-info" style="color:var(--primary);"></i>
+                <span>Posts expressing severe distress or self-harm keywords are automatically escalated to Guidance Counselors.</span>
+              </div>
+            </div>
+
+            <!-- Urgent Safety Incidents -->
+            <div class="admin-panel" style="margin-bottom:0;">
+              <div class="panel-header">
+                <h4 class="panel-title"><i class="fas fa-triangle-exclamation" style="color:#EF4444;"></i> Urgent Safety Queue</h4>
+                <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 10px; font-size:11px;" onclick="switchAdminTab('reports')">View All</button>
+              </div>
+              <div id="overviewReportsContainer">
+                <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">Checking safety reports...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Bar -->
+          <div class="admin-panel" style="background:#FAF8FF; border:1px dashed var(--primary-light);">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+              <div>
+                <strong style="color:var(--primary); font-size:14px;"><i class="fas fa-wand-magic-sparkles"></i> Quick Admin Shortcuts</strong>
+                <p style="margin:2px 0 0 0; font-size:12px; color:var(--text-muted);">Manage platform operations directly with one click.</p>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="admin-btn admin-btn-primary" onclick="switchAdminTab('ai-governance')">
+                  <i class="fas fa-sliders"></i> Adjust AI Sensitivity
+                </button>
+                <button type="button" class="admin-btn admin-btn-outline" onclick="openTestAiModal()">
+                  <i class="fas fa-vial"></i> Test AI Simulator
+                </button>
+                <a href="bible-verse.html" target="_blank" class="admin-btn admin-btn-outline">
+                  <i class="fas fa-heart"></i> Scripture & Topic Verses
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 2: USER MANAGEMENT & ROLES
+             ========================================== -->
+        <section id="tab-users" class="admin-tab-pane" style="display:none;">
+          <div class="admin-panel">
+            <div class="panel-header">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-users-gear" style="color:var(--primary);"></i> User Accounts &amp; Permissions</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Search, filter, assign roles (Student, Counselor, Admin), and suspend/reactivate accounts</span>
+              </div>
+
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <input type="text" id="userSearchInput" placeholder="Search by name, handle, email..." class="admin-form-control" style="width:230px; height:34px;" />
+                <button type="button" class="admin-btn admin-btn-primary" onclick="openCreateUserModal()">
+                  <i class="fas fa-plus"></i> Add Account
+                </button>
+              </div>
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="filter-pills-row" id="userFilterRow" style="margin-bottom:16px;">
+              <button type="button" class="filter-pill active" data-user-filter="all">All Accounts</button>
+              <button type="button" class="filter-pill" data-user-filter="student">Students</button>
+              <button type="button" class="filter-pill" data-user-filter="counselor">Counselors</button>
+              <button type="button" class="filter-pill" data-user-filter="admin">Administrators</button>
+              <button type="button" class="filter-pill" data-user-filter="deactivated">Suspended / Inactive</button>
+            </div>
+
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <tr>
+                    <td colspan="6" style="text-align:center; padding:32px; color:var(--text-muted);">Loading user records from database...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 3: COMMUNITY POSTS & FEED MODERATION
+             ========================================== -->
+        <section id="tab-posts" class="admin-tab-pane" style="display:none;">
+          <div class="admin-panel">
+            <div class="panel-header">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-newspaper" style="color:var(--primary);"></i> Community Posts &amp; Moderation</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Manage real student feed submissions, inspect comments, and handle content safety</span>
+              </div>
+
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <span class="ai-status-pill ai-status-online" id="adminPostsAiStatus" style="font-size:11px; padding:4px 10px;">
+                  <i class="fas fa-circle-check"></i> AI Moderation Online
+                </span>
+                <button type="button" class="admin-btn admin-btn-outline" style="height:34px; padding:0 12px; font-size:12px;" onclick="loadAdminDashboardData()">
+                  <i class="fas fa-rotate"></i> Refresh
+                </button>
+                <input type="text" id="postSearchInput" placeholder="Filter by keyword, author, or ID..." class="admin-form-control" style="width:230px; height:34px;" />
+                <select id="postCategoryFilter" class="admin-form-control" style="width:140px; height:34px;">
+                  <option value="all">All Categories</option>
+                  <option value="general">General</option>
+                  <option value="support">Support</option>
+                  <option value="story">Story</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Post Status Filter Pills -->
+            <div class="filter-pills-row" id="postStatusFilterRow" style="margin-bottom:16px;">
+              <button type="button" class="filter-pill active" data-post-filter="all">All Posts</button>
+              <button type="button" class="filter-pill" data-post-filter="APPROVED">Approved</button>
+              <button type="button" class="filter-pill" data-post-filter="REVIEW">Flagged / Review</button>
+              <button type="button" class="filter-pill" data-post-filter="BLOCKED">Blocked / Hidden</button>
+            </div>
+
+            <div id="postsListContainer">
+              <div style="text-align:center; padding:32px; color:var(--text-muted);">Loading posts...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 4: SAFETY REPORTS & MODERATION CENTER
+             ========================================== -->
+        <section id="tab-reports" class="admin-tab-pane" style="display:none;">
+          <!-- Moderation KPI Cards -->
+          <div class="mod-kpi-grid">
+            <div class="mod-kpi-card" style="border-left: 4px solid #EF4444;">
+              <div class="mod-kpi-icon" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div>
+                <div style="font-size: 20px; font-weight: 800; color: #EF4444;" id="statRepPending">0</div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending Review</div>
+              </div>
+            </div>
+
+            <div class="mod-kpi-card" style="border-left: 4px solid #F59E0B;">
+              <div class="mod-kpi-icon" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
+                <i class="fas fa-magnifying-glass"></i>
+              </div>
+              <div>
+                <div style="font-size: 20px; font-weight: 800; color: #F59E0B;" id="statRepUnderReview">0</div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Under Review</div>
+              </div>
+            </div>
+
+            <div class="mod-kpi-card" style="border-left: 4px solid #10B981;">
+              <div class="mod-kpi-icon" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+                <i class="fas fa-circle-check"></i>
+              </div>
+              <div>
+                <div style="font-size: 20px; font-weight: 800; color: #10B981;" id="statRepResolved">0</div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Resolved</div>
+              </div>
+            </div>
+
+            <div class="mod-kpi-card" style="border-left: 4px solid #6B7280;">
+              <div class="mod-kpi-icon" style="background: rgba(107, 114, 128, 0.12); color: #6B7280;">
+                <i class="fas fa-shield-xmark"></i>
+              </div>
+              <div>
+                <div style="font-size: 20px; font-weight: 800; color: #6B7280;" id="statRepDismissed">0</div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Dismissed</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Reports Panel -->
+          <div class="admin-panel" style="margin-bottom: 24px;">
+            <div class="panel-header" style="flex-wrap: wrap; gap: 14px;">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-shield-halved" style="color:#EF4444;"></i> Peer Safety &amp; Content Moderation Queue</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Real Supabase incident triage. Review reports, inspect evidence, and enforce community standards.</span>
+              </div>
+
+              <!-- Filter Pills -->
+              <div class="filter-pills-row" id="reportsFilterRow">
+                <button type="button" class="filter-pill active" data-report-filter="all">All</button>
+                <button type="button" class="filter-pill" data-report-filter="Pending">Pending</button>
+                <button type="button" class="filter-pill" data-report-filter="Reviewed">Under Review</button>
+                <button type="button" class="filter-pill" data-report-filter="Resolved">Resolved</button>
+                <button type="button" class="filter-pill" data-report-filter="Dismissed">Dismissed</button>
+              </div>
+            </div>
+
+            <!-- Search and Sorting Toolbar -->
+            <div style="padding: 14px 20px; background: #FAF9FE; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px; max-width: 480px;">
+                <div style="position: relative; width: 100%;">
+                  <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: var(--text-muted); font-size: 13px;"></i>
+                  <input type="text" id="reportsSearchInput" placeholder="Search by Post ID, username, or reason..." class="admin-form-control" style="padding-left: 36px; height: 38px; font-size: 12px;" />
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Sort By:</label>
+                <select id="reportsSortSelect" class="admin-form-control" style="width: auto; height: 38px; font-size: 12px; padding: 0 10px;">
+                  <option value="newest">Newest Reports First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="most_reported">Most Reported Posts</option>
+                </select>
+                <button type="button" class="admin-btn admin-btn-outline" style="height: 38px; padding: 0 12px;" onclick="loadAdminReportsData()">
+                  <i class="fas fa-rotate"></i> Refresh
+                </button>
+              </div>
+            </div>
+
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Report ID / Date</th>
+                    <th>Reported Content</th>
+                    <th>Reported User</th>
+                    <th>Reporter</th>
+                    <th>Reason / Reports</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="reportsTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">Loading real reports from database...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Moderation Audit Log Panel -->
+          <div class="admin-panel">
+            <div class="panel-header">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-clipboard-list" style="color:var(--primary);"></i> Moderation Audit Trail &amp; Disciplinary Log</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Permanent historical record of confirmed administrator actions (warnings, removals, suspensions, bans)</span>
+              </div>
+              <button type="button" class="admin-btn admin-btn-outline" style="font-size: 11px; padding: 5px 12px;" onclick="loadModerationAuditLog()">
+                <i class="fas fa-arrows-rotate"></i> Reload Audit Log
+              </button>
+            </div>
+
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Moderator</th>
+                    <th>Action Taken</th>
+                    <th>Target User</th>
+                    <th>Reason</th>
+                    <th>Notes</th>
+                    <th>Duration / Expiry</th>
+                  </tr>
+                </thead>
+                <tbody id="moderationAuditTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">Loading audit records...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 5: AI GOVERNANCE & CONTROL CENTER
+             ========================================== -->
+        <section id="tab-ai-governance" class="admin-tab-pane" style="display:none;">
+          <!-- AI Hero Banner -->
+          <div class="ai-hero-card">
+            <div class="ai-hero-text">
+              <h3><i class="fas fa-microchip"></i> AI Automated Moderation &amp; Sentiment Engine</h3>
+              <p>
+                BART-large-mnli Zero-Shot Classifier combined with RoBERTa Sentiment Analysis and a Filipino/Tagalog dialect rule layer.
+                Admins maintain full control over thresholds, banned words, automated actions, and decision overrides.
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+              <div class="ai-status-indicator">
+                <div class="ai-status-dot" id="aiStatusDotHero"></div>
+                <span id="aiStatusLabelHero">Checking AI Engine...</span>
+              </div>
+              <button type="button" class="admin-btn" style="background:#fff; color:var(--primary); font-size:11px;" onclick="testAiConnection()">
+                <i class="fas fa-satellite-dish"></i> Ping AI Service
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Configuration Grid: Sensitivity Sliders & Custom Keywords -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px;">
+            <!-- Sensitivity Sliders & Safety Policies -->
+            <div class="admin-panel" style="margin-bottom:0;">
+              <div class="panel-header">
+                <h4 class="panel-title"><i class="fas fa-sliders" style="color:var(--primary);"></i> Moderation Policies &amp; Sensitivity</h4>
+              </div>
+
+              <!-- Toxicity Threshold Slider -->
+              <div class="ai-control-box">
+                <div class="ai-control-header">
+                  <strong style="font-size:13px; color:var(--text-dark);">Toxicity Flagging Threshold</strong>
+                  <span id="toxicityThresholdLabel" style="font-size:12px; font-weight:800; color:var(--primary);">70%</span>
+                </div>
+                <p style="font-size:11px; color:var(--text-muted); margin:0 0 10px 0;">Content scoring above this confidence is queued for human counselor review.</p>
+                <div class="ai-slider-wrap">
+                  <span style="font-size:11px; color:var(--text-muted);">Strict (50%)</span>
+                  <input type="range" class="ai-slider" id="toxicitySlider" min="50" max="95" value="70" oninput="document.getElementById('toxicityThresholdLabel').textContent = this.value + '%'" />
+                  <span style="font-size:11px; color:var(--text-muted);">Permissive (95%)</span>
+                </div>
+              </div>
+
+              <!-- Severe Self-Harm Auto-Escalation Toggle -->
+              <div class="ai-control-box" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <div>
+                  <strong style="font-size:13px; color:var(--text-dark);">Severe Crisis Auto-Escalation</strong>
+                  <p style="font-size:11px; color:var(--text-muted); margin:2px 0 0 0;">Instantly alert guidance counselors when self-harm intent is detected.</p>
+                </div>
+                <input type="checkbox" id="crisisAutoEscalateCheck" checked style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;" />
+              </div>
+
+              <!-- Immediate Block on Violent Threats Toggle -->
+              <div class="ai-control-box" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <div>
+                  <strong style="font-size:13px; color:var(--text-dark);">Auto-Block Extreme Violations</strong>
+                  <p style="font-size:11px; color:var(--text-muted); margin:2px 0 0 0;">Automatically hide posts with severe hate speech or direct threats before public viewing.</p>
+                </div>
+                <input type="checkbox" id="extremeAutoBlockCheck" checked style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;" />
+              </div>
+
+              <button type="button" class="admin-btn admin-btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="saveAiSettings()">
+                <i class="fas fa-floppy-disk"></i> Save AI Policy Settings
+              </button>
+            </div>
+
+            <!-- Banned Keywords & Trigger Phrases Manager -->
+            <div class="admin-panel" style="margin-bottom:0;">
+              <div class="panel-header">
+                <h4 class="panel-title"><i class="fas fa-ban" style="color:#EF4444;"></i> Banned Words &amp; Slang Filter</h4>
+                <span style="font-size:11px; font-weight:700; color:var(--text-muted);" id="keywordCountLabel">0 keywords</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px 0;">
+                Custom keywords for English, Tagalog, and Filipino dialect harassment patterns.
+              </p>
+
+              <!-- Add Keyword Row -->
+              <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <input type="text" id="newKeywordInput" placeholder="Add word (e.g. gago, boboka)..." class="admin-form-control" style="flex:1; height:36px;" />
+                <button type="button" class="admin-btn admin-btn-primary" style="height:36px; padding:0 14px;" onclick="addNewKeyword()">
+                  <i class="fas fa-plus"></i> Add
+                </button>
+              </div>
+
+              <!-- Keywords Container -->
+              <div id="keywordsListContainer" style="max-height:220px; overflow-y:auto; padding:6px; background:#FAF9FD; border-radius:12px; border:1px solid var(--border);">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Live AI Sandbox / Simulator (Thesis Showcase) -->
+          <div class="admin-panel">
+            <div class="panel-header">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-flask" style="color:var(--primary);"></i> Live AI Testing Sandbox (Thesis Defense Simulator)</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Test how the AI models classify student text before it reaches the feed</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                <span style="font-size:11px; font-weight:700; color:var(--text-muted); align-self:center;">Try Presets:</span>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('positive')">Empathetic Praise</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('stress')">Academic Burnout</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('insult')">Tagalog Slur (Gago)</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('crisis')">Self-Harm Concern</button>
+              </div>
+              <textarea id="aiSandboxInput" class="admin-form-control" style="height:80px;" placeholder="Type any text to analyze with Safe Space AI..."></textarea>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+              <button type="button" class="admin-btn admin-btn-primary" id="runAiSandboxBtn" onclick="runAiSandbox()">
+                <i class="fas fa-play"></i> Run AI Analysis
+              </button>
+            </div>
+
+            <!-- Live Output Card -->
+            <div id="aiSandboxResultCard" style="display:none; margin-top:16px; padding:18px; border-radius:14px; background:#F8FAFC; border:1px solid var(--border);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span id="sandboxStatusBadge" class="status-badge status-approved" style="font-size:13px; padding:4px 12px;">APPROVED</span>
+                  <span id="sandboxCategoryBadge" style="font-size:12px; font-weight:700; color:var(--text-mid); background:#E2E8F0; padding:3px 10px; border-radius:8px;">SAFE</span>
+                  <span id="sandboxLanguageBadge" style="font-size:12px; font-weight:700; color:#3B82F6; background:#EFF6FF; padding:3px 10px; border-radius:8px;">Language: ENGLISH</span>
+                  <span id="sandboxSeverityBadge" style="font-size:12px; font-weight:700; color:#6B7280; background:#F3F4F6; padding:3px 10px; border-radius:8px;">Severity: NONE</span>
+                  <span id="sandboxSourceBadge" style="font-size:12px; font-weight:700; color:#8B5CF6; background:#F5F3FF; padding:3px 10px; border-radius:8px;">Source: AI</span>
+                  <span id="sandboxObfuscationBadge" style="display:none; font-size:12px; font-weight:700; color:#EF4444; background:#FEE2E2; padding:3px 10px; border-radius:8px;">Evasion Detected</span>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted);">
+                  Confidence: <strong id="sandboxConfidenceText">95%</strong> &bull; Latency: <strong id="sandboxLatencyText">12ms</strong>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:10px;">
+                <div style="background:#fff; padding:12px; border-radius:10px; border:1px solid var(--border);">
+                  <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Detected Sentiment</div>
+                  <div id="sandboxSentimentText" style="font-size:14px; font-weight:800; color:var(--primary); margin-top:2px;">POSITIVE</div>
+                </div>
+                <div style="background:#fff; padding:12px; border-radius:10px; border:1px solid var(--border);">
+                  <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Automated Action</div>
+                  <div id="sandboxActionText" style="font-size:13px; font-weight:700; color:var(--text-dark); margin-top:2px;">Publish to Community Feed</div>
+                </div>
+              </div>
+
+              <div style="font-size:12px; color:var(--text-mid);" id="sandboxReasonText">
+                Safety analysis verified: Content is empathetic and safe for peer community support.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 6: CHAT & CONSULTATION SUPERVISION
+             ========================================== -->
+        <section id="tab-chat-supervision" class="admin-tab-pane" style="display:none;">
+          <div class="admin-panel">
+            <div class="panel-header">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-comments" style="color:var(--primary);"></i> Counselor Sessions &amp; Chat Supervision</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Monitor guidance counselor support requests and active student counseling channels</span>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px;" id="chatSessionsContainer">
+              <div style="padding:24px; text-align:center; color:var(--text-muted);">Loading active counseling channels...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 7: RESOURCES & BIBLE SCRIPTURE MGMT
+             ========================================== -->
+        <section id="tab-resources" class="admin-tab-pane" style="display:none;">
+          <div class="admin-panel">
+            <div class="panel-header">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-book-medical" style="color:var(--primary);"></i> Campus Mental Health &amp; Crisis Contacts</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Institutional support services shown to students under the Resources catalog</span>
+              </div>
+              <button type="button" class="admin-btn admin-btn-primary" onclick="openAddResourceModal()">
+                <i class="fas fa-plus"></i> Add Helpline
+              </button>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;" id="adminResourcesContainer">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Bible Verses Status Panel -->
+          <div class="admin-panel">
+            <div class="panel-header">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-book-bible" style="color:var(--primary);"></i> Scripture &amp; Topic Verses Management</h4>
+                <span style="font-size:12px; color:var(--text-muted);">Curated Faith-Based Grounding Verses Database for Student Emotional Support</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <a href="bible-verse.html" target="_blank" class="admin-btn admin-btn-primary">
+                  <i class="fas fa-heart"></i> Open Topic Verses
+                </a>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+              <div style="background:var(--bg-hover); padding:16px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Categories</div>
+                <div style="font-size:15px; font-weight:800; color:var(--text-dark); margin:4px 0;">5 Emotional Topics</div>
+                <div style="font-size:11px; color:#16A34A;"><i class="fas fa-check-circle"></i> Peace, Hope, Strength, Comfort</div>
+              </div>
+
+              <div style="background:var(--bg-hover); padding:16px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Database Integration</div>
+                <div style="font-size:15px; font-weight:800; color:var(--text-dark); margin:4px 0;">Supabase &amp; Offline Cache</div>
+                <div style="font-size:11px; color:var(--primary);"><i class="fas fa-database"></i> public.bible_verses active</div>
+              </div>
+
+              <div style="background:var(--bg-hover); padding:16px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Daily Grounding</div>
+                <div style="font-size:15px; font-weight:800; color:var(--text-dark); margin:4px 0;">Student Feed Widget</div>
+                <div style="font-size:11px; color:var(--text-mid);"><i class="fas fa-sun"></i> Dynamic daily verse card</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==========================================
+       MODALS
+       ========================================== -->
+
+  <!-- Modal: Create New User -->
+  <div class="admin-modal-overlay" id="createUserModal">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3><i class="fas fa-user-plus" style="color:var(--primary); margin-right:6px;"></i> Create New Account</h3>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closeCreateUserModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="admin-modal-body">
+        <form id="createUserForm" onsubmit="handleCreateUserSubmit(event)">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="admin-form-group">
+              <label>First Name</label>
+              <input type="text" id="newFirstnameInput" required class="admin-form-control" placeholder="Juan" />
+            </div>
+            <div class="admin-form-group">
+              <label>Last Name</label>
+              <input type="text" id="newLastnameInput" required class="admin-form-control" placeholder="Dela Cruz" />
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label>Username / Student Handle</label>
+            <input type="text" id="newUsernameInput" required class="admin-form-control" placeholder="juandc" />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Email Address</label>
+            <input type="email" id="newEmailInput" required class="admin-form-control" placeholder="juan@asu.edu.ph" />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Temporary Password</label>
+            <input type="password" id="newPasswordInput" required class="admin-form-control" value="TemporaryPass123!" />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Account Role</label>
+            <select id="newRoleSelect" class="admin-form-control">
+              <option value="student">Student (Standard Access)</option>
+              <option value="counselor">Guidance Counselor</option>
+              <option value="admin">System Administrator</option>
+            </select>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+            <button type="button" class="admin-btn admin-btn-outline" onclick="closeCreateUserModal()">Cancel</button>
+            <button type="submit" class="admin-btn admin-btn-primary" id="saveUserBtn">Create Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Change Role -->
+  <div class="admin-modal-overlay" id="changeRoleModal">
+    <div class="admin-modal-card" style="max-width:440px;">
+      <div class="admin-modal-header">
+        <h3><i class="fas fa-user-shield" style="color:var(--primary); margin-right:6px;"></i> Change User Role</h3>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closeRoleModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="admin-modal-body">
+        <p style="font-size:13px; color:var(--text-mid); margin:0 0 16px 0;">
+          Select new permissions level for <strong id="roleModalUserName">user</strong>:
+        </p>
+        <input type="hidden" id="roleModalUserId" />
+        <div class="admin-form-group">
+          <label>Assign Role:</label>
+          <select id="roleModalSelect" class="admin-form-control">
+            <option value="student">Student</option>
+            <option value="counselor">Guidance Counselor</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="admin-btn admin-btn-outline" onclick="closeRoleModal()">Cancel</button>
+          <button type="button" class="admin-btn admin-btn-primary" onclick="submitRoleChange()">Save Role</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Comments Moderation -->
+  <div class="admin-modal-overlay" id="commentsModal">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3><i class="fas fa-comments" style="color:var(--primary); margin-right:6px;"></i> Moderate Post Comments</h3>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closeCommentsModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="admin-modal-body">
+        <div id="commentsModalList">
+          <div style="text-align:center; padding:20px; color:var(--text-muted);">Loading comments...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: REVIEW REPORT & INVESTIGATION DOSSIER
+       ========================================== -->
+  <div class="admin-modal-overlay" id="reviewReportModal">
+    <div class="admin-modal-card admin-modal-lg">
+      <div class="admin-modal-header" style="background:#FAF9FE;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h3 id="revModalTitle"><i class="fas fa-shield-halved" style="color:#EF4444; margin-right:6px;"></i> Incident Investigation</h3>
+            <span class="status-badge" id="revModalStatusBadge">Pending</span>
+          </div>
+          <span style="font-size:12px; color:var(--text-muted);" id="revModalSubtitle">Report ID: —</span>
+        </div>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closeReviewReportModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="admin-modal-body" id="reviewReportModalBody">
+        <div style="text-align:center; padding:32px; color:var(--text-muted);">
+          <i class="fas fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px;"></i>
+          <div>Loading incident dossier...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Suspend User -->
+  <div class="admin-modal-overlay" id="suspendModal">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header" style="background:#FFFBEB;">
+        <h3 style="color:#B45309;"><i class="fas fa-user-clock" style="margin-right:6px;"></i> Suspend Student Account</h3>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closeSuspendModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="admin-modal-body">
+        <p style="font-size:13px; color:var(--text-mid); margin-top:0;">
+          Temporarily restrict this user from posting, chatting, and commenting for the specified duration.
+        </p>
+        
+        <input type="hidden" id="suspendTargetUserId" />
+        <input type="hidden" id="suspendTargetReportId" />
+
+        <div class="admin-form-group">
+          <label>Target Account</label>
+          <div id="suspendTargetUserDisplay" style="font-weight:700; color:var(--text-dark); font-size:14px; padding:8px 12px; background:#F8F6FD; border-radius:8px;">—</div>
+        </div>
+
+        <div class="admin-form-group">
+          <label>Suspension Duration</label>
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:8px;">
+            <button type="button" class="admin-btn admin-btn-outline dur-btn" data-dur="24" onclick="selectSuspendDuration(24)">24 Hours</button>
+            <button type="button" class="admin-btn admin-btn-outline dur-btn" data-dur="72" onclick="selectSuspendDuration(72)">3 Days</button>
+            <button type="button" class="admin-btn admin-btn-outline dur-btn" data-dur="168" onclick="selectSuspendDuration(168)">7 Days</button>
+            <button type="button" class="admin-btn admin-btn-outline dur-btn" data-dur="720" onclick="selectSuspendDuration(720)">30 Days</button>
+            <button type="button" class="admin-btn admin-btn-outline dur-btn" data-dur="custom" onclick="selectSuspendDuration('custom')">Custom Hours</button>
+          </div>
+          <div id="customDurationWrap" style="display:none; margin-top:8px;">
+            <input type="number" id="customDurationHours" placeholder="Enter hours (e.g. 48)" class="admin-form-control" min="1" />
+          </div>
+        </div>
+
+        <div class="admin-form-group">
+          <label>Reason for Suspension</label>
+          <input type="text" id="suspendReasonInput" class="admin-form-control" placeholder="e.g. Repeated harassment and community guidelines violations" />
+        </div>
+
+        <div class="admin-form-group">
+          <label>Internal Administrator Notes (Private)</label>
+          <textarea id="suspendNotesInput" class="admin-form-control" placeholder="Additional context for faculty and audit log..."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="admin-btn admin-btn-outline" onclick="closeSuspendModal()">Cancel</button>
+          <button type="button" class="admin-btn admin-btn-danger" id="confirmSuspendBtn" onclick="executeSuspendUser()">
+            <i class="fas fa-user-lock"></i> Confirm Suspension
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Permanent Ban Confirmation -->
+  <div class="admin-modal-overlay" id="banConfirmModal">
+    <div class="admin-modal-card" style="max-width:480px;">
+      <div class="admin-modal-header" style="background:#FEE2E2;">
+        <h3 style="color:#DC2626;"><i class="fas fa-triangle-exclamation" style="margin-right:6px;"></i> Permanent Ban Confirmation</h3>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closeBanModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="admin-modal-body">
+        <p style="font-size:13px; color:var(--text-mid); line-height:1.5;">
+          <strong>Warning:</strong> This is a severe action. Permanently banning this student will deactivate their profile, block all posting, messaging, and prevent further participation.
+        </p>
+
+        <input type="hidden" id="banTargetUserId" />
+        <input type="hidden" id="banTargetReportId" />
+
+        <div class="admin-form-group">
+          <label>Target Account</label>
+          <div id="banTargetUserDisplay" style="font-weight:700; color:#DC2626; font-size:14px; padding:8px 12px; background:#FEF2F2; border-radius:8px;">—</div>
+        </div>
+
+        <div class="admin-form-group">
+          <label>Official Ban Reason</label>
+          <input type="text" id="banReasonInput" class="admin-form-control" placeholder="e.g. Severe hate speech or repeated critical safety violations" />
+        </div>
+
+        <div class="admin-form-group">
+          <label>Audit Notes</label>
+          <textarea id="banNotesInput" class="admin-form-control" placeholder="Documented faculty justification..."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="admin-btn admin-btn-outline" onclick="closeBanModal()">Cancel</button>
+          <button type="button" class="admin-btn admin-btn-danger" id="confirmBanBtn" onclick="executeBanUser()">
+            <i class="fas fa-ban"></i> Permanently Ban User
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Delete Post Confirmation -->
+  <div class="admin-modal-overlay" id="deletePostConfirmModal">
+    <div class="admin-modal-card" style="max-width:500px;">
+      <div class="admin-modal-header" style="background:#FEE2E2;">
+        <h3 style="color:#DC2626;"><i class="fas fa-trash-can" style="margin-right:6px;"></i> Remove Violating Post</h3>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closeDeletePostModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="admin-modal-body">
+        <p style="font-size:13px; color:var(--text-mid); line-height:1.5;">
+          This action will <strong>soft-delete</strong> the post from the student feed while preserving the evidence in Supabase for audit purposes. The author's violation count will be incremented.
+        </p>
+
+        <input type="hidden" id="delTargetPostId" />
+        <input type="hidden" id="delTargetReportId" />
+
+        <div class="admin-form-group">
+          <label>Deletion Reason (Will be sent to author in notice)</label>
+          <select id="delReasonSelect" class="admin-form-control" onchange="toggleCustomDelReason()">
+            <option value="Bullying or harassment">Bullying or harassment</option>
+            <option value="Hate or discriminatory content">Hate or discriminatory content</option>
+            <option value="Threatening or violent behavior">Threatening or violent behavior</option>
+            <option value="Inappropriate or explicit content">Inappropriate or explicit content</option>
+            <option value="Spam or malicious links">Spam or malicious links</option>
+            <option value="Misinformation">Misinformation</option>
+            <option value="Self-harm concern">Self-harm concern</option>
+            <option value="custom">Other (Custom reason)</option>
+          </select>
+          <input type="text" id="delCustomReasonInput" class="admin-form-control" placeholder="Specify custom reason..." style="display:none; margin-top:8px;" />
+        </div>
+
+        <div class="admin-form-group">
+          <label>Internal Moderator Notes</label>
+          <textarea id="delNotesInput" class="admin-form-control" placeholder="Internal notes for faculty audit..."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="admin-btn admin-btn-outline" onclick="closeDeletePostModal()">Cancel</button>
+          <button type="button" class="admin-btn admin-btn-danger" id="confirmDeletePostBtn" onclick="executeDeletePost()">
+            <i class="fas fa-trash"></i> Remove Post
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Post Moderation & Review (Full Inspector) -->
+  <div class="admin-modal-overlay" id="postReviewModal">
+    <div class="admin-modal-card" style="max-width:640px; max-height:90vh; display:flex; flex-direction:column;">
+      <div class="admin-modal-header" style="background:#F8F6FD;">
+        <div>
+          <h3 style="color:var(--primary); margin:0;">
+            <i class="fas fa-shield-halved" style="margin-right:6px;"></i> Community Post Moderation Review
+          </h3>
+          <span style="font-size:11px; color:var(--text-muted);" id="postRevModalId">Post ID: —</span>
+        </div>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px;" onclick="closePostReviewModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="admin-modal-body" id="postReviewModalBody" style="overflow-y:auto; flex:1; padding:20px;">
+        <!-- Dynamic content filled by openPostReviewModal(postId) -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/ai-service.js"></script>
+
+  <script>
+    // ========================================================
+    // STATE & INITIALIZATION
+    // ========================================================
+    let currentUser = null;
+    let cachedReports = [];
+    let cachedPosts = [];
+    let cachedUsers = [];
+    let activeReportFilter = 'all';
+    let activeUserFilter = 'all';
+    let activePostFilter = 'all';
+    let activePostCategory = 'all';
+
+    // Banned keywords persistent state
+    let bannedKeywords = [
+      'gago', 'tarantado', 'boboka', 'bobo', 'ulol', 'tangina',
+      'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you'
+    ];
+    try {
+      const stored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
+      if (Array.isArray(stored) && stored.length > 0) bannedKeywords = stored;
+    } catch (e) {}
+
+    function hidePageLoader() {
+      const loader = document.getElementById('pageLoader');
+      if (loader) {
+        loader.classList.add('hidden');
+        setTimeout(() => loader.remove(), 400);
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.style.position = 'fixed';
+      toast.style.bottom = '24px';
+      toast.style.right = '24px';
+      toast.style.background = type === 'success' ? '#22C55E' : (type === 'error' ? '#EF4444' : '#6C4FD1');
+      toast.style.color = '#fff';
+      toast.style.padding = '12px 20px';
+      toast.style.borderRadius = '12px';
+      toast.style.fontSize = '13px';
+      toast.style.fontWeight = '700';
+      toast.style.zIndex = '9999';
+      toast.style.boxShadow = '0 6px 20px rgba(0,0,0,0.18)';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatTime(iso) {
+      if (!iso) return 'Just now';
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return iso;
+      }
+    }
+
+    // Auth gate check
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Safety guard: ensure full-page loader never hangs longer than 1 second under any circumstance
+      const loaderTimeout = setTimeout(() => {
+        hidePageLoader();
+      }, 1000);
+
+      // Fast synchronous check from local storage to show dashboard immediately (0ms flash)
+      let localUser = null;
+      try {
+        localUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+      } catch (e) {}
+      currentUser = localUser;
+
+      const isUnlocked = localStorage.getItem('safe_space_admin_unlocked') === 'true';
+
+      function checkIsAdmin(u) {
+        if (!u) return false;
+        const uEmail = String(u.email || '').toLowerCase();
+        const uRole = String(u.role || '').toLowerCase();
+        const uName = String(u.username || '').toLowerCase();
+        return Boolean(
+          u.is_admin === true ||
+          uRole === 'admin' ||
+          uRole === 'counselor' ||
+          uRole === 'moderator' ||
+          uEmail.includes('admin') ||
+          uEmail === 'taciomhae@gmail.com' ||
+          uName === 'taciomhae'
+        );
+      }
+
+      let isAdminUser = checkIsAdmin(currentUser);
+
+      function activateAdminDashboard() {
+        clearTimeout(loaderTimeout);
+        const deniedView = document.getElementById('accessDeniedView');
+        if (deniedView) deniedView.style.display = 'none';
+        const iface = document.getElementById('adminInterface');
+        if (iface) iface.style.display = 'flex';
+        setupAdminUI();
+        hidePageLoader();
+
+        const hashTab = (window.location.hash || '').replace('#', '');
+        const targetTab = (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'chat-supervision', 'resources'].includes(hashTab)) ? hashTab : 'overview';
+        switchAdminTab(targetTab);
+
+        loadAdminDashboardData().catch(err => {
+          console.warn('[Admin] Background load error:', err);
+        });
+        renderKeywordsList();
+      }
+
+      // If authorized by role or previously unlocked, activate immediately!
+      if (isAdminUser || isUnlocked) {
+        activateAdminDashboard();
+      }
+
+      // In background, verify live session from Supabase
+      if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
+        SafeSpaceDB.auth.getCurrentUser().then(u => {
+          if (u) {
+            currentUser = u;
+            isAdminUser = checkIsAdmin(currentUser);
+            if (isAdminUser || isUnlocked) {
+              const deniedView = document.getElementById('accessDeniedView');
+              if (deniedView && deniedView.style.display !== 'none') {
+                activateAdminDashboard();
+              }
+              const nameEl = document.getElementById('adminUserName');
+              if (nameEl) nameEl.textContent = currentUser.username || currentUser.first_name || 'Admin';
+              const roleEl = document.getElementById('adminUserRoleTag');
+              if (roleEl) roleEl.textContent = (currentUser.role || 'Administrator').toUpperCase();
+            }
+          }
+        }).catch(err => {
+          console.warn('[Admin] Auth check error:', err);
+        });
+      }
+
+      if (!isAdminUser && !isUnlocked) {
+        clearTimeout(loaderTimeout);
+        document.getElementById('accessDeniedView').style.display = 'flex';
+        hidePageLoader();
+
+        const submitBtn = document.getElementById('adminPasscodeSubmitBtn');
+        const passInput = document.getElementById('adminPasscodeInput');
+        if (submitBtn && passInput) {
+          const handlePasscodeUnlock = () => {
+            const val = passInput.value.trim();
+            if (val === 'safespace2026' || val === 'admin123' || val === 'asu-safespace') {
+              localStorage.setItem('safe_space_admin_unlocked', 'true');
+              showToast('Admin portal unlocked 🛡️', 'success');
+              activateAdminDashboard();
+            } else {
+              showToast('Invalid passcode. Use safespace2026 for demonstration.', 'error');
+            }
+          };
+
+          submitBtn.addEventListener('click', handlePasscodeUnlock);
+          passInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handlePasscodeUnlock();
+          });
+        }
+        return;
+      }
+    });
+
+    let _adminUIInitialized = false;
+    function setupAdminUI() {
+      if (_adminUIInitialized) return;
+      _adminUIInitialized = true;
+
+      // Sidebar Navigation
+      document.querySelectorAll('.admin-nav-item[data-tab]').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          switchAdminTab(item.dataset.tab);
+        });
+      });
+
+      // Listen to browser hash changes (e.g. back/forward buttons or direct links)
+      window.addEventListener('hashchange', () => {
+        const hashTab = (window.location.hash || '').replace('#', '');
+        if (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'chat-supervision', 'resources'].includes(hashTab)) {
+          switchAdminTab(hashTab);
+        }
+      });
+
+      // Mobile Menu
+      const mobileToggle = document.getElementById('mobileMenuToggle');
+      const sidebar = document.getElementById('adminSidebar');
+      if (mobileToggle && sidebar) {
+        mobileToggle.addEventListener('click', () => {
+          sidebar.classList.toggle('open');
+        });
+      }
+
+      // Logout / Lock
+      const logoutBtn = document.getElementById('adminLogoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('safe_space_admin_unlocked');
+          showToast('Admin portal locked.', 'info');
+          window.location.reload();
+        });
+      }
+
+      // Refresh Data
+      const refreshBtn = document.getElementById('refreshDataBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          refreshBtn.disabled = true;
+          refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+          await loadAdminDashboardData();
+          refreshBtn.disabled = false;
+          refreshBtn.innerHTML = '<i class="fas fa-rotate"></i> Refresh';
+          showToast('Live data refreshed from database.', 'success');
+        });
+      }
+
+      // Filter pills listeners
+      document.querySelectorAll('#reportsFilterRow .filter-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          document.querySelectorAll('#reportsFilterRow .filter-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          activeReportFilter = pill.dataset.reportFilter;
+          renderReportsTable();
+        });
+      });
+
+      document.querySelectorAll('#userFilterRow .filter-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          document.querySelectorAll('#userFilterRow .filter-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          activeUserFilter = pill.dataset.userFilter;
+          renderUsersTable();
+        });
+      });
+
+      document.querySelectorAll('#postStatusFilterRow .filter-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          document.querySelectorAll('#postStatusFilterRow .filter-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          activePostFilter = pill.dataset.postFilter;
+          renderPostsList();
+        });
+      });
+
+      const catFilter = document.getElementById('postCategoryFilter');
+      if (catFilter) {
+        catFilter.addEventListener('change', (e) => {
+          activePostCategory = e.target.value;
+          renderPostsList();
+        });
+      }
+
+      const uSearch = document.getElementById('userSearchInput');
+      if (uSearch) {
+        uSearch.addEventListener('input', () => {
+          renderUsersTable();
+        });
+      }
+
+      const pSearch = document.getElementById('postSearchInput');
+      if (pSearch) {
+        pSearch.addEventListener('input', () => {
+          renderPostsList();
+        });
+      }
+
+      const repSearch = document.getElementById('reportsSearchInput');
+      if (repSearch) {
+        repSearch.addEventListener('input', () => {
+          renderReportsTable();
+        });
+      }
+
+      const repSort = document.getElementById('reportsSortSelect');
+      if (repSort) {
+        repSort.addEventListener('change', () => {
+          renderReportsTable();
+        });
+      }
+
+      // Admin username header
+      if (currentUser) {
+        const uName = document.getElementById('adminUserName');
+        if (uName) uName.textContent = currentUser.username || currentUser.first_name || 'Admin';
+        const uRole = document.getElementById('adminUserRoleTag');
+        if (uRole) uRole.textContent = (currentUser.role || 'Administrator').toUpperCase();
+      }
+    }
+
+    function switchAdminTab(tabName) {
+      if (!tabName) tabName = 'overview';
+
+      document.querySelectorAll('.admin-nav-item[data-tab]').forEach(el => {
+        el.classList.toggle('active', el.dataset.tab === tabName);
+      });
+
+      document.querySelectorAll('.admin-tab-pane').forEach(pane => {
+        pane.style.display = 'none';
+      });
+
+      const targetPane = document.getElementById(`tab-${tabName}`);
+      if (targetPane) {
+        targetPane.style.display = 'block';
+      }
+
+      try {
+        if (window.location.hash !== '#' + tabName) {
+          history.replaceState(null, '', '#' + tabName);
+        }
+      } catch (e) {}
+
+      const titleMap = {
+        overview: ['Dashboard Overview', 'Safe Space System, Community & AI Health'],
+        users: ['User Accounts & Roles', 'Manage Student & Counselor Credentials'],
+        posts: ['Community Posts & Moderation', 'Inspect Submissions, Comments & Sentiment'],
+        reports: ['Safety Reports Triage', 'Resolve Harassment & Emergency Flags'],
+        'ai-governance': ['AI Governance & Control Center', 'Configure BART Zero-Shot & RoBERTa Sensitivity'],
+        'chat-supervision': ['Chat Supervision', 'Monitor Guidance Counselor Support Sessions'],
+        resources: ['Campus Helplines & Bible', 'Institutional Emergency Services & Scriptures']
+      };
+
+      if (titleMap[tabName]) {
+        const tEl = document.getElementById('currentTabTitle');
+        if (tEl) tEl.textContent = titleMap[tabName][0];
+        const sEl = document.getElementById('currentTabSubtitle');
+        if (sEl) sEl.textContent = titleMap[tabName][1];
+      }
+
+      // Render tab specific data immediately so it never stays stuck
+      if (tabName === 'posts') {
+        renderPostsList();
+      } else if (tabName === 'users') {
+        renderUsersTable();
+      } else if (tabName === 'reports') {
+        renderReportsTable();
+      } else if (tabName === 'overview') {
+        renderSentimentBreakdown();
+        renderOverviewReports();
+      }
+
+      const sidebar = document.getElementById('adminSidebar');
+      if (sidebar) sidebar.classList.remove('open');
+    }
+    window.switchAdminTab = switchAdminTab;
+
+    // ========================================================
+    // LOAD LIVE DATA FROM SUPABASE
+    // ========================================================
+    async function loadAdminDashboardData() {
+      // 1. Immediately seed cache from localStorage for instant, zero-flicker rendering
+      try {
+        if (!cachedPosts || cachedPosts.length === 0) {
+          const rawPosts = localStorage.getItem('safe_space_admin_cached_posts') || localStorage.getItem('safe_space_posts');
+          if (rawPosts) {
+            const parsed = JSON.parse(rawPosts);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              cachedPosts = parsed;
+              renderPostsList();
+              renderSentimentBreakdown();
+            }
+          }
+        }
+      } catch (e) {}
+
+      try {
+        if (!cachedUsers || cachedUsers.length === 0) {
+          const rawUsers = localStorage.getItem('safe_space_admin_cached_users');
+          if (rawUsers) {
+            const parsed = JSON.parse(rawUsers);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              cachedUsers = parsed;
+              renderUsersTable();
+            }
+          }
+        }
+      } catch (e) {}
+
+      try {
+        if (!cachedReports || cachedReports.length === 0) {
+          const rawReports = localStorage.getItem('safe_space_admin_cached_reports');
+          if (rawReports) {
+            const parsed = JSON.parse(rawReports);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              cachedReports = parsed;
+              renderReportsTable();
+              renderOverviewReports();
+            }
+          }
+        }
+      } catch (e) {}
+
+      // 2. Fetch all domains asynchronously and independently so one slow call never blocks posts or users
+      const pStats = SafeSpaceDB.admin.getStats().then(stats => {
+        if (stats) {
+          const uEl = document.getElementById('statTotalUsers');
+          if (uEl) uEl.textContent = stats.totalUsers || 0;
+          const pEl = document.getElementById('statTotalPosts');
+          if (pEl) pEl.textContent = stats.totalPosts || 0;
+          const rEl = document.getElementById('statTotalReports');
+          if (rEl) rEl.textContent = stats.totalReports || 0;
+          const fEl = document.getElementById('statFlaggedContent');
+          if (fEl) fEl.textContent = stats.flaggedPosts || 0;
+          const aEl = document.getElementById('statActiveUsers');
+          if (aEl) aEl.textContent = stats.activeUsersToday || 1;
+
+          const repBadge = document.getElementById('navReportsBadge');
+          if (repBadge) {
+            repBadge.textContent = stats.pendingReports || 0;
+            repBadge.style.display = (stats.pendingReports > 0) ? 'inline-block' : 'none';
+          }
+          const flagBadge = document.getElementById('navFlaggedBadge');
+          if (flagBadge) {
+            flagBadge.textContent = stats.flaggedPosts || 0;
+            flagBadge.style.display = (stats.flaggedPosts > 0) ? 'inline-block' : 'none';
+          }
+        }
+      }).catch(err => console.warn('[Admin] getStats notice:', err));
+
+      const pPosts = SafeSpaceDB.admin.getAllPosts().then(posts => {
+        if (Array.isArray(posts) && posts.length > 0) {
+          cachedPosts = posts;
+          try { localStorage.setItem('safe_space_admin_cached_posts', JSON.stringify(posts)); } catch(e) {}
+          renderPostsList();
+          renderSentimentBreakdown();
+        } else if (SafeSpaceDB.community && SafeSpaceDB.community.getPosts) {
+          return SafeSpaceDB.community.getPosts().then(fb => {
+            if (Array.isArray(fb) && fb.length > 0) {
+              cachedPosts = fb;
+              renderPostsList();
+              renderSentimentBreakdown();
+            }
+          });
+        }
+      }).catch(async err => {
+        console.warn('[Admin] getAllPosts notice, fallback to community posts:', err);
+        if (SafeSpaceDB.community && SafeSpaceDB.community.getPosts) {
+          try {
+            const fb = await SafeSpaceDB.community.getPosts();
+            if (Array.isArray(fb)) {
+              cachedPosts = fb;
+              renderPostsList();
+              renderSentimentBreakdown();
+            }
+          } catch(e) {}
+        }
+      });
+
+      const pUsers = SafeSpaceDB.admin.getUsers().then(users => {
+        if (Array.isArray(users) && users.length > 0) {
+          cachedUsers = users;
+          try { localStorage.setItem('safe_space_admin_cached_users', JSON.stringify(users)); } catch(e) {}
+          renderUsersTable();
+        } else if (SafeSpaceDB.community && SafeSpaceDB.community.getMembers) {
+          return SafeSpaceDB.community.getMembers().then(members => {
+            if (Array.isArray(members)) {
+              cachedUsers = members;
+              renderUsersTable();
+            }
+          });
+        }
+      }).catch(async err => {
+        console.warn('[Admin] getUsers notice:', err);
+        if (SafeSpaceDB.community && SafeSpaceDB.community.getMembers) {
+          try {
+            const members = await SafeSpaceDB.community.getMembers();
+            if (Array.isArray(members)) {
+              cachedUsers = members;
+              renderUsersTable();
+            }
+          } catch(e) {}
+        }
+      });
+
+      const pReports = SafeSpaceDB.reports.getReports().then(reports => {
+        if (Array.isArray(reports)) {
+          cachedReports = reports;
+          try { localStorage.setItem('safe_space_admin_cached_reports', JSON.stringify(reports)); } catch(e) {}
+          updateReportsKpiCounters();
+          renderReportsTable();
+          renderOverviewReports();
+          loadModerationAuditLog().catch(e => console.warn(e));
+        }
+      }).catch(err => {
+        console.warn('[Admin] getReports notice:', err);
+      });
+
+      renderAdminResources();
+
+      await Promise.allSettled([pStats, pPosts, pUsers, pReports]);
+    }
+
+    // ========================================================
+    // OVERVIEW: SENTIMENT & REPORTS
+    // ========================================================
+    function renderSentimentBreakdown() {
+      const total = cachedPosts.length;
+      if (total === 0) {
+        document.getElementById('sentimentPosPct').textContent = '50%';
+        document.getElementById('sentimentPosBar').style.width = '50%';
+        document.getElementById('sentimentNeuPct').textContent = '35%';
+        document.getElementById('sentimentNeuBar').style.width = '35%';
+        document.getElementById('sentimentNegPct').textContent = '15%';
+        document.getElementById('sentimentNegBar').style.width = '15%';
+        return;
+      }
+
+      const pos = cachedPosts.filter(p => (p.sentiment || '').toUpperCase() === 'POSITIVE').length;
+      const neg = cachedPosts.filter(p => (p.sentiment || '').toUpperCase() === 'NEGATIVE').length;
+      const neu = total - pos - neg;
+
+      const posPct = Math.round((pos / total) * 100);
+      const negPct = Math.round((neg / total) * 100);
+      const neuPct = 100 - posPct - negPct;
+
+      document.getElementById('sentimentPosPct').textContent = `${posPct}% (${pos})`;
+      document.getElementById('sentimentPosBar').style.width = `${posPct}%`;
+      document.getElementById('sentimentNeuPct').textContent = `${neuPct}% (${neu})`;
+      document.getElementById('sentimentNeuBar').style.width = `${neuPct}%`;
+      document.getElementById('sentimentNegPct').textContent = `${negPct}% (${neg})`;
+      document.getElementById('sentimentNegBar').style.width = `${negPct}%`;
+    }
+
+    function renderOverviewReports() {
+      const container = document.getElementById('overviewReportsContainer');
+      const urgent = cachedReports.slice(0, 4);
+
+      if (urgent.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:30px 16px; color:var(--text-muted);">
+            <i class="fas fa-shield-heart" style="font-size:32px; color:#22C55E; margin-bottom:8px;"></i>
+            <p style="margin:0; font-size:13px; font-weight:700; color:var(--text-dark);">All Clear &bull; No Pending Incidents</p>
+            <p style="margin:2px 0 0 0; font-size:12px;">The peer community is respectful and safe.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = urgent.map(r => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-dark);">${escapeHTML(r.reason || r.report_type || 'Safety Concern')}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${formatTime(r.created_at)}</div>
+          </div>
+          <span class="status-badge status-${(r.status || 'Pending').toLowerCase()}">${escapeHTML(r.status || 'Pending')}</span>
+        </div>
+      `).join('');
+    }
+
+    // ========================================================
+    // TAB 2: USER MANAGEMENT
+    // ========================================================
+    function renderUsersTable() {
+      const tbody = document.getElementById('usersTableBody');
+      const query = (document.getElementById('userSearchInput').value || '').trim().toLowerCase();
+      let users = cachedUsers || [];
+
+      if (activeUserFilter !== 'all') {
+        if (activeUserFilter === 'deactivated') {
+          users = users.filter(u => u.is_deactivated === true);
+        } else {
+          users = users.filter(u => (u.role || 'student').toLowerCase() === activeUserFilter.toLowerCase());
+        }
+      }
+
+      if (query) {
+        users = users.filter(u => 
+          (u.username && u.username.toLowerCase().includes(query)) ||
+          (u.email && u.email.toLowerCase().includes(query)) ||
+          (u.first_name && u.first_name.toLowerCase().includes(query)) ||
+          (u.last_name && u.last_name.toLowerCase().includes(query))
+        );
+      }
+
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-muted);">No accounts match the current filter.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => {
+        const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || 'Safe Space Member';
+        const role = u.role || (u.is_admin ? 'admin' : 'student');
+        const isDeactivated = Boolean(u.is_deactivated);
+
+        let roleBadgeColor = '#6C4FD1';
+        let roleBg = '#F3E8FF';
+        if (role === 'admin') { roleBadgeColor = '#DC2626'; roleBg = '#FEE2E2'; }
+        else if (role === 'counselor') { roleBadgeColor = '#2563EB'; roleBg = '#DBEAFE'; }
+
+        return `
+          <tr id="user-row-${u.id}">
+            <td>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div class="admin-user-avatar" style="width:32px; height:32px; font-size:13px;">
+                  ${u.avatar_url ? `<img src="${u.avatar_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '<i class="fas fa-user"></i>'}
+                </div>
+                <div>
+                  <div style="font-weight:700; color:var(--text-dark);">${escapeHTML(name)}</div>
+                  <div style="font-size:11px; color:var(--primary); font-weight:600;">@${escapeHTML(u.username || 'user')}</div>
+                </div>
+              </div>
+            </td>
+            <td style="color:var(--text-mid); font-size:12px;">${escapeHTML(u.email || '—')}</td>
+            <td>
+              <span class="status-badge" style="background:${roleBg}; color:${roleBadgeColor};">
+                ${escapeHTML(role.toUpperCase())}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" style="background:${isDeactivated ? '#FEE2E2' : '#DCFCE7'}; color:${isDeactivated ? '#DC2626' : '#16A34A'};">
+                ${isDeactivated ? 'Suspended' : 'Active'}
+              </span>
+            </td>
+            <td style="font-size:11px; color:var(--text-muted);">${formatTime(u.created_at)}</td>
+            <td style="text-align:right;">
+              <div style="display:inline-flex; gap:6px;">
+                <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px; font-size:11px;" onclick="openRoleModal('${u.id}', '${escapeHTML(u.username || name)}', '${role}')" title="Change Role">
+                  <i class="fas fa-user-gear"></i> Role
+                </button>
+                <button type="button" class="admin-btn ${isDeactivated ? 'admin-btn-success' : 'admin-btn-danger'}" style="padding:4px 8px; font-size:11px;" onclick="handleToggleUserStatus('${u.id}', ${!isDeactivated})" title="${isDeactivated ? 'Reactivate' : 'Suspend'}">
+                  <i class="fas ${isDeactivated ? 'fa-user-check' : 'fa-user-slash'}"></i> ${isDeactivated ? 'Reactivate' : 'Suspend'}
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Role modal
+    function openRoleModal(userId, username, currentRole) {
+      document.getElementById('roleModalUserId').value = userId;
+      document.getElementById('roleModalUserName').textContent = username;
+      document.getElementById('roleModalSelect').value = currentRole;
+      document.getElementById('changeRoleModal').classList.add('open');
+    }
+
+    function closeRoleModal() {
+      document.getElementById('changeRoleModal').classList.remove('open');
+    }
+
+    async function submitRoleChange() {
+      const userId = document.getElementById('roleModalUserId').value;
+      const newRole = document.getElementById('roleModalSelect').value;
+      try {
+        await SafeSpaceDB.admin.updateUserRole(userId, newRole);
+        showToast(`Role updated to ${newRole.toUpperCase()} successfully.`, 'success');
+        closeRoleModal();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to update role.', 'error');
+      }
+    }
+
+    async function handleToggleUserStatus(userId, shouldDeactivate) {
+      const actionName = shouldDeactivate ? 'suspend' : 'reactivate';
+      if (!confirm(`Are you sure you want to ${actionName} this user account?`)) return;
+
+      try {
+        await SafeSpaceDB.admin.toggleUserStatus(userId, shouldDeactivate);
+        showToast(`User has been ${shouldDeactivate ? 'suspended' : 'reactivated'}.`, 'success');
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast(`Failed to ${actionName} user.`, 'error');
+      }
+    }
+
+    // Create user modal
+    function openCreateUserModal() {
+      document.getElementById('createUserModal').classList.add('open');
+    }
+    function closeCreateUserModal() {
+      document.getElementById('createUserModal').classList.remove('open');
+    }
+
+    async function handleCreateUserSubmit(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveUserBtn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+      const payload = {
+        first_name: document.getElementById('newFirstnameInput').value.trim(),
+        last_name: document.getElementById('newLastnameInput').value.trim(),
+        username: document.getElementById('newUsernameInput').value.trim(),
+        email: document.getElementById('newEmailInput').value.trim(),
+        password: document.getElementById('newPasswordInput').value,
+        role: document.getElementById('newRoleSelect').value
+      };
+
+      try {
+        await SafeSpaceDB.admin.createUser(payload);
+        showToast(`Account @${payload.username} created successfully!`, 'success');
+        closeCreateUserModal();
+        document.getElementById('createUserForm').reset();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast(err.message || 'Could not create account.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = 'Create Account';
+      }
+    }
+
+    // ========================================================
+    // TAB 3: COMMUNITY POSTS MODERATION
+    // ========================================================
+    function renderPostsList() {
+      const container = document.getElementById('postsListContainer');
+      if (!container) return;
+
+      try {
+        const query = (document.getElementById('postSearchInput')?.value || '').trim().toLowerCase();
+        let posts = Array.isArray(cachedPosts) ? [...cachedPosts] : [];
+
+        // 1. Update filter pill counter badges
+        const totalCount = posts.length;
+        const approvedCount = posts.filter(p => !p.archived && String(p.moderation_status || 'APPROVED').toUpperCase() === 'APPROVED' && (!p.reports_count || Number(p.reports_count) === 0)).length;
+        const reviewCount = posts.filter(p => !p.archived && (String(p.moderation_status || '').toUpperCase() === 'REVIEW' || Number(p.reports_count || 0) > 0)).length;
+        const blockedCount = posts.filter(p => p.archived || ['BLOCKED', 'HIDDEN'].includes(String(p.moderation_status || '').toUpperCase())).length;
+
+        const pillAll = document.querySelector('[data-post-filter="all"]');
+        if (pillAll) pillAll.innerHTML = `All Posts <span style="opacity:0.75; font-size:11px;">(${totalCount})</span>`;
+        const pillApp = document.querySelector('[data-post-filter="APPROVED"]');
+        if (pillApp) pillApp.innerHTML = `Approved <span style="opacity:0.75; font-size:11px;">(${approvedCount})</span>`;
+        const pillRev = document.querySelector('[data-post-filter="REVIEW"]');
+        if (pillRev) pillRev.innerHTML = `Flagged / Review <span style="background:${reviewCount > 0 ? '#EF4444' : 'rgba(0,0,0,0.1)'}; color:${reviewCount > 0 ? '#fff' : 'inherit'}; padding:1px 6px; border-radius:10px; font-size:10px;">${reviewCount}</span>`;
+        const pillBlk = document.querySelector('[data-post-filter="BLOCKED"]');
+        if (pillBlk) pillBlk.innerHTML = `Blocked / Hidden <span style="opacity:0.75; font-size:11px;">(${blockedCount})</span>`;
+
+        // 2. Filter posts by active tab
+        if (activePostFilter === 'APPROVED') {
+          posts = posts.filter(p => !p.archived && String(p.moderation_status || 'APPROVED').toUpperCase() === 'APPROVED' && Number(p.reports_count || 0) === 0);
+        } else if (activePostFilter === 'REVIEW') {
+          posts = posts.filter(p => !p.archived && (String(p.moderation_status || '').toUpperCase() === 'REVIEW' || Number(p.reports_count || 0) > 0));
+        } else if (activePostFilter === 'BLOCKED') {
+          posts = posts.filter(p => p.archived || ['BLOCKED', 'HIDDEN'].includes(String(p.moderation_status || '').toUpperCase()));
+        }
+
+        if (activePostCategory !== 'all') {
+          posts = posts.filter(p => String(p.category || 'general').toLowerCase() === activePostCategory.toLowerCase());
+        }
+        if (query) {
+          posts = posts.filter(p => 
+            (p.content && String(p.content).toLowerCase().includes(query)) ||
+            (p.author_name && String(p.author_name).toLowerCase().includes(query)) ||
+            (p.id && String(p.id).toLowerCase().includes(query))
+          );
+        }
+
+        if (posts.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:36px; color:var(--text-muted);">
+              <i class="fas fa-folder-open" style="font-size:32px; opacity:0.4; margin-bottom:8px; display:block;"></i>
+              <p style="margin:0 0 8px 0;">No community posts match the selected filter.</p>
+              <button type="button" class="admin-btn admin-btn-outline" style="font-size:11px; padding:4px 12px;" onclick="loadAdminDashboardData()">
+                <i class="fas fa-rotate"></i> Refresh Feed
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = posts.map(p => {
+          const isArchived = Boolean(p.archived);
+          const reportsCount = Number(p.reports_count || 0);
+          const hasReports = reportsCount > 0;
+          const aiStatus = String(p.ai_status || 'APPROVED').toUpperCase();
+          const aiCat = String(p.ai_category || 'SAFE');
+          const safeId = String(p.id || '');
+          const shortId = safeId.length > 8 ? safeId.substring(0, 8) + '...' : (safeId || 'N/A');
+
+          // Post Status Badge
+          let statusBadgeHtml = '';
+          if (isArchived) {
+            statusBadgeHtml = '<span class="status-badge" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5;"><i class="fas fa-eye-slash"></i> Hidden / Removed</span>';
+          } else if (hasReports) {
+            statusBadgeHtml = `<span class="status-badge" style="background:#FEF3C7; color:#B45309; border:1px solid #FCD34D;"><i class="fas fa-flag"></i> ${reportsCount} Report${reportsCount > 1 ? 's' : ''}</span>`;
+          } else {
+            statusBadgeHtml = '<span class="status-badge status-approved"><i class="fas fa-circle-check"></i> Approved</span>';
+          }
+
+          // AI Moderation Badge
+          let aiBadgeHtml = '';
+          if (aiStatus === 'APPROVED' && hasReports) {
+            aiBadgeHtml = '<span style="font-size:11px; font-weight:700; color:#B45309; background:#FFFBEB; padding:2px 8px; border-radius:6px; border:1px solid #FCD34D;" title="AI marked safe, but users reported"><i class="fas fa-triangle-exclamation"></i> AI Pass · Review Req</span>';
+          } else if (aiCat && aiCat !== 'SAFE') {
+            aiBadgeHtml = `<span style="font-size:11px; font-weight:700; color:#DC2626; background:#FEF2F2; padding:2px 8px; border-radius:6px; border:1px solid #FCA5A5;"><i class="fas fa-shield-halved"></i> AI Flag: ${escapeHTML(aiCat)}</span>`;
+          } else {
+            aiBadgeHtml = '<span style="font-size:11px; font-weight:700; color:#16A34A; background:#F0FDF4; padding:2px 8px; border-radius:6px; border:1px solid #BBF7D0;"><i class="fas fa-robot"></i> AI: Pass</span>';
+          }
+
+          const sentiment = String(p.sentiment || 'NEUTRAL').toUpperCase();
+          const sentimentColor = sentiment === 'POSITIVE' ? '#16A34A' : (sentiment === 'NEGATIVE' ? '#EA580C' : '#64748B');
+
+          const likesCount = Number(p.likes_count ?? (Array.isArray(p.likes) ? p.likes.length : 0));
+          const commentsCount = Number(p.comments_count || 0);
+
+          return `
+            <div style="background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px;" id="post-card-${safeId}">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <strong style="color:var(--text-dark);">${escapeHTML(p.author_name || 'Student')}</strong>
+                  ${p.is_anonymous ? '<span style="font-size:10px; background:#F1F0F7; padding:2px 6px; border-radius:6px; color:var(--text-muted);">Anonymous</span>' : ''}
+                  ${statusBadgeHtml}
+                  ${aiBadgeHtml}
+                  <span style="font-size:11px; font-weight:700; color:${sentimentColor}; background:#F8FAFC; padding:2px 8px; border-radius:6px; border:1px solid var(--border);">
+                    <i class="fas fa-heart-pulse"></i> ${escapeHTML(sentiment)}
+                  </span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="font-family:monospace; font-size:10px; color:var(--text-muted); cursor:pointer;" onclick="navigator.clipboard.writeText('${safeId}'); showToast('Post ID copied', 'info')" title="Click to copy Post UUID">ID: ${shortId}</span>
+                  <span style="font-size:11px; color:var(--text-muted);">${formatTime(p.created_at)}</span>
+                </div>
+              </div>
+
+              <div style="font-size:13px; color:var(--text-dark); background:#FBF9FF; padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:12px; line-height:1.5; white-space:pre-wrap;">
+                ${escapeHTML(p.content || '')}
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="font-size:12px; color:var(--text-muted); display:flex; gap:12px;">
+                  <span><i class="fas fa-heart"></i> ${likesCount} Likes</span>
+                  <span><i class="fas fa-comment"></i> ${commentsCount} Comments</span>
+                  <span><i class="fas fa-tag"></i> ${escapeHTML(p.category || 'General')}</span>
+                  ${hasReports ? `<span style="color:#DC2626; font-weight:700;"><i class="fas fa-flag"></i> ${reportsCount} Report(s)</span>` : ''}
+                </div>
+
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <button type="button" class="admin-btn admin-btn-primary" style="padding:4px 12px; font-size:11px; font-weight:700;" onclick="openPostReviewModal('${safeId}')">
+                    <i class="fas fa-shield-halved"></i> Review
+                  </button>
+                  <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 10px; font-size:11px;" onclick="openPostCommentsModal('${safeId}')">
+                    <i class="fas fa-comments"></i> Comments (${commentsCount})
+                  </button>
+
+                  ${isArchived ? `
+                    <button type="button" class="admin-btn admin-btn-success" style="padding:4px 10px; font-size:11px;" onclick="handleRestorePost('${safeId}')">
+                      <i class="fas fa-rotate-left"></i> Restore
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-danger" style="padding:4px 10px; font-size:11px;" onclick="handleDeletePost('${safeId}')">
+                      <i class="fas fa-trash"></i> Delete
+                    </button>
+                  ` : `
+                    <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 10px; font-size:11px; color:#B45309;" onclick="handleWarnAuthor('${escapeHTML(String(p.user_id || ''))}', '${safeId}')">
+                      <i class="fas fa-triangle-exclamation"></i> Warn
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 10px; font-size:11px;" onclick="handleHidePost('${safeId}')">
+                      <i class="fas fa-eye-slash"></i> Hide
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-danger" style="padding:4px 10px; font-size:11px;" onclick="handleDeletePost('${safeId}')">
+                      <i class="fas fa-trash"></i> Delete
+                    </button>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('[Admin] Error rendering posts list:', err);
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px; color:#EF4444;">
+            <i class="fas fa-triangle-exclamation" style="font-size:28px; margin-bottom:8px; display:block;"></i>
+            <p style="margin:0 0 8px 0; font-weight:700;">Could not display community posts.</p>
+            <button type="button" class="admin-btn admin-btn-primary" style="font-size:11px; padding:4px 12px;" onclick="loadAdminDashboardData()">
+              <i class="fas fa-rotate"></i> Try Again
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Modal Inspector: Complete Post Review
+    function openPostReviewModal(postId) {
+      const p = (cachedPosts || []).find(item => String(item.id) === String(postId));
+      if (!p) {
+        showToast('Post not found in active list.', 'error');
+        return;
+      }
+
+      document.getElementById('postRevModalId').textContent = 'Post ID: ' + p.id;
+      const body = document.getElementById('postReviewModalBody');
+
+      const isArchived = Boolean(p.archived);
+      const reports = p.reports || [];
+      const hasReports = reports.length > 0;
+      const aiStatus = (p.ai_status || 'APPROVED').toUpperCase();
+      const aiCat = p.ai_category || 'SAFE';
+      const aiConf = typeof p.ai_confidence === 'number' ? Math.round(p.ai_confidence * 100) : 94;
+
+      body.innerHTML = `
+        <!-- Author Profile Row -->
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#F8F6FD; border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:50%; background:var(--primary-light, #EDE9FE); display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:800; font-size:16px;">
+              ${p.author_avatar ? `<img src="${escapeHTML(p.author_avatar)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />` : escapeHTML((p.author_name || 'S').charAt(0).toUpperCase())}
+            </div>
+            <div>
+              <div style="font-weight:800; color:var(--text-dark); font-size:14px;">${escapeHTML(p.author_name || 'Student')}</div>
+              <div style="font-size:11px; color:var(--text-muted); font-family:monospace;">User ID: ${p.user_id}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:11px; font-weight:700; background:${p.author_deactivated ? '#FEE2E2' : '#DCFCE7'}; color:${p.author_deactivated ? '#DC2626' : '#16A34A'}; padding:2px 8px; border-radius:8px;">
+              ${p.author_deactivated ? 'Suspended' : 'Active Account'}
+            </span>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Role: ${escapeHTML(p.author_role || 'student')}</div>
+          </div>
+        </div>
+
+        <!-- Post Content Box -->
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Post Content</label>
+            <span style="font-size:11px; color:var(--text-muted);">${formatTime(p.created_at)} · Category: <strong>${escapeHTML(p.category || 'General')}</strong></span>
+          </div>
+          <div style="background:#FFF; border:1px solid var(--border); border-radius:12px; padding:16px; font-size:14px; line-height:1.6; color:var(--text-dark); box-shadow:0 1px 3px rgba(0,0,0,0.03); white-space:pre-wrap;">
+            ${escapeHTML(p.content)}
+          </div>
+        </div>
+
+        <!-- AI Moderation Evaluation Grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div style="background:#FBF9FF; border:1px solid var(--border); border-radius:10px; padding:12px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">
+              <i class="fas fa-robot" style="color:var(--primary);"></i> AI Analysis Result
+            </div>
+            <div style="font-size:14px; font-weight:800; color:${aiCat !== 'SAFE' ? '#DC2626' : '#16A34A'};">
+              ${aiCat !== 'SAFE' ? 'Harmful Flag' : 'Pass / Safe'}
+            </div>
+            <div style="font-size:11px; color:var(--text-mid); margin-top:2px;">
+              Confidence: <strong>${aiConf}%</strong> · Category: <strong>${aiCat}</strong>
+            </div>
+          </div>
+
+          <div style="background:#FBF9FF; border:1px solid var(--border); border-radius:10px; padding:12px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">
+              <i class="fas fa-gauge-high" style="color:var(--primary);"></i> Feed Visibility
+            </div>
+            <div style="font-size:14px; font-weight:800; color:${isArchived ? '#DC2626' : '#16A34A'};">
+              ${isArchived ? 'Hidden / Removed from Home' : 'Publicly Visible on Home'}
+            </div>
+            <div style="font-size:11px; color:var(--text-mid); margin-top:2px;">
+              ${p.likes_count || 0} Likes · ${p.comments_count || 0} Comments
+            </div>
+          </div>
+        </div>
+
+        <!-- Community Safety Reports Section -->
+        <div style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
+              <i class="fas fa-flag" style="color:${hasReports ? '#EF4444' : 'var(--text-muted)'}; margin-right:4px;"></i>
+              User Safety Reports (${reports.length})
+            </label>
+            ${aiCat === 'SAFE' && hasReports ? '<span style="font-size:11px; font-weight:700; color:#B45309; background:#FEF3C7; padding:2px 8px; border-radius:6px;">⚠️ AI Missed — Admin Override Needed</span>' : ''}
+          </div>
+
+          ${!hasReports ? `
+            <div style="background:#F8FAFC; border:1px dashed var(--border); border-radius:10px; padding:12px; text-align:center; font-size:12px; color:var(--text-muted);">
+              No community reports filed against this post.
+            </div>
+          ` : `
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${reports.map((rep, idx) => `
+                <div style="background:#FFF5F5; border:1px solid #FECACA; border-radius:10px; padding:10px 14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <strong style="color:#DC2626; font-size:12px;">Report #${idx+1}: ${escapeHTML(rep.reason || 'Safety Concern')}</strong>
+                    <span style="font-size:10px; color:var(--text-muted);">${formatTime(rep.created_at)}</span>
+                  </div>
+                  ${rep.details || rep.description ? `<div style="font-size:12px; color:#4B5563; font-style:italic;">"${escapeHTML(rep.details || rep.description)}"</div>` : ''}
+                  <div style="font-size:10px; color:#9CA3AF; margin-top:4px;">Status: <strong>${escapeHTML(rep.status || 'Pending')}</strong></div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Admin Actions Footer Toolbar -->
+        <div style="border-top:1px solid var(--border); padding-top:16px;">
+          <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:10px;">
+            <i class="fas fa-gavel"></i> Authoritative Moderator Decision
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="admin-btn admin-btn-outline" style="color:#B45309; border-color:#FCD34D;" onclick="handleWarnAuthor('${p.user_id}', '${p.id}')">
+                <i class="fas fa-triangle-exclamation"></i> Warn Author
+              </button>
+              <button type="button" class="admin-btn admin-btn-outline" style="color:#DC2626; border-color:#FECACA;" onclick="handleSuspendAuthor('${p.user_id}', '${escapeHTML(p.author_name || 'Student')}')">
+                <i class="fas fa-user-lock"></i> Suspend User
+              </button>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              ${isArchived ? `
+                <button type="button" class="admin-btn admin-btn-success" onclick="handleRestorePost('${p.id}')">
+                  <i class="fas fa-rotate-left"></i> Restore Post
+                </button>
+              ` : `
+                <button type="button" class="admin-btn admin-btn-outline" onclick="handleHidePost('${p.id}')">
+                  <i class="fas fa-eye-slash"></i> Hide Post
+                </button>
+                <button type="button" class="admin-btn admin-btn-success" onclick="handleApproveKeepPost('${p.id}')">
+                  <i class="fas fa-check"></i> Keep / Approve
+                </button>
+              `}
+              <button type="button" class="admin-btn admin-btn-danger" onclick="openDeletePostModal('${p.id}')">
+                <i class="fas fa-trash"></i> Delete Post
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('postReviewModal').classList.add('open');
+    }
+
+    function closePostReviewModal() {
+      const modal = document.getElementById('postReviewModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    async function handleApproveKeepPost(postId) {
+      try {
+        await SafeSpaceDB.admin.updatePostModeration(postId, 'APPROVED');
+        showToast('Post verified and approved. Visible on community feed.', 'success');
+        closePostReviewModal();
+        await loadAdminDashboardData();
+      } catch (e) {
+        showToast('Failed to approve post.', 'error');
+      }
+    }
+
+    async function handleHidePost(postId) {
+      try {
+        await SafeSpaceDB.admin.softDeletePost(postId, 'Hidden by administrator during moderation review');
+        showToast('Post hidden from community feed.', 'success');
+        closePostReviewModal();
+        await loadAdminDashboardData();
+      } catch (e) {
+        showToast('Failed to hide post: ' + e.message, 'error');
+      }
+    }
+
+    async function handleRestorePost(postId) {
+      try {
+        await SafeSpaceDB.admin.restorePost(postId, 'Restored by administrator');
+        showToast('Post restored to community feed.', 'success');
+        closePostReviewModal();
+        await loadAdminDashboardData();
+      } catch (e) {
+        showToast('Failed to restore post: ' + e.message, 'error');
+      }
+    }
+
+    async function handleWarnAuthor(userId, postId) {
+      const reason = prompt("Enter official Community Guidelines warning reason:", "Violation of Safe Space community standards and respectful discourse policies.");
+      if (!reason) return;
+      try {
+        await SafeSpaceDB.admin.warnUser(userId, reason, null, postId, "Warning issued from Community Posts review");
+        showToast('Official warning notification sent to author.', 'success');
+        closePostReviewModal();
+        await loadAdminDashboardData();
+      } catch (e) {
+        showToast('Failed to issue warning: ' + e.message, 'error');
+      }
+    }
+
+    function handleSuspendAuthor(userId, username) {
+      closePostReviewModal();
+      document.getElementById('suspendTargetUserId').value = userId;
+      document.getElementById('suspendTargetUserDisplay').textContent = `@${username} (${userId})`;
+      document.getElementById('suspendModal').classList.add('open');
+    }
+
+    async function handleDeletePost(postId) {
+      openDeletePostModal(postId);
+    }
+
+    async function openPostCommentsModal(postId) {
+      const listEl = document.getElementById('commentsModalList');
+      listEl.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
+      document.getElementById('commentsModal').classList.add('open');
+
+      try {
+        const comments = await SafeSpaceDB.admin.getPostComments(postId);
+        if (comments.length === 0) {
+          listEl.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted);">No comments on this post yet.</div>';
+          return;
+        }
+
+        listEl.innerHTML = comments.map(c => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:12px; font-weight:700; color:var(--text-dark);">
+                ${escapeHTML(c.profiles ? (c.profiles.username || c.profiles.first_name) : 'Student')}
+                <span style="font-size:10px; font-weight:normal; color:var(--text-muted); margin-left:6px;">${formatTime(c.created_at)}</span>
+              </div>
+              <div style="font-size:13px; color:var(--text-mid); margin-top:2px;">${escapeHTML(c.content)}</div>
+            </div>
+            <button type="button" class="admin-btn admin-btn-danger" style="padding:4px 8px; font-size:11px;" onclick="handleDeleteComment('${c.id}', '${postId}')" title="Delete Comment">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `).join('');
+      } catch (err) {
+        listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#EF4444;">Failed to load comments.</div>';
+      }
+    }
+
+    function closeCommentsModal() {
+      document.getElementById('commentsModal').classList.remove('open');
+    }
+
+    async function handleDeleteComment(commentId, postId) {
+      if (!confirm('Delete this comment permanently?')) return;
+      try {
+        await SafeSpaceDB.admin.deleteComment(commentId);
+        showToast('Comment deleted.', 'success');
+        openPostCommentsModal(postId);
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to delete comment.', 'error');
+      }
+    }
+
+    // ========================================================
+    // TAB 4: SAFETY REPORTS TRIAGE & INVESTIGATION DOSSIER
+    // ========================================================
+
+    async function loadAdminReportsData() {
+      try {
+        cachedReports = await SafeSpaceDB.reports.getReports();
+        updateReportsKpiCounters();
+        renderReportsTable();
+        loadModerationAuditLog().catch(e => console.warn(e));
+        showToast('Reports queue updated from Supabase.', 'info');
+      } catch (err) {
+        console.error('[Admin] Error refreshing reports queue:', err);
+        showToast('Could not fetch reports.', 'error');
+      }
+    }
+
+    function updateReportsKpiCounters() {
+      let pending = 0;
+      let underReview = 0;
+      let resolved = 0;
+      let dismissed = 0;
+
+      (cachedReports || []).forEach(r => {
+        const s = (r.status || 'Pending').toLowerCase();
+        if (s === 'pending') pending++;
+        else if (s === 'reviewed' || s === 'under_review' || s === 'under review') underReview++;
+        else if (s === 'resolved') resolved++;
+        else if (s === 'dismissed') dismissed++;
+      });
+
+      const pEl = document.getElementById('statRepPending');
+      if (pEl) pEl.textContent = pending;
+      const uEl = document.getElementById('statRepUnderReview');
+      if (uEl) uEl.textContent = underReview;
+      const rEl = document.getElementById('statRepResolved');
+      if (rEl) rEl.textContent = resolved;
+      const dEl = document.getElementById('statRepDismissed');
+      if (dEl) dEl.textContent = dismissed;
+
+      const navBadge = document.getElementById('navReportsBadge');
+      if (navBadge) {
+        navBadge.textContent = pending;
+        navBadge.style.display = pending > 0 ? 'inline-block' : 'none';
+      }
+    }
+
+    function renderReportsTable() {
+      const tbody = document.getElementById('reportsTableBody');
+      const searchInput = document.getElementById('reportsSearchInput');
+      const sortSelect = document.getElementById('reportsSortSelect');
+
+      const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+      const sortBy = sortSelect ? sortSelect.value : 'newest';
+
+      let reports = (cachedReports || []).slice();
+
+      // 1. Filter by status pill
+      if (activeReportFilter !== 'all') {
+        const target = activeReportFilter.toLowerCase();
+        reports = reports.filter(r => {
+          const s = (r.status || 'Pending').toLowerCase();
+          if (target === 'pending') return s === 'pending';
+          if (target === 'reviewed') return s === 'reviewed' || s === 'under_review' || s === 'under review';
+          if (target === 'resolved') return s === 'resolved';
+          if (target === 'dismissed') return s === 'dismissed';
+          return s === target;
+        });
+      }
+
+      // 2. Search query filter
+      if (query) {
+        reports = reports.filter(r => {
+          const id = String(r.id || r.report_id || '').toLowerCase();
+          const postId = String(r.post_id || '').toLowerCase();
+          const reason = String(r.reason || r.report_type || '').toLowerCase();
+          const desc = String(r.description || r.details || '').toLowerCase();
+          const repUser = String((r.reported_user && (r.reported_user.username || r.reported_user.name)) || '').toLowerCase();
+          const reporter = String((r.reporter && (r.reporter.username || r.reporter.name)) || '').toLowerCase();
+          const postContent = String((r.post && r.post.content) || '').toLowerCase();
+
+          return id.includes(query) || postId.includes(query) || reason.includes(query) ||
+                 desc.includes(query) || repUser.includes(query) || reporter.includes(query) ||
+                 postContent.includes(query);
+        });
+      }
+
+      // 3. Sorting
+      if (sortBy === 'newest') {
+        reports.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      } else if (sortBy === 'oldest') {
+        reports.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+      } else if (sortBy === 'most_reported') {
+        reports.sort((a, b) => (b.post_report_count || 1) - (a.post_report_count || 1));
+      }
+
+      if (reports.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center; padding:36px; color:var(--text-muted);">
+              <i class="fas fa-clipboard-check" style="font-size:28px; color:#10B981; margin-bottom:8px; display:block;"></i>
+              No reports match the current criteria.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = reports.map(r => {
+        const id = r.id || r.report_id;
+        const reason = r.reason || r.report_type || 'Safety Concern';
+        const details = r.details || r.description || '—';
+        const status = r.status || 'Pending';
+        const isPost = Boolean(r.post_id);
+        const post = r.post || null;
+        const reportedUser = r.reported_user || null;
+        const reporter = r.reporter || null;
+        const reportCount = r.post_report_count || 1;
+
+        // Content preview
+        let contentPreviewHtml = '';
+        if (isPost) {
+          if (post && post.deleted_at) {
+            contentPreviewHtml = `<span class="status-badge" style="background:#FEE2E2; color:#DC2626;"><i class="fas fa-trash"></i> Post Removed</span>`;
+          } else if (post && post.content) {
+            const snippet = post.content.length > 70 ? escapeHTML(post.content.substring(0, 70)) + '...' : escapeHTML(post.content);
+            contentPreviewHtml = `
+              <div style="font-size:12px; color:var(--text-dark); max-width:260px; line-height:1.4;">
+                "${snippet}"
+              </div>
+              <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                <span class="status-badge" style="padding:1px 6px; font-size:9px;">${escapeHTML(post.category || 'General')}</span>
+                ${post.photo_url ? '<span style="color:var(--primary); margin-left:4px;"><i class="fas fa-image"></i> Photo</span>' : ''}
+              </div>
+            `;
+          } else {
+            contentPreviewHtml = `<span style="font-size:12px; color:var(--text-muted); font-style:italic;">Post ID #${escapeHTML(String(r.post_id).substring(0, 8))}</span>`;
+          }
+        } else if (r.message_id) {
+          contentPreviewHtml = `<span style="font-size:12px; color:var(--text-mid);"><i class="fas fa-comment"></i> Direct Message</span>`;
+        } else {
+          contentPreviewHtml = `<span style="font-size:12px; color:var(--text-mid);"><i class="fas fa-user"></i> User Account</span>`;
+        }
+
+        // Reported User column
+        let reportedUserHtml = '—';
+        if (reportedUser) {
+          const uName = reportedUser.name || reportedUser.username || 'Student';
+          const uHandle = reportedUser.username ? `@${escapeHTML(reportedUser.username)}` : '';
+          const uStatus = (reportedUser.account_status || 'active').toLowerCase();
+          const violations = reportedUser.violation_count || 0;
+
+          let statusTag = '';
+          if (uStatus === 'suspended') {
+            statusTag = `<span style="font-size:9px; background:#FEF3C7; color:#B45309; padding:1px 5px; border-radius:4px; font-weight:700;">SUSPENDED</span>`;
+          } else if (uStatus === 'banned') {
+            statusTag = `<span style="font-size:9px; background:#FEE2E2; color:#DC2626; padding:1px 5px; border-radius:4px; font-weight:700;">BANNED</span>`;
+          }
+
+          let violationTag = '';
+          if (violations > 0) {
+            violationTag = `<span style="font-size:10px; font-weight:800; color:#DC2626; background:#FEE2E2; padding:1px 6px; border-radius:10px; margin-left:4px;" title="${violations} confirmed violations">${violations} viol.</span>`;
+          }
+
+          reportedUserHtml = `
+            <div>
+              <div style="font-weight:700; font-size:12px; color:var(--text-dark); display:flex; align-items:center; gap:4px;">
+                ${escapeHTML(uName)}
+                ${statusTag}
+                ${violationTag}
+              </div>
+              <div style="font-size:11px; color:var(--text-muted);">${uHandle}</div>
+            </div>
+          `;
+        }
+
+        // Reporter column
+        let reporterHtml = '—';
+        if (reporter) {
+          const repName = reporter.name || reporter.username || 'Student';
+          const repHandle = reporter.username ? `@${escapeHTML(reporter.username)}` : '';
+          reporterHtml = `
+            <div>
+              <div style="font-weight:600; font-size:12px; color:var(--text-dark);">${escapeHTML(repName)}</div>
+              <div style="font-size:11px; color:var(--text-muted);">${repHandle}</div>
+            </div>
+          `;
+        } else {
+          reporterHtml = `<span style="font-size:11px; color:var(--text-muted);">User #${escapeHTML(String(r.reporter_id || '').substring(0, 8))}</span>`;
+        }
+
+        // Reports badge for multiple submissions on same post
+        let countBadgeHtml = '';
+        if (reportCount > 1) {
+          countBadgeHtml = `
+            <span style="display:inline-flex; align-items:center; gap:3px; background:#FEE2E2; color:#DC2626; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;" title="${(r.post_report_reasons || []).join(', ')}">
+              <i class="fas fa-flag"></i> ${reportCount} reports
+            </span>
+          `;
+        }
+
+        // Status badge class
+        let statusClass = 'status-pending';
+        const sLower = status.toLowerCase();
+        if (sLower === 'reviewed' || sLower === 'under_review' || sLower === 'under review') statusClass = 'status-reviewed';
+        else if (sLower === 'resolved') statusClass = 'status-resolved';
+        else if (sLower === 'dismissed') statusClass = 'status-dismissed';
+
+        return `
+          <tr id="report-row-${id}">
+            <td>
+              <div style="font-weight:700; color:var(--primary); font-size:12px;">#${escapeHTML(String(id).substring(0, 8))}</div>
+              <div style="font-size:11px; color:var(--text-muted);">${formatTime(r.created_at)}</div>
+            </td>
+            <td>${contentPreviewHtml}</td>
+            <td>${reportedUserHtml}</td>
+            <td>${reporterHtml}</td>
+            <td>
+              <div style="display:flex; align-items:center; flex-wrap:wrap;">
+                <strong style="color:var(--text-dark); font-size:12px;">${escapeHTML(reason)}</strong>
+                ${countBadgeHtml}
+              </div>
+              <div style="font-size:11px; color:var(--text-muted); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${escapeHTML(details)}
+              </div>
+            </td>
+            <td>
+              <span class="status-badge ${statusClass}" id="report-badge-${id}">
+                ${escapeHTML(status)}
+              </span>
+            </td>
+            <td style="text-align:right;">
+              <div style="display:inline-flex; gap:6px;">
+                <button type="button" class="admin-btn admin-btn-primary" style="padding:4px 10px; font-size:11px;" onclick="openReviewReportModal('${id}')" title="Inspect incident dossier">
+                  <i class="fas fa-magnifying-glass"></i> Review
+                </button>
+                <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px; font-size:11px; color:#6B7280;" onclick="handleDismissReport('${id}')" title="Dismiss as non-violating">
+                  <i class="fas fa-xmark"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ========================================================
+    // INCIDENT INVESTIGATION DOSSIER (REVIEW REPORT MODAL)
+    // ========================================================
+
+    async function openReviewReportModal(reportId) {
+      const modal = document.getElementById('reviewReportModal');
+      const body = document.getElementById('reviewReportModalBody');
+      const titleBadge = document.getElementById('revModalStatusBadge');
+      const subTitle = document.getElementById('revModalSubtitle');
+
+      modal.classList.add('open');
+      body.innerHTML = `
+        <div style="text-align:center; padding:48px; color:var(--text-muted);">
+          <i class="fas fa-spinner fa-spin" style="font-size:32px; color:var(--primary); margin-bottom:12px; display:block;"></i>
+          <div style="font-size:14px; font-weight:700; color:var(--text-dark);">Assembling Incident Investigation Dossier...</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Retrieving evidence, author profile, and confirmed moderation history from Supabase.</div>
+        </div>
+      `;
+
+      // Find report in cache or fetch
+      let report = (cachedReports || []).find(r => (r.id === reportId || r.report_id === reportId));
+      if (!report) {
+        const fresh = await SafeSpaceDB.reports.getReports();
+        report = fresh.find(r => (r.id === reportId || r.report_id === reportId));
+      }
+
+      if (!report) {
+        body.innerHTML = `<div style="text-align:center; padding:32px; color:#EF4444;">Report record not found.</div>`;
+        return;
+      }
+
+      // Automatically transition from "Pending" to "under_review" if freshly opened
+      const currentStatus = (report.status || 'Pending').toLowerCase();
+      if (currentStatus === 'pending') {
+        try {
+          await SafeSpaceDB.reports.updateReportStatus(reportId, 'under_review');
+          report.status = 'under_review';
+          updateReportsKpiCounters();
+          const badgeEl = document.getElementById(`report-badge-${reportId}`);
+          if (badgeEl) {
+            badgeEl.className = 'status-badge status-reviewed';
+            badgeEl.textContent = 'Under Review';
+          }
+        } catch (e) {
+          console.warn('[Admin] Auto under_review update error:', e);
+        }
+      }
+
+      // Update header
+      subTitle.textContent = `Report Reference: #${reportId.substring(0, 10)} • Submitted ${formatTime(report.created_at)}`;
+      titleBadge.textContent = report.status || 'Under Review';
+      titleBadge.className = `status-badge ${report.status === 'Resolved' ? 'status-resolved' : (report.status === 'Dismissed' ? 'status-dismissed' : 'status-reviewed')}`;
+
+      // Retrieve Reported User's full moderation history from database
+      const reportedUserId = report.reported_user_id || (report.post && report.post.user_id);
+      let userViolations = [];
+      if (reportedUserId) {
+        try {
+          userViolations = await SafeSpaceDB.admin.getUserModerationHistory(reportedUserId);
+        } catch (err) {
+          console.warn('[Admin] History fetch error:', err);
+        }
+      }
+
+      const post = report.post || null;
+      const reportedUser = report.reported_user || null;
+      const reporter = report.reporter || null;
+      const reportCount = report.post_report_count || 1;
+      const breakdown = report.post_report_reasons || [];
+
+      // Filter confirmed violations (exclude dismissed)
+      const confirmedViolations = userViolations.filter(v => v.action !== 'report_dismissed');
+      const violationCount = reportedUser ? (reportedUser.violation_count || confirmedViolations.length) : confirmedViolations.length;
+
+      // Recommended action banner logic based on application escalation rules
+      let policyRecommendation = '';
+      if (violationCount === 0) {
+        policyRecommendation = `
+          <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
+            <div style="font-size:12px; font-weight:800; color:#166534; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-shield"></i> Community Guidelines Policy: First Incident
+            </div>
+            <p style="font-size:12px; color:#15803D; margin:4px 0 0 0; line-height:1.4;">
+              User has <strong>0 previous confirmed violations</strong>. If content violates guidelines, recommend issuing an <strong>Official Warning</strong> or <strong>Removing Post</strong>.
+            </p>
+          </div>
+        `;
+      } else if (violationCount === 1) {
+        policyRecommendation = `
+          <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
+            <div style="font-size:12px; font-weight:800; color:#B45309; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-triangle-exclamation"></i> Community Guidelines Policy: Second Violation
+            </div>
+            <p style="font-size:12px; color:#92400E; margin:4px 0 0 0; line-height:1.4;">
+              User has <strong>1 previous confirmed violation</strong>. Escalation policy suggests a <strong>Strong Warning</strong> or a <strong>24h - 72h Temporary Suspension</strong>.
+            </p>
+          </div>
+        `;
+      } else {
+        policyRecommendation = `
+          <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
+            <div style="font-size:12px; font-weight:800; color:#DC2626; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-skull-crossbones"></i> Community Guidelines Policy: Repeated Violator (${violationCount} Violations)
+            </div>
+            <p style="font-size:12px; color:#991B1B; margin:4px 0 0 0; line-height:1.4;">
+              User is a <strong>habitual offender</strong> with ${violationCount} confirmed violations. Recommended action: <strong>7 to 30 Day Suspension</strong> or <strong>Permanent Ban</strong>.
+            </p>
+          </div>
+        `;
+      }
+
+      // Render the two-column investigation dossier
+      body.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
+          
+          <!-- LEFT COLUMN: REPORTED CONTENT & ALLEGATION EVIDENCE -->
+          <div>
+            <div style="font-size:13px; font-weight:800; color:var(--text-dark); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-flag" style="color:#EF4444;"></i>
+              Incident Allegation &amp; Content Evidence
+            </div>
+
+            <!-- Reported Post Card -->
+            <div style="background:#FAF9FE; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div class="admin-user-avatar" style="width:36px; height:36px; font-size:14px;">
+                    ${reportedUser && reportedUser.avatar_url ? `<img src="${reportedUser.avatar_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '<i class="fas fa-user"></i>'}
+                  </div>
+                  <div>
+                    <div style="font-weight:700; color:var(--text-dark); font-size:13px;">${escapeHTML((reportedUser && (reportedUser.name || reportedUser.username)) || 'Post Author')}</div>
+                    <div style="font-size:11px; color:var(--text-muted);">${post ? formatTime(post.created_at) : '—'}</div>
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:6px;">
+                  <span class="status-badge" style="background:#EDE9FE; color:var(--primary); font-size:10px;">
+                    ${escapeHTML((post && post.category) || 'General')}
+                  </span>
+                  ${post && post.deleted_at ? '<span class="status-badge" style="background:#FEE2E2; color:#DC2626; font-size:10px;"><i class="fas fa-trash"></i> Removed</span>' : ''}
+                </div>
+              </div>
+
+              <!-- Post Content Body -->
+              <div style="background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; font-size:13px; color:var(--text-dark); line-height:1.55; margin-bottom:12px; max-height:220px; overflow-y:auto;">
+                ${post ? escapeHTML(post.content) : '<em style="color:var(--text-muted);">Post content not available or deleted.</em>'}
+              </div>
+
+              ${post && post.photo_url ? `
+                <div style="margin-bottom:12px;">
+                  <a href="${post.photo_url}" target="_blank" title="Click to view full photo">
+                    <img src="${post.photo_url}" style="width:100%; max-height:200px; object-fit:cover; border-radius:10px; border:1px solid var(--border);" alt="Reported post attachment" />
+                  </a>
+                </div>
+              ` : ''}
+
+              <!-- Post Metadata Summary -->
+              ${post ? `
+                <div style="display:flex; gap:16px; font-size:11px; color:var(--text-muted);">
+                  <span><i class="fas fa-tag"></i> Mood: <strong>${escapeHTML(post.mood || 'None')}</strong></span>
+                  <span><i class="fas fa-user-secret"></i> Anonymous: <strong>${post.is_anonymous ? 'Yes' : 'No'}</strong></span>
+                </div>
+              ` : ''}
+
+              <!-- Multiple Submissions Banner -->
+              ${reportCount > 1 ? `
+                <div style="margin-top:14px; background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:10px 14px;">
+                  <div style="font-size:12px; font-weight:800; color:#DC2626; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-users-viewfinder"></i> Multiple Reports Received (${reportCount} Submissions)
+                  </div>
+                  <div style="font-size:11px; color:#991B1B; margin-top:3px;">
+                    Allegation Categories: <strong>${breakdown.join(' &bull; ')}</strong>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Specific Report Filed by Reporter -->
+            <div style="background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px;">
+              <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">
+                Report Filed Details
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; margin-bottom:10px;">
+                <div>
+                  <span style="color:var(--text-muted);">Category / Reason:</span>
+                  <div style="font-weight:700; color:#EF4444; font-size:13px; margin-top:2px;">${escapeHTML(report.reason || report.report_type || 'Safety Concern')}</div>
+                </div>
+                <div>
+                  <span style="color:var(--text-muted);">Reported By:</span>
+                  <div style="font-weight:700; color:var(--text-dark); font-size:13px; margin-top:2px;">
+                    ${escapeHTML((reporter && (reporter.name || reporter.username)) || 'Student')}
+                    ${reporter && reporter.username ? `<span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(@${escapeHTML(reporter.username)})</span>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <span style="font-size:12px; color:var(--text-muted);">Additional Information from Reporter:</span>
+                <div style="margin-top:4px; font-size:12px; color:var(--text-dark); background:#FAF9FE; padding:10px 12px; border-radius:8px; border:1px solid var(--border);">
+                  ${report.description || report.details ? escapeHTML(report.description || report.details) : '<em style="color:var(--text-muted);">No additional context provided.</em>'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: REPORTED USER DOSSIER & VIOLATION TIMELINE -->
+          <div>
+            <div style="font-size:13px; font-weight:800; color:var(--text-dark); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-id-card-clip" style="color:var(--primary);"></i>
+              Reported User Dossier &amp; Risk Assessment
+            </div>
+
+            <!-- User Profile Summary Card -->
+            <div style="background:#FAF9FE; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="admin-user-avatar" style="width:46px; height:46px; font-size:18px;">
+                    ${reportedUser && reportedUser.avatar_url ? `<img src="${reportedUser.avatar_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '<i class="fas fa-user"></i>'}
+                  </div>
+                  <div>
+                    <div style="font-weight:800; color:var(--text-dark); font-size:15px;">${escapeHTML((reportedUser && (reportedUser.name || reportedUser.username)) || 'Member')}</div>
+                    <div style="font-size:12px; color:var(--primary); font-weight:600;">@${escapeHTML((reportedUser && reportedUser.username) || 'student')}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${escapeHTML((reportedUser && reportedUser.email) || '—')}</div>
+                  </div>
+                </div>
+
+                <div style="text-align:right;">
+                  <div style="font-size:11px; color:var(--text-muted);">Account Status</div>
+                  <span class="status-badge" style="background:${reportedUser && reportedUser.account_status === 'suspended' ? '#FEF3C7' : (reportedUser && reportedUser.account_status === 'banned' ? '#FEE2E2' : '#DCFCE7')}; color:${reportedUser && reportedUser.account_status === 'suspended' ? '#B45309' : (reportedUser && reportedUser.account_status === 'banned' ? '#DC2626' : '#16A34A')}; margin-top:4px;">
+                    ${escapeHTML((reportedUser && reportedUser.account_status ? reportedUser.account_status.toUpperCase() : 'ACTIVE'))}
+                  </span>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); font-size:12px;">
+                <div>
+                  <span style="color:var(--text-muted);">Member Since:</span>
+                  <div style="font-weight:600; color:var(--text-dark);">${reportedUser && reportedUser.created_at ? formatTime(reportedUser.created_at) : '—'}</div>
+                </div>
+                <div>
+                  <span style="color:var(--text-muted);">Confirmed Violations:</span>
+                  <div style="font-weight:800; color:${violationCount > 0 ? '#DC2626' : '#16A34A'}; font-size:14px;">
+                    ${violationCount} Violations
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Escalation Recommendation Policy Guide -->
+            ${policyRecommendation}
+
+            <!-- Permanent Moderation Audit History Timeline -->
+            <div style="background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px;">
+              <div style="font-size:12px; font-weight:800; color:var(--text-dark); text-transform:uppercase; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fas fa-history" style="color:var(--primary); margin-right:4px;"></i> Confirmed Violation History</span>
+                <span style="font-size:11px; font-weight:600; color:var(--text-muted);">${userViolations.length} records</span>
+              </div>
+
+              ${userViolations.length === 0 ? `
+                <div style="text-align:center; padding:24px 12px; color:var(--text-muted); font-size:12px;">
+                  <i class="fas fa-check-circle" style="color:#10B981; font-size:22px; margin-bottom:6px; display:block;"></i>
+                  Clean record. No prior moderation actions recorded for this user.
+                </div>
+              ` : `
+                <div style="max-height:220px; overflow-y:auto; padding-right:4px;">
+                  ${userViolations.map(act => {
+                    let actBadgeBg = '#EDE9FE';
+                    let actBadgeColor = 'var(--primary)';
+                    let actIcon = 'fa-circle-info';
+
+                    if (act.action === 'warning') { actBadgeBg = '#FEF3C7'; actBadgeColor = '#B45309'; actIcon = 'fa-triangle-exclamation'; }
+                    else if (act.action === 'post_removed') { actBadgeBg = '#FEE2E2'; actBadgeColor = '#DC2626'; actIcon = 'fa-trash-can'; }
+                    else if (act.action === 'temporary_suspension') { actBadgeBg = '#FFEDD5'; actBadgeColor = '#C2410C'; actIcon = 'fa-user-lock'; }
+                    else if (act.action === 'permanent_ban') { actBadgeBg = '#FEE2E2'; actBadgeColor = '#991B1B'; actIcon = 'fa-ban'; }
+                    else if (act.action === 'report_dismissed') { actBadgeBg = '#F3F4F6'; actBadgeColor = '#6B7280'; actIcon = 'fa-check'; }
+
+                    return `
+                      <div style="border-left:3px solid ${actBadgeColor}; padding:8px 12px; background:#FAF9FD; border-radius:0 8px 8px 0; margin-bottom:8px; font-size:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                          <span style="font-weight:700; color:${actBadgeColor}; text-transform:uppercase; font-size:10px;">
+                            <i class="fas ${actIcon}"></i> ${(act.action || 'Action').replace(/_/g, ' ')}
+                          </span>
+                          <span style="font-size:10px; color:var(--text-muted);">${formatTime(act.created_at)}</span>
+                        </div>
+                        <div style="font-weight:600; color:var(--text-dark); margin-top:2px;">${escapeHTML(act.reason || 'Guidelines violation')}</div>
+                        ${act.notes ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px; font-style:italic;">Notes: ${escapeHTML(act.notes)}</div>` : ''}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER: ADMINISTRATIVE ACTION BUTTONS -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:24px; padding-top:16px; border-top:1px solid var(--border);">
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="admin-btn admin-btn-outline" onclick="closeReviewReportModal()">
+              Close Window
+            </button>
+            <button type="button" class="admin-btn admin-btn-outline" style="color:#6B7280;" onclick="handleDismissReport('${reportId}')">
+              <i class="fas fa-xmark"></i> Dismiss Report
+            </button>
+            <button type="button" class="admin-btn admin-btn-outline" style="color:#10B981; border-color:#A7F3D0;" onclick="handleKeepPost('${reportId}')">
+              <i class="fas fa-shield-heart"></i> Keep Post (No Violation)
+            </button>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            ${report.post_id ? `
+              <button type="button" class="admin-btn admin-btn-danger" onclick="openDeletePostModal('${report.post_id}', '${reportId}')">
+                <i class="fas fa-trash-can"></i> Remove Post
+              </button>
+            ` : ''}
+            
+            ${reportedUserId ? `
+              <button type="button" class="admin-btn" style="background:#F59E0B; color:#fff;" onclick="handleWarnUser('${reportedUserId}', '${reportId}', '${report.post_id || ''}')">
+                <i class="fas fa-triangle-exclamation"></i> Warn User
+              </button>
+              
+              <button type="button" class="admin-btn" style="background:#EA580C; color:#fff;" onclick="openSuspendModal('${reportedUserId}', '${reportId}', '${escapeHTML((reportedUser && (reportedUser.username || reportedUser.name)) || 'User')}')">
+                <i class="fas fa-user-lock"></i> Suspend User
+              </button>
+
+              <button type="button" class="admin-btn admin-btn-danger" style="background:#DC2626;" onclick="openBanModal('${reportedUserId}', '${reportId}', '${escapeHTML((reportedUser && (reportedUser.username || reportedUser.name)) || 'User')}')">
+                <i class="fas fa-ban"></i> Permanent Ban
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function closeReviewReportModal() {
+      const modal = document.getElementById('reviewReportModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    // ========================================================
+    // DISCIPLINARY ACTIONS EXECUTION
+    // ========================================================
+
+    async function handleDismissReport(reportId) {
+      const notes = prompt("Dismiss Report as non-violating?\n\nEnter optional administrative review notes:", "Content reviewed by administrator — no community guidelines violation detected.");
+      if (notes === null) return; // Cancelled
+
+      try {
+        await SafeSpaceDB.admin.dismissReport(reportId, notes);
+        showToast('Report dismissed. No violation recorded against author.', 'info');
+        closeReviewReportModal();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to dismiss report: ' + err.message, 'error');
+      }
+    }
+
+    async function handleKeepPost(reportId) {
+      try {
+        await SafeSpaceDB.admin.keepPost(reportId, 'Post reviewed and cleared by moderation team.');
+        showToast('Post verified safe and report resolved.', 'success');
+        closeReviewReportModal();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to resolve report.', 'error');
+      }
+    }
+
+    // Soft-Delete Post Flow
+    function openDeletePostModal(postId, reportId) {
+      document.getElementById('delTargetPostId').value = postId;
+      document.getElementById('delTargetReportId').value = reportId || '';
+      document.getElementById('delReasonSelect').value = 'Bullying or harassment';
+      document.getElementById('delCustomReasonInput').style.display = 'none';
+      document.getElementById('delCustomReasonInput').value = '';
+      document.getElementById('delNotesInput').value = '';
+      document.getElementById('deletePostConfirmModal').classList.add('open');
+    }
+
+    function closeDeletePostModal() {
+      document.getElementById('deletePostConfirmModal').classList.remove('open');
+    }
+
+    function toggleCustomDelReason() {
+      const sel = document.getElementById('delReasonSelect').value;
+      const customInput = document.getElementById('delCustomReasonInput');
+      customInput.style.display = (sel === 'custom') ? 'block' : 'none';
+    }
+
+    async function executeDeletePost() {
+      const postId = document.getElementById('delTargetPostId').value;
+      const reportId = document.getElementById('delTargetReportId').value;
+      const selectReason = document.getElementById('delReasonSelect').value;
+      const customReason = document.getElementById('delCustomReasonInput').value.trim();
+      const reason = (selectReason === 'custom' && customReason) ? customReason : selectReason;
+      const notes = document.getElementById('delNotesInput').value.trim();
+
+      const btn = document.getElementById('deletePostConfirmModal').querySelector('.admin-btn-danger');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...'; }
+
+      try {
+        await SafeSpaceDB.admin.softDeletePost(postId, reason, reportId, notes);
+        showToast('Violating post soft-deleted. Author violation count incremented.', 'success');
+        closeDeletePostModal();
+        if (typeof closePostReviewModal === 'function') closePostReviewModal();
+        closeReviewReportModal();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to remove post: ' + err.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-can"></i> Remove Post'; }
+      }
+    }
+
+    // Official Warning Flow
+    async function handleWarnUser(userId, reportId, postId) {
+      const reason = prompt("Enter official warning reason to send to user:", "Violation of Safe Space community standards and respectful discourse policies.");
+      if (!reason) return;
+
+      const notes = prompt("Enter optional internal faculty/admin audit note:", "Issued formal administrative warning.");
+      try {
+        await SafeSpaceDB.admin.warnUser(userId, reason, reportId, postId, notes);
+        showToast('Official warning issued to student. Moderation record logged.', 'success');
+        closeReviewReportModal();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to issue warning: ' + err.message, 'error');
+      }
+    }
+
+    // Temporary Suspension Flow
+    let selectedSuspendDurationHours = 24;
+
+    function openSuspendModal(userId, reportId, username) {
+      document.getElementById('suspendTargetUserId').value = userId;
+      document.getElementById('suspendTargetReportId').value = reportId || '';
+      document.getElementById('suspendTargetUserDisplay').textContent = username || 'Student Account';
+      document.getElementById('suspendReasonInput').value = 'Repeated violations of Safe Space community guidelines';
+      document.getElementById('suspendNotesInput').value = '';
+      selectSuspendDuration(24);
+      document.getElementById('suspendModal').classList.add('open');
+    }
+
+    function closeSuspendModal() {
+      document.getElementById('suspendModal').classList.remove('open');
+    }
+
+    function selectSuspendDuration(val) {
+      document.querySelectorAll('#suspendModal .dur-btn').forEach(btn => {
+        btn.classList.toggle('admin-btn-primary', btn.dataset.dur == val);
+        btn.classList.toggle('admin-btn-outline', btn.dataset.dur != val);
+      });
+
+      const customWrap = document.getElementById('customDurationWrap');
+      if (val === 'custom') {
+        customWrap.style.display = 'block';
+        selectedSuspendDurationHours = 'custom';
+      } else {
+        customWrap.style.display = 'none';
+        selectedSuspendDurationHours = parseInt(val, 10);
+      }
+    }
+
+    async function executeSuspendUser() {
+      const userId = document.getElementById('suspendTargetUserId').value;
+      const reportId = document.getElementById('suspendTargetReportId').value;
+      const reason = document.getElementById('suspendReasonInput').value.trim() || 'Community guidelines violation';
+      const notes = document.getElementById('suspendNotesInput').value.trim();
+
+      let hours = selectedSuspendDurationHours;
+      if (hours === 'custom') {
+        hours = parseInt(document.getElementById('customDurationHours').value, 10);
+        if (!hours || hours < 1) {
+          showToast('Please enter a valid duration in hours.', 'error');
+          return;
+        }
+      }
+
+      const btn = document.getElementById('confirmSuspendBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Suspending...';
+
+      try {
+        const res = await SafeSpaceDB.admin.suspendUser(userId, hours, reason, reportId, notes);
+        showToast(`User suspended for ${hours} hours until ${new Date(res.suspended_until).toLocaleDateString()}.`, 'success');
+        closeSuspendModal();
+        closeReviewReportModal();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to suspend user: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-user-lock"></i> Confirm Suspension';
+      }
+    }
+
+    // Permanent Ban Flow
+    function openBanModal(userId, reportId, username) {
+      document.getElementById('banTargetUserId').value = userId;
+      document.getElementById('banTargetReportId').value = reportId || '';
+      document.getElementById('banTargetUserDisplay').textContent = username || 'Student Account';
+      document.getElementById('banReasonInput').value = 'Severe or repeated critical violations of Safe Space safety guidelines';
+      document.getElementById('banNotesInput').value = '';
+      document.getElementById('banConfirmModal').classList.add('open');
+    }
+
+    function closeBanModal() {
+      document.getElementById('banConfirmModal').classList.remove('open');
+    }
+
+    async function executeBanUser() {
+      const userId = document.getElementById('banTargetUserId').value;
+      const reportId = document.getElementById('banTargetReportId').value;
+      const reason = document.getElementById('banReasonInput').value.trim() || 'Severe violations';
+      const notes = document.getElementById('banNotesInput').value.trim();
+
+      const btn = document.getElementById('confirmBanBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Banning...';
+
+      try {
+        await SafeSpaceDB.admin.banUser(userId, reason, reportId, notes);
+        showToast('User account has been permanently banned from Safe Space.', 'success');
+        closeBanModal();
+        closeReviewReportModal();
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to ban user: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-ban"></i> Permanently Ban User';
+      }
+    }
+
+    // ========================================================
+    // MODERATION AUDIT TRAIL LOG
+    // ========================================================
+
+    async function loadModerationAuditLog() {
+      const tbody = document.getElementById('moderationAuditTableBody');
+      if (!tbody) return;
+
+      try {
+        const records = await SafeSpaceDB.admin.getModerationAuditLog(50);
+        if (!records || records.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">
+                No moderation disciplinary actions recorded yet. All community interactions are clean.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = records.map(a => {
+          const modName = a.admin ? (a.admin.username || a.admin.first_name || 'Admin') : 'System Admin';
+          const targetName = a.user ? `@${escapeHTML(a.user.username || a.user.first_name || 'Student')}` : '—';
+          
+          let actBadgeBg = '#EDE9FE';
+          let actBadgeColor = 'var(--primary)';
+          if (a.action === 'warning') { actBadgeBg = '#FEF3C7'; actBadgeColor = '#B45309'; }
+          else if (a.action === 'post_removed') { actBadgeBg = '#FEE2E2'; actBadgeColor = '#DC2626'; }
+          else if (a.action === 'temporary_suspension') { actBadgeBg = '#FFEDD5'; actBadgeColor = '#C2410C'; }
+          else if (a.action === 'permanent_ban') { actBadgeBg = '#FEE2E2'; actBadgeColor = '#991B1B'; }
+          else if (a.action === 'report_dismissed') { actBadgeBg = '#F3F4F6'; actBadgeColor = '#6B7280'; }
+
+          let durationText = '—';
+          if (a.expires_at) {
+            durationText = `<span style="font-size:11px; color:#B45309; font-weight:600;"><i class="fas fa-clock"></i> Until ${formatTime(a.expires_at)}</span>`;
+          }
+
+          return `
+            <tr>
+              <td style="white-space:nowrap; font-size:11px; color:var(--text-muted);">${formatTime(a.created_at)}</td>
+              <td><strong style="color:var(--text-dark); font-size:12px;">${escapeHTML(modName)}</strong></td>
+              <td>
+                <span class="status-badge" style="background:${actBadgeBg}; color:${actBadgeColor}; font-size:10px; font-weight:800; text-transform:uppercase;">
+                  ${escapeHTML((a.action || 'Action').replace(/_/g, ' '))}
+                </span>
+              </td>
+              <td><strong style="color:var(--primary); font-size:12px;">${targetName}</strong></td>
+              <td style="font-size:12px; color:var(--text-dark);">${escapeHTML(a.reason || '—')}</td>
+              <td style="font-size:11px; color:var(--text-muted); font-style:italic;">${escapeHTML(a.notes || '—')}</td>
+              <td>${durationText}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:16px; color:#EF4444;">Failed to load audit records.</td></tr>`;
+      }
+    }
+
+    // ========================================================
+    // TAB 5: AI GOVERNANCE & CONTROL CENTER
+    // ========================================================
+    async function checkAiStatus() {
+      try {
+        const status = await AIService.checkStatus(true);
+        const dot = document.getElementById('topbarAiDot');
+        const heroDot = document.getElementById('aiStatusDotHero');
+        const heroLabel = document.getElementById('aiStatusLabelHero');
+
+        if (status.online) {
+          dot.className = 'ai-status-dot';
+          document.getElementById('topbarAiLabel').textContent = 'AI Moderation Online';
+          if (heroDot) heroDot.className = 'ai-status-dot';
+          if (heroLabel) heroLabel.textContent = `FastAPI Service Online (Multilingual BART + RoBERTa)`;
+        } else {
+          dot.className = 'ai-status-dot offline';
+          document.getElementById('topbarAiLabel').textContent = 'Safety Fallback Active';
+          if (heroDot) heroDot.className = 'ai-status-dot offline';
+          if (heroLabel) heroLabel.textContent = 'Safety Fallback Active (Multilingual Protection Shield)';
+        }
+      } catch (e) {
+        console.warn('AI status check failed:', e);
+      }
+    }
+
+    async function testAiConnection() {
+      showToast('Testing AI service connectivity...', 'info');
+      const start = Date.now();
+      const status = await AIService.checkStatus(true);
+      const latency = Date.now() - start;
+      if (status.online) {
+        showToast(`AI Moderation Online! Response received in ${latency}ms.`, 'success');
+      } else {
+        showToast(`Safety Fallback Active (${latency}ms).`, 'info');
+      }
+      checkAiStatus();
+    }
+
+    function renderKeywordsList() {
+      const container = document.getElementById('keywordsListContainer');
+      document.getElementById('keywordCountLabel').textContent = `${bannedKeywords.length} keywords`;
+
+      container.innerHTML = bannedKeywords.map(kw => `
+        <span class="ai-keyword-tag">
+          ${escapeHTML(kw)}
+          <i class="fas fa-times" onclick="removeKeyword('${escapeHTML(kw)}')" title="Remove keyword"></i>
+        </span>
+      `).join('');
+    }
+
+    function addNewKeyword() {
+      const input = document.getElementById('newKeywordInput');
+      const word = input.value.trim().toLowerCase();
+      if (!word) return;
+      if (!bannedKeywords.includes(word)) {
+        bannedKeywords.push(word);
+        localStorage.setItem('safe_space_banned_keywords', JSON.stringify(bannedKeywords));
+        renderKeywordsList();
+        showToast(`Added "${word}" to banned keywords filter.`, 'success');
+      }
+      input.value = '';
+    }
+
+    function removeKeyword(word) {
+      bannedKeywords = bannedKeywords.filter(k => k !== word);
+      localStorage.setItem('safe_space_banned_keywords', JSON.stringify(bannedKeywords));
+      renderKeywordsList();
+      showToast(`Removed "${word}" from filter.`, 'info');
+    }
+
+    function saveAiSettings() {
+      const toxicity = document.getElementById('toxicitySlider').value;
+      const autoEscalate = document.getElementById('crisisAutoEscalateCheck').checked;
+      const autoBlock = document.getElementById('extremeAutoBlockCheck').checked;
+
+      localStorage.setItem('safe_space_ai_settings', JSON.stringify({
+        toxicityThreshold: toxicity,
+        autoEscalateSelfHarm: autoEscalate,
+        autoBlockThreats: autoBlock,
+        updatedAt: new Date().toISOString()
+      }));
+
+      showToast('AI governance policies & thresholds saved.', 'success');
+    }
+
+    // AI Sandbox Simulator
+    function loadSandboxSample(type) {
+      const textarea = document.getElementById('aiSandboxInput');
+      if (type === 'positive') {
+        textarea.value = "Great job everyone on the presentation today! Proud of our class teamwork.";
+      } else if (type === 'stress') {
+        textarea.value = "I am feeling so overwhelmed with exams and finals, I haven't slept in two days and feel hopeless.";
+      } else if (type === 'insult') {
+        textarea.value = "Napakatanga mo talaga gago boboka ka pa!";
+      } else if (type === 'crisis') {
+        textarea.value = "I don't want to wake up anymore. Everything hurts and I want to end it all.";
+      }
+    }
+
+    async function runAiSandbox() {
+      const text = document.getElementById('aiSandboxInput').value.trim();
+      if (!text) {
+        showToast('Please type a sample message to analyze.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('runAiSandboxBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+
+      try {
+        const res = await AIService.moderate(text);
+        const card = document.getElementById('aiSandboxResultCard');
+        card.style.display = 'block';
+
+        const status = res.status || 'APPROVED';
+        const category = res.category || 'SAFE';
+        const sentiment = res.sentiment || 'NEUTRAL';
+        const confidence = Math.round((res.confidence || 0.85) * 100);
+        const elapsed = res.elapsedMs || 10;
+        const lang = (res.language || 'English').toUpperCase();
+        const severity = (res.severity || 'none').toUpperCase();
+        const source = res.detection_source ? res.detection_source.toUpperCase() : 'AI';
+        const hasObf = res.has_obfuscation;
+
+        const badge = document.getElementById('sandboxStatusBadge');
+        badge.className = `status-badge status-${status.toLowerCase()}`;
+        badge.textContent = status;
+
+        document.getElementById('sandboxCategoryBadge').textContent = category.replace(/_/g, ' ');
+        document.getElementById('sandboxLanguageBadge').textContent = `Language: ${lang}`;
+        document.getElementById('sandboxSeverityBadge').textContent = `Severity: ${severity}`;
+        document.getElementById('sandboxSourceBadge').textContent = `Source: ${source}`;
+
+        const obfEl = document.getElementById('sandboxObfuscationBadge');
+        if (obfEl) {
+          obfEl.style.display = hasObf ? 'inline-block' : 'none';
+          obfEl.textContent = hasObf ? `Evasion Detected (${(res.obfuscation_types || []).join(', ')})` : '';
+        }
+
+        document.getElementById('sandboxConfidenceText').textContent = `${confidence}%`;
+        document.getElementById('sandboxLatencyText').textContent = `${elapsed}ms`;
+        document.getElementById('sandboxSentimentText').textContent = sentiment;
+        document.getElementById('sandboxReasonText').textContent = res.reason || 'Content passed automated safety checks.';
+
+        let action = 'Publish to Community Feed (Allow)';
+        if (status === 'REVIEW') action = 'Send to Guidance Counselor Queue for Review (Warn/Review)';
+        if (status === 'BLOCKED') action = 'Block Submission Immediately & Log Safety Alert';
+        document.getElementById('sandboxActionText').textContent = action;
+
+        showToast(`AI Analysis Complete: ${status}`, 'success');
+      } catch (err) {
+        showToast('AI analysis error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> Run AI Analysis';
+      }
+    }
+
+    function openTestAiModal() {
+      switchAdminTab('ai-governance');
+      document.getElementById('aiSandboxInput').focus();
+    }
+
+    // ========================================================
+    // TAB 7: RESOURCES
+    // ========================================================
+    function renderAdminResources() {
+      const container = document.getElementById('adminResourcesContainer');
+      const resources = [
+        {
+          title: "ASU Guidance & Counseling Office",
+          subtitle: "Aklan State University – Ibajay Campus",
+          location: "📍 Administration Building, 2nd Floor",
+          hours: "Mon - Fri: 8:00 AM - 5:00 PM",
+          contact: "Local Campus Extension 104"
+        },
+        {
+          title: "National Crisis Hotline (NCMH 1553)",
+          subtitle: "Toll-free 24/7 mental health crisis assistance in the Philippines",
+          location: "📞 Dial 1553 (Toll-Free Nationwide)",
+          hours: "24 Hours / 7 Days a week",
+          contact: "Mobile: 0917-899-8727 / 0966-351-4518"
+        },
+        {
+          title: "Hopeline Philippines",
+          subtitle: "24/7 Suicide Prevention and Emotional Support Hotline",
+          location: "📞 (02) 8804-4673 / 0917-558-4673",
+          hours: "24/7 Confidential Student Helpline",
+          contact: "Globe / TM: 2919 (Toll-Free)"
+        }
+      ];
+
+      container.innerHTML = resources.map(r => `
+        <div style="background:#FBF9FF; border:1px solid var(--border); border-radius:14px; padding:18px;">
+          <div style="font-size:14px; font-weight:800; color:var(--text-dark); margin-bottom:4px;">${r.title}</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">${r.subtitle}</div>
+          <div style="font-size:13px; font-weight:700; color:var(--primary);">${r.location}</div>
+          <div style="font-size:12px; color:var(--text-mid); margin-top:4px;">${r.hours}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${r.contact}</div>
+        </div>
+      `).join('');
+    }
+
+    function openAddResourceModal() {
+      showToast('Emergency Helplines are verified institutional crisis contacts.', 'info');
+    }
+  </script>
+</body>
+</html>

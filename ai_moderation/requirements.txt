@@ -1,0 +1,34 @@
+# =============================================================
+#  requirements.txt — Python Dependencies
+#  Project: AN AI-POWERED SAFE SPACE PLATFORM
+#           WITH AUTOMATED MODERATION AND SENTIMENT ANALYSIS
+#
+#  Install with:
+#    pip install -r requirements.txt
+#
+#  ALL packages listed here are FREE and open-source.
+#  NO paid API keys are required.
+# =============================================================
+
+# ── Web API Framework ─────────────────────────────────────────
+fastapi==0.115.0          # Modern, fast async Python web framework
+uvicorn[standard]==0.30.6  # ASGI server to run FastAPI
+
+# ── AI / NLP Libraries (FREE, runs LOCALLY) ──────────────────
+transformers==4.44.2      # HuggingFace Transformers — zero-shot + sentiment models
+torch>=2.4.1              # PyTorch — AI model execution (CPU version; 2.4.0 had a known Windows fbgemm.dll bug)
+sentencepiece==0.2.0      # Required by some HuggingFace tokenizers
+scipy==1.13.1             # Required by some transformer models
+
+# ── Lightweight Fallback Sentiment Analyzer ───────────────────
+textblob==0.18.0          # TextBlob — rule-based NLP (fallback when AI model unavailable)
+
+# ── Input Validation ──────────────────────────────────────────
+pydantic==2.8.2           # Data validation (used by FastAPI)
+
+# ── Utilities ─────────────────────────────────────────────────
+python-multipart==0.0.9   # Required by FastAPI for form handling
+httpx==0.27.2             # Used in tests to call the API locally
+
+# ── Optional: Dataset downloads for TextBlob ─────────────────
+# Run this after installing: python -m textblob.download_corpora

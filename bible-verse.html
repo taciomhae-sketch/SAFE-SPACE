@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Bible Verses — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading Bible Verses...</div>
+      </div>
+    </div>
+
+    <!-- Desktop & Tablet Sidebar -->
+    <aside class="desktop-sidebar">
+      <a href="home.html" class="sidebar-brand">
+        <img class="sidebar-logo" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+        <div>
+          <div class="sidebar-brand-name">SAFE SPACE</div>
+          <span class="sidebar-brand-tag">Student Support</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="home.html" class="sidebar-link" data-page="home">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="community.html" class="sidebar-link" data-page="community">
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </a>
+        <a href="chat.html" class="sidebar-link" data-page="chat">
+          <i class="fas fa-comment-dots"></i>
+          <span>Chat</span>
+        </a>
+        <a href="resources.html" class="sidebar-link active" data-page="resources">
+          <i class="fas fa-book-open"></i>
+          <span>Resources</span>
+        </a>
+        <a href="profile.html" class="sidebar-link" data-page="profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-actions">
+        <button type="button" class="sidebar-create-btn" onclick="window.location.href='home.html'">
+          <i class="fas fa-arrow-left"></i>
+          <span>Back to Feed</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="sidebar-user-card" id="sidebarUserCard" title="View Profile">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">Account</span>
+            <span class="sidebar-user-role">Student</span>
+          </div>
+          <i class="fas fa-gear sidebar-settings-icon"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Column -->
+    <div class="main-content-column">
+      <!-- Dedicated Bible Page Header -->
+      <header class="bible-page-header">
+        <div class="bible-header-left">
+          <a href="resources.html" class="bible-back-btn" title="Back to Resources" aria-label="Back to Resources">
+            <i class="fas fa-arrow-left"></i>
+          </a>
+          <div class="bible-title-group">
+            <h1>Bible Verses</h1>
+            <p>Find Scripture for comfort, hope, strength, peace, and encouragement.</p>
+          </div>
+        </div>
+        <div class="bible-header-actions">
+          <button type="button" class="bible-saved-toggle-btn" id="savedFilterToggleBtn" title="View Saved Verses">
+            <i class="fa-regular fa-heart" id="savedToggleIcon"></i>
+            <span id="savedToggleText">My Saved Verses</span>
+            <span id="savedCountBadge" style="display:none; font-size:11px; background:#ef4444; color:#fff; border-radius:10px; padding:1px 6px;">0</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Category Filter Buttons Bar (Horizontal scroll on mobile) -->
+      <div class="bible-categories-bar">
+        <div class="bible-pill-row" id="categoriesPillRow">
+          <!-- Populated dynamically: All, Comfort, Anxiety, Stress, Hope, Peace, Strength, Faith, Love, etc. -->
+        </div>
+      </div>
+
+      <!-- Search & Controls Bar -->
+      <div class="bible-controls-bar">
+        <!-- Search Input -->
+        <div class="bible-search-wrap">
+          <i class="fas fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            class="bible-search-input"
+            id="bibleSearchInput"
+            placeholder="Search Bible verses by keyword, topic, book, or reference (e.g. hope, Psalm 23, John 3:16)..."
+            autocomplete="off"
+          />
+          <button type="button" class="bible-search-clear" id="bibleSearchClearBtn" aria-label="Clear search">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Filter Actions Row -->
+        <div class="bible-filter-actions-row">
+          <!-- Browse by Book Button -->
+          <button type="button" class="btn-browse-book" id="openBrowseBookBtn">
+            <i class="fas fa-book-bible"></i>
+            <span id="browseBookBtnText">Browse by Book</span>
+            <i class="fas fa-chevron-down" style="font-size:11px; margin-left:2px;"></i>
+          </button>
+
+          <!-- Active Filter Badges -->
+          <div id="activeFilterBadges" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"></div>
+
+          <!-- Clear Filters Button -->
+          <button type="button" class="btn-clear-filters" id="clearAllFiltersBtn" style="display:none;">
+            <i class="fas fa-rotate-left"></i>
+            <span>Clear Filters</span>
+          </button>
+
+          <!-- Total Count & Translation Badge -->
+          <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted);" id="versesCountStatus">Loading verses...</span>
+            <span class="bible-trans-badge" title="Public domain King James Version">KJV</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Chapter Bar (Visible when a book is selected) -->
+        <div class="bible-chapter-bar" id="chapterBar" style="display:none;">
+          <div class="bible-chapter-title">
+            <span id="chapterBarBookTitle">Select Chapter:</span>
+            <button type="button" id="closeChapterBarBtn" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:12px;">
+              <i class="fas fa-times"></i> Close Book View
+            </button>
+          </div>
+          <div class="bible-chapter-pills-row" id="chapterPillsRow">
+            <!-- Chapter buttons [1] [2] [3]... -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Verses Container -->
+      <main class="page-content" id="biblePageContent" style="padding: 0 24px 24px 24px;">
+
+        <div id="versesListContainer">
+          <!-- Skeleton Loading Card -->
+          <div class="skeleton-card" style="padding:22px; margin-bottom:16px; border-radius:16px;">
+            <div class="sk-header">
+              <div class="skeleton sk-avatar" style="width:32px; height:32px; border-radius:50%;"></div>
+              <div class="sk-lines" style="width:40%;">
+                <div class="skeleton sk-line" style="width:60%;"></div>
+              </div>
+            </div>
+            <div class="skeleton sk-line" style="margin-top:14px; width:90%; height:14px;"></div>
+            <div class="skeleton sk-line" style="margin-top:8px; width:75%; height:14px;"></div>
+          </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="bible-pagination-wrap" id="paginationWrap" style="display:none;">
+          <button type="button" class="bible-page-btn" id="prevPageBtn" title="Previous Page">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div id="pageNumbersContainer" style="display:flex; gap:6px; align-items:center;"></div>
+          <button type="button" class="bible-page-btn" id="nextPageBtn" title="Next Page">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav">
+      <a href="home.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item active">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Browse by Book Modal -->
+  <div class="modal-overlay" id="browseBookModal">
+    <div class="modal-sheet" style="max-width: 620px; max-height: 85vh;">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="bible-verse-icon" style="width:34px; height:34px;">
+            <i class="fas fa-book-bible"></i>
+          </div>
+          <div>
+            <div class="modal-title" style="font-size:17px;">Browse Bible Books</div>
+            <div style="font-size:12px; color:var(--text-muted);">Select any of the 66 Bible books to view chapters</div>
+          </div>
+        </div>
+        <button class="modal-close" id="closeBrowseBookModalBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding:16px 20px 24px 20px;">
+        <!-- Testament Tabs -->
+        <div class="book-tabs-nav">
+          <button type="button" class="book-tab-btn active" data-testament="all">All (66 Books)</button>
+          <button type="button" class="book-tab-btn" data-testament="Old Testament">Old Testament (39)</button>
+          <button type="button" class="book-tab-btn" data-testament="New Testament">New Testament (27)</button>
+        </div>
+
+        <!-- Filter Books input -->
+        <div style="margin-bottom:12px; position:relative;">
+          <i class="fas fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:13px;"></i>
+          <input
+            type="text"
+            id="bookFilterInput"
+            placeholder="Filter book by name (e.g. Psalms, Genesis, John)..."
+            style="width:100%; height:38px; padding:0 12px 0 34px; border-radius:var(--radius-lg); border:1px solid var(--border); background:var(--card-bg); font-size:13px; box-sizing:border-box; outline:none;"
+          />
+        </div>
+
+        <!-- Books Grid -->
+        <div class="books-grid" id="booksGridContainer">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verse Detail Modal -->
+  <div class="modal-overlay" id="verseDetailModal">
+    <div class="modal-sheet" style="max-width: 540px;">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="bible-verse-icon" style="width:34px; height:34px;">
+            <i class="fas fa-book-bible"></i>
+          </div>
+          <div>
+            <div class="modal-title" id="detailVerseRef">Scripture Reference</div>
+            <div style="font-size:12px; color:var(--text-muted);" id="detailVerseTestament">Testament Details</div>
+          </div>
+        </div>
+        <button class="modal-close" id="closeDetailModalBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding:20px;">
+        <div style="font-size:18px; line-height:1.65; color:var(--text-dark); margin-bottom:18px; font-weight:500;" id="detailVerseText">
+          "Verse text goes here..."
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:18px; background:var(--page-bg); padding:12px; border-radius:var(--radius-lg); border:1px solid var(--border);">
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Book</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-dark);" id="detailVerseBook">-</div>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Chapter</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-dark);" id="detailVerseChapter">-</div>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Verse</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-dark);" id="detailVerseNumber">-</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Categories / Topics</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;" id="detailVerseCategories"></div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:flex-end; margin-top:20px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; gap:10px;">
+          <button type="button" class="btn-verse-save" id="detailSaveBtn">
+            <i class="fa-regular fa-heart"></i>
+            <span>Save Verse</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/bible-data.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 0. Dismiss page loader immediately for zero perceived latency
+      if (typeof hidePageLoader === 'function') hidePageLoader();
+
+      // Read current user synchronously from local cache
+      let currentUser = null;
+      try {
+        currentUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+      } catch (e) {}
+
+      // Background non-blocking auth check
+      setTimeout(async () => {
+        try {
+          if (typeof requireAuth === 'function') {
+            const authUser = await requireAuth();
+            if (authUser) currentUser = authUser;
+          }
+          await refreshSavedVersesList();
+        } catch (e) {
+          console.warn('Background auth/saved check:', e);
+        }
+      }, 0);
+
+      const escapeHTML = window.escapeHTML || (str => String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]));
+
+      // Synchronously retrieve saved verses from local cache for 0ms badge display
+      const initialSavedIds = (window.SafeSpaceDB && SafeSpaceDB.verses && SafeSpaceDB.verses.getSavedVersesSync)
+        ? SafeSpaceDB.verses.getSavedVersesSync(currentUser ? currentUser.id : null)
+        : [];
+
+      // State Management
+      const state = {
+        category: 'all',
+        book: 'all',
+        chapter: null,
+        search: '',
+        onlySaved: false,
+        page: 1,
+        limit: 20,
+        savedIds: initialSavedIds,
+        totalItems: 0,
+        totalPages: 1,
+        selectedTestament: 'all',
+        bookFilter: '',
+        activeDetailVerse: null
+      };
+
+      // In-memory query cache for instant (0ms) category switching
+      const _queryCache = new Map();
+
+      // DOM Elements
+      const categoriesRow = document.getElementById('categoriesPillRow');
+      const searchInput = document.getElementById('bibleSearchInput');
+      const searchClearBtn = document.getElementById('bibleSearchClearBtn');
+      const versesContainer = document.getElementById('versesListContainer');
+      const versesCountStatus = document.getElementById('versesCountStatus');
+      const savedFilterToggleBtn = document.getElementById('savedFilterToggleBtn');
+      const savedToggleIcon = document.getElementById('savedToggleIcon');
+      const savedToggleText = document.getElementById('savedToggleText');
+      const savedCountBadge = document.getElementById('savedCountBadge');
+      const activeFilterBadges = document.getElementById('activeFilterBadges');
+      const clearAllFiltersBtn = document.getElementById('clearAllFiltersBtn');
+      const openBrowseBookBtn = document.getElementById('openBrowseBookBtn');
+      const browseBookBtnText = document.getElementById('browseBookBtnText');
+      const chapterBar = document.getElementById('chapterBar');
+      const chapterBarBookTitle = document.getElementById('chapterBarBookTitle');
+      const chapterPillsRow = document.getElementById('chapterPillsRow');
+      const closeChapterBarBtn = document.getElementById('closeChapterBarBtn');
+      const browseBookModal = document.getElementById('browseBookModal');
+      const closeBrowseBookModalBtn = document.getElementById('closeBrowseBookModalBtn');
+      const booksGridContainer = document.getElementById('booksGridContainer');
+      const bookFilterInput = document.getElementById('bookFilterInput');
+      const bookTabBtns = document.querySelectorAll('.book-tab-btn');
+      const verseDetailModal = document.getElementById('verseDetailModal');
+      const closeDetailModalBtn = document.getElementById('closeDetailModalBtn');
+      const paginationWrap = document.getElementById('paginationWrap');
+      const prevPageBtn = document.getElementById('prevPageBtn');
+      const nextPageBtn = document.getElementById('nextPageBtn');
+      const pageNumbersContainer = document.getElementById('pageNumbersContainer');
+
+      // Update badge immediately
+      if (savedCountBadge && state.savedIds.length > 0) {
+        savedCountBadge.textContent = state.savedIds.length;
+        savedCountBadge.style.display = 'inline-block';
+      }
+
+      // Toast notification helper
+      function notify(msg, type = 'info') {
+        if (typeof showToast === 'function') {
+          showToast(msg, type);
+        } else {
+          console.log(`[Toast ${type}]: ${msg}`);
+        }
+      }
+
+      // 1. Saved Verses Sync
+      async function refreshSavedVersesList() {
+        try {
+          if (window.SafeSpaceDB && SafeSpaceDB.verses && SafeSpaceDB.verses.getSavedVerses) {
+            const ids = await SafeSpaceDB.verses.getSavedVerses();
+            if (ids && ids.length !== state.savedIds.length) {
+              state.savedIds = ids;
+              if (savedCountBadge) {
+                const count = state.savedIds.length;
+                savedCountBadge.textContent = count;
+                savedCountBadge.style.display = count > 0 ? 'inline-block' : 'none';
+              }
+              // Clear cache when saved items change
+              _queryCache.clear();
+              loadVerses(false);
+            }
+          }
+        } catch (e) {
+          console.warn('Error fetching saved verses:', e);
+        }
+      }
+
+      // 2. Render Category Buttons
+      function renderCategoryButtons() {
+        const categories = (typeof SafeSpaceBible !== 'undefined' && SafeSpaceBible.getCategories)
+          ? SafeSpaceBible.getCategories()
+          : [
+              "Comfort", "Anxiety", "Stress", "Hope", "Peace",
+              "Strength", "Courage", "Faith", "Love", "Forgiveness",
+              "Grief", "Loneliness", "Friendship", "Relationships", "Guidance",
+              "Wisdom", "Patience", "Gratitude", "Self-Worth", "Encouragement",
+              "Fear", "Healing", "Difficult Times", "Protection", "Prayer",
+              "Joy", "Kindness", "Perseverance", "Purpose", "Rest"
+            ];
+
+        let html = `<button type="button" class="bible-pill ${state.category === 'all' ? 'active' : ''}" data-cat="all">All</button>`;
+        categories.forEach(cat => {
+          const isActive = (state.category.toLowerCase() === cat.toLowerCase());
+          html += `<button type="button" class="bible-pill ${isActive ? 'active' : ''}" data-cat="${escapeHTML(cat)}">${escapeHTML(cat)}</button>`;
+        });
+        categoriesRow.innerHTML = html;
+
+        const onCategorySelect = (btn) => {
+          const cat = btn.dataset.cat;
+          if (state.category === cat && !state.onlySaved) return;
+          categoriesRow.querySelectorAll('.bible-pill').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.category = cat;
+          state.onlySaved = false;
+          updateSavedToggleUI();
+          state.page = 1;
+          loadVerses(false);
+        };
+
+        categoriesRow.querySelectorAll('.bible-pill').forEach(btn => {
+          // Instant active response on click
+          btn.addEventListener('click', () => onCategorySelect(btn));
+        });
+      }
+
+      // 3. Render Books in Modal
+      function renderBooksGrid() {
+        const allBooks = (typeof SafeSpaceBible !== 'undefined' && SafeSpaceBible.getAllBooks)
+          ? SafeSpaceBible.getAllBooks()
+          : [];
+
+        let filtered = allBooks.slice();
+        if (state.selectedTestament !== 'all') {
+          filtered = filtered.filter(b => b.testament === state.selectedTestament);
+        }
+        if (state.bookFilter) {
+          const q = state.bookFilter.toLowerCase();
+          filtered = filtered.filter(b => b.name.toLowerCase().includes(q));
+        }
+
+        if (filtered.length === 0) {
+          booksGridContainer.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">
+              <i class="fas fa-book-open" style="font-size:24px; margin-bottom:8px; display:block;"></i>
+              No Bible books match your search.
+            </div>
+          `;
+          return;
+        }
+
+        booksGridContainer.innerHTML = filtered.map(b => {
+          const isSelected = (state.book.toLowerCase() === b.name.toLowerCase());
+          return `
+            <button type="button" class="book-card-item ${isSelected ? 'selected' : ''}" data-book="${escapeHTML(b.name)}" data-chapters="${b.chapters}">
+              <span style="font-weight:700;">${escapeHTML(b.name)}</span>
+              <span class="book-chaps-tag">${b.chapters} chapter${b.chapters === 1 ? '' : 's'}</span>
+            </button>
+          `;
+        }).join('');
+
+        booksGridContainer.querySelectorAll('.book-card-item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const bookName = btn.dataset.book;
+            const chaps = parseInt(btn.dataset.chapters, 10);
+            selectBook(bookName, chaps);
+            closeBrowseBookModal();
+          });
+        });
+      }
+
+      // 4. Handle Book Selection & Chapters
+      function selectBook(bookName, chapsCount) {
+        state.book = bookName;
+        state.chapter = 1; // Default to Chapter 1
+        state.category = 'all'; // Default to all so full chapter is browsable
+        categoriesRow.querySelectorAll('.bible-pill').forEach(b => {
+          b.classList.toggle('active', b.dataset.cat === 'all');
+        });
+        state.page = 1;
+
+        browseBookBtnText.textContent = bookName;
+        openBrowseBookBtn.classList.add('has-book');
+
+        // Render chapter pills
+        chapterBar.style.display = 'block';
+        chapterBarBookTitle.textContent = `${bookName} — Select Chapter:`;
+
+        let html = '';
+        for (let c = 1; c <= chapsCount; c++) {
+          const isActive = (state.chapter === c);
+          html += `<button type="button" class="btn-chap-pill ${isActive ? 'active' : ''}" data-chap="${c}">${c}</button>`;
+        }
+        chapterPillsRow.innerHTML = html;
+
+        chapterPillsRow.querySelectorAll('.btn-chap-pill').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const chap = parseInt(btn.dataset.chap, 10);
+            chapterPillsRow.querySelectorAll('.btn-chap-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.chapter = chap;
+            state.page = 1;
+            loadVerses(false);
+          });
+        });
+
+        loadVerses(false);
+      }
+
+      function clearBookSelection() {
+        state.book = 'all';
+        state.chapter = null;
+        browseBookBtnText.textContent = 'Browse by Book';
+        openBrowseBookBtn.classList.remove('has-book');
+        chapterBar.style.display = 'none';
+        chapterPillsRow.innerHTML = '';
+        state.page = 1;
+        loadVerses(false);
+      }
+
+      closeChapterBarBtn.addEventListener('click', clearBookSelection);
+
+      // 5. Active Filter Badges UI
+      function updateFilterBadgesUI() {
+        let badgesHtml = '';
+        let hasFilters = false;
+
+        if (state.category !== 'all') {
+          hasFilters = true;
+          badgesHtml += `
+            <span class="bible-active-filter-badge">
+              Category: ${escapeHTML(state.category)}
+              <i class="fas fa-times" onclick="window.clearCategoryFilter()"></i>
+            </span>
+          `;
+        }
+
+        if (state.book !== 'all') {
+          hasFilters = true;
+          badgesHtml += `
+            <span class="bible-active-filter-badge">
+              Book: ${escapeHTML(state.book)} ${state.chapter ? 'Ch. ' + state.chapter : ''}
+              <i class="fas fa-times" onclick="window.clearBookFilter()"></i>
+            </span>
+          `;
+        }
+
+        if (state.search) {
+          hasFilters = true;
+          badgesHtml += `
+            <span class="bible-active-filter-badge">
+              "${escapeHTML(state.search)}"
+              <i class="fas fa-times" onclick="window.clearSearchFilter()"></i>
+            </span>
+          `;
+        }
+
+        if (state.onlySaved) {
+          hasFilters = true;
+          badgesHtml += `
+            <span class="bible-active-filter-badge" style="background:#fee2e2; color:#ef4444;">
+              <i class="fas fa-heart"></i> Saved Verses
+              <i class="fas fa-times" onclick="window.clearSavedFilter()"></i>
+            </span>
+          `;
+        }
+
+        activeFilterBadges.innerHTML = badgesHtml;
+        clearAllFiltersBtn.style.display = hasFilters ? 'inline-flex' : 'none';
+      }
+
+      window.clearCategoryFilter = () => {
+        state.category = 'all';
+        categoriesRow.querySelectorAll('.bible-pill').forEach(b => {
+          b.classList.toggle('active', b.dataset.cat === 'all');
+        });
+        state.page = 1;
+        loadVerses(false);
+      };
+
+      window.clearBookFilter = () => {
+        clearBookSelection();
+      };
+
+      window.clearSearchFilter = () => {
+        state.search = '';
+        searchInput.value = '';
+        searchClearBtn.style.display = 'none';
+        state.page = 1;
+        loadVerses(false);
+      };
+
+      window.clearSavedFilter = () => {
+        state.onlySaved = false;
+        updateSavedToggleUI();
+        state.page = 1;
+        loadVerses(false);
+      };
+
+      clearAllFiltersBtn.addEventListener('click', () => {
+        state.category = 'all';
+        categoriesRow.querySelectorAll('.bible-pill').forEach(b => {
+          b.classList.toggle('active', b.dataset.cat === 'all');
+        });
+        clearBookSelection();
+        state.search = '';
+        searchInput.value = '';
+        searchClearBtn.style.display = 'none';
+        state.onlySaved = false;
+        updateSavedToggleUI();
+        state.page = 1;
+        loadVerses(false);
+      });
+
+      // 6. Saved Toggle Button UI
+      function updateSavedToggleUI() {
+        if (state.onlySaved) {
+          savedFilterToggleBtn.classList.add('active');
+          savedToggleIcon.className = 'fas fa-heart';
+          savedToggleText.textContent = 'Showing Saved';
+        } else {
+          savedFilterToggleBtn.classList.remove('active');
+          savedToggleIcon.className = 'fa-regular fa-heart';
+          savedToggleText.textContent = 'My Saved Verses';
+        }
+      }
+
+      savedFilterToggleBtn.addEventListener('click', () => {
+        state.onlySaved = !state.onlySaved;
+        updateSavedToggleUI();
+        state.page = 1;
+        loadVerses(false);
+      });
+
+      // 7. Load & Render Verses (Immediate with Zero Flicker)
+      async function loadVerses(showSkeleton = false) {
+        updateFilterBadgesUI();
+
+        const cacheKey = `${state.category}|${state.book}|${state.chapter}|${state.search}|${state.onlySaved}|${state.page}|${state.limit}|${state.savedIds.join(',')}`;
+
+        let res = _queryCache.get(cacheKey);
+
+        if (!res && showSkeleton) {
+          versesCountStatus.textContent = 'Searching...';
+          versesContainer.innerHTML = `
+            <div class="skeleton-card" style="padding:22px; margin-bottom:16px; border-radius:16px;">
+              <div class="sk-header">
+                <div class="skeleton sk-avatar" style="width:32px; height:32px; border-radius:50%;"></div>
+                <div class="sk-lines" style="width:40%;">
+                  <div class="skeleton sk-line" style="width:60%;"></div>
+                </div>
+              </div>
+              <div class="skeleton sk-line" style="margin-top:14px; width:90%; height:14px;"></div>
+              <div class="skeleton sk-line" style="margin-top:8px; width:75%; height:14px;"></div>
+            </div>
+          `;
+        }
+
+        try {
+          if (!res) {
+            res = await SafeSpaceBible.queryVerses({
+              category: state.category,
+              book: state.book,
+              chapter: state.chapter,
+              search: state.search,
+              onlySaved: state.onlySaved,
+              savedIds: state.savedIds,
+              page: state.page,
+              limit: state.limit
+            });
+            _queryCache.set(cacheKey, res);
+          }
+
+          state.totalItems = res.total;
+          state.totalPages = res.totalPages;
+          state.page = res.page;
+
+          versesCountStatus.textContent = `${state.totalItems} Scripture${state.totalItems === 1 ? '' : 's'}`;
+
+          if (res.items.length === 0) {
+            let emptyMsg = 'No Bible verses match your search.';
+            let emptySub = 'Try clearing some filters or searching for terms like "hope", "peace", or "strength".';
+            let emptyIcon = 'fa-book-open';
+
+            if (state.onlySaved) {
+              emptyMsg = 'No saved Bible verses yet';
+              emptySub = 'Tap the heart icon on any verse to bookmark it for quick comfort and encouragement.';
+              emptyIcon = 'fa-heart';
+            }
+
+            versesContainer.innerHTML = `
+              <div class="empty-state" style="padding:60px 20px; text-align:center;">
+                <i class="fa-solid ${emptyIcon}" style="font-size:48px; color:var(--text-muted); margin-bottom:14px; display:inline-block;"></i>
+                <h3 style="font-size:17px; font-weight:700; color:var(--text-dark); margin:0 0 6px 0;">${emptyMsg}</h3>
+                <p style="font-size:14px; color:var(--text-muted); max-width:400px; margin:0 auto 16px auto; line-height:1.5;">${emptySub}</p>
+                ${state.onlySaved ? '' : '<button type="button" class="btn-clear-filters" onclick="document.getElementById(\'clearAllFiltersBtn\').click()"><i class="fas fa-rotate-left"></i> View All Verses</button>'}
+              </div>
+            `;
+            paginationWrap.style.display = 'none';
+            return;
+          }
+
+          versesContainer.innerHTML = res.items.map(v => {
+            const isSaved = state.savedIds.includes(v.id) || state.savedIds.includes(v.reference);
+            const categories = v.category || [];
+            const tagsHtml = categories.slice(0, 3).map(c => `<span class="bible-tag">${escapeHTML(c)}</span>`).join('');
+            const moreCats = categories.length > 3 ? `<span class="bible-tag" style="background:var(--page-bg); color:var(--text-muted); border:1px solid var(--border);">+${categories.length - 3}</span>` : '';
+
+            return `
+              <article class="bible-verse-card" id="verse-card-${v.id}" data-id="${v.id}">
+                <div class="bible-verse-top">
+                  <div class="bible-verse-ref-box">
+                    <div class="bible-verse-icon"><i class="fas fa-book-bible"></i></div>
+                    <span class="bible-verse-reference">${escapeHTML(v.reference)}</span>
+                  </div>
+                  <div class="bible-verse-badges">
+                    ${tagsHtml}
+                    ${moreCats}
+                    <span class="bible-trans-badge">KJV</span>
+                  </div>
+                </div>
+
+                <div class="bible-verse-body">
+                  &ldquo;${escapeHTML(v.text)}&rdquo;
+                </div>
+
+                <div class="bible-verse-footer">
+                  <div class="bible-verse-detail-hint">
+                    <i class="fas fa-circle-info"></i>
+                    <span>Tap for details</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <button type="button" class="btn-verse-save ${isSaved ? 'saved' : ''}" data-id="${v.id}" data-ref="${escapeHTML(v.reference)}" title="${isSaved ? 'Remove from saved' : 'Save verse'}">
+                      <i class="${isSaved ? 'fas' : 'fa-regular'} fa-heart"></i>
+                      <span>${isSaved ? 'Saved' : 'Save'}</span>
+                    </button>
+                  </div>
+                </div>
+              </article>
+            `;
+          }).join('');
+
+          // Attach listeners to verse cards and save buttons
+          versesContainer.querySelectorAll('.bible-verse-card').forEach(card => {
+            const verseId = card.dataset.id;
+            const verseObj = res.items.find(item => item.id === verseId);
+
+            // Card click -> open detail view
+            card.addEventListener('click', (e) => {
+              if (e.target.closest('.btn-verse-save')) return;
+              openVerseDetail(verseObj);
+            });
+
+            // Save button click
+            const saveBtn = card.querySelector('.btn-verse-save');
+            if (saveBtn) {
+              saveBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await handleToggleSave(verseObj, saveBtn);
+              });
+            }
+          });
+
+          // Render pagination
+          renderPagination();
+
+        } catch (err) {
+          console.error('[SafeSpace] Error loading verses:', err);
+          versesContainer.innerHTML = `
+            <div class="empty-state" style="padding:40px; text-align:center;">
+              <i class="fas fa-triangle-exclamation" style="font-size:36px; color:#ef4444; margin-bottom:10px;"></i>
+              <h3 style="font-size:16px;">Could not load verses</h3>
+              <p style="font-size:13px; color:var(--text-muted);">Please check your connection and try again.</p>
+            </div>
+          `;
+        }
+      }
+
+      // 8. Toggle Save Verse Logic (Instant Optimistic UI)
+      async function handleToggleSave(verseObj, buttonEl) {
+        if (!currentUser) {
+          try {
+            currentUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+          } catch (e) {}
+        }
+        if (!currentUser) {
+          notify('Please log in to save Bible verses.', 'error');
+          return;
+        }
+
+        const currentlySaved = state.savedIds.includes(verseObj.id) || state.savedIds.includes(verseObj.reference);
+        const willBeSaved = !currentlySaved;
+
+        // Optimistic UI update immediately
+        if (willBeSaved) {
+          if (!state.savedIds.includes(verseObj.id)) state.savedIds.push(verseObj.id);
+          if (!state.savedIds.includes(verseObj.reference)) state.savedIds.push(verseObj.reference);
+        } else {
+          state.savedIds = state.savedIds.filter(id => id !== verseObj.id && id !== verseObj.reference);
+        }
+
+        if (savedCountBadge) {
+          const count = state.savedIds.length;
+          savedCountBadge.textContent = count;
+          savedCountBadge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+
+        if (buttonEl) {
+          if (willBeSaved) {
+            buttonEl.classList.add('saved');
+            buttonEl.innerHTML = `<i class="fas fa-heart"></i><span>Saved</span>`;
+            notify(`Saved ${verseObj.reference} to favorites ❤️`, 'success');
+          } else {
+            buttonEl.classList.remove('saved');
+            buttonEl.innerHTML = `<i class="fa-regular fa-heart"></i><span>Save</span>`;
+            notify(`Removed ${verseObj.reference} from favorites`, 'info');
+          }
+        }
+
+        // Clear query cache
+        _queryCache.clear();
+
+        // Perform actual toggle in background
+        try {
+          const res = await SafeSpaceDB.verses.toggleSaveVerse(verseObj.id, verseObj);
+          if (state.onlySaved) {
+            loadVerses(false);
+          }
+        } catch (e) {
+          notify(e.message || 'Could not save verse', 'error');
+          // Revert on error
+          await refreshSavedVersesList();
+          loadVerses(false);
+        }
+      }
+
+      // 9. Pagination UI
+      function renderPagination() {
+        if (state.totalPages <= 1) {
+          paginationWrap.style.display = 'none';
+          return;
+        }
+
+        paginationWrap.style.display = 'flex';
+        prevPageBtn.disabled = (state.page <= 1);
+        nextPageBtn.disabled = (state.page >= state.totalPages);
+
+        let html = '';
+        const cur = state.page;
+        const total = state.totalPages;
+
+        let pages = [];
+        if (total <= 6) {
+          for (let p = 1; p <= total; p++) pages.push(p);
+        } else {
+          pages.push(1);
+          if (cur > 3) pages.push('...');
+          for (let p = Math.max(2, cur - 1); p <= Math.min(total - 1, cur + 1); p++) {
+            pages.push(p);
+          }
+          if (cur < total - 2) pages.push('...');
+          pages.push(total);
+        }
+
+        pages.forEach(p => {
+          if (p === '...') {
+            html += `<span style="color:var(--text-muted); padding:0 4px;">...</span>`;
+          } else {
+            const isActive = (p === cur);
+            html += `<button type="button" class="bible-page-btn ${isActive ? 'active' : ''}" data-page="${p}">${p}</button>`;
+          }
+        });
+
+        pageNumbersContainer.innerHTML = html;
+
+        pageNumbersContainer.querySelectorAll('.bible-page-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.page = parseInt(btn.dataset.page, 10);
+            loadVerses(false);
+            const contentEl = document.getElementById('biblePageContent') || window;
+            contentEl.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        });
+      }
+
+      prevPageBtn.addEventListener('click', () => {
+        if (state.page > 1) {
+          state.page--;
+          loadVerses(false);
+          const contentEl = document.getElementById('biblePageContent') || window;
+          contentEl.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+
+      nextPageBtn.addEventListener('click', () => {
+        if (state.page < state.totalPages) {
+          state.page++;
+          loadVerses(false);
+          const contentEl = document.getElementById('biblePageContent') || window;
+          contentEl.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+
+      // 10. Verse Detail Modal
+      function openVerseDetail(v) {
+        if (!v) return;
+        state.activeDetailVerse = v;
+        const isSaved = state.savedIds.includes(v.id) || state.savedIds.includes(v.reference);
+
+        document.getElementById('detailVerseRef').textContent = v.reference;
+        document.getElementById('detailVerseTestament').textContent = `${v.testament || 'Public Domain'} • King James Version (KJV)`;
+        document.getElementById('detailVerseText').textContent = `"${v.text}"`;
+        document.getElementById('detailVerseBook').textContent = v.book;
+        document.getElementById('detailVerseChapter').textContent = v.chapter;
+        document.getElementById('detailVerseNumber').textContent = v.verse;
+
+        const catsEl = document.getElementById('detailVerseCategories');
+        catsEl.innerHTML = (v.category || ['Scripture']).map(c => `<span class="bible-tag">${escapeHTML(c)}</span>`).join('');
+
+        const detailSaveBtn = document.getElementById('detailSaveBtn');
+        if (isSaved) {
+          detailSaveBtn.classList.add('saved');
+          detailSaveBtn.innerHTML = `<i class="fas fa-heart"></i><span>Saved</span>`;
+        } else {
+          detailSaveBtn.classList.remove('saved');
+          detailSaveBtn.innerHTML = `<i class="fa-regular fa-heart"></i><span>Save Verse</span>`;
+        }
+        verseDetailModal.classList.add('open');
+      }
+
+      function closeVerseDetail() {
+        verseDetailModal.classList.remove('open');
+        state.activeDetailVerse = null;
+      }
+
+      closeDetailModalBtn.addEventListener('click', closeVerseDetail);
+
+      document.getElementById('detailSaveBtn').addEventListener('click', async () => {
+        if (!state.activeDetailVerse) return;
+        const btn = document.getElementById('detailSaveBtn');
+        await handleToggleSave(state.activeDetailVerse, btn);
+        loadVerses(false);
+      });
+
+      // 11. Browse Book Modal Handlers
+      function openBrowseBookModal() {
+        browseBookModal.classList.add('open');
+        renderBooksGrid();
+        setTimeout(() => bookFilterInput.focus(), 150);
+      }
+
+      function closeBrowseBookModal() {
+        browseBookModal.classList.remove('open');
+        state.bookFilter = '';
+        bookFilterInput.value = '';
+      }
+
+      openBrowseBookBtn.addEventListener('click', openBrowseBookModal);
+      closeBrowseBookModalBtn.addEventListener('click', closeBrowseBookModal);
+
+      // Book modal tabs
+      bookTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          bookTabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.selectedTestament = btn.dataset.testament;
+          renderBooksGrid();
+        });
+      });
+
+      // Book search filter in modal
+      bookFilterInput.addEventListener('input', (e) => {
+        state.bookFilter = e.target.value.trim();
+        renderBooksGrid();
+      });
+
+      // 12. Search Input Listener (Ultra snappy 75ms debounce)
+      let searchDebounceTimer = null;
+      searchInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        searchClearBtn.style.display = val ? 'block' : 'none';
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+          state.search = val;
+          state.page = 1;
+          loadVerses(false);
+        }, 75);
+      });
+
+      searchClearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchClearBtn.style.display = 'none';
+        state.search = '';
+        state.page = 1;
+        loadVerses(false);
+      });
+
+      // Close modals with Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (browseBookModal.classList.contains('open')) closeBrowseBookModal();
+          if (verseDetailModal.classList.contains('open')) closeVerseDetail();
+        }
+      });
+
+      // Close modals when clicking backdrop
+      [browseBookModal, verseDetailModal].forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.classList.remove('open');
+          }
+        });
+      });
+
+      // 13. Initialize Page Instantly (0ms delay)
+      renderCategoryButtons();
+      loadVerses(false);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Home — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading feed...</div>
+      </div>
+    </div>
+
+    <!-- Desktop & Tablet Sidebar -->
+    <aside class="desktop-sidebar">
+      <a href="home.html" class="sidebar-brand">
+        <img class="sidebar-logo" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+        <div>
+          <div class="sidebar-brand-name">SAFE SPACE</div>
+          <span class="sidebar-brand-tag">Student Support</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="home.html" class="sidebar-link active" data-page="home">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="community.html" class="sidebar-link" data-page="community">
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </a>
+        <a href="chat.html" class="sidebar-link" data-page="chat">
+          <i class="fas fa-comment-dots"></i>
+          <span>Chat</span>
+        </a>
+        <a href="resources.html" class="sidebar-link" data-page="resources">
+          <i class="fas fa-book-open"></i>
+          <span>Resources</span>
+        </a>
+        <a href="profile.html" class="sidebar-link" data-page="profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-actions">
+        <button type="button" class="sidebar-create-btn" id="sidebarCreatePostBtn">
+          <i class="fas fa-plus"></i>
+          <span>Create Post</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="sidebar-user-card" id="sidebarUserCard" title="View Profile">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">Account</span>
+            <span class="sidebar-user-role">Student</span>
+          </div>
+          <i class="fas fa-gear sidebar-settings-icon"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Column -->
+    <div class="main-content-column">
+      <!-- Page Header -->
+      <header class="page-header">
+        <h1>Home</h1>
+        <div class="header-actions">
+          <button class="header-btn notif-bell-btn" id="notificationsBtn" aria-label="Notifications">
+            <i class="fa-regular fa-bell"></i>
+            <span class="notif-bell-badge" id="notifBadge" style="display: none;">0</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Category Pill Row -->
+      <div class="pill-scroll-wrap">
+        <div class="pill-row" id="categoryPillRow">
+          <button class="pill active" data-category="all">All</button>
+          <button class="pill" data-category="general">General</button>
+          <button class="pill" data-category="support">Support</button>
+          <button class="pill" data-category="story">Story</button>
+          <div class="category-loading-badge" id="categoryLoadingBadge" style="display: none;">
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <span id="categoryLoadingText">Loading...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Feed Content -->
+      <main class="page-content" id="pageContent">
+        <!-- Account Restriction / Suspension Alert Banner -->
+        <div id="accountRestrictionBanner" style="display:none; margin: 12px 0 16px 0;"></div>
+
+        <div class="feed-list" id="feedContainer">
+          <!-- Skeleton Loading -->
+          <div class="skeleton-post">
+            <div class="sk-header">
+              <div class="skeleton sk-avatar"></div>
+              <div class="sk-lines">
+                <div class="skeleton sk-line" style="width: 40%;"></div>
+                <div class="skeleton sk-line short"></div>
+              </div>
+            </div>
+            <div class="skeleton sk-line" style="margin-bottom: 8px;"></div>
+            <div class="skeleton sk-line" style="width: 80%;"></div>
+          </div>
+          <div class="skeleton-post">
+            <div class="sk-header">
+              <div class="skeleton sk-avatar"></div>
+              <div class="sk-lines">
+                <div class="skeleton sk-line" style="width: 50%;"></div>
+                <div class="skeleton sk-line short"></div>
+              </div>
+            </div>
+            <div class="skeleton sk-image" style="margin-top: 8px;"></div>
+          </div>
+        </div>
+
+        <!-- Feed Load More / Pagination -->
+        <div id="feedLoadMoreContainer" class="feed-load-more-wrap" style="display:none;"></div>
+      </main>
+
+      <!-- Floating Action Button (FAB) -->
+      <button class="fab" id="openCreatePostBtn" aria-label="Create Post">
+        <i class="fas fa-plus"></i>
+      </button>
+    </div>
+
+    <!-- Desktop Right Sidebar (Daily Scripture & Resources) -->
+    <aside class="desktop-right-sidebar">
+      <div class="right-widget scripture-widget" style="display:block;">
+        <div class="scripture-header">
+          <i class="fas fa-quote-left"></i>
+          <span>Daily Scripture</span>
+          <span style="margin-left:auto; font-size:10px; font-weight:700; color:var(--primary); background:rgba(108,79,209,0.1); padding:2px 6px; border-radius:10px;">KJV</span>
+        </div>
+        <p class="scripture-text" id="dailyScriptureText">"Cast all your anxiety on Him because He cares for you."</p>
+        <div class="scripture-ref" id="dailyScriptureRef">1 Peter 5:7</div>
+        <div style="margin-top:12px;">
+          <a href="bible-verse.html" style="display:block; text-align:center; font-size:12px; font-weight:600; padding:7px 12px; background:var(--primary-ultra); color:var(--primary); border-radius:var(--radius-sm); text-decoration:none; transition:all var(--transition);">
+            <i class="fas fa-heart"></i> Explore Scripture Verses
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="home.html" class="nav-item active">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Create Post Modal -->
+  <div class="modal-overlay" id="createPostModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <button class="modal-close" id="closeCreateModalBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+        <span class="modal-title">Create Post</span>
+        <div style="width: 28px;"></div>
+      </div>
+
+      <div class="modal-body">
+        <!-- Category Picker — Required, visible first -->
+        <div style="margin-bottom: 14px;">
+          <p style="font-size: 12px; font-weight: 700; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; display:flex; align-items:center; gap:4px;">
+            <i class="fas fa-tag" style="color: var(--primary); font-size:11px;"></i>
+            Post Category <span style="color: var(--primary);">*</span>
+          </p>
+          <div class="category-chips" id="postCategoryChips" style="display:flex; gap: 8px;">
+            <button type="button" class="category-chip selected" data-category="general" style="flex:1;">
+              <i class="fa-regular fa-comment-dots" style="margin-right:4px;"></i>General
+            </button>
+            <button type="button" class="category-chip" data-category="support" style="flex:1;">
+              <i class="fas fa-hand-holding-heart" style="margin-right:4px;"></i>Support
+            </button>
+            <button type="button" class="category-chip" data-category="story" style="flex:1;">
+              <i class="fas fa-book-open" style="margin-right:4px;"></i>Story
+            </button>
+          </div>
+        </div>
+
+        <!-- Identity Selector -->
+        <div class="identity-selector">
+          <div class="identity-btn" id="identityToggleBtn">
+            <i class="fas fa-user-secret" id="currentIdentityIcon"></i>
+            <span id="currentIdentityLabel">Post as Anonymous</span>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="identity-dropdown" id="identityDropdown">
+            <div class="identity-option" data-anonymous="true">
+              <i class="fas fa-user-secret"></i>
+              <span>Post as Anonymous</span>
+            </div>
+            <div class="identity-option" data-anonymous="false" id="namedIdentityOption">
+              <i class="fas fa-user"></i>
+              <span id="namedIdentityLabel">Post as User</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Moderation Active Banner -->
+        <div class="ai-status-banner" id="aiStatusBanner">
+          <div class="ai-status-banner-left">
+            <span class="ai-pulse-dot" id="aiPulseDot"></span>
+            <span id="aiStatusText">Checking...</span>
+          </div>
+          <span class="ai-status-model-tag" id="aiModelTag">BART + RoBERTa</span>
+        </div>
+
+        <!-- Post Textarea -->
+        <textarea
+          class="post-textarea"
+          id="postContentInput"
+          placeholder="Share your thoughts..."
+          maxlength="2000"
+        ></textarea>
+        <div class="char-count" id="charCountLabel">0/2000</div>
+
+        <!-- Photo Preview Container -->
+        <div class="photo-preview" id="photoPreviewBox" style="display: none; position: relative;">
+          <img id="photoPreviewImg" src="" alt="Photo upload preview" />
+          <div id="photoCategoryBadge" style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+            Uploading to: General
+          </div>
+          <button class="photo-preview-remove" id="removePhotoBtn" aria-label="Remove Photo">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Mood Picker (expandable) -->
+        <div id="moodPickerContainer" style="display: none; margin-bottom: 12px;">
+          <p style="font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px;">How are you feeling?</p>
+          <div class="mood-picker" id="moodChipList">
+            <button type="button" class="mood-chip" data-mood="like">👍 Feeling good</button>
+            <button type="button" class="mood-chip" data-mood="love">❤️ Loved</button>
+            <button type="button" class="mood-chip" data-mood="support">🤝 Supported</button>
+            <button type="button" class="mood-chip" data-mood="haha">😆 Amused</button>
+            <button type="button" class="mood-chip" data-mood="sad">😢 Down</button>
+            <button type="button" class="mood-chip" data-mood="angry">😠 Frustrated</button>
+          </div>
+        </div>
+
+        <!-- Hidden File Input -->
+        <input type="file" id="postPhotoFileInput" accept="image/*" style="display: none;" />
+
+        <!-- Toolbar Buttons -->
+        <div class="modal-toolbar">
+          <button type="button" class="toolbar-btn" id="toolbarPhotoBtn">
+            <i class="fa-regular fa-image"></i>
+            <span>Add Photo</span>
+          </button>
+          <button type="button" class="toolbar-btn" id="toolbarMoodBtn">
+            <i class="fa-regular fa-face-smile"></i>
+            <span id="moodToolbarLabel">Add Mood</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-post" id="submitPostBtn">Post</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comments Drawer Overlay -->
+  <div class="comments-overlay" id="commentsDrawer">
+    <div class="comments-drawer">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <span class="modal-title" id="commentsDrawerTitle">Comments</span>
+        <button class="modal-close" id="closeCommentsBtn" aria-label="Close Comments">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="comments-list" id="commentsListContainer">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Replying Banner -->
+      <div class="replying-banner" id="replyingBanner" style="display: none;">
+        <div class="replying-info">
+          <i class="fas fa-reply" style="font-size:11px;"></i>
+          <span>Replying to <strong id="replyingTargetUser">@user</strong></span>
+        </div>
+        <button type="button" class="replying-cancel" id="cancelReplyBtn" aria-label="Cancel Reply">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="comment-input-row">
+        <input
+          type="text"
+          class="comment-input"
+          id="newCommentInput"
+          placeholder="Write a kind comment..."
+          maxlength="500"
+        />
+        <button class="comment-send" id="sendCommentBtn" aria-label="Send Comment">
+          <i class="fas fa-arrow-up"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Options Modal Sheet -->
+  <div class="modal-overlay" id="postOptionsMenu">
+    <div class="post-menu-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header" style="border:none; padding-bottom: 8px;">
+        <span class="modal-title">Post Options</span>
+        <button class="modal-close" id="closePostOptionsBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="post-menu-list">
+        <button class="post-menu-item" id="menuCopyTextBtn">
+          <i class="fa-regular fa-copy"></i>
+          <span>Copy Post</span>
+        </button>
+        <button class="post-menu-item" id="menuShareBtn">
+          <i class="fa-regular fa-share-from-square"></i>
+          <span>Share Post</span>
+        </button>
+        <button class="post-menu-item" id="menuSaveBtn">
+          <i class="fa-regular fa-bookmark" id="menuSaveIcon"></i>
+          <span id="menuSaveText">Save Post</span>
+        </button>
+        <button class="post-menu-item" id="menuReportBtn">
+          <i class="fa-regular fa-flag"></i>
+          <span>Report Post</span>
+        </button>
+        <button class="post-menu-item danger" id="menuDeleteBtn" style="display: none;">
+          <i class="fa-regular fa-trash-can"></i>
+          <span>Delete Post</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Post Modal -->
+  <div class="modal-overlay" id="reportPostModal">
+    <div class="modal-card" style="max-width: 440px; width: 92%;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <i class="fa-regular fa-flag" style="color:var(--primary);"></i>
+          <span>Report Post</span>
+        </div>
+        <button type="button" class="modal-close" id="closeReportPostModalBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="reportPostModalBody" style="padding: 16px 20px;">
+        <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px;">
+          Why are you reporting this?
+        </p>
+        <div class="report-options-list" id="postReportReasonList">
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Bullying or harassment" checked />
+            <span>Bullying or harassment</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Hate or discrimination" />
+            <span>Hate or discrimination</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Threatening behavior" />
+            <span>Threatening behavior</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Inappropriate content" />
+            <span>Inappropriate content</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Spam" />
+            <span>Spam</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Self-harm concern" />
+            <span>Self-harm concern</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Other" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div style="margin: 16px 0;">
+          <label for="postReportDetails" style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+            Additional details (optional)
+          </label>
+          <textarea
+            id="postReportDetails"
+            class="report-textarea"
+            rows="3"
+            placeholder="Tell us more..."
+            style="width:100%; box-sizing:border-box;"
+          ></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn-cancel" id="cancelReportPostBtn">Cancel</button>
+          <button type="button" class="btn-submit-action" id="submitReportPostBtn">Submit Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Safety Alert Modal for Flagged Content -->
+  <div class="ai-warning-modal-overlay" id="aiWarningModal">
+    <div class="ai-warning-card">
+      <div class="ai-warning-icon-wrap">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <div class="ai-warning-title">Safe Space Advisory</div>
+      <div class="ai-warning-category-pill" id="aiWarningCategory">FLAGGED CONTENT</div>
+      <div class="ai-warning-desc" id="aiWarningReason">
+        Your post was flagged by our automated AI model for containing potentially harmful or inappropriate language.
+      </div>
+      <div class="ai-warning-guidance">
+        Safe Space is an empathetic, supportive platform. Please edit your message to ensure respect, empathy, and psychological safety for all community members.
+      </div>
+      <div class="ai-warning-actions">
+        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn">Edit Post</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Drawer Overlay -->
+  <div class="notif-drawer-overlay" id="notifDrawerOverlay">
+    <div class="notif-drawer">
+      <div class="notif-header">
+        <h2><i class="fa-regular fa-bell" style="color:var(--primary);"></i> Notifications</h2>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="notif-mark-all-btn" id="markAllNotifsBtn">Mark all as read</button>
+          <button class="modal-close" id="closeNotifDrawerBtn" aria-label="Close notifications"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="notif-list" id="notifListContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/bible-data.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/ai-service.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    // ── Application & Feed State ──
+    let currentUser = null;
+    let currentFeed = [];
+    let activeCategory = 'all';
+
+    // Per-category in-memory cache: { [category]: { posts: [...], timestamp: number, page: number, hasMore: boolean } }
+    const feedCache = {
+      all: null,
+      general: null,
+      support: null,
+      story: null
+    };
+    const CACHE_TTL_MS = 60000; // 60s freshness window for cached categories
+    const PAGE_SIZE = 15;
+
+    // Race-condition guard & in-flight request tracking
+    let currentFeedRequestId = 0;
+    let isCategoryLoading = false;
+    let isLoadingMore = false;
+
+    let postState = {
+      isAnonymous: true,
+      selectedMood: null,
+      selectedCategory: 'general',
+      photoFile: null,
+      photoUrl: null
+    };
+    let activeCommentPostId = null;
+    let activeMenuPostId = null;
+
+    // Helper to format user display name: guarantees email is NEVER shown
+    function formatDisplayName(name, fallback) {
+      if (!name) return fallback || 'Member';
+      let clean = String(name).trim();
+      if (clean.includes('@')) {
+        clean = clean.split('@')[0];
+      }
+      return clean || fallback || 'Member';
+    }
+
+    // Synchronize updates across all cached categories in memory
+    function syncPostInCaches(postId, updateFn) {
+      Object.keys(feedCache).forEach(cat => {
+        if (feedCache[cat] && Array.isArray(feedCache[cat].posts)) {
+          const post = feedCache[cat].posts.find(item => item.id === postId);
+          if (post) updateFn(post);
+        }
+      });
+    }
+
+    // ── Progressive Staged Initial Loading ──
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Stage 1: UI Shell is already in DOM, wire interactive listeners immediately
+      setupCategoryFilter();
+      setupCreatePostModal();
+      setupCommentsDrawer();
+      setupPostOptionsMenu();
+      setupReportPostModal();
+      setupNotificationBell();
+      setupInfiniteScrollObserver();
+      setupModerationSync();
+
+      try {
+        // Stage 2: Essential authentication and user profile
+        currentUser = await requireAuth();
+        if (!currentUser) {
+          hidePageLoader();
+          return;
+        }
+
+        // Reveal the application shell to the user immediately
+        hidePageLoader();
+
+        // Update current user identity in sidebar
+        const userNameEl = document.getElementById('sidebarUserName');
+        if (userNameEl) {
+          userNameEl.textContent = formatDisplayName(currentUser.first_name || currentUser.username, 'Account');
+        }
+        const userAvatarEl = document.getElementById('sidebarUserAvatar');
+        if (userAvatarEl && window.SafeSpaceAvatars) {
+          userAvatarEl.innerHTML = window.SafeSpaceAvatars.renderHtml(currentUser.avatar_url, { alt: currentUser.username });
+        }
+
+        // Update post modal identity option
+        const namedLabel = document.getElementById('namedIdentityLabel');
+        if (namedLabel) {
+          namedLabel.textContent = `Post as ${formatDisplayName(currentUser.username || currentUser.first_name, 'me')}`;
+        }
+
+        // Non-blocking check for account suspension or ban
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.admin && SafeSpaceDB.admin.checkUserStatus) {
+          SafeSpaceDB.admin.checkUserStatus(currentUser.id).then(userStatus => {
+            if (userStatus.status === 'banned') {
+              showAccountRestrictionBanner('banned', userStatus.ban_reason);
+            } else if (userStatus.status === 'suspended' && userStatus.suspended_until && new Date(userStatus.suspended_until) > new Date()) {
+              showAccountRestrictionBanner('suspended', userStatus.ban_reason, userStatus.suspended_until);
+            }
+          }).catch(statusErr => console.warn('[Home] User status check error:', statusErr));
+        }
+
+        // Stage 3: Load initial feed ('All' category, paginated limit 15)
+        await loadCategoryFeed('all', { isBackground: false, page: 0 });
+      } catch (initErr) {
+        console.error('[Home] Initialization error:', initErr);
+      } finally {
+        hidePageLoader();
+      }
+
+      // Stage 4: Secondary independent widget data (Daily Scripture)
+      loadDailyScripture().catch(err => console.warn(err));
+    });
+
+    // ── Instant Category Switching Logic ──
+    function setupCategoryFilter() {
+      const pills = document.querySelectorAll('#categoryPillRow .pill');
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          const category = (pill.dataset.category || 'all').toLowerCase();
+          if (category === activeCategory) return;
+          switchCategory(category);
+        });
+      });
+    }
+
+    async function switchCategory(category) {
+      activeCategory = category;
+
+      // 1. Immediately update active category button UI
+      const pills = document.querySelectorAll('#categoryPillRow .pill');
+      pills.forEach(p => {
+        p.classList.toggle('active', (p.dataset.category || 'all').toLowerCase() === category);
+      });
+
+      // 2. Check in-memory category cache
+      const cached = feedCache[category];
+      const isCached = cached && Array.isArray(cached.posts);
+      const isStale = isCached && (Date.now() - cached.timestamp > CACHE_TTL_MS);
+
+      if (isCached) {
+        // INSTANT: Render cached category feed immediately without any network wait!
+        currentFeed = cached.posts.slice();
+        renderFeed();
+        renderLoadMoreState(cached.hasMore);
+
+        // If cache is stale, revalidate silently in the background
+        if (isStale) {
+          loadCategoryFeed(category, { isBackground: true, page: 0 });
+        }
+        return;
+      }
+
+      // 3. Not in cache yet: keep existing posts visible with a gentle opacity transition
+      const feedContainer = document.getElementById('feedContainer');
+      if (currentFeed && currentFeed.length > 0) {
+        feedContainer.classList.add('is-switching');
+      } else {
+        showSkeletonLoader();
+      }
+      showCategoryBadge(true, category);
+
+      // 4. Fetch category posts from database
+      await loadCategoryFeed(category, { isBackground: false, page: 0 });
+    }
+
+    // ── Paginated & Race-Guarded Feed Fetching ──
+    async function loadCategoryFeed(category, options = {}) {
+      const isBackground = Boolean(options.isBackground);
+      const page = options.page || 0;
+      const isInitialPage = page === 0;
+
+      // Abort/ignore outdated requests: Increment sequence ID
+      const requestId = ++currentFeedRequestId;
+
+      if (!isBackground && isInitialPage) {
+        isCategoryLoading = true;
+      }
+
+      try {
+        const posts = await SafeSpaceDB.posts.getFeed({
+          category: category,
+          page: page,
+          limit: PAGE_SIZE
+        });
+
+        // If a newer request was dispatched while this was fetching, drop this stale result
+        if (requestId !== currentFeedRequestId) {
+          return;
+        }
+
+        const hasMore = Array.isArray(posts) && posts.length >= PAGE_SIZE;
+
+        if (isInitialPage) {
+          feedCache[category] = {
+            posts: posts.slice(),
+            timestamp: Date.now(),
+            page: 0,
+            hasMore: hasMore
+          };
+          currentFeed = posts;
+          renderFeed();
+          renderLoadMoreState(hasMore);
+        } else {
+          // Pagination: Append new items without replacing entire feed
+          if (!feedCache[category]) {
+            feedCache[category] = { posts: [], timestamp: Date.now(), page: 0, hasMore: true };
+          }
+          const existingIds = new Set(feedCache[category].posts.map(p => p.id));
+          posts.forEach(p => {
+            if (!existingIds.has(p.id)) {
+              feedCache[category].posts.push(p);
+              currentFeed.push(p);
+            }
+          });
+          feedCache[category].page = page;
+          feedCache[category].hasMore = hasMore;
+          renderFeed();
+          renderLoadMoreState(hasMore);
+        }
+      } catch (err) {
+        if (requestId !== currentFeedRequestId) return;
+        console.error(`[SafeSpace] Feed query error for "${category}":`, err);
+
+        if (!currentFeed || currentFeed.length === 0) {
+          renderFeedError(category);
+        } else {
+          showToast('Could not refresh feed. Displaying existing posts.', 'info');
+        }
+      } finally {
+        if (requestId === currentFeedRequestId) {
+          isCategoryLoading = false;
+          showCategoryBadge(false);
+          const feedContainer = document.getElementById('feedContainer');
+          if (feedContainer) feedContainer.classList.remove('is-switching');
+        }
+      }
+    }
+
+    // ── Pagination / Load More Handler ──
+    async function handleLoadMore() {
+      if (isLoadingMore || isCategoryLoading) return;
+      const cached = feedCache[activeCategory];
+      if (!cached || !cached.hasMore) return;
+
+      const nextPage = (cached.page || 0) + 1;
+      isLoadingMore = true;
+      renderLoadMoreLoading(true);
+
+      try {
+        await loadCategoryFeed(activeCategory, { isBackground: false, page: nextPage });
+      } finally {
+        isLoadingMore = false;
+        renderLoadMoreLoading(false);
+      }
+    }
+    window.handleLoadMore = handleLoadMore;
+
+    function renderLoadMoreState(hasMore) {
+      const container = document.getElementById('feedLoadMoreContainer');
+      if (!container) return;
+
+      if (!hasMore || !currentFeed || currentFeed.length === 0) {
+        if (currentFeed && currentFeed.length >= 6) {
+          container.innerHTML = `<div class="feed-end-message">You've reached the end of the feed ✨</div>`;
+          container.style.display = 'block';
+        } else {
+          container.style.display = 'none';
+        }
+        return;
+      }
+
+      container.style.display = 'flex';
+      container.innerHTML = `
+        <button type="button" class="btn-feed-load-more" id="feedLoadMoreBtn" onclick="handleLoadMore()">
+          <i class="fas fa-arrow-down"></i>
+          <span>Load more posts</span>
+        </button>
+      `;
+    }
+
+    function renderLoadMoreLoading(isLoading) {
+      const btn = document.getElementById('feedLoadMoreBtn');
+      if (!btn) return;
+      if (isLoading) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i><span>Loading...</span>`;
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-arrow-down"></i><span>Load more posts</span>`;
+      }
+    }
+
+    // Auto-load more when scrolling near bottom
+    function setupInfiniteScrollObserver() {
+      const loadMoreContainer = document.getElementById('feedLoadMoreContainer');
+      if (!loadMoreContainer || typeof IntersectionObserver === 'undefined') return;
+
+      const observer = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting && !isLoadingMore && !isCategoryLoading) {
+          const cached = feedCache[activeCategory];
+          if (cached && cached.hasMore) {
+            handleLoadMore();
+          }
+        }
+      }, { rootMargin: '300px' });
+
+      observer.observe(loadMoreContainer);
+    }
+
+    // ── Subtle UI Indicators ──
+    function showCategoryBadge(show, category) {
+      const badge = document.getElementById('categoryLoadingBadge');
+      const text = document.getElementById('categoryLoadingText');
+      if (!badge) return;
+      if (show) {
+        const label = category ? (category.charAt(0).toUpperCase() + category.slice(1)) : 'Feed';
+        if (text) text.textContent = `Loading ${label}...`;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function showSkeletonLoader() {
+      const container = document.getElementById('feedContainer');
+      if (!container) return;
+      container.innerHTML = `
+        <div class="skeleton-post" style="padding: 16px; margin-bottom: 12px;">
+          <div class="sk-header">
+            <div class="skeleton sk-avatar"></div>
+            <div class="sk-lines">
+              <div class="skeleton sk-line" style="width: 35%;"></div>
+              <div class="skeleton sk-line short"></div>
+            </div>
+          </div>
+          <div class="skeleton sk-line" style="margin-bottom: 8px;"></div>
+          <div class="skeleton sk-line" style="width: 75%;"></div>
+        </div>
+        <div class="skeleton-post" style="padding: 16px;">
+          <div class="sk-header">
+            <div class="skeleton sk-avatar"></div>
+            <div class="sk-lines">
+              <div class="skeleton sk-line" style="width: 45%;"></div>
+              <div class="skeleton sk-line short"></div>
+            </div>
+          </div>
+          <div class="skeleton sk-line" style="margin-bottom: 8px;"></div>
+        </div>
+      `;
+    }
+
+    function renderFeedError(category) {
+      const container = document.getElementById('feedContainer');
+      if (!container) return;
+      const catName = category === 'all' ? 'community feed' : `${category} posts`;
+      container.innerHTML = `
+        <div class="feed-error-state">
+          <i class="fas fa-triangle-exclamation"></i>
+          <h3>Unable to load ${escapeHTML(catName)}</h3>
+          <p>Please check your connection and try again.</p>
+          <button class="btn-retry-feed" onclick="retryFeedLoad()">
+            <i class="fas fa-rotate-right"></i> Try Again
+          </button>
+        </div>
+      `;
+      const loadMoreContainer = document.getElementById('feedLoadMoreContainer');
+      if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+    }
+
+    window.retryFeedLoad = function() {
+      showSkeletonLoader();
+      loadCategoryFeed(activeCategory, { isBackground: false, page: 0 });
+    };
+
+    // Account Restriction / Suspension Banner Handler
+    function showAccountRestrictionBanner(type, reason, until) {
+      const container = document.getElementById('accountRestrictionBanner');
+      const fab = document.getElementById('openCreatePostBtn');
+      const sidebarBtn = document.getElementById('sidebarCreatePostBtn');
+      if (fab) fab.style.display = 'none';
+      if (sidebarBtn) {
+        sidebarBtn.disabled = true;
+        sidebarBtn.style.opacity = '0.5';
+        sidebarBtn.style.cursor = 'not-allowed';
+        sidebarBtn.title = 'Posting disabled due to account restriction';
+      }
+
+      if (!container) return;
+      container.style.display = 'block';
+
+      if (type === 'banned') {
+        container.innerHTML = `
+          <div style="background: #FEE2E2; border: 1px solid #EF4444; border-radius: 12px; padding: 14px 18px; color: #991B1B; display: flex; align-items: flex-start; gap: 12px;">
+            <i class="fas fa-ban" style="font-size: 20px; color: #DC2626; margin-top: 2px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">Account Permanently Suspended</div>
+              <div style="font-size: 13px; line-height: 1.4;">
+                Your account has been permanently suspended for violating the Safe Space community guidelines.
+                ${reason ? `<br><strong>Reason:</strong> ${escapeHTML(reason)}` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        const formattedUntil = until ? new Date(until).toLocaleString() : 'a later date';
+        container.innerHTML = `
+          <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 12px; padding: 14px 18px; color: #92400E; display: flex; align-items: flex-start; gap: 12px;">
+            <i class="fas fa-triangle-exclamation" style="font-size: 20px; color: #D97706; margin-top: 2px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">Account Temporarily Suspended</div>
+              <div style="font-size: 13px; line-height: 1.4;">
+                Your account is temporarily suspended until <strong>${escapeHTML(formattedUntil)}</strong>. Creating posts and messaging are restricted.
+                ${reason ? `<br><strong>Reason:</strong> ${escapeHTML(reason)}` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Dynamic Daily Scripture that changes deterministically every calendar day
+    async function loadDailyScripture() {
+      try {
+        if (!SafeSpaceDB || !SafeSpaceDB.verses || !SafeSpaceDB.verses.getDailyVerse) return;
+        const verse = await SafeSpaceDB.verses.getDailyVerse();
+        if (verse && verse.verse_text) {
+          const textEl = document.getElementById('dailyScriptureText');
+          const refEl = document.getElementById('dailyScriptureRef');
+          if (textEl) {
+            textEl.textContent = `"${verse.verse_text}"`;
+          }
+          if (refEl) {
+            refEl.textContent = verse.reference || `${verse.book} ${verse.chapter}:${verse.verse}`;
+          }
+        }
+      } catch (err) {
+        console.warn('[SafeSpace] Error loading daily scripture:', err);
+      }
+    }
+
+    // ── Render Feed ──
+    function renderFeed() {
+      const container = document.getElementById('feedContainer');
+      if (!container) return;
+      let posts = currentFeed || [];
+
+      if (posts.length === 0) {
+        const catLabel = activeCategory === 'all' ? '' : ` in ${activeCategory.toUpperCase()}`;
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-newspaper"></i>
+            <h3>No posts yet${escapeHTML(catLabel)}</h3>
+            <p>Be the first to share something with the community.</p>
+            <button type="button" class="btn-retry-feed" onclick="document.getElementById('openCreatePostBtn').click()" style="margin-top: 14px;">
+              <i class="fas fa-plus"></i> Create Post
+            </button>
+          </div>
+        `;
+        renderLoadMoreState(false);
+        return;
+      }
+
+      container.innerHTML = posts.map(post => {
+        const isAnon = post.is_anonymous;
+        const authorDisplay = isAnon ? 'Anonymous' : formatDisplayName(post.author_name, 'Member');
+        const avatarHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(post.author_avatar, { alt: authorDisplay, isAnonymous: isAnon })
+          : (isAnon ? '<i class="fas fa-user-secret"></i>' : (post.author_avatar ? `<img src="${escapeHTML(post.author_avatar)}" alt="${escapeHTML(authorDisplay)}" />` : '<i class="fas fa-user"></i>'));
+
+        const moodMap = typeof MOOD_MAP !== 'undefined' ? MOOD_MAP : (window.MOOD_MAP || {});
+        const moodMeta = post.mood && moodMap[post.mood] ? moodMap[post.mood] : null;
+        const moodHtml = moodMeta
+          ? `<span class="post-mood-tag">· ${moodMeta.emoji} ${moodMeta.label}</span>`
+          : '';
+
+        const rawCat = (post.category || 'general').toLowerCase();
+        const catLabel = (rawCat === 'story' || rawCat === 'stories') ? 'STORY' : rawCat.toUpperCase();
+        const catClass = (rawCat === 'story' || rawCat === 'stories') ? 'story' : rawCat;
+        const isLiked = Array.isArray(post.likes) && currentUser && post.likes.includes(currentUser.id);
+        const likeCount = Array.isArray(post.likes) ? post.likes.length : 0;
+        const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
+        const isSaved = Array.isArray(post.saved_by) && currentUser && post.saved_by.includes(currentUser.id);
+
+        const aiBadgeHtml = window.AIService ? AIService.renderSentimentBadge(post.sentiment, post.sentiment_score) : '';
+        const aiVerifiedHtml = (post.moderation_status === 'APPROVED' || post.moderation_category === 'SAFE')
+          ? '<span class="ai-verified-tag" title="Verified Safe by Safe Space AI"><i class="fas fa-shield-halved"></i> Safe</span>'
+          : '';
+
+        return `
+          <article class="post-card" id="post-${post.id}">
+            <div class="post-header">
+              <div class="post-avatar">
+                ${avatarHtml}
+              </div>
+              <div class="post-meta">
+                <div class="post-author">${escapeHTML(authorDisplay)}</div>
+                <div class="post-time-mood">
+                  <span>${formatRelativeTime(post.created_at)}</span>
+                  <span class="post-category-tag ${escapeHTML(catClass)}">${escapeHTML(catLabel)}</span>
+                  ${moodHtml}
+                  ${aiBadgeHtml}
+                  ${aiVerifiedHtml}
+                </div>
+              </div>
+              <button class="post-menu-btn" onclick="togglePostMenu('${post.id}')" aria-label="Options">
+                <i class="fas fa-ellipsis-vertical"></i>
+              </button>
+            </div>
+
+            <div class="post-content">${escapeHTML(post.content)}</div>
+
+            ${post.photo_url ? `
+              <div class="post-image">
+                <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />
+              </div>
+            ` : ''}
+
+            <div class="post-actions">
+              <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="handleLike('${post.id}')" aria-label="Like post">
+                <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+                <span id="like-count-${post.id}">${likeCount}</span>
+              </button>
+              <button class="post-action-btn" onclick="openComments('${post.id}')" aria-label="Comments">
+                <i class="fa-regular fa-comment"></i>
+                <span id="comment-count-${post.id}">${commentCount}</span>
+              </button>
+              <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="handleSave('${post.id}')" aria-label="Bookmark post">
+                <i class="${isSaved ? 'fas' : 'fa-regular'} fa-bookmark"></i>
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // ── Surgical Like Handler ──
+    async function handleLike(postId) {
+      try {
+        const result = await SafeSpaceDB.posts.toggleLike(postId);
+        
+        // Update in currentFeed
+        const post = currentFeed.find(p => p.id === postId);
+        if (post) {
+          if (!Array.isArray(post.likes)) post.likes = [];
+          if (result.liked) {
+            if (!post.likes.includes(currentUser.id)) post.likes.push(currentUser.id);
+          } else {
+            post.likes = post.likes.filter(id => id !== currentUser.id);
+          }
+        }
+
+        // Sync all cached categories in memory
+        syncPostInCaches(postId, p => {
+          if (!Array.isArray(p.likes)) p.likes = [];
+          if (result.liked) {
+            if (!p.likes.includes(currentUser.id)) p.likes.push(currentUser.id);
+          } else {
+            p.likes = p.likes.filter(id => id !== currentUser.id);
+          }
+        });
+
+        // Surgical DOM update
+        const postCard = document.getElementById(`post-${postId}`);
+        if (postCard) {
+          const btn = postCard.querySelector('.post-action-btn:nth-child(1)');
+          const icon = btn ? btn.querySelector('i') : null;
+          const countSpan = document.getElementById(`like-count-${postId}`);
+          if (result.liked) {
+            if (btn) btn.classList.add('liked');
+            if (icon) icon.className = 'fas fa-heart';
+          } else {
+            if (btn) btn.classList.remove('liked');
+            if (icon) icon.className = 'fa-regular fa-heart';
+          }
+          if (countSpan) {
+            countSpan.textContent = result.count !== undefined ? result.count : (post ? post.likes.length : 0);
+          }
+        }
+      } catch (err) {
+        showToast('Failed to update like', 'error');
+      }
+    }
+
+    // ── Surgical Bookmark / Save Handler ──
+    async function handleSave(postId) {
+      try {
+        const result = await SafeSpaceDB.posts.toggleSave(postId);
+        showToast(result.saved ? 'Saved to bookmarks' : 'Removed from bookmarks', 'success');
+
+        const post = currentFeed.find(p => p.id === postId);
+        if (post) {
+          if (!Array.isArray(post.saved_by)) post.saved_by = [];
+          if (result.saved) {
+            if (!post.saved_by.includes(currentUser.id)) post.saved_by.push(currentUser.id);
+          } else {
+            post.saved_by = post.saved_by.filter(id => id !== currentUser.id);
+          }
+        }
+
+        // Sync all cached categories in memory
+        syncPostInCaches(postId, p => {
+          if (!Array.isArray(p.saved_by)) p.saved_by = [];
+          if (result.saved) {
+            if (!p.saved_by.includes(currentUser.id)) p.saved_by.push(currentUser.id);
+          } else {
+            p.saved_by = p.saved_by.filter(id => id !== currentUser.id);
+          }
+        });
+
+        // Surgical DOM update
+        const postCard = document.getElementById(`post-${postId}`);
+        if (postCard) {
+          const btn = postCard.querySelector('.post-action-btn:nth-child(3)');
+          const icon = btn ? btn.querySelector('i') : null;
+          if (result.saved) {
+            if (btn) btn.classList.add('saved');
+            if (icon) icon.className = 'fas fa-bookmark';
+          } else {
+            if (btn) btn.classList.remove('saved');
+            if (icon) icon.className = 'fa-regular fa-bookmark';
+          }
+        }
+      } catch (err) {
+        showToast('Failed to bookmark', 'error');
+      }
+    }
+
+    // Modal & Post creation
+    function setupCreatePostModal() {
+      const modal = document.getElementById('createPostModal');
+      const openBtn = document.getElementById('openCreatePostBtn');
+      const closeBtn = document.getElementById('closeCreateModalBtn');
+      const identityBtn = document.getElementById('identityToggleBtn');
+      const identityDropdown = document.getElementById('identityDropdown');
+      const postTextarea = document.getElementById('postContentInput');
+      const charCount = document.getElementById('charCountLabel');
+      const photoBtn = document.getElementById('toolbarPhotoBtn');
+      const photoInput = document.getElementById('postPhotoFileInput');
+      const photoPreviewBox = document.getElementById('photoPreviewBox');
+      const photoPreviewImg = document.getElementById('photoPreviewImg');
+      const removePhotoBtn = document.getElementById('removePhotoBtn');
+      const moodBtn = document.getElementById('toolbarMoodBtn');
+      const moodContainer = document.getElementById('moodPickerContainer');
+      const moodChips = document.querySelectorAll('#moodChipList .mood-chip');
+      const catChips = document.querySelectorAll('#postCategoryChips .category-chip');
+      const submitBtn = document.getElementById('submitPostBtn');
+
+      openBtn.addEventListener('click', () => {
+        modal.classList.add('open');
+        updateAiStatusUI();
+        postTextarea.focus();
+      });
+
+      closeBtn.addEventListener('click', () => {
+        modal.classList.remove('open');
+      });
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
+
+      // Identity toggle
+      identityBtn.addEventListener('click', () => {
+        identityDropdown.classList.toggle('open');
+      });
+
+      document.querySelectorAll('.identity-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          const isAnon = opt.dataset.anonymous === 'true';
+          postState.isAnonymous = isAnon;
+          document.getElementById('currentIdentityIcon').className = isAnon ? 'fas fa-user-secret' : 'fas fa-user';
+          document.getElementById('currentIdentityLabel').textContent = isAnon ? 'Post as Anonymous' : `Post as ${formatDisplayName(currentUser.username || currentUser.first_name, 'me')}`;
+          identityDropdown.classList.remove('open');
+        });
+      });
+
+      // Category chip selection in modal
+      catChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          catChips.forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          postState.selectedCategory = chip.dataset.category || 'general';
+          const badge = document.getElementById('photoCategoryBadge');
+          if (badge) {
+            badge.textContent = `Uploading to: ${chip.textContent.trim()}`;
+          }
+        });
+      });
+
+      // Char count
+      postTextarea.addEventListener('input', () => {
+        const len = postTextarea.value.length;
+        charCount.textContent = `${len}/2000`;
+        charCount.className = 'char-count' + (len >= 2000 ? ' over-limit' : len >= 1800 ? ' near-limit' : '');
+      });
+
+      // Photo upload with strict security validation
+      photoBtn.addEventListener('click', () => photoInput.click());
+      photoInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const fileName = (file.name || '').toLowerCase();
+        const validExts = ['.jpg', '.jpeg', '.png', '.webp'];
+        const hasValidExt = validExts.some(ext => fileName.endsWith(ext));
+
+        if (!hasValidExt || !validTypes.includes(file.type.toLowerCase())) {
+          showToast('Please select a valid image file (.jpg, .jpeg, .png, or .webp).', 'warning');
+          photoInput.value = '';
+          return;
+        }
+
+        const maxSize = 5 * 1024 * 1024; // 5 MB
+        if (file.size > maxSize) {
+          showToast('Photo file size must be 5MB or less.', 'warning');
+          photoInput.value = '';
+          return;
+        }
+
+        postState.photoFile = file;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          photoPreviewImg.src = evt.target.result;
+          photoPreviewBox.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+
+      removePhotoBtn.addEventListener('click', () => {
+        postState.photoFile = null;
+        photoInput.value = '';
+        photoPreviewBox.style.display = 'none';
+        photoPreviewImg.src = '';
+      });
+
+      // Mood picker toggle
+      moodBtn.addEventListener('click', () => {
+        const isOpen = moodContainer.style.display !== 'none';
+        moodContainer.style.display = isOpen ? 'none' : 'block';
+      });
+
+      moodChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          moodChips.forEach(c => c.classList.remove('selected'));
+          if (postState.selectedMood === chip.dataset.mood) {
+            postState.selectedMood = null;
+            document.getElementById('moodToolbarLabel').textContent = 'Add Mood';
+          } else {
+            chip.classList.add('selected');
+            postState.selectedMood = chip.dataset.mood;
+            document.getElementById('moodToolbarLabel').textContent = chip.textContent;
+          }
+        });
+      });
+
+      // Submit post with AI Moderation & Sentiment Analysis
+      submitBtn.addEventListener('click', async () => {
+        const content = postTextarea.value.trim();
+        if (!content) {
+          showToast('Please enter your thoughts before posting', 'warning');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-sparkles fa-spin" style="margin-right:6px;"></i>AI Moderating...';
+
+        try {
+          // ── Step 1: Run AI Moderation & Sentiment Analysis ──
+          let aiResult = {
+            status: 'APPROVED',
+            category: 'SAFE',
+            confidence: 1.0,
+            sentiment: 'NEUTRAL',
+            sentiment_score: 0.5
+          };
+
+          if (window.AIService) {
+            aiResult = await AIService.moderate(content);
+          }
+
+          // ── Step 2: Handle Flagged Content ──
+          if (aiResult.status === 'BLOCKED' || (aiResult.status === 'REVIEW' && aiResult.category !== 'SAFE')) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Post';
+            showAiWarningModal(aiResult);
+            return;
+          }
+
+          submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin" style="margin-right:6px;"></i>Posting...';
+
+          let photoUrl = null;
+          if (postState.photoFile) {
+            photoUrl = await SafeSpaceDB.storage.uploadImage(postState.photoFile, 'post-photos');
+          }
+
+          // ── Step 3: Save Post with AI Metadata ──
+          const newPost = await SafeSpaceDB.posts.createPost({
+            content,
+            mood: postState.selectedMood,
+            is_anonymous: postState.isAnonymous,
+            photo_url: photoUrl,
+            category: postState.selectedCategory || 'general',
+            sentiment: aiResult.sentiment,
+            sentiment_score: aiResult.sentiment_score,
+            moderation_status: aiResult.status,
+            moderation_category: aiResult.category,
+            moderation_confidence: aiResult.confidence,
+            moderation_reason: aiResult.reason
+          });
+
+          // Invalidate / update category caches reactive to new post
+          const rawCat = (newPost.category || 'general').toLowerCase();
+          const targetCat = (rawCat === 'story' || rawCat === 'stories') ? 'story' : rawCat;
+
+          if (feedCache['all'] && Array.isArray(feedCache['all'].posts)) {
+            feedCache['all'].posts.unshift(newPost);
+          }
+          if (feedCache[targetCat] && Array.isArray(feedCache[targetCat].posts)) {
+            feedCache[targetCat].posts.unshift(newPost);
+          }
+
+          if (activeCategory === 'all' || activeCategory === targetCat) {
+            currentFeed.unshift(newPost);
+            renderFeed();
+          }
+
+          // Reset modal
+          postTextarea.value = '';
+          charCount.textContent = '0/2000';
+          removePhotoBtn.click();
+          postState.selectedMood = null;
+          postState.selectedCategory = 'general';
+          catChips.forEach(c => {
+            if (c.dataset.category === 'general') c.classList.add('selected');
+            else c.classList.remove('selected');
+          });
+          const badge = document.getElementById('photoCategoryBadge');
+          if (badge) badge.textContent = 'Uploading to: General';
+          document.getElementById('moodToolbarLabel').textContent = 'Add Mood';
+          moodChips.forEach(c => c.classList.remove('selected'));
+          moodContainer.style.display = 'none';
+          modal.classList.remove('open');
+
+          var sentimentNote = aiResult.sentiment === 'POSITIVE' ? ' · Positive ✨' : (aiResult.sentiment === 'NEGATIVE' ? ' · Seeking Support 💙' : '');
+          showToast(`Shared with the community!${sentimentNote}`, 'success');
+        } catch (err) {
+          console.error(err);
+          showToast('Failed to share post. Try again.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Post';
+        }
+      });
+    }
+
+    // Track source of active warning modal ('post' | 'comment')
+    let activeWarningSource = 'post';
+
+    // AI Status UI Helper
+    async function updateAiStatusUI() {
+      if (!window.AIService) return;
+      try {
+        const status = await AIService.checkStatus();
+        const dot = document.getElementById('aiPulseDot');
+        const text = document.getElementById('aiStatusText');
+        const modelTag = document.getElementById('aiModelTag');
+        if (dot && text) {
+          if (status.state === 'checking') {
+            dot.className = 'ai-pulse-dot checking';
+            text.textContent = 'Checking...';
+            if (modelTag) modelTag.textContent = 'Checking...';
+          } else if (status.online) {
+            dot.className = 'ai-pulse-dot';
+            text.textContent = 'AI Moderation Online';
+            if (modelTag) modelTag.textContent = 'BART + RoBERTa';
+          } else {
+            dot.className = 'ai-pulse-dot fallback';
+            text.textContent = 'Safety Fallback Active';
+            if (modelTag) modelTag.textContent = 'Multilingual Shield';
+          }
+        }
+      } catch (e) {
+        console.warn('AI status check:', e);
+      }
+    }
+
+    if (window.AIService && typeof window.AIService.onStatusChange === 'function') {
+      window.AIService.onStatusChange(() => {
+        updateAiStatusUI();
+      });
+    }
+
+    // AI Warning Modal Helper
+    function showAiWarningModal(aiResult, source) {
+      activeWarningSource = source || 'post';
+      const modal = document.getElementById('aiWarningModal');
+      const catEl = document.getElementById('aiWarningCategory');
+      const reasonEl = document.getElementById('aiWarningReason');
+      const closeWarnBtn = document.getElementById('aiCloseWarningBtn');
+      if (!modal) return;
+
+      const categoryName = (aiResult.category || 'HARASSMENT').replace(/_/g, ' ').toUpperCase();
+      const confidencePct = aiResult.confidence ? Math.round(aiResult.confidence * 100) : 85;
+      if (catEl) catEl.textContent = `FLAGGED: ${categoryName} (${confidencePct}% CONFIDENCE)`;
+      
+      let guidance = 'Your message may violate the Safe Space community guidelines. Please review and revise your message before posting.';
+      if (aiResult.category === 'SELF_HARM' || aiResult.category === 'ENCOURAGEMENT_OF_SELF_HARM') {
+        guidance = 'We care deeply about your emotional and physical well-being. If you are experiencing distress, please reach out to our supportive student guidance counselors.';
+      } else if (aiResult.category === 'THREAT' || aiResult.category === 'VIOLENCE') {
+        guidance = 'Safe Space is strictly committed to safety for all students. Threats of harm or violence are prohibited. Please review and revise your message.';
+      } else if (aiResult.category === 'HARASSMENT' || aiResult.category === 'BULLYING') {
+        guidance = 'Personal insults, demeaning attacks, or targeted harassment are not allowed. Please keep your message respectful and kind.';
+      } else if (aiResult.category === 'SEXUAL_HARASSMENT' || aiResult.category === 'SEXUAL_CONTENT') {
+        guidance = 'Explicit sexual language and unwanted sexual comments violate our campus safety standards. Please revise your message.';
+      } else if (aiResult.category === 'HATE' || aiResult.category === 'DISCRIMINATION') {
+        guidance = 'Discriminatory language or hate speech targeting identities, gender, or orientation is prohibited on Safe Space.';
+      }
+
+      if (reasonEl) {
+        reasonEl.textContent = guidance;
+      }
+      if (closeWarnBtn) {
+        closeWarnBtn.textContent = activeWarningSource === 'comment' ? 'Edit Comment' : 'Edit Post';
+      }
+
+      modal.classList.add('open');
+    }
+
+    // Close Warning Modal Handler
+    document.addEventListener('DOMContentLoaded', () => {
+      const closeWarnBtn = document.getElementById('aiCloseWarningBtn');
+      if (closeWarnBtn) {
+        closeWarnBtn.addEventListener('click', () => {
+          const modal = document.getElementById('aiWarningModal');
+          if (modal) modal.classList.remove('open');
+          if (activeWarningSource === 'comment') {
+            const commentInput = document.getElementById('newCommentInput');
+            if (commentInput) commentInput.focus();
+          } else {
+            const textarea = document.getElementById('postContentInput');
+            if (textarea) textarea.focus();
+          }
+        });
+      }
+    });
+
+    // Comments drawer with Reactions and Replies
+    let activeReplyTarget = null; // { commentId: string, username: string }
+
+    function clearReplyTarget() {
+      activeReplyTarget = null;
+      const banner = document.getElementById('replyingBanner');
+      if (banner) banner.style.display = 'none';
+      const input = document.getElementById('newCommentInput');
+      if (input) input.placeholder = 'Write a kind comment...';
+    }
+
+    function startReplyToComment(commentId, authorUsername) {
+      activeReplyTarget = { commentId, username: authorUsername };
+      const banner = document.getElementById('replyingBanner');
+      const userLabel = document.getElementById('replyingTargetUser');
+      const input = document.getElementById('newCommentInput');
+      if (banner && userLabel) {
+        userLabel.textContent = '@' + authorUsername;
+        banner.style.display = 'flex';
+      }
+      if (input) {
+        input.placeholder = `Replying to @${authorUsername}...`;
+        input.focus();
+      }
+    }
+    window.startReplyToComment = startReplyToComment;
+
+    const _isUUIDComment = id => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    async function handleCommentReaction(commentId) {
+      if (!currentUser) return;
+      try {
+        let res;
+
+        if (_isUUIDComment(commentId)) {
+          // Real Supabase comment — persist reaction to DB
+          res = await SafeSpaceDB.posts.toggleCommentReaction(commentId, activeCommentPostId);
+          // Also sync currentFeed state
+          const post = currentFeed.find(p => p.id === activeCommentPostId);
+          if (post && Array.isArray(post.comments)) {
+            const c = post.comments.find(item => item.id === commentId);
+            if (c) {
+              if (!Array.isArray(c.likes)) c.likes = [];
+              if (res.reacted) {
+                if (!c.likes.includes(currentUser.id)) c.likes.push(currentUser.id);
+              } else {
+                c.likes = c.likes.filter(id => id !== currentUser.id);
+              }
+            }
+          }
+        } else {
+          // Local/demo comment (non-UUID) — handle purely in currentFeed memory
+          const post = currentFeed.find(p => p.id === activeCommentPostId);
+          let reacted = false, count = 0;
+          if (post && Array.isArray(post.comments)) {
+            const c = post.comments.find(item => item.id === commentId);
+            if (c) {
+              if (!Array.isArray(c.likes)) c.likes = [];
+              const idx = c.likes.indexOf(currentUser.id);
+              if (idx > -1) {
+                c.likes.splice(idx, 1);
+                reacted = false;
+              } else {
+                c.likes.push(currentUser.id);
+                reacted = true;
+              }
+              count = c.likes.length;
+            }
+          }
+          res = { reacted, count };
+        }
+
+        // Surgical DOM update — works for both UUID and demo comments
+        const btn = document.getElementById(`comment-react-btn-${commentId}`);
+        if (btn) {
+          const icon = btn.querySelector('i');
+          const countSpan = btn.querySelector('.comment-react-count');
+          if (res.reacted) {
+            btn.classList.add('reacted');
+            if (icon) icon.className = 'fas fa-heart';
+          } else {
+            btn.classList.remove('reacted');
+            if (icon) icon.className = 'fa-regular fa-heart';
+          }
+          if (countSpan) countSpan.textContent = res.count > 0 ? res.count : '';
+        }
+      } catch (err) {
+        console.error('Comment reaction failed:', err);
+      }
+    }
+    window.handleCommentReaction = handleCommentReaction;
+
+    function setupCommentsDrawer() {
+      const drawer = document.getElementById('commentsDrawer');
+      const closeBtn = document.getElementById('closeCommentsBtn');
+      const sendBtn = document.getElementById('sendCommentBtn');
+      const input = document.getElementById('newCommentInput');
+      const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+
+      if (cancelReplyBtn) {
+        cancelReplyBtn.addEventListener('click', clearReplyTarget);
+      }
+
+      closeBtn.addEventListener('click', () => {
+        clearReplyTarget();
+        drawer.classList.remove('open');
+      });
+
+      drawer.addEventListener('click', (e) => {
+        if (e.target === drawer) {
+          clearReplyTarget();
+          drawer.classList.remove('open');
+        }
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        const content = input.value.trim();
+        if (!content || !activeCommentPostId) return;
+
+        sendBtn.disabled = true;
+        try {
+          // AI Content Moderation Check for Comments
+          if (window.AIService) {
+            const aiCheck = await AIService.moderate(content);
+            if (!aiCheck.allowed || aiCheck.status === 'BLOCKED' || (aiCheck.status === 'REVIEW' && aiCheck.category !== 'SAFE')) {
+              showAiWarningModal(aiCheck, 'comment');
+              sendBtn.disabled = false;
+              return;
+            }
+          }
+
+          const replyOpts = activeReplyTarget ? {
+            parent_id: activeReplyTarget.commentId,
+            reply_to: activeReplyTarget.username
+          } : {};
+
+          const comment = await SafeSpaceDB.posts.addComment(activeCommentPostId, content, replyOpts);
+          input.value = '';
+          clearReplyTarget();
+          
+          const post = currentFeed.find(p => p.id === activeCommentPostId);
+          if (post) {
+            if (!Array.isArray(post.comments)) post.comments = [];
+            post.comments.push(comment);
+            renderComments(post.comments);
+            
+            const countSpan = document.getElementById(`comment-count-${activeCommentPostId}`);
+            if (countSpan) countSpan.textContent = post.comments.length;
+          }
+          syncPostInCaches(activeCommentPostId, p => {
+            if (!Array.isArray(p.comments)) p.comments = [];
+            if (!p.comments.some(c => c.id === comment.id)) p.comments.push(comment);
+          });
+          showToast('Comment posted! 💬', 'success');
+        } catch (err) {
+          showToast('Could not post comment', 'error');
+        } finally {
+          sendBtn.disabled = false;
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendBtn.click();
+      });
+    }
+
+    function openComments(postId) {
+      activeCommentPostId = postId;
+      clearReplyTarget();
+      const post = currentFeed.find(p => p.id === postId);
+      const drawer = document.getElementById('commentsDrawer');
+      const comments = post ? (post.comments || []) : [];
+      
+      const title = document.getElementById('commentsDrawerTitle');
+      if (title) title.textContent = `Comments (${comments.length})`;
+
+      renderComments(comments);
+      drawer.classList.add('open');
+    }
+
+    function renderComments(comments) {
+      const container = document.getElementById('commentsListContainer');
+      const title = document.getElementById('commentsDrawerTitle');
+      if (title) title.textContent = `Comments (${comments.length})`;
+
+      if (comments.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding: 32px 16px; color: var(--text-muted); font-size: 14px;">
+            No comments yet. Leave a kind word!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = comments.map(c => {
+        const username = formatDisplayName(c.username, 'Member');
+        const avatarHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(c.avatar_url, { alt: username })
+          : (c.avatar_url ? `<img src="${escapeHTML(c.avatar_url)}" alt="${escapeHTML(username)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />` : `<i class="fas fa-user"></i>`);
+        
+        const isReacted = Array.isArray(c.likes) && currentUser && c.likes.includes(currentUser.id);
+        const reactCount = Array.isArray(c.likes) ? c.likes.length : 0;
+        const isReply = Boolean(c.parent_id || c.reply_to);
+        const replyBadge = c.reply_to ? `<span class="comment-reply-indicator"><i class="fas fa-reply" style="font-size:10px;"></i> @${escapeHTML(c.reply_to)}</span>` : '';
+
+        return `
+        <div class="comment-item ${isReply ? 'is-reply' : ''}" id="comment-${c.id}">
+          <div class="comment-avatar">
+            ${avatarHtml}
+          </div>
+          <div class="comment-body">
+            <div class="comment-author">${escapeHTML(username)}</div>
+            <div class="comment-text">${replyBadge}${escapeHTML(c.content)}</div>
+            <div class="comment-actions-row">
+              <span class="comment-time">${formatRelativeTime(c.created_at)}</span>
+              <button type="button" class="comment-action-btn ${isReacted ? 'reacted' : ''}" id="comment-react-btn-${c.id}" onclick="handleCommentReaction('${c.id}')" aria-label="React to comment">
+                <i class="${isReacted ? 'fas' : 'fa-regular'} fa-heart"></i>
+                <span class="comment-react-count">${reactCount > 0 ? reactCount : ''}</span>
+              </button>
+              <button type="button" class="comment-action-btn" onclick="startReplyToComment('${c.id}', '${escapeHTML(username)}')" aria-label="Reply to comment">
+                <i class="fa-regular fa-message"></i>
+                <span>Reply</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    // Post Options Menu Sheet
+    function setupPostOptionsMenu() {
+      const modal = document.getElementById('postOptionsMenu');
+      const closeBtn = document.getElementById('closePostOptionsBtn');
+      const copyBtn = document.getElementById('menuCopyTextBtn');
+      const shareBtn = document.getElementById('menuShareBtn');
+      const saveBtn = document.getElementById('menuSaveBtn');
+      const reportBtn = document.getElementById('menuReportBtn');
+      const deleteBtn = document.getElementById('menuDeleteBtn');
+
+      closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        const post = currentFeed.find(p => p.id === activeMenuPostId);
+        if (post && post.content) {
+          try {
+            await navigator.clipboard.writeText(post.content);
+            showToast('Post copied to clipboard 📋', 'success');
+          } catch (e) {
+            showToast('Unable to copy to clipboard', 'warning');
+          }
+        }
+        modal.classList.remove('open');
+      });
+
+      shareBtn.addEventListener('click', () => {
+        if (navigator.share) {
+          navigator.share({
+            title: 'Safe Space Post',
+            text: 'Check out this post on Safe Space!',
+            url: window.location.href
+          }).catch(() => {});
+        } else {
+          showToast('Link ready to share! 🔗', 'info');
+        }
+        modal.classList.remove('open');
+      });
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+          modal.classList.remove('open');
+          if (!activeMenuPostId) return;
+          await handleSave(activeMenuPostId);
+        });
+      }
+
+      reportBtn.addEventListener('click', () => {
+        modal.classList.remove('open');
+        openReportPostModal(activeMenuPostId);
+      });
+
+      deleteBtn.addEventListener('click', async () => {
+        if (!activeMenuPostId) return;
+        if (!confirm('Are you sure you want to delete this post?')) return;
+
+        const deletedId = activeMenuPostId;
+        modal.classList.remove('open');
+        try {
+          await SafeSpaceDB.posts.deletePost(deletedId);
+
+          // Synchronize deletion across all cached categories in memory
+          Object.keys(feedCache).forEach(k => {
+            if (feedCache[k] && Array.isArray(feedCache[k].posts)) {
+              feedCache[k].posts = feedCache[k].posts.filter(p => p.id !== deletedId);
+            }
+          });
+          currentFeed = currentFeed.filter(p => p.id !== deletedId);
+
+          // Surgical removal with smooth fade-out animation
+          const postCard = document.getElementById(`post-${deletedId}`);
+          if (postCard) {
+            postCard.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            postCard.style.opacity = '0';
+            postCard.style.transform = 'scale(0.96)';
+            setTimeout(() => {
+              if (postCard.parentNode) postCard.remove();
+              if (currentFeed.length === 0) renderFeed();
+            }, 200);
+          } else {
+            renderFeed();
+          }
+          showToast('Post deleted.', 'info');
+        } catch (err) {
+          showToast('Failed to delete post', 'error');
+        }
+      });
+    }
+
+    function togglePostMenu(postId) {
+      activeMenuPostId = postId;
+      const post = currentFeed.find(p => p.id === postId);
+      if (!post) return;
+
+      const modal = document.getElementById('postOptionsMenu');
+      const deleteBtn = document.getElementById('menuDeleteBtn');
+      const saveText = document.getElementById('menuSaveText');
+      const saveIcon = document.getElementById('menuSaveIcon');
+
+      // Update Save button label & icon based on bookmark state
+      const isSaved = Array.isArray(post.saved_by) && currentUser && post.saved_by.includes(currentUser.id);
+      if (saveText) saveText.textContent = isSaved ? 'Remove from Saved' : 'Save Post';
+      if (saveIcon) {
+        saveIcon.className = isSaved ? 'fas fa-bookmark' : 'fa-regular fa-bookmark';
+      }
+
+      if (currentUser && post.user_id === currentUser.id) {
+        deleteBtn.style.display = 'flex';
+      } else {
+        deleteBtn.style.display = 'none';
+      }
+
+      modal.classList.add('open');
+    }
+
+    // Contextual Report Post Modal Logic
+    function setupReportPostModal() {
+      const modal = document.getElementById('reportPostModal');
+      const closeBtn = document.getElementById('closeReportPostModalBtn');
+
+      if (!modal) return;
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+      }
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
+    }
+
+    function openReportPostModal(postId) {
+      const modal = document.getElementById('reportPostModal');
+      const modalBody = document.getElementById('reportPostModalBody');
+      if (!modal || !modalBody) return;
+
+      // Render fresh report form
+      modalBody.innerHTML = `
+        <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px;">
+          Why are you reporting this?
+        </p>
+        <div class="report-options-list" id="postReportReasonList">
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Bullying or harassment" checked />
+            <span>Bullying or harassment</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Hate or discrimination" />
+            <span>Hate or discrimination</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Threatening behavior" />
+            <span>Threatening behavior</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Inappropriate content" />
+            <span>Inappropriate content</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Spam" />
+            <span>Spam</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Self-harm concern" />
+            <span>Self-harm concern</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="postReportReason" value="Other" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div style="margin: 16px 0;">
+          <label for="postReportDetails" style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+            Additional details
+          </label>
+          <textarea
+            id="postReportDetails"
+            class="report-textarea"
+            rows="3"
+            placeholder="Provide any additional context (optional)..."
+            style="width:100%; box-sizing:border-box;"
+          ></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn-cancel" id="cancelReportPostBtn">Cancel</button>
+          <button type="button" class="btn-submit-action" id="submitReportPostBtn">Submit Report</button>
+        </div>
+      `;
+
+      const cancelBtn = document.getElementById('cancelReportPostBtn');
+      const submitBtn = document.getElementById('submitReportPostBtn');
+
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener('click', async () => {
+          const selectedRadio = modalBody.querySelector('input[name="postReportReason"]:checked');
+          const reason = selectedRadio ? selectedRadio.value : 'Other';
+          const detailsInput = document.getElementById('postReportDetails');
+          const details = detailsInput ? detailsInput.value.trim() : '';
+
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+          try {
+            const post = currentFeed.find(p => p.id === postId);
+            const reportedUserId = post ? (post.user_id || post.author_id) : null;
+
+            const res = await SafeSpaceDB.reports.createReport({
+              post_id: postId,
+              reported_user_id: reportedUserId,
+              reason: reason,
+              report_type: reason,
+              details: details,
+              description: details,
+              status: 'Pending'
+            });
+
+            if (res && res.duplicate) {
+              modalBody.innerHTML = `
+                <div style="text-align:center; padding: 24px 16px;">
+                  <div style="width:56px; height:56px; border-radius:50%; background:rgba(239, 68, 68, 0.12); color:#EF4444; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 16px;">
+                    <i class="fas fa-info-circle"></i>
+                  </div>
+                  <h3 style="font-size:17px; font-weight:700; color:var(--text-dark); margin-bottom:8px;">Already Reported</h3>
+                  <p style="font-size:14px; color:var(--text-mid); line-height:1.5; margin-bottom:20px;">
+                    You have already reported this post.<br>Our moderation team will review it.
+                  </p>
+                  <button type="button" class="btn-cancel" id="doneReportPostBtn" style="min-width:120px; padding:10px 24px;">Close</button>
+                </div>
+              `;
+              const doneBtn = document.getElementById('doneReportPostBtn');
+              if (doneBtn) {
+                doneBtn.addEventListener('click', () => modal.classList.remove('open'));
+              }
+              showToast('You have already reported this post.', 'info');
+              return;
+            }
+
+            // Confirmation View
+            modalBody.innerHTML = `
+              <div style="text-align:center; padding: 24px 16px;">
+                <div style="width:56px; height:56px; border-radius:50%; background:rgba(34, 197, 94, 0.12); color:#22c55e; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 16px;">
+                  <i class="fas fa-check"></i>
+                </div>
+                <h3 style="font-size:17px; font-weight:700; color:var(--text-dark); margin-bottom:8px;">Report Submitted</h3>
+                <p style="font-size:14px; color:var(--text-mid); line-height:1.5; margin-bottom:20px;">
+                  Thank you. Your report has been submitted for review.
+                </p>
+                <button type="button" class="btn-submit-action" id="doneReportPostBtn" style="min-width:120px; padding:10px 24px;">Done</button>
+              </div>
+            `;
+
+            const doneBtn = document.getElementById('doneReportPostBtn');
+            if (doneBtn) {
+              doneBtn.addEventListener('click', () => modal.classList.remove('open'));
+            }
+            showToast('Report submitted.', 'success');
+          } catch (err) {
+            console.error('Failed to submit report:', err);
+            showToast('Something went wrong. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Submit Report';
+          }
+        });
+      }
+      modal.classList.add('open');
+    }
+
+    // ── Notifications System ──
+    async function setupNotificationBell() {
+      const btn = document.getElementById('notificationsBtn');
+      const overlay = document.getElementById('notifDrawerOverlay');
+      const closeBtn = document.getElementById('closeNotifDrawerBtn');
+      const markAllBtn = document.getElementById('markAllNotifsBtn');
+      const listContainer = document.getElementById('notifListContainer');
+      const badge = document.getElementById('notifBadge');
+
+      async function refreshBadge() {
+        if (!SafeSpaceDB.notifications) return;
+        try {
+          const unread = await SafeSpaceDB.notifications.getUnreadCount();
+          if (badge) {
+            if (unread > 0) {
+              badge.textContent = unread > 99 ? '99+' : unread;
+              badge.style.display = 'flex';
+            } else {
+              badge.style.display = 'none';
+            }
+          }
+        } catch (e) {}
+      }
+
+      await refreshBadge();
+
+      btn.addEventListener('click', async () => {
+        overlay.classList.add('open');
+        listContainer.innerHTML = `
+          <div class="skeleton-card" style="padding: 12px; margin-bottom: 8px;">
+            <div class="skeleton sk-avatar" style="width: 36px; height: 36px;"></div>
+            <div class="sk-info" style="flex: 1;">
+              <div class="skeleton sk-title" style="width: 70%; height: 12px; margin-bottom: 6px;"></div>
+              <div class="skeleton sk-subtitle" style="width: 40%; height: 10px;"></div>
+            </div>
+          </div>
+          <div class="skeleton-card" style="padding: 12px; margin-bottom: 8px;">
+            <div class="skeleton sk-avatar" style="width: 36px; height: 36px;"></div>
+            <div class="sk-info" style="flex: 1;">
+              <div class="skeleton sk-title" style="width: 55%; height: 12px; margin-bottom: 6px;"></div>
+              <div class="skeleton sk-subtitle" style="width: 35%; height: 10px;"></div>
+            </div>
+          </div>
+        `;
+        try {
+          const notifs = await SafeSpaceDB.notifications.getNotifications();
+          if (!notifs || notifs.length === 0) {
+            listContainer.innerHTML = `
+              <div class="empty-state" style="padding: 40px 16px;">
+                <i class="fa-regular fa-bell-slash" style="font-size: 44px; color: var(--text-muted);"></i>
+                <h3 style="font-size: 15px; margin-top: 10px;">No notifications</h3>
+                <p style="font-size: 13px;">You're completely caught up with community updates.</p>
+              </div>
+            `;
+            return;
+          }
+
+          listContainer.innerHTML = notifs.map(n => {
+            const isUnread = !n.is_read;
+            let iconClass = 'fa-bell';
+            let typeClass = 'announcement';
+
+            if (n.type === 'reaction' || n.type === 'like') { iconClass = 'fa-heart'; typeClass = 'reaction'; }
+            else if (n.type === 'comment') { iconClass = 'fa-comment'; typeClass = 'comment'; }
+            else if (n.type === 'message' || n.type === 'support_message') { iconClass = 'fa-envelope'; typeClass = 'announcement'; }
+            else if (n.type === 'friend_request' || n.type === 'friend_accept') { iconClass = 'fa-user-plus'; typeClass = 'announcement'; }
+            else if (n.type === 'moderation' || n.type === 'moderation_warning' || n.type === 'moderation_notice' || n.type === 'account_suspended') { iconClass = 'fa-shield-halved'; typeClass = 'moderation'; }
+
+            return `
+              <div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-item-${n.id}" onclick="handleNotifClick('${n.id}')">
+                <div class="notif-item-icon ${typeClass}">
+                  <i class="fas ${iconClass}"></i>
+                </div>
+                <div class="notif-item-content">
+                  <div class="notif-item-msg">${escapeHTML(n.message)}</div>
+                  <div class="notif-item-time">${formatRelativeTime(n.created_at)}</div>
+                </div>
+                ${isUnread ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--primary);margin-top:6px;"></span>' : ''}
+              </div>
+            `;
+          }).join('');
+        } catch (err) {
+          listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load notifications</div>';
+        }
+      });
+
+      closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('open');
+      });
+
+      markAllBtn.addEventListener('click', async () => {
+        await SafeSpaceDB.notifications.markAllAsRead();
+        document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+        if (badge) badge.style.display = 'none';
+        showToast('All notifications marked as read', 'info');
+      });
+
+      window.handleNotifClick = async function(notifId) {
+        await SafeSpaceDB.notifications.markAsRead(notifId);
+        const item = document.getElementById(`notif-item-${notifId}`);
+        if (item) item.classList.remove('unread');
+        refreshBadge();
+      };
+    }
+
+    // Real-time synchronization when posts are moderated by administrators
+    function setupModerationSync() {
+      function applyModerationSync(data) {
+        if (!data || !data.postId) return;
+        const postId = data.postId;
+        const action = data.action; // 'deleted', 'hidden', 'restored'
+
+        // 1. Invalidate in-memory feed caches across categories
+        Object.keys(feedCache).forEach(cat => {
+          if (feedCache[cat] && Array.isArray(feedCache[cat].posts)) {
+            if (action === 'restored') {
+              delete feedCache[cat];
+            } else {
+              feedCache[cat].posts = feedCache[cat].posts.filter(p => p.id !== postId);
+            }
+          }
+        });
+
+        // 2. Immediate live UI update on Home Feed
+        if (action === 'restored') {
+          loadCategoryFeed(activeCategory, { isBackground: false, page: 0 });
+        } else {
+          const card = document.getElementById('post-' + postId);
+          if (card) {
+            card.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.96) translateY(-8px)';
+            setTimeout(() => {
+              if (card.parentNode) card.remove();
+              currentFeed = (currentFeed || []).filter(p => p.id !== postId);
+              if (currentFeed.length === 0) renderFeed();
+            }, 350);
+          } else {
+            currentFeed = (currentFeed || []).filter(p => p.id !== postId);
+          }
+        }
+      }
+
+      // BroadcastChannel for cross-tab sync
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const modChannel = new BroadcastChannel('safespace_moderation_channel');
+          modChannel.onmessage = function(e) {
+            if (e.data && e.data.type === 'post_moderated') {
+              applyModerationSync(e.data);
+            }
+          };
+        } catch (be) {}
+      }
+
+      // Storage event listener fallback
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'safe_space_post_moderation_sync' && e.newValue) {
+          try {
+            const data = JSON.parse(e.newValue);
+            applyModerationSync(data);
+          } catch (se) {}
+        }
+      });
+    }
+
+    // Real-time synchronization when user updates their avatar
+    window.addEventListener('safespace:avatar-changed', function(e) {
+      if (e.detail && e.detail.user && currentUser && e.detail.user.id === currentUser.id) {
+        Object.assign(currentUser, e.detail.user);
+        // Refresh feed so current user's posts display new avatar immediately
+        loadCategoryFeed(activeCategory, { isBackground: true, page: 0 });
+      }
+    });
+  </script>
+</body>
+</html>

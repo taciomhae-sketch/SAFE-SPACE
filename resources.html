@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Resources — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="prefetch" href="bible-verse.html" />
+  <link rel="prefetch" href="js/bible-data.js" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading resources...</div>
+      </div>
+    </div>
+
+    <!-- Desktop & Tablet Sidebar -->
+    <aside class="desktop-sidebar">
+      <a href="home.html" class="sidebar-brand">
+        <img class="sidebar-logo" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+        <div>
+          <div class="sidebar-brand-name">SAFE SPACE</div>
+          <span class="sidebar-brand-tag">Student Support</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="home.html" class="sidebar-link" data-page="home">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="community.html" class="sidebar-link" data-page="community">
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </a>
+        <a href="chat.html" class="sidebar-link" data-page="chat">
+          <i class="fas fa-comment-dots"></i>
+          <span>Chat</span>
+        </a>
+        <a href="resources.html" class="sidebar-link active" data-page="resources">
+          <i class="fas fa-book-open"></i>
+          <span>Resources</span>
+        </a>
+        <a href="profile.html" class="sidebar-link" data-page="profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-actions">
+        <button type="button" class="sidebar-create-btn" id="sidebarCreatePostBtn">
+          <i class="fas fa-plus"></i>
+          <span>Create Post</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="sidebar-user-card" id="sidebarUserCard" title="View Profile">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">Account</span>
+            <span class="sidebar-user-role">Student</span>
+          </div>
+          <i class="fas fa-gear sidebar-settings-icon"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Column -->
+    <div class="main-content-column">
+      <!-- Page Header (from screenshot: Resources + purple heart on right) -->
+      <header class="page-header">
+        <h1>Resources</h1>
+        <div class="header-actions">
+          <button class="header-btn" style="color: var(--primary);" aria-label="Favorite Resources">
+            <i class="fas fa-heart"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable 4 Resource Cards -->
+      <main class="page-content" id="resourcesPageContent">
+        <div class="resources-list">
+          <!-- 1. Mental Health -->
+          <article class="resource-card" id="cardMentalHealth">
+            <div class="resource-icon">
+              <i class="fas fa-brain"></i>
+            </div>
+            <div class="resource-info">
+              <h2 class="resource-title">Mental Health</h2>
+              <p class="resource-desc">Articles and tips for your mental well-being.</p>
+            </div>
+          </article>
+
+          <!-- 2. Find Support -->
+          <article class="resource-card" id="cardFindSupport">
+            <div class="resource-icon">
+              <i class="fas fa-hands-holding-child" style="font-size:24px;"></i>
+            </div>
+            <div class="resource-info">
+              <h2 class="resource-title">Find Support</h2>
+              <p class="resource-desc">Find hotlines and organizations that can help.</p>
+            </div>
+          </article>
+
+          <!-- 3. Self Care -->
+          <article class="resource-card" id="cardSelfCare">
+            <div class="resource-icon">
+              <i class="fas fa-heart"></i>
+            </div>
+            <div class="resource-info">
+              <h2 class="resource-title">Self Care</h2>
+              <p class="resource-desc">Tips and activities for student well-being.</p>
+            </div>
+          </article>
+
+          <!-- 4. Bible Verses -->
+          <article class="resource-card" id="cardBibleVerses" style="cursor: pointer;">
+            <div class="resource-icon" style="background: rgba(108, 79, 209, 0.12); color: var(--primary);">
+              <i class="fas fa-bookmark"></i>
+            </div>
+            <div class="resource-info">
+              <h2 class="resource-title">Bible Verses</h2>
+              <p class="resource-desc">Browse verses categorized for anxiety, peace, hope, and encouragement.</p>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="home.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item active">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Resource Detail Slide-in Overlay -->
+  <div class="thread-overlay" id="resourceDetailOverlay">
+    <div class="thread-header">
+      <button class="thread-back" id="closeDetailBtn" aria-label="Back to Resources">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="thread-user-info">
+        <div class="thread-username" id="detailTitle">Details</div>
+      </div>
+    </div>
+    <div class="page-content" id="detailContent" style="padding: 16px 20px;">
+      <!-- Details loaded dynamically -->
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Immediate UI revelation — 0ms page load
+      if (typeof hidePageLoader === 'function') hidePageLoader();
+
+      let currentUser = null;
+      try {
+        currentUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+      } catch (e) {}
+
+      // Non-blocking background session verification
+      if (typeof requireAuth === 'function') {
+        requireAuth().then(u => { if (u) currentUser = u; }).catch(e => console.warn('Auth check fallback:', e));
+      }
+
+      // Prewarm Bible Verses page on hover/touch for instant navigation
+      const bibleCard = document.getElementById('cardBibleVerses');
+      if (bibleCard) {
+        const prewarmBible = () => {
+          if (!window._biblePrewarmed) {
+            window._biblePrewarmed = true;
+            const l1 = document.createElement('link');
+            l1.rel = 'prefetch';
+            l1.href = 'bible-verse.html';
+            document.head.appendChild(l1);
+            const l2 = document.createElement('link');
+            l2.rel = 'prefetch';
+            l2.href = 'js/bible-data.js';
+            document.head.appendChild(l2);
+          }
+        };
+        bibleCard.addEventListener('pointerenter', prewarmBible, { passive: true });
+        bibleCard.addEventListener('touchstart', prewarmBible, { passive: true });
+      }
+
+      const overlay = document.getElementById('resourceDetailOverlay');
+      const detailTitle = document.getElementById('detailTitle');
+      const detailContent = document.getElementById('detailContent');
+      const closeBtn = document.getElementById('closeDetailBtn');
+
+      function openOverlay(title) {
+        detailTitle.textContent = title;
+        overlay.classList.add('open');
+        overlay.querySelector('.page-content').scrollTop = 0;
+      }
+
+      function closeOverlay() {
+        overlay.classList.remove('open');
+        // Stop any active breathing timers
+        if (window.breathingInterval) {
+          clearInterval(window.breathingInterval);
+          window.breathingInterval = null;
+        }
+      }
+
+      closeBtn.addEventListener('click', closeOverlay);
+      window.closeResourceOverlay = closeOverlay;
+
+      // Handle escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('open')) {
+          closeOverlay();
+        }
+      });
+
+      // ========================================================
+      // 1. MENTAL HEALTH MODULE
+      // ========================================================
+      document.getElementById('cardMentalHealth').addEventListener('click', () => {
+        openOverlay('Mental Health');
+        renderMentalHealthModule();
+      });
+
+      function renderMentalHealthModule() {
+        detailContent.innerHTML = `
+          <!-- Module Hero -->
+          <div class="res-hero-banner">
+            <h2><i class="fas fa-brain" style="margin-right:8px;"></i> Mental Health</h2>
+            <p>Your well-being matters. Explore helpful information and practical tips for managing everyday student challenges.</p>
+          </div>
+
+          <!-- Professional Disclaimer -->
+          <div class="res-disclaimer">
+            <i class="fas fa-circle-info"></i>
+            <div>
+              <strong>Educational Resource Only:</strong> Safe Space provides educational resources and student coping strategies. This content is not a substitute for clinical psychiatric care, medical diagnosis, or professional therapy. If you are experiencing intense distress or crisis, please consult our <strong>Find Support</strong> section or campus guidance counselors.
+            </div>
+          </div>
+
+          <!-- Topic Filter Pills -->
+          <div class="pill-scroll-wrap" style="margin-bottom:16px;">
+            <div class="pill-row" id="mhTopicPills">
+              <button class="pill active" data-mh-topic="all">All Topics</button>
+              <button class="pill" data-mh-topic="anxiety">Anxiety</button>
+              <button class="pill" data-mh-topic="stress">Student Stress</button>
+              <button class="pill" data-mh-topic="burnout">Student Burnout</button>
+              <button class="pill" data-mh-topic="wellbeing">Emotional Well-Being</button>
+              <button class="pill" data-mh-topic="confidence">Confidence &amp; Self-Esteem</button>
+              <button class="pill" data-mh-topic="mindfulness">Mindfulness &amp; Relaxation</button>
+            </div>
+          </div>
+
+          <div id="mhTopicsContainer">
+            <!-- 1. Anxiety -->
+            <article class="res-topic-card" data-topic="anxiety">
+              <div class="res-topic-header">
+                <div class="res-topic-title-group">
+                  <div class="res-topic-icon"><i class="fas fa-wind"></i></div>
+                  <h3 class="res-topic-title">Anxiety Support</h3>
+                </div>
+                <span class="verse-cat-tag">Topic</span>
+              </div>
+              <div class="res-topic-desc">
+                Feeling worried, restless, or overwhelmed before exams, presentations, or social settings is common among students. Anxiety is your body's natural response to perceived threat or pressure.
+              </div>
+              
+              <div class="res-tips-box">
+                <div class="res-tips-title"><i class="fas fa-lightbulb"></i> Common Signs:</div>
+                <ul class="res-tips-list">
+                  <li>Rapid heartbeat, shallow breathing, muscle tension, or a churning stomach.</li>
+                  <li>Racing or repetitive thoughts ("What if I fail?", "What if I mess up?").</li>
+                  <li>Difficulty concentrating or trouble falling asleep due to worried thoughts.</li>
+                </ul>
+              </div>
+
+              <!-- Interactive 5-4-3-2-1 Grounding Box -->
+              <div class="grounding-box">
+                <div style="font-size:13px; font-weight:700; color:var(--primary); margin-bottom:8px;">
+                  <i class="fas fa-hand-holding-heart"></i> Try the 5-4-3-2-1 Sensory Reset:
+                </div>
+                <div class="grounding-step"><span class="grounding-badge">5</span> Notice 5 things you can see around your room.</div>
+                <div class="grounding-step"><span class="grounding-badge">4</span> Notice 4 things you can physically feel (feet on floor, clothes on shoulders).</div>
+                <div class="grounding-step"><span class="grounding-badge">3</span> Notice 3 distinct sounds you can hear right now.</div>
+                <div class="grounding-step"><span class="grounding-badge">2</span> Notice 2 scents you can smell in the air.</div>
+                <div class="grounding-step"><span class="grounding-badge">1</span> Notice 1 taste in your mouth or take a sip of cool water.</div>
+              </div>
+
+              <div class="res-tips-box" style="margin-top:12px; background:rgba(239, 68, 68, 0.08); border:1px solid rgba(239, 68, 68, 0.2);">
+                <div class="res-tips-title" style="color:#dc2626;"><i class="fas fa-heart-pulse"></i> When to seek additional support:</div>
+                <p style="font-size:13px; color:var(--text-mid); margin:0; line-height:1.5;">
+                  If feelings of panic or anxiety persist daily for more than 2 weeks, interfere with attending classes, or prevent you from eating or sleeping, reach out to your school guidance counselor or trusted health professional.
+                </p>
+              </div>
+            </article>
+
+            <!-- 2. Student Stress -->
+            <article class="res-topic-card" data-topic="stress">
+              <div class="res-topic-header">
+                <div class="res-topic-title-group">
+                  <div class="res-topic-icon"><i class="fas fa-book-reader"></i></div>
+                  <h3 class="res-topic-title">Student Stress</h3>
+                </div>
+                <span class="verse-cat-tag">Academic</span>
+              </div>
+              <div class="res-topic-desc">
+                Academic deadlines, impending exams, financial considerations, and social expectations can pile up quickly. Learning student-friendly pacing protects your health.
+              </div>
+              <div class="res-tips-box">
+                <div class="res-tips-title"><i class="fas fa-check-circle"></i> Student-Friendly Coping Strategies:</div>
+                <ul class="res-tips-list">
+                  <li><strong>The 25/5 Pomodoro Rule:</strong> Study focused for 25 minutes, then take an unconditional 5-minute break away from your screen.</li>
+                  <li><strong>Break big projects down:</strong> Turn an overwhelming 10-page paper into bite-sized 15-minute tasks (e.g. "Draft outline", "Find 2 sources").</li>
+                  <li><strong>Communicate early:</strong> If you are struggling with a deadline, send a polite email to your instructor a few days ahead rather than panicking on submission night.</li>
+                  <li><strong>Keep perspective:</strong> Your grades reflect an evaluation of specific coursework, not your worth as a human being.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- 3. Student Burnout -->
+            <article class="res-topic-card" data-topic="burnout">
+              <div class="res-topic-header">
+                <div class="res-topic-title-group">
+                  <div class="res-topic-icon"><i class="fas fa-battery-quarter"></i></div>
+                  <h3 class="res-topic-title">Student Burnout</h3>
+                </div>
+                <span class="verse-cat-tag">Rest &amp; Balance</span>
+              </div>
+              <div class="res-topic-desc">
+                Burnout is not laziness—it is emotional, mental, and physical exhaustion resulting from prolonged, unrelieved academic pressure and chronic stress.
+              </div>
+              <div class="res-tips-box">
+                <div class="res-tips-title"><i class="fas fa-triangle-exclamation"></i> Common Warning Signs:</div>
+                <ul class="res-tips-list">
+                  <li>Feeling emotionally drained before your day even begins.</li>
+                  <li>Cynicism or detachment toward courses you used to enjoy.</li>
+                  <li>Difficulty concentrating, frequent headaches, or feeling unable to rest even during breaks.</li>
+                </ul>
+              </div>
+              <div class="res-tips-box" style="margin-top:10px;">
+                <div class="res-tips-title"><i class="fas fa-leaf"></i> Practical Recovery Steps:</div>
+                <ul class="res-tips-list">
+                  <li><strong>Rest is productive:</strong> Recharging your brain allows neural pathways to consolidate memories. Sleep is part of your study plan.</li>
+                  <li><strong>Set firm boundaries:</strong> Give yourself permission to say "I don't have capacity to take that on right now."</li>
+                  <li><strong>Take guilt-free pauses:</strong> When you take a break, do not think about studying. Let your mind disconnect completely.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- 4. Emotional Well-Being -->
+            <article class="res-topic-card" data-topic="wellbeing">
+              <div class="res-topic-header">
+                <div class="res-topic-title-group">
+                  <div class="res-topic-icon"><i class="fas fa-face-smile"></i></div>
+                  <h3 class="res-topic-title">Emotional Well-Being</h3>
+                </div>
+                <span class="verse-cat-tag">Emotions</span>
+              </div>
+              <div class="res-topic-desc">
+                Emotional well-being does not mean being happy every minute. It means recognizing your feelings, allowing yourself to feel them safely, and practicing healthy coping.
+              </div>
+              <div class="res-tips-box">
+                <div class="res-tips-title"><i class="fas fa-heart"></i> Daily Practices:</div>
+                <ul class="res-tips-list">
+                  <li><strong>Name it to tame it:</strong> Instead of bottling up stress, pause and name the exact emotion ("I am feeling discouraged" or "I am feeling lonely").</li>
+                  <li><strong>Safe expression:</strong> Release heavy emotions through expressive writing, drawing, physical exercise, or anonymous posting in Safe Space.</li>
+                  <li><strong>Maintain trusted connections:</strong> Check in with peers who listen without offering unsolicited judgment or competition.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- 5. Confidence & Self-Esteem -->
+            <article class="res-topic-card" data-topic="confidence">
+              <div class="res-topic-header">
+                <div class="res-topic-title-group">
+                  <div class="res-topic-icon"><i class="fas fa-star"></i></div>
+                  <h3 class="res-topic-title">Confidence &amp; Self-Esteem</h3>
+                </div>
+                <span class="verse-cat-tag">Growth</span>
+              </div>
+              <div class="res-topic-desc">
+                College and high school environments often provoke unhealthy comparisons. Developing a gentle inner dialogue fosters authentic confidence.
+              </div>
+              <div class="res-tips-box">
+                <div class="res-tips-title"><i class="fas fa-shield-cat"></i> Building Healthy Self-Belief:</div>
+                <ul class="res-tips-list">
+                  <li><strong>Reframe the inner critic:</strong> When you think "I am not smart enough," rephrase it to "I am encountering a challenging topic and I can learn it step-by-step."</li>
+                  <li><strong>Acknowledge micro-wins:</strong> Celebrate getting out of bed, showing up to morning lectures, or reading a single chapter.</li>
+                  <li><strong>Dodge the comparison trap:</strong> Social media presents curated highlight reels. You are comparing your behind-the-scenes to everyone else's public highlight.</li>
+                  <li><strong>Focus on your individual trajectory:</strong> Growth is personal. Compare yourself only to who you were yesterday.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- 6. Mindfulness & Relaxation -->
+            <article class="res-topic-card" data-topic="mindfulness">
+              <div class="res-topic-header">
+                <div class="res-topic-title-group">
+                  <div class="res-topic-icon"><i class="fas fa-spa"></i></div>
+                  <h3 class="res-topic-title">Mindfulness &amp; Relaxation</h3>
+                </div>
+                <span class="verse-cat-tag">Mindfulness</span>
+              </div>
+              <div class="res-topic-desc">
+                Mindfulness is simply paying attention to the present moment without judging it. It lowers stress hormones and helps reset your nervous system.
+              </div>
+              
+              <!-- Interactive Breathing Guide -->
+              <div class="grounding-box" style="text-align:center; padding:20px;">
+                <h4 style="color:var(--primary); font-size:15px; margin-bottom:6px;">Box Breathing Exercise</h4>
+                <p style="font-size:13px; color:var(--text-mid); margin-bottom:12px;">Inhale 4s &bull; Hold 4s &bull; Exhale 4s &bull; Hold 4s</p>
+                <div id="breathingPacer" style="font-size:24px; font-weight:800; color:var(--primary); height:40px; display:flex; align-items:center; justify-content:center;">
+                  Ready to breathe?
+                </div>
+                <button type="button" id="startBreathingBtn" class="btn-call-action" style="margin-top:10px; cursor:pointer;">
+                  <i class="fas fa-play"></i> Start 1-Minute Reset
+                </button>
+              </div>
+            </article>
+          </div>
+        `;
+
+        // Topic Pills filtering
+        const pills = document.querySelectorAll('#mhTopicPills .pill');
+        const cards = document.querySelectorAll('#mhTopicsContainer .res-topic-card');
+        pills.forEach(pill => {
+          pill.addEventListener('click', () => {
+            pills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const topic = pill.dataset.mhTopic;
+            cards.forEach(card => {
+              if (topic === 'all' || card.dataset.topic === topic) {
+                card.style.display = 'block';
+              } else {
+                card.style.display = 'none';
+              }
+            });
+          });
+        });
+
+        // Interactive breathing timer
+        const startBtn = document.getElementById('startBreathingBtn');
+        const pacer = document.getElementById('breathingPacer');
+        if (startBtn && pacer) {
+          startBtn.addEventListener('click', () => {
+            if (window.breathingInterval) {
+              clearInterval(window.breathingInterval);
+              window.breathingInterval = null;
+              startBtn.innerHTML = '<i class="fas fa-play"></i> Start 1-Minute Reset';
+              pacer.textContent = 'Paused. Great effort!';
+              return;
+            }
+
+            const phases = [
+              { text: '🌸 Inhale slowly (4s)...', time: 4 },
+              { text: '✋ Hold gently (4s)...', time: 4 },
+              { text: '💨 Exhale smoothly (4s)...', time: 4 },
+              { text: '✨ Rest quietly (4s)...', time: 4 }
+            ];
+            let phaseIdx = 0;
+            let secLeft = 4;
+            startBtn.innerHTML = '<i class="fas fa-pause"></i> Pause Exercise';
+
+            pacer.textContent = phases[0].text;
+            window.breathingInterval = setInterval(() => {
+              secLeft--;
+              if (secLeft <= 0) {
+                phaseIdx = (phaseIdx + 1) % phases.length;
+                pacer.textContent = phases[phaseIdx].text;
+                secLeft = phases[phaseIdx].time;
+              }
+            }, 1000);
+          });
+        }
+      }
+
+      // ========================================================
+      // 2. SELF-CARE MODULE
+      // ========================================================
+      document.getElementById('cardSelfCare').addEventListener('click', () => {
+        openOverlay('Self Care');
+        renderSelfCareModule();
+      });
+
+      function renderSelfCareModule() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const userPrefix = (currentUser && currentUser.id) ? currentUser.id : 'guest';
+        const storageKey = `safe_space_selfcare_${userPrefix}_${todayStr}`;
+        let checkedMap = {};
+        try {
+          checkedMap = JSON.parse(localStorage.getItem(storageKey)) || {};
+        } catch (e) { checkedMap = {}; }
+
+        const activities = [
+          { id: 'act-1', text: 'Take 5 slow, deep breaths', icon: 'fas fa-wind' },
+          { id: 'act-2', text: 'Drink a full glass of water', icon: 'fas fa-droplet' },
+          { id: 'act-3', text: 'Take a 10-minute break away from screens', icon: 'fas fa-mobile-screen-button' },
+          { id: 'act-4', text: 'Stretch your body and loosen your shoulders', icon: 'fas fa-person-walking' },
+          { id: 'act-5', text: "Write down one thing you're grateful for today", icon: 'fas fa-pen-fancy' },
+          { id: 'act-6', text: 'Talk or message someone you trust', icon: 'fas fa-comment-dots' }
+        ];
+
+        function getCompletedCount() {
+          return activities.filter(a => checkedMap[a.id]).length;
+        }
+
+        detailContent.innerHTML = `
+          <!-- Module Hero -->
+          <div class="res-hero-banner">
+            <h2><i class="fas fa-heart" style="margin-right:8px;"></i> Self-Care &amp; Daily Balance</h2>
+            <p>Practical tips and interactive activities that students can use to support their everyday well-being.</p>
+          </div>
+
+          <!-- Interactive Daily Checklist Tracker -->
+          <div class="selfcare-tracker-card">
+            <div class="selfcare-tracker-header">
+              <div class="selfcare-tracker-title">
+                <i class="fas fa-list-check" style="color:var(--primary);"></i>
+                <span>Daily Self-Care Check-in</span>
+              </div>
+              <span id="selfCareCountLabel" style="font-size:13px; font-weight:700; color:var(--primary);">
+                ${getCompletedCount()} of ${activities.length} completed
+              </span>
+            </div>
+            
+            <div class="selfcare-progress-outer">
+              <div class="selfcare-progress-inner" id="selfCareProgressBar" style="width: ${(getCompletedCount() / activities.length) * 100}%;"></div>
+            </div>
+
+            <div class="selfcare-checklist" id="selfCareChecklist">
+              ${activities.map(act => {
+                const isChecked = Boolean(checkedMap[act.id]);
+                return `
+                  <div class="selfcare-check-item ${isChecked ? 'completed' : ''}" data-act-id="${act.id}">
+                    <div class="selfcare-custom-checkbox">
+                      <i class="fas fa-check"></i>
+                    </div>
+                    <div class="selfcare-check-text">
+                      <i class="${act.icon}" style="margin-right:6px; color:var(--primary); opacity:0.8;"></i>
+                      ${escapeHTML(act.text)}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:12px; text-align:right;">
+              <i class="fa-regular fa-clock"></i> Resets daily &bull; Check off as you go
+            </div>
+          </div>
+
+          <!-- Self Care 5 Categories -->
+          <h3 style="font-size:16px; font-weight:700; color:var(--text-dark); margin: 24px 0 14px;">
+            <i class="fas fa-shapes" style="color:var(--primary); margin-right:6px;"></i> The 5 Pillars of Student Self-Care
+          </h3>
+
+          <!-- Category 1: Physical -->
+          <div class="res-topic-card">
+            <div class="res-topic-header">
+              <div class="res-topic-title-group">
+                <div class="res-topic-icon"><i class="fas fa-bed"></i></div>
+                <h3 class="res-topic-title">Physical Self-Care</h3>
+              </div>
+              <span class="verse-cat-tag">Body</span>
+            </div>
+            <div class="res-topic-desc">Your mind cannot perform at its best if your body is exhausted, dehydrated, or running on empty.</div>
+            <div class="res-tips-box">
+              <ul class="res-tips-list">
+                <li><strong>Consistent Rest:</strong> Target 7 to 8 hours of sleep. Pulling all-nighters degrades memory retention by up to 40%.</li>
+                <li><strong>Hydration:</strong> Carry a refillable water bottle to lectures; mild dehydration causes brain fog and tension headaches.</li>
+                <li><strong>Regular Meals:</strong> Fuel your brain with balanced food throughout exam weeks rather than skipping meals.</li>
+                <li><strong>Movement Breaks:</strong> Stand up, stretch, or walk around the library for 3 minutes after 45 minutes of studying.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Category 2: Emotional -->
+          <div class="res-topic-card">
+            <div class="res-topic-header">
+              <div class="res-topic-title-group">
+                <div class="res-topic-icon"><i class="fas fa-pen-nib"></i></div>
+                <h3 class="res-topic-title">Emotional Self-Care</h3>
+              </div>
+              <span class="verse-cat-tag">Emotions</span>
+            </div>
+            <div class="res-topic-desc">Giving yourself permission to experience your emotions without judging or suppressing them.</div>
+            <div class="res-tips-box">
+              <ul class="res-tips-list">
+                <li><strong>5-Minute Brain Dump:</strong> Before going to sleep, write down whatever is occupying your thoughts on paper.</li>
+                <li><strong>Compassionate Self-Talk:</strong> Speak to yourself the way you would speak to a friend who is having a hard week.</li>
+                <li><strong>Rest Without Guilt:</strong> Recognize that taking a Saturday afternoon off is healthy maintenance, not wasted time.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Category 3: Social -->
+          <div class="res-topic-card">
+            <div class="res-topic-header">
+              <div class="res-topic-title-group">
+                <div class="res-topic-icon"><i class="fas fa-users-rays"></i></div>
+                <h3 class="res-topic-title">Social Self-Care</h3>
+              </div>
+              <span class="verse-cat-tag">Connection</span>
+            </div>
+            <div class="res-topic-desc">Fostering nourishing friendships and protecting your energy from toxic or draining interactions.</div>
+            <div class="res-tips-box">
+              <ul class="res-tips-list">
+                <li><strong>Quality Over Quantity:</strong> Invest your energy in 2 or 3 friends who genuinely listen and celebrate your wins.</li>
+                <li><strong>Ask for Help:</strong> When course material or personal issues feel too heavy, reach out to trusted peers or advisers.</li>
+                <li><strong>Set Social Boundaries:</strong> You have the right to politely decline social plans when you need to study or recharge.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Category 4: Academic -->
+          <div class="res-topic-card">
+            <div class="res-topic-header">
+              <div class="res-topic-title-group">
+                <div class="res-topic-icon"><i class="fas fa-graduation-cap"></i></div>
+                <h3 class="res-topic-title">Academic Self-Care</h3>
+              </div>
+              <span class="verse-cat-tag">Studies</span>
+            </div>
+            <div class="res-topic-desc">Working smarter, setting sustainable study habits, and preventing burnout before final exams.</div>
+            <div class="res-tips-box">
+              <ul class="res-tips-list">
+                <li><strong>Eisenhower Matrix:</strong> Distinguish between urgent tasks and important tasks so you are not always in crisis mode.</li>
+                <li><strong>Buffer Time:</strong> Schedule assignment completion for 24 hours before the real deadline to account for unexpected hiccups.</li>
+                <li><strong>Dedicated Study Zone:</strong> Separate your study desk from your bed so your brain associates bed strictly with sleep.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Category 5: Digital -->
+          <div class="res-topic-card">
+            <div class="res-topic-header">
+              <div class="res-topic-title-group">
+                <div class="res-topic-icon"><i class="fas fa-bell-slash"></i></div>
+                <h3 class="res-topic-title">Digital Self-Care</h3>
+              </div>
+              <span class="verse-cat-tag">Technology</span>
+            </div>
+            <div class="res-topic-desc">Managing your screen time, social media consumption, and notifications to protect your focus and mental peace.</div>
+            <div class="res-tips-box">
+              <ul class="res-tips-list">
+                <li><strong>Notification Curfew:</strong> Mute non-essential class group chats or social notifications during study blocks.</li>
+                <li><strong>No-Phone Bedtime:</strong> Put your phone on 'Do Not Disturb' 30 minutes before sleep to avoid blue-light melatonin suppression.</li>
+                <li><strong>Unfollow Draining Accounts:</strong> Unfollow or mute social accounts that trigger self-doubt or anxiety.</li>
+              </ul>
+            </div>
+          </div>
+        `;
+
+        // Checklist click listener
+        const items = document.querySelectorAll('#selfCareChecklist .selfcare-check-item');
+        const countLabel = document.getElementById('selfCareCountLabel');
+        const progressBar = document.getElementById('selfCareProgressBar');
+
+        items.forEach(item => {
+          item.addEventListener('click', () => {
+            const id = item.dataset.actId;
+            const isNowChecked = !checkedMap[id];
+            checkedMap[id] = isNowChecked;
+            item.classList.toggle('completed', isNowChecked);
+
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(checkedMap));
+            } catch (e) {}
+
+            const count = getCompletedCount();
+            countLabel.textContent = `${count} of ${activities.length} completed`;
+            progressBar.style.width = `${(count / activities.length) * 100}%`;
+
+            if (count === activities.length) {
+              if (typeof showToast === 'function') {
+                showToast('All self-care activities completed today! Proud of you! 🎉', 'success');
+              }
+            }
+          });
+        });
+      }
+
+      // ========================================================
+      // 3. BIBLE VERSE & FULL BIBLE READER MODULES
+      // ========================================================
+      document.getElementById('cardBibleVerses').addEventListener('click', () => {
+        window.location.href = 'bible-verse.html';
+      });
+
+      async function renderBibleVerseSection() {
+        detailContent.innerHTML = `
+          <!-- Module Hero -->
+          <div class="res-hero-banner">
+            <h2><i class="fas fa-book-bible" style="margin-right:8px;"></i> Bible Verses</h2>
+            <p>Browse scriptures by topic for comfort, peace, hope, strength, and encouragement.</p>
+          </div>
+
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:14px; padding:8px 12px; background:var(--primary-ultra); border-radius:var(--radius-md);">
+            <i class="fas fa-circle-info" style="color:var(--primary);"></i> This optional faith-based module is provided for students seeking scripture-based encouragement and reflection.
+          </div>
+
+          <!-- Search Bar -->
+          <div class="search-bar" style="margin: 0 0 12px 0;">
+            <i class="fas fa-magnifying-glass"></i>
+            <input
+              type="text"
+              class="search-input"
+              id="verseSearchInput"
+              placeholder="Search by topic, book, verse, or keyword..."
+            />
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="pill-scroll-wrap" style="margin-bottom:14px;">
+            <div class="pill-row" id="verseCategoryRow">
+              <button class="pill active" data-cat="all">All</button>
+              <button class="pill" data-cat="comfort">Comfort</button>
+              <button class="pill" data-cat="hope">Hope</button>
+              <button class="pill" data-cat="peace">Peace</button>
+              <button class="pill" data-cat="strength">Strength</button>
+              <button class="pill" data-cat="love">Love</button>
+              <button class="pill" data-cat="guidance">Guidance</button>
+              <button class="pill" data-cat="fear and anxiety">Fear &amp; Anxiety</button>
+              <button class="pill" data-cat="stress">Stress</button>
+              <button class="pill" data-cat="saved"><i class="fas fa-bookmark" style="margin-right:4px;"></i> Saved Verses</button>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;" id="verseCountLabel">Loading scriptures...</span>
+            <span style="font-size:11px; color:var(--text-muted);"><i class="fas fa-shield-alt"></i> Public Domain (WEB/KJV)</span>
+          </div>
+
+          <div id="versesListContainer">
+            <div class="skeleton-card" style="padding:16px; margin-bottom:12px; border-radius:12px;">
+              <div class="sk-info" style="width:100%;">
+                <div class="skeleton sk-title" style="width:35%; height:14px; margin-bottom:8px;"></div>
+                <div class="skeleton sk-line" style="width:100%; height:12px; margin-bottom:6px;"></div>
+                <div class="skeleton sk-line" style="width:85%; height:12px; margin-bottom:6px;"></div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        let activeCat = 'all';
+        let searchQuery = '';
+
+        async function loadAndDisplayVerses() {
+          const listContainer = document.getElementById('versesListContainer');
+          const countLabel = document.getElementById('verseCountLabel');
+          if (!listContainer) return;
+
+          const onlySaved = (activeCat === 'saved');
+          const queryCat = onlySaved ? 'all' : activeCat;
+
+          const [verses, savedIds] = await Promise.all([
+            SafeSpaceDB.verses.getVerses({ category: queryCat, query: searchQuery, onlySaved: onlySaved }),
+            SafeSpaceDB.verses.getSavedVerses()
+          ]);
+
+          countLabel.textContent = `${verses.length} Scripture${verses.length === 1 ? '' : 's'}`;
+
+          if (verses.length === 0) {
+            listContainer.innerHTML = `
+              <div class="empty-state" style="padding:40px 16px;">
+                <i class="fa-solid fa-book-open" style="font-size:40px; color:var(--text-muted);"></i>
+                <h3 style="font-size:15px; margin-top:10px;">${onlySaved ? 'No saved verses yet' : 'No verses found'}</h3>
+                <p style="font-size:13px; color:var(--text-muted);">
+                  ${onlySaved ? 'Tap the bookmark icon on any verse to save it for quick encouragement later.' : 'Try searching for another topic like "peace", "comfort", or "hope".'}
+                </p>
+              </div>
+            `;
+            return;
+          }
+
+          listContainer.innerHTML = verses.map(v => {
+            const isSaved = savedIds.includes(v.id);
+            const bookName = v.book || 'Scripture';
+            const refStr = `${bookName} ${v.chapter}:${v.verse}`;
+            return `
+              <article class="verse-card" id="verse-card-${v.id}">
+                <div class="verse-header">
+                  <div class="verse-ref-group">
+                    <div class="verse-icon-badge"><i class="fas fa-book-bible"></i></div>
+                    <span class="verse-ref">${escapeHTML(refStr)}</span>
+                  </div>
+                  <span class="verse-cat-tag">${escapeHTML(v.category || 'Reflection')}</span>
+                </div>
+                <div class="verse-text">&ldquo;${escapeHTML(v.verse_text)}&rdquo;</div>
+                <div class="verse-actions">
+                  <button class="btn-save-verse ${isSaved ? 'saved' : ''}" onclick="handleToggleSaveVerse('${v.id}')">
+                    <i class="${isSaved ? 'fas' : 'fa-regular'} fa-bookmark"></i>
+                    <span>${isSaved ? 'Saved' : 'Save Verse'}</span>
+                  </button>
+                </div>
+              </article>
+            `;
+          }).join('');
+        }
+
+        await loadAndDisplayVerses();
+
+        // Search listener
+        const searchInput = document.getElementById('verseSearchInput');
+        searchInput.addEventListener('input', (e) => {
+          searchQuery = e.target.value.trim();
+          loadAndDisplayVerses();
+        });
+
+        // Category pills
+        const pills = document.querySelectorAll('#verseCategoryRow .pill');
+        pills.forEach(pill => {
+          pill.addEventListener('click', () => {
+            pills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            activeCat = pill.dataset.cat;
+            loadAndDisplayVerses();
+          });
+        });
+
+        window.handleToggleSaveVerse = async function(verseId) {
+          try {
+            const res = await SafeSpaceDB.verses.toggleSaveVerse(verseId);
+            if (typeof showToast === 'function') {
+              showToast(res.saved ? 'Verse bookmarked to favorites ❤️' : 'Verse removed from favorites', 'info');
+            }
+            loadAndDisplayVerses();
+          } catch (e) {
+            if (typeof showToast === 'function') showToast(e.message || 'Could not save verse', 'error');
+          }
+        };
+      }
+
+      // ========================================================
+      // 4. FIND SUPPORT / SUPPORT RESOURCES MODULE
+      // ========================================================
+      document.getElementById('cardFindSupport').addEventListener('click', () => {
+        openOverlay('Find Support');
+        renderFindSupportModule();
+      });
+
+      async function renderFindSupportModule() {
+        detailContent.innerHTML = `
+          <!-- Module Hero -->
+          <div class="res-hero-banner">
+            <h2><i class="fas fa-hands-holding-child" style="margin-right:8px;"></i> Find Support</h2>
+            <p>You don't have to handle everything alone. Find available school, community, and national support resources.</p>
+          </div>
+
+          <!-- Verified Emergency Banner -->
+          <div style="background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: var(--radius-xl); padding: 18px 20px; margin-bottom: 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="color: #991B1B; font-weight: 800; font-size: 15px; margin-bottom: 4px;">
+                <i class="fas fa-triangle-exclamation" style="margin-right:6px;"></i> In Immediate Danger or Medical Crisis?
+              </div>
+              <p style="color: #B91C1C; font-size: 13px; margin: 0; line-height: 1.4;">
+                If you or someone else is in immediate physical danger, dial official Philippine emergency dispatch.
+              </p>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <a href="tel:911" class="btn-call-action emergency"><i class="fas fa-phone"></i> Call 911</a>
+              <a href="tel:1553" class="btn-call-action emergency" style="background:#B91C1C;"><i class="fas fa-phone"></i> Dial 1553 (NCMH)</a>
+            </div>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="pill-scroll-wrap" style="margin-bottom:16px;">
+            <div class="pill-row" id="supportCategoryRow">
+              <button class="pill active" data-cat="all">All Resources</button>
+              <button class="pill" data-cat="school_support">School Support</button>
+              <button class="pill" data-cat="counseling">Counseling Services</button>
+              <button class="pill" data-cat="emergency">Emergency Contacts</button>
+              <button class="pill" data-cat="organizations">Hotlines &amp; Organizations</button>
+            </div>
+          </div>
+
+          <div id="supportServicesList">
+            <div class="skeleton-card" style="padding:18px; border-radius:12px;"><div class="skeleton sk-line" style="width:50%;"></div></div>
+          </div>
+        `;
+
+        let activeSupportCat = 'all';
+
+        async function loadSupportServices() {
+          const listContainer = document.getElementById('supportServicesList');
+          if (!listContainer) return;
+
+          const services = await SafeSpaceDB.supportServices.getServices(activeSupportCat);
+
+          if (services.length === 0) {
+            listContainer.innerHTML = `
+              <div class="empty-state" style="padding:40px 16px;">
+                <i class="fas fa-hand-holding-heart" style="font-size:36px; color:var(--text-muted);"></i>
+                <h3 style="font-size:15px; margin-top:10px;">No support services found</h3>
+              </div>
+            `;
+            return;
+          }
+
+          listContainer.innerHTML = services.map(svc => {
+            let badgeClass = 'support-badge-school';
+            let badgeLabel = 'School Support';
+            if (svc.category === 'emergency') {
+              badgeClass = 'support-badge-emergency';
+              badgeLabel = 'Emergency';
+            } else if (svc.category === 'counseling') {
+              badgeClass = 'support-badge-school';
+              badgeLabel = 'Counseling Service';
+            } else if (svc.category === 'organizations') {
+              badgeClass = 'support-badge-org';
+              badgeLabel = 'National Organization';
+            }
+
+            const cleanPhone = (svc.contact_number || '').replace(/[^0-9+]/g, '');
+
+            return `
+              <article class="support-service-card">
+                <span class="support-card-badge ${badgeClass}">${badgeLabel}</span>
+                <h3 class="support-title">${escapeHTML(svc.title)}</h3>
+                <div class="support-desc">${escapeHTML(svc.description)}</div>
+
+                <div class="support-details-grid">
+                  ${svc.location ? `<div class="support-detail-item"><i class="fas fa-location-dot"></i><span><strong>Location:</strong> ${escapeHTML(svc.location)}</span></div>` : ''}
+                  ${svc.office_hours ? `<div class="support-detail-item"><i class="fa-regular fa-clock"></i><span><strong>Hours:</strong> ${escapeHTML(svc.office_hours)}</span></div>` : ''}
+                  ${svc.contact_number ? `<div class="support-detail-item"><i class="fas fa-phone"></i><span><strong>Contact:</strong> ${escapeHTML(svc.contact_number)}</span></div>` : ''}
+                  ${svc.email ? `<div class="support-detail-item"><i class="fas fa-envelope"></i><span><strong>Email:</strong> ${escapeHTML(svc.email)}</span></div>` : ''}
+                  ${svc.how_to_access ? `<div class="support-detail-item" style="grid-column: 1 / -1;"><i class="fas fa-door-open"></i><span><strong>How to access:</strong> ${escapeHTML(svc.how_to_access)}</span></div>` : ''}
+                </div>
+
+                <div class="support-actions">
+                  ${cleanPhone ? `<a href="tel:${cleanPhone}" class="btn-call-action ${svc.category === 'emergency' ? 'emergency' : ''}"><i class="fas fa-phone"></i> Call Now</a>` : ''}
+                  ${svc.email ? `<a href="mailto:${escapeHTML(svc.email)}" class="btn-call-action" style="background:var(--page-bg); border:1px solid var(--border); color:var(--text-dark);"><i class="fas fa-envelope"></i> Send Email</a>` : ''}
+                  ${svc.website ? `<a href="${escapeHTML(svc.website)}" target="_blank" rel="noopener" class="btn-call-action" style="background:var(--page-bg); border:1px solid var(--border); color:var(--text-dark);"><i class="fas fa-arrow-up-right-from-square"></i> Visit Website</a>` : ''}
+                </div>
+              </article>
+            `;
+          }).join('');
+        }
+
+        await loadSupportServices();
+
+        // Support Category pills
+        const pills = document.querySelectorAll('#supportCategoryRow .pill');
+        pills.forEach(pill => {
+          pill.addEventListener('click', () => {
+            pills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            activeSupportCat = pill.dataset.cat;
+            loadSupportServices();
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>

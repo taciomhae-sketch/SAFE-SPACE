@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Your Account — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+</head>
+<body class="auth-page">
+  <!-- Page Loading Overlay -->
+  <div class="page-loader" id="pageLoader">
+    <div class="loader-content">
+      <div class="loader-spinner-ring">
+        <div class="loader-icon-center">
+          <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+        </div>
+      </div>
+      <div class="loader-label">Safe Space</div>
+      <div class="loader-sublabel">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Back to Welcome -->
+  <a href="welcome.html" style="position:fixed;top:16px;left:16px;z-index:10;color:rgba(255,255,255,0.85);font-size:22px;text-decoration:none;" aria-label="Back to welcome page">
+    <i class="fas fa-chevron-left"></i>
+  </a>
+
+  <div class="signup-page">
+    <div class="signup-card-container">
+
+      <!-- Active Session Warning Card (if already logged in) -->
+      <div id="alreadySignedInCard" class="already-signed-in-card hidden" style="display:none; margin-bottom:20px;">
+        <div class="already-signed-in-badge">
+          <i class="fas fa-check-circle"></i> Active Session Detected
+        </div>
+        <div class="already-signed-in-user" id="signedInUserName">Signed In User</div>
+        <div class="already-signed-in-email" id="signedInUserEmail">user@safespace.org</div>
+        <p style="color:rgba(255,255,255,0.85); font-size:12px; margin-bottom:14px;">
+          You already have an active session on this device.
+        </p>
+        <div class="already-signed-in-actions">
+          <a href="home.html" class="btn-signed-in-continue">
+            <i class="fas fa-arrow-right"></i> Continue to Safe Space
+          </a>
+          <button type="button" class="btn-signed-in-switch" id="switchAccountBtn">
+            <i class="fas fa-user-plus"></i> Sign Out &amp; Create New Account
+          </button>
+        </div>
+      </div>
+
+      <!-- Alert Box for Errors and Information -->
+      <div id="registerAlert" class="auth-alert hidden" role="alert" style="margin-bottom:18px;">
+        <i class="alert-icon fas fa-circle-exclamation" id="registerAlertIcon"></i>
+        <div class="alert-content">
+          <span class="alert-message" id="registerAlertMessage"></span>
+          <div id="registerAlertAction" style="margin-top:6px;"></div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           3-STEP REGISTRATION WIZARD CONTAINER
+           ======================================================== -->
+      <div id="signupSection" style="width:100%;">
+        
+        <!-- HEADER -->
+        <div style="text-align:center; margin-bottom: 18px;">
+          <h1 class="auth-title" style="margin:0; font-size:25px; font-weight:800; letter-spacing:0.8px; color:#FFFFFF;">CREATE YOUR ACCOUNT</h1>
+        </div>
+
+        <!-- 3-STEP PROGRESS INDICATOR -->
+        <nav aria-label="Registration Progress" class="wizard-progress-bar" style="margin-bottom: 20px;">
+          <div class="wizard-progress-fill" id="wizardProgressFill" style="width: 0%;"></div>
+
+          <!-- Step 1 Node -->
+          <div class="wizard-step-node active" id="progNode1">
+            <div class="wizard-step-circle" id="progCircle1">1</div>
+            <span class="wizard-step-title">Basic Info</span>
+          </div>
+
+          <!-- Step 2 Node -->
+          <div class="wizard-step-node" id="progNode2">
+            <div class="wizard-step-circle" id="progCircle2">2</div>
+            <span class="wizard-step-title">Account</span>
+          </div>
+
+          <!-- Step 3 Node -->
+          <div class="wizard-step-node" id="progNode3">
+            <div class="wizard-step-circle" id="progCircle3">3</div>
+            <span class="wizard-step-title">Profile</span>
+          </div>
+        </nav>
+
+        <!-- REGISTRATION CARD WRAPPER -->
+        <div class="signup-card">
+          <form id="registerForm" novalidate>
+
+            <!-- ══════════════════════════════════════════════════════
+                 STEP 1 — BASIC INFORMATION
+                 ══════════════════════════════════════════════════════ -->
+            <section class="signup-step" id="step1" data-step="1">
+              <div class="step-heading-wrap" style="text-align:center; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:12px; margin-bottom:18px;">
+                <h2 style="font-size:18px; font-weight:800; color:#FFFFFF; margin:0 0 4px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                  <i class="fas fa-user-circle" style="color:#FDE68A;"></i> Basic Information
+                </h2>
+                <p style="font-size:12.5px; color:rgba(255,255,255,0.85); margin:0;">
+                  Please enter your basic information to get started.
+                </p>
+              </div>
+
+              <!-- First Name -->
+              <div class="form-group" style="margin-bottom:15px;">
+                <label class="field-label" for="firstName">First Name <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-id-card"></i></span>
+                  <input class="auth-input" type="text" id="firstName" placeholder="Enter your first name" autocomplete="given-name" required />
+                </div>
+                <div id="firstNameError" class="field-feedback error" style="display:none; margin-top:4px;"></div>
+              </div>
+
+              <!-- Last Name -->
+              <div class="form-group" style="margin-bottom:15px;">
+                <label class="field-label" for="lastName">Last Name <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-id-card"></i></span>
+                  <input class="auth-input" type="text" id="lastName" placeholder="Enter your last name" autocomplete="family-name" required />
+                </div>
+                <div id="lastNameError" class="field-feedback error" style="display:none; margin-top:4px;"></div>
+              </div>
+
+              <!-- Birthday -->
+              <div class="form-group" style="margin-bottom:15px;">
+                <label class="field-label" for="birthday">Birthday <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-calendar-alt"></i></span>
+                  <input class="auth-input" type="date" id="birthday" required style="color-scheme: dark;" />
+                </div>
+                <div id="birthdayError" class="field-feedback error" style="display:none; margin-top:4px;"></div>
+              </div>
+
+              <!-- Gender -->
+              <div class="form-group" style="margin-bottom:20px;">
+                <label class="field-label" for="gender">Gender <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-venus-mars"></i></span>
+                  <select class="auth-input" id="gender" required style="appearance:none; -webkit-appearance:none; cursor:pointer;">
+                    <option value="" disabled selected style="color:#6B7280; background:#FFFFFF;">Select gender ▼</option>
+                    <option value="Female" style="color:#111827; background:#FFFFFF;">Female</option>
+                    <option value="Male" style="color:#111827; background:#FFFFFF;">Male</option>
+                    <option value="Non-binary" style="color:#111827; background:#FFFFFF;">Non-binary</option>
+                    <option value="Other" style="color:#111827; background:#FFFFFF;">Other</option>
+                    <option value="Prefer not to say" style="color:#111827; background:#FFFFFF;">Prefer not to say</option>
+                  </select>
+                </div>
+                <div id="genderError" class="field-feedback error" style="display:none; margin-top:4px;"></div>
+
+                <!-- Optional self-describe text field if 'Other' is selected -->
+                <div id="otherGenderWrap" style="display:none; margin-top:10px;">
+                  <label class="field-label" for="otherGenderInput" style="font-size:12px;">Specify your gender (optional)</label>
+                  <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-pen"></i></span>
+                    <input class="auth-input" type="text" id="otherGenderInput" placeholder="Enter your gender" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 1 Action: NEXT Button -->
+              <div class="form-actions single-right" style="margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.15); display:flex; justify-content:flex-end;">
+                <button type="button" class="btn-wizard-next" id="btnNext1" style="width:100%; max-width:180px; height:46px; font-weight:800; cursor:pointer;">
+                  NEXT <i class="fas fa-arrow-right" style="margin-left:6px;"></i>
+                </button>
+              </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════
+                 STEP 2 — ACCOUNT INFORMATION
+                 ══════════════════════════════════════════════════════ -->
+            <section class="signup-step" id="step2" data-step="2" style="display:none;">
+              <div class="step-heading-wrap" style="text-align:center; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:12px; margin-bottom:18px;">
+                <h2 style="font-size:18px; font-weight:800; color:#FFFFFF; margin:0 0 4px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                  <i class="fas fa-lock" style="color:#93C5FD;"></i> Account Information
+                </h2>
+                <p style="font-size:12.5px; color:rgba(255,255,255,0.85); margin:0;">
+                  Create your Safe Space login credentials.
+                </p>
+              </div>
+
+              <!-- Email Address -->
+              <div class="form-group" style="margin-bottom:15px;">
+                <label class="field-label" for="email">Email Address <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                  <input class="auth-input" type="email" id="email" placeholder="Enter your email address" autocomplete="email" required />
+                </div>
+                <div id="emailStatus" class="field-feedback"></div>
+              </div>
+
+              <!-- Username -->
+              <div class="form-group" style="margin-bottom:15px;">
+                <label class="field-label" for="username">Username <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-user"></i></span>
+                  <input class="auth-input" type="text" id="username" placeholder="Choose a username" autocomplete="username" required maxlength="30" />
+                </div>
+                <div id="usernameStatus" class="field-feedback"></div>
+              </div>
+
+              <!-- Password -->
+              <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label" for="password">Password <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-lock"></i></span>
+                  <input class="auth-input" type="password" id="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
+                  <button type="button" class="input-icon-right" id="eyeToggle1" aria-label="Toggle password visibility" tabindex="-1">
+                    <i class="fas fa-eye" id="eyeIcon1"></i>
+                  </button>
+                </div>
+
+                <!-- Password Strength Meter -->
+                <div class="password-strength-wrap" id="passwordStrengthWrap" style="display:none; margin-top:8px;">
+                  <div class="strength-bar-bg">
+                    <div class="strength-bar-fill" id="strengthBarFill"></div>
+                  </div>
+                  <div class="strength-meta-row">
+                    <span class="strength-label" id="strengthLabel">Password Strength: <strong>—</strong></span>
+                  </div>
+                </div>
+
+                <div class="input-hint" style="margin-top:6px; font-size:12px; color:rgba(255,255,255,0.85); display:flex; align-items:center; gap:6px;">
+                  <i class="fas fa-shield-alt" style="color:#FDE68A;"></i> Password must be at least 8 characters.
+                </div>
+                <div id="passwordStatus" class="field-feedback error" style="display:none; margin-top:4px;"></div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="form-group" style="margin-bottom:18px;">
+                <label class="field-label" for="confirmPassword">Confirm Password <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-lock"></i></span>
+                  <input class="auth-input" type="password" id="confirmPassword" placeholder="Confirm your password" autocomplete="new-password" required />
+                  <button type="button" class="input-icon-right" id="eyeToggle2" aria-label="Toggle confirm password visibility" tabindex="-1">
+                    <i class="fas fa-eye" id="eyeIcon2"></i>
+                  </button>
+                </div>
+                <div id="passwordMatchStatus" class="field-feedback"></div>
+              </div>
+
+              <!-- Step 2 Actions: BACK & NEXT Buttons -->
+              <div class="form-actions" style="margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.15); display:flex; justify-content:space-between; gap:12px;">
+                <button type="button" class="btn-wizard-back" id="btnBack2" style="flex:1; height:46px; font-weight:700; cursor:pointer;">
+                  <i class="fas fa-arrow-left" style="margin-right:6px;"></i> BACK
+                </button>
+                <button type="button" class="btn-wizard-next" id="btnNext2" style="flex:1; height:46px; font-weight:800; cursor:pointer;">
+                  NEXT <i class="fas fa-arrow-right" style="margin-left:6px;"></i>
+                </button>
+              </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════
+                 STEP 3 — PROFILE & AGREEMENT
+                 ══════════════════════════════════════════════════════ -->
+            <section class="signup-step" id="step3" data-step="3" style="display:none;">
+              <div class="step-heading-wrap" style="text-align:center; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:12px; margin-bottom:18px;">
+                <h2 style="font-size:18px; font-weight:800; color:#FFFFFF; margin:0 0 4px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                  <i class="fas fa-shield-halved" style="color:#6EE7B7;"></i> Profile &amp; Agreement
+                </h2>
+                <p style="font-size:12.5px; color:rgba(255,255,255,0.85); margin:0;">
+                  Personalize your Safe Space profile and review the terms.
+                </p>
+              </div>
+
+              <!-- Profile Photo / Avatar (Optional) -->
+              <div style="text-align:center; margin-bottom: 22px;">
+                <label class="field-label" style="display:block; text-align:center; margin-bottom:8px; font-size:12.5px;">
+                  Profile Photo / Avatar <span class="optional-tag" style="opacity:0.8; font-weight:400;">(Optional)</span>
+                </label>
+
+                <div class="avatar-upload" id="avatarUpload" style="margin: 0 auto 10px; display:inline-block; position:relative; cursor:pointer;" title="Click to choose avatar or upload photo">
+                  <div class="avatar-circle" id="avatarCircle" style="width:84px; height:84px; border:3px solid rgba(255,255,255,0.4); box-shadow:0 6px 18px rgba(0,0,0,0.22); margin:0 auto;">
+                    <img id="avatarPreview" src="assets/avatars/default-avatar.png" alt="Safe Space avatar preview" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" style="width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;" />
+                  </div>
+                  <div class="camera-badge" id="cameraBadge" title="Change photo or avatar" style="width:26px; height:26px; font-size:11px;">
+                    <i class="fas fa-camera"></i>
+                  </div>
+                  <input type="file" id="avatarFile" accept="image/jpeg,image/png,image/jpg,image/webp" style="display:none;" />
+                </div>
+
+                <!-- Avatar Choice Buttons -->
+                <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                  <button type="button" class="btn-avatar-action" id="uploadPhotoBtn" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-upload" style="color:#93C5FD;"></i> Upload Photo
+                  </button>
+                  <button type="button" class="btn-avatar-action" id="chooseCuteAvatarBtn" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-cat" style="color:#FDE68A;"></i> Choose Avatar
+                  </button>
+                  <button type="button" class="btn-avatar-action" id="defaultAvatarBtn" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:999px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-user-shield" style="color:#6EE7B7;"></i> Default
+                  </button>
+                </div>
+
+                <div id="avatarFeedback" class="field-feedback info" style="justify-content:center; margin-top:8px; font-size:11.5px; opacity:0.85;">
+                  Optional. If you don't choose an avatar, the default Safe Space avatar will be used.
+                </div>
+              </div>
+
+              <!-- Privacy Policy Checkbox (Required) -->
+              <div class="privacy-consent-box" style="margin-bottom:20px;">
+                <label class="privacy-checkbox-label" for="privacyConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                  <input type="checkbox" id="privacyConsentCheckbox" required style="margin-top:3px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
+                  <span style="font-size:13px; line-height:1.45; color:rgba(255,255,255,0.95);">
+                    I agree to the <button type="button" id="openPrivacyPolicyBtn" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:13px; font-family:inherit;">Privacy Policy</button> and <button type="button" id="openTermsBtn" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:13px; font-family:inherit;">Terms of Use</button>. <span style="color:#F87171;">*</span>
+                  </span>
+                </label>
+                <div id="consentError" class="field-feedback error" style="display:none; margin-top:6px;"></div>
+              </div>
+
+              <!-- Step 3 Actions: BACK & CREATE ACCOUNT Buttons -->
+              <div class="form-actions" style="margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.15); display:flex; justify-content:space-between; gap:12px;">
+                <button type="button" class="btn-wizard-back" id="btnBack3" style="flex:1; height:48px; font-weight:700; cursor:pointer;">
+                  <i class="fas fa-arrow-left" style="margin-right:6px;"></i> BACK
+                </button>
+                <button type="submit" class="btn-wizard-submit" id="signupBtn" style="flex:1.4; height:48px; font-size:14.5px; font-weight:800; cursor:pointer;" disabled>
+                  <span id="signupBtnText"><i class="fas fa-user-plus" style="margin-right:6px;"></i> CREATE ACCOUNT</span>
+                  <span id="signupBtnSpinner" style="display:none;">
+                    <i class="fas fa-circle-notch fa-spin"></i> Creating account…
+                  </span>
+                </button>
+              </div>
+            </section>
+
+          </form>
+
+          <!-- Sign In Link Row -->
+          <div class="auth-link-row" style="margin-top:20px; text-align:center; font-size:13.5px; color:rgba(255,255,255,0.92);">
+            Already have an account? <a href="login.html" style="font-weight:800; color:#FFFFFF; text-decoration:underline; margin-left:4px;">Sign In</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================
+           SUCCESS STATE CARD
+           ======================================================== -->
+      <div id="signupSuccessCard" class="signup-card" style="display:none; text-align:center; width:100%;">
+        <div style="width:68px; height:68px; border-radius:50%; background:rgba(16,185,129,0.2); border:2px solid #10B981; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#10B981; font-size:32px;">
+          <i class="fas fa-check"></i>
+        </div>
+        <h2 style="color:#FFFFFF; font-size:22px; font-weight:800; margin-bottom:8px;">Account created successfully!</h2>
+        <p id="successSubtitle" style="color:rgba(255,255,255,0.88); font-size:13.5px; line-height:1.55; margin-bottom:22px;">
+          Welcome to Safe Space! Your student account is now ready.
+        </p>
+        <a href="login.html" class="btn-auth-primary" id="successLoginBtn" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:48px; border-radius:999px; text-decoration:none; font-weight:800;">
+          Continue to Login <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- ========================================================
+           EMAIL VERIFICATION (OTP) SECTION
+           ======================================================== -->
+      <div id="otpSection" class="otp-card" style="display:none; width:100%;">
+        <div class="otp-header-icon">
+          <i class="fas fa-envelope-circle-check"></i>
+        </div>
+
+        <h1 class="auth-title" style="font-size:24px;">VERIFY YOUR EMAIL</h1>
+        <p class="auth-subtitle">ENTER 6-DIGIT CODE</p>
+
+        <p style="color:rgba(255,255,255,0.85); font-size:13px; text-align:center; margin-bottom:8px;">
+          A verification code was sent to your email:
+        </p>
+
+        <div class="otp-email-badge">
+          <i class="fas fa-envelope"></i>
+          <span id="otpEmailDisplay">user@example.com</span>
+        </div>
+
+        <p style="color:#FDE68A; font-size:11.5px; text-align:center; margin-bottom:14px; font-weight:600;">
+          <i class="fas fa-clock"></i> Your verification code expires in 10 minutes.
+        </p>
+
+        <!-- 6 OTP Digit Inputs -->
+        <div class="otp-inputs-row" id="otpInputsRow">
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="0" />
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="1" />
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="2" />
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="3" />
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="4" />
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="5" />
+        </div>
+
+        <!-- Verify Button -->
+        <button type="button" class="btn-auth-primary" id="submitOtpBtn">
+          <span id="submitOtpBtnText">VERIFY &amp; COMPLETE</span>
+          <span id="submitOtpBtnSpinner" style="display:none;">
+            <i class="fas fa-circle-notch fa-spin"></i> Verifying OTP…
+          </span>
+        </button>
+
+        <!-- Resend Code Row -->
+        <div class="otp-resend-row" style="margin-top:14px;">
+          <span>Didn't receive the email?</span>
+          <button type="button" class="btn-otp-resend" id="resendRegisterOtpBtn">Resend Code</button>
+        </div>
+
+        <!-- Return Buttons -->
+        <div class="otp-back-row" style="display:flex; justify-content:space-between; margin-top:16px;">
+          <button type="button" class="btn-otp-back" id="backToSignupBtn">
+            <i class="fas fa-arrow-left"></i> Edit details
+          </button>
+          <a href="login.html" class="btn-otp-back" style="text-decoration:none;">
+            <i class="fas fa-right-to-bracket"></i> Go to Sign In
+          </a>
+        </div>
+
+        <p style="color:rgba(255,255,255,0.65); font-size:11px; text-align:center; margin-top:20px; line-height:1.4;">
+          <i class="fas fa-circle-info"></i> Make sure to check your inbox as well as your spam/junk folder for your 6-digit confirmation code.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================
+       CUTE AVATAR COLLECTION MODAL OVERLAY
+       ======================================================== -->
+  <div class="modal-overlay" id="cuteAvatarModalOverlay" role="dialog" aria-modal="true" aria-labelledby="cuteAvatarModalTitle">
+    <div class="modal-sheet" style="max-width: 560px;">
+      <div class="modal-header">
+        <span class="modal-title" id="cuteAvatarModalTitle"><i class="fas fa-icons" style="color:var(--primary); margin-right:8px;"></i>Choose Safe Space Avatar</span>
+        <button type="button" class="modal-close" id="closeCuteAvatarModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <!-- Filter Pills -->
+        <div class="cute-avatar-filters">
+          <button type="button" class="pill active" data-avatar-filter="all">All (18)</button>
+          <button type="button" class="pill" data-avatar-filter="animals">Animals (12)</button>
+          <button type="button" class="pill" data-avatar-filter="characters">Characters (6)</button>
+        </div>
+
+        <!-- Grid of Cute Avatars -->
+        <div class="cute-avatar-grid" id="cuteAvatarGridContainer">
+          <!-- Dynamically populated from AVATARS -->
+        </div>
+
+        <!-- Selected Preview Area -->
+        <div class="avatar-preview-box" id="cuteAvatarPreviewArea" style="margin-top:16px; margin-bottom:0; display:flex;">
+          <div class="avatar-preview-container avatar-preview-circle" id="cuteAvatarSelectedPreviewCircle">
+            <img class="avatar-preview-image" src="assets/avatars/default-avatar.png" alt="Avatar" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" />
+          </div>
+          <div class="avatar-preview-title" id="cuteAvatarSelectedName">Default Safe Space Avatar</div>
+          <div class="avatar-preview-subtitle" id="cuteAvatarSelectedDesc">Choose an avatar you like from above</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; gap:10px; padding:14px 20px;">
+        <button type="button" class="btn-cancel" id="cancelCuteAvatarBtn" style="flex:1; height:44px; border-radius:var(--radius-full);">Cancel</button>
+        <button type="button" class="btn-save" id="confirmCuteAvatarBtn" style="flex:1; height:44px; border-radius:var(--radius-full);" disabled>Use This Avatar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       PRIVACY POLICY & TERMS MODAL
+       ======================================================== -->
+  <div class="privacy-modal-overlay" id="privacyModalOverlay" role="dialog" aria-modal="true" aria-labelledby="privacyModalTitle">
+    <div class="privacy-modal-card">
+      <div class="privacy-modal-header">
+        <h3 id="privacyModalTitle"><i class="fas fa-shield-halved"></i> Safe Space Privacy Policy &amp; Terms</h3>
+        <button type="button" id="closePrivacyModalBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="privacy-modal-body">
+        <h4>1. Student Identity &amp; Account Information</h4>
+        <p>Safe Space collects basic registration information: your name, birthday (used to derive age), gender identity, username, email address, and securely hashed password. Profile photos or avatar selections are optional.</p>
+
+        <h4>2. Purpose of Collection</h4>
+        <p>Your information is used strictly to provide access to Safe Space support features, maintain respectful community moderation, enable confidential communication, and preserve account security.</p>
+
+        <h4>3. Account Security &amp; Passwords</h4>
+        <p>Passwords are securely hashed before storage and are never stored as plain text. Passwords cannot be viewed by platform administrators or sent back to the browser.</p>
+
+        <h4>4. Anonymous &amp; Safe Expression</h4>
+        <p>When you post anonymously in community spaces, your personal identifying information is hidden from peer students. Your well-being, privacy, and peace of mind are paramount.</p>
+
+        <h4>5. AI Moderation &amp; Safety</h4>
+        <p>Safe Space utilizes respectful AI moderation to safeguard students against cyberbullying, self-harm risks, and harassment. Content flagged for safety review is handled confidentially.</p>
+
+        <h4>6. User Rights, Profile &amp; Data Deletion</h4>
+        <p>You have full autonomy over your data. You can view, edit, or remove your personal details anytime via Profile → Account Information. You may also request account deactivation or deletion.</p>
+
+        <h4>7. Non-Medical Platform Notice</h4>
+        <p>Safe Space is a peer support and safe-expression web platform for students. It does not replace professional medical advice, clinical psychiatric diagnosis, or emergency crisis intervention services.</p>
+
+        <h4>8. Contact &amp; Research Context</h4>
+        <p>Safe Space is crafted for student well-being as part of an academic thesis initiative. For inquiries, reach out to the Safe Space Student Support research team.</p>
+      </div>
+      <div class="privacy-modal-footer">
+        <button type="button" class="privacy-modal-close-btn" id="privacyModalOkBtn">I Understand &amp; Agree</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    /* ────────────────────────────────
+       State & Wizard Management
+    ──────────────────────────────── */
+    var currentStep = 1;
+    var totalSteps = 3;
+    var registeredEmail = '';
+    var resendTimer = null;
+    var checkUserTimeout = null;
+    var checkEmailTimeout = null;
+    var isUsernameAvailable = null;
+    var isEmailAvailable = null;
+
+    var stepTitles = {
+      1: 'Basic Information',
+      2: 'Account Information',
+      3: 'Profile & Agreement'
+    };
+
+    // Selected Avatar State (default)
+    var selectedAvatar = {
+      url: 'assets/avatars/default-avatar.png',
+      type: 'default',
+      value: 'default',
+      isCustomFile: false,
+      dataUrl: null
+    };
+
+    var pendingCuteAvatar = null;
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      setTimeout(function() {
+        if (typeof hidePageLoader === 'function') hidePageLoader();
+      }, 150);
+
+      // Check active session
+      await checkExistingSession();
+
+      // Check URL query parameters (e.g. ?verify=email&step=otp)
+      checkUrlParams();
+
+      // Setup Eye Toggles
+      setupEye('password', 'eyeToggle1', 'eyeIcon1');
+      setupEye('confirmPassword', 'eyeToggle2', 'eyeIcon2');
+
+      // Initialize Progress UI
+      updateProgressIndicator(currentStep);
+
+      // Initialize Cute Avatar Modal Grid
+      renderCuteAvatarGrid('all');
+    });
+
+    /* ── Check Active Session ── */
+    async function checkExistingSession() {
+      try {
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
+          var user = await SafeSpaceDB.auth.getCurrentUser();
+          if (user && user.email) {
+            var name = SafeSpaceDB._displayName ? SafeSpaceDB._displayName(user) : (user.username || user.email);
+            document.getElementById('signedInUserName').textContent = name;
+            document.getElementById('signedInUserEmail').textContent = user.email;
+            var card = document.getElementById('alreadySignedInCard');
+            card.style.display = 'block';
+            card.classList.remove('hidden');
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    document.getElementById('switchAccountBtn').addEventListener('click', async function() {
+      if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
+        await SafeSpaceDB.auth.signOut();
+      }
+      var card = document.getElementById('alreadySignedInCard');
+      card.style.display = 'none';
+      card.classList.add('hidden');
+      clearFormAlert();
+      if (typeof showToast === 'function') {
+        showToast('Signed out. You can now create a new account.', 'info');
+      }
+    });
+
+    /* ────────────────────────────────
+       Step Navigation & Indicators (3-Step)
+    ──────────────────────────────── */
+    function showStep(stepNum) {
+      if (stepNum < 1) stepNum = 1;
+      if (stepNum > totalSteps) stepNum = totalSteps;
+      currentStep = stepNum;
+
+      for (var i = 1; i <= totalSteps; i++) {
+        var el = document.getElementById('step' + i);
+        if (el) {
+          el.style.display = (i === currentStep) ? 'block' : 'none';
+        }
+      }
+
+      updateProgressIndicator(currentStep);
+      clearFormAlert();
+
+      // Focus first active input of newly shown step
+      var activeStepEl = document.getElementById('step' + currentStep);
+      if (activeStepEl) {
+        var firstInput = activeStepEl.querySelector('input:not([type="hidden"]), select, button');
+        if (firstInput && firstInput.focus) firstInput.focus();
+        activeStepEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Check create account button enabled state on step 3
+      if (currentStep === 3) {
+        updateSignupButtonState();
+      }
+    }
+
+    function updateProgressIndicator(stepNum) {
+      // Desktop nodes
+      for (var i = 1; i <= totalSteps; i++) {
+        var node = document.getElementById('progNode' + i);
+        var circle = document.getElementById('progCircle' + i);
+        if (!node) continue;
+
+        node.classList.remove('active', 'completed');
+        if (i < stepNum) {
+          node.classList.add('completed');
+          circle.innerHTML = '<i class="fas fa-check"></i>';
+        } else if (i === stepNum) {
+          node.classList.add('active');
+          circle.textContent = i;
+        } else {
+          circle.textContent = i;
+        }
+      }
+
+      // Progress line fill (0% -> 50% -> 100%)
+      var percent = ((stepNum - 1) / (totalSteps - 1)) * 100;
+      var fillEl = document.getElementById('wizardProgressFill');
+      if (fillEl) fillEl.style.width = percent + '%';
+    }
+
+    /* ────────────────────────────────
+       Step 1 Validation
+    ──────────────────────────────── */
+    function calculateAge(dobString) {
+      if (!dobString) return null;
+      var dob = new Date(dobString);
+      if (isNaN(dob.getTime())) return null;
+      var today = new Date();
+      if (dob > today) return { error: 'Birthday cannot be in the future.' };
+      var age = today.getFullYear() - dob.getFullYear();
+      var m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      if (age < 1 || age > 120) {
+        return { error: 'Please enter a valid birthday.' };
+      }
+      return { age: age };
+    }
+
+    function validateStep1() {
+      var firstName = val('firstName');
+      var lastName  = val('lastName');
+      var birthday  = val('birthday');
+      var gender    = val('gender');
+
+      var isValid = true;
+
+      // 1. First Name
+      var fnErr = document.getElementById('firstNameError');
+      if (!firstName) {
+        document.getElementById('firstName').classList.add('has-error');
+        fnErr.textContent = 'Please enter your first name.';
+        fnErr.style.display = 'block';
+        isValid = false;
+      } else {
+        document.getElementById('firstName').classList.remove('has-error');
+        fnErr.style.display = 'none';
+      }
+
+      // 2. Last Name
+      var lnErr = document.getElementById('lastNameError');
+      if (!lastName) {
+        document.getElementById('lastName').classList.add('has-error');
+        lnErr.textContent = 'Please enter your last name.';
+        lnErr.style.display = 'block';
+        isValid = false;
+      } else {
+        document.getElementById('lastName').classList.remove('has-error');
+        lnErr.style.display = 'none';
+      }
+
+      // 3. Birthday
+      var bdayErr = document.getElementById('birthdayError');
+      if (!birthday) {
+        document.getElementById('birthday').classList.add('has-error');
+        bdayErr.textContent = 'Please enter your birthday.';
+        bdayErr.style.display = 'block';
+        isValid = false;
+      } else {
+        var ageCheck = calculateAge(birthday);
+        if (!ageCheck || ageCheck.error) {
+          document.getElementById('birthday').classList.add('has-error');
+          bdayErr.textContent = ageCheck ? ageCheck.error : 'Please enter a valid birthday.';
+          bdayErr.style.display = 'block';
+          isValid = false;
+        } else {
+          document.getElementById('birthday').classList.remove('has-error');
+          bdayErr.style.display = 'none';
+        }
+      }
+
+      // 4. Gender
+      var genErr = document.getElementById('genderError');
+      if (!gender) {
+        document.getElementById('gender').classList.add('has-error');
+        genErr.textContent = 'Please select your gender.';
+        genErr.style.display = 'block';
+        isValid = false;
+      } else {
+        document.getElementById('gender').classList.remove('has-error');
+        genErr.style.display = 'none';
+      }
+
+      if (!isValid) {
+        showFormAlert('Please fill in all required basic information fields correctly.', 'error');
+      }
+      return isValid;
+    }
+
+    // Gender 'Other' selection handler
+    document.getElementById('gender').addEventListener('change', function() {
+      var otherWrap = document.getElementById('otherGenderWrap');
+      if (this.value === 'Other') {
+        otherWrap.style.display = 'block';
+        document.getElementById('otherGenderInput').focus();
+      } else {
+        otherWrap.style.display = 'none';
+      }
+      document.getElementById('genderError').style.display = 'none';
+      this.classList.remove('has-error');
+    });
+
+    // Clear input errors on typing
+    ['firstName', 'lastName', 'birthday'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', function() {
+          el.classList.remove('has-error');
+          var errEl = document.getElementById(id + 'Error');
+          if (errEl) errEl.style.display = 'none';
+        });
+      }
+    });
+
+    /* ────────────────────────────────
+       Step 2 Validation
+    ──────────────────────────────── */
+    function validateStep2() {
+      var email       = val('email').toLowerCase();
+      var username    = val('username');
+      var password    = document.getElementById('password').value;
+      var confirmPwd  = document.getElementById('confirmPassword').value;
+      var isValid     = true;
+
+      // 1. Email
+      var emailStatus = document.getElementById('emailStatus');
+      if (!email) {
+        document.getElementById('email').classList.add('has-error');
+        emailStatus.className = 'field-feedback error';
+        emailStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Please enter your email address.';
+        isValid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        document.getElementById('email').classList.add('has-error');
+        emailStatus.className = 'field-feedback error';
+        emailStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Please enter a valid email address.';
+        isValid = false;
+      } else if (isEmailAvailable === false) {
+        document.getElementById('email').classList.add('has-error');
+        emailStatus.className = 'field-feedback error';
+        emailStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Email is already registered.';
+        isValid = false;
+      }
+
+      // 2. Username
+      var usernameStatus = document.getElementById('usernameStatus');
+      if (!username) {
+        document.getElementById('username').classList.add('has-error');
+        usernameStatus.className = 'field-feedback error';
+        usernameStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Please choose a username.';
+        isValid = false;
+      } else if (username.length < 3 || username.length > 30) {
+        document.getElementById('username').classList.add('has-error');
+        usernameStatus.className = 'field-feedback error';
+        usernameStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Username must be between 3 and 30 characters.';
+        isValid = false;
+      } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        document.getElementById('username').classList.add('has-error');
+        usernameStatus.className = 'field-feedback error';
+        usernameStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Only letters, numbers, and underscores allowed.';
+        isValid = false;
+      } else if (isUsernameAvailable === false) {
+        document.getElementById('username').classList.add('has-error');
+        usernameStatus.className = 'field-feedback error';
+        usernameStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Username is already taken.';
+        isValid = false;
+      }
+
+      // 3. Password
+      var passwordStatus = document.getElementById('passwordStatus');
+      if (!password) {
+        document.getElementById('password').classList.add('has-error');
+        passwordStatus.className = 'field-feedback error';
+        passwordStatus.style.display = 'block';
+        passwordStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Please create a password.';
+        isValid = false;
+      } else if (password.length < 8) {
+        document.getElementById('password').classList.add('has-error');
+        passwordStatus.className = 'field-feedback error';
+        passwordStatus.style.display = 'block';
+        passwordStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Password must be at least 8 characters.';
+        isValid = false;
+      } else {
+        passwordStatus.style.display = 'none';
+      }
+
+      // 4. Confirm Password
+      var passwordMatchStatus = document.getElementById('passwordMatchStatus');
+      if (!confirmPwd) {
+        document.getElementById('confirmPassword').classList.add('has-error');
+        passwordMatchStatus.className = 'field-feedback error';
+        passwordMatchStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Please confirm your password.';
+        isValid = false;
+      } else if (password !== confirmPwd) {
+        document.getElementById('confirmPassword').classList.add('has-error');
+        passwordMatchStatus.className = 'field-feedback error';
+        passwordMatchStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Passwords do not match.';
+        isValid = false;
+      }
+
+      if (!isValid) {
+        showFormAlert('Please correct the errors in your account credentials before continuing.', 'error');
+      }
+      return isValid;
+    }
+
+    /* ── Next / Back Button Handlers (Preserves all entered data!) ── */
+    document.getElementById('btnNext1').addEventListener('click', function() {
+      if (validateStep1()) {
+        showStep(2);
+      }
+    });
+
+    document.getElementById('btnBack2').addEventListener('click', function() {
+      showStep(1);
+    });
+
+    document.getElementById('btnNext2').addEventListener('click', function() {
+      if (validateStep2()) {
+        showStep(3);
+      }
+    });
+
+    document.getElementById('btnBack3').addEventListener('click', function() {
+      showStep(2);
+    });
+
+    /* ────────────────────────────────
+       Step 3: Avatar & Privacy Agreement
+    ──────────────────────────────── */
+    var avatarCircle        = document.getElementById('avatarCircle');
+    var cameraBadge         = document.getElementById('cameraBadge');
+    var avatarPreview       = document.getElementById('avatarPreview');
+    var avatarFile          = document.getElementById('avatarFile');
+    var avatarFeedback      = document.getElementById('avatarFeedback');
+    var uploadPhotoBtn      = document.getElementById('uploadPhotoBtn');
+    var chooseCuteAvatarBtn = document.getElementById('chooseCuteAvatarBtn');
+    var defaultAvatarBtn    = document.getElementById('defaultAvatarBtn');
+    var privacyCheckbox      = document.getElementById('privacyConsentCheckbox');
+    var consentError         = document.getElementById('consentError');
+    var signupBtn            = document.getElementById('signupBtn');
+
+    function updateSignupButtonState() {
+      var termsChecked = privacyCheckbox.checked;
+      var canSubmit = termsChecked && validateStep1Quick() && validateStep2Quick();
+      signupBtn.disabled = !canSubmit;
+    }
+
+    function validateStep1Quick() {
+      return !!val('firstName') && !!val('lastName') && !!val('birthday') && !!val('gender');
+    }
+
+    function validateStep2Quick() {
+      var pwd = document.getElementById('password').value;
+      var cpwd = document.getElementById('confirmPassword').value;
+      return !!val('email') && !!val('username') && pwd.length >= 8 && pwd === cpwd;
+    }
+
+    privacyCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        consentError.style.display = 'none';
+      }
+      updateSignupButtonState();
+    });
+
+    // Upload Photo Action
+    uploadPhotoBtn.addEventListener('click', function() {
+      avatarFile.click();
+    });
+    cameraBadge.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openCuteAvatarModal();
+    });
+    avatarCircle.addEventListener('click', function() {
+      openCuteAvatarModal();
+    });
+
+    avatarFile.addEventListener('change', function() {
+      var file = avatarFile.files[0];
+      if (!file) return;
+
+      var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type.toLowerCase())) {
+        avatarFeedback.className = 'field-feedback error';
+        avatarFeedback.innerHTML = '<i class="fas fa-circle-exclamation"></i> Please select a JPG, JPEG, PNG, or WEBP image.';
+        avatarFile.value = '';
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        avatarFeedback.className = 'field-feedback error';
+        avatarFeedback.innerHTML = '<i class="fas fa-circle-exclamation"></i> Image is too large. Maximum size is 5MB.';
+        avatarFile.value = '';
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var dataUrl = e.target.result;
+        avatarPreview.src = dataUrl;
+        selectedAvatar = {
+          url: dataUrl,
+          type: 'uploaded',
+          value: file.name,
+          isCustomFile: true,
+          dataUrl: dataUrl
+        };
+        avatarFeedback.className = 'field-feedback success';
+        avatarFeedback.innerHTML = '<i class="fas fa-circle-check"></i> Photo selected: ' + escapeHtml(file.name);
+        uploadPhotoBtn.innerHTML = '<i class="fas fa-pencil" style="color:#93C5FD;"></i> Change Photo';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset to Default Avatar Action
+    defaultAvatarBtn.addEventListener('click', function() {
+      selectedAvatar = {
+        url: 'assets/avatars/default-avatar.png',
+        type: 'default',
+        value: 'default',
+        isCustomFile: false,
+        dataUrl: null
+      };
+      avatarPreview.src = 'assets/avatars/default-avatar.png';
+      avatarFeedback.className = 'field-feedback info';
+      avatarFeedback.innerHTML = '<i class="fas fa-user-shield"></i> Default Safe Space avatar selected.';
+      uploadPhotoBtn.innerHTML = '<i class="fas fa-upload" style="color:#93C5FD;"></i> Upload Photo';
+    });
+
+    /* ────────────────────────────────
+       Cute Avatars Modal System
+    ──────────────────────────────── */
+    var cuteModalOverlay       = document.getElementById('cuteAvatarModalOverlay');
+    var closeCuteModalBtn      = document.getElementById('closeCuteAvatarModalBtn');
+    var cancelCuteAvatarBtn    = document.getElementById('cancelCuteAvatarBtn');
+    var confirmCuteAvatarBtn   = document.getElementById('confirmCuteAvatarBtn');
+    var cuteGrid               = document.getElementById('cuteAvatarGridContainer');
+    var previewCircle          = document.getElementById('cuteAvatarSelectedPreviewCircle');
+    var previewName            = document.getElementById('cuteAvatarSelectedName');
+    var previewDesc            = document.getElementById('cuteAvatarSelectedDesc');
+    var filterPills            = document.querySelectorAll('[data-avatar-filter]');
+
+    chooseCuteAvatarBtn.addEventListener('click', openCuteAvatarModal);
+
+    function openCuteAvatarModal() {
+      cuteModalOverlay.classList.add('open');
+    }
+
+    function closeCuteAvatarModal() {
+      cuteModalOverlay.classList.remove('open');
+    }
+
+    closeCuteModalBtn.addEventListener('click', closeCuteAvatarModal);
+    cancelCuteAvatarBtn.addEventListener('click', closeCuteAvatarModal);
+    cuteModalOverlay.addEventListener('click', function(e) {
+      if (e.target === cuteModalOverlay) closeCuteAvatarModal();
+    });
+
+    filterPills.forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        filterPills.forEach(function(p) { p.classList.remove('active'); });
+        pill.classList.add('active');
+        renderCuteAvatarGrid(pill.getAttribute('data-avatar-filter'));
+      });
+    });
+
+    function renderCuteAvatarGrid(filterCategory) {
+      var avatarsList = window.AVATARS || [];
+      if (!cuteGrid || !avatarsList.length) return;
+      cuteGrid.innerHTML = '';
+
+      var filtered = avatarsList.filter(function(a) {
+        if (filterCategory === 'all') return true;
+        return a.category === filterCategory || (filterCategory === 'animals' && a.category === 'animal') || (filterCategory === 'characters' && a.category === 'character');
+      });
+
+      filtered.forEach(function(avatar) {
+        var item = document.createElement('div');
+        item.className = 'cute-avatar-item avatar-card';
+        if (pendingCuteAvatar && (pendingCuteAvatar.id === avatar.id || pendingCuteAvatar.shortId === avatar.id)) {
+          item.classList.add('selected');
+        }
+
+        var fallbackSrc = avatar.svgImage || 'assets/avatars/default-avatar.png';
+        item.innerHTML = `
+          <div class="avatar-card-check"><i class="fas fa-check"></i></div>
+          <div class="avatar-image-container cute-avatar-img-wrap">
+            <img src="${avatar.image}" alt="${escapeHtml(avatar.name)}" class="avatar-image" loading="lazy" onerror="this.onerror=null; this.src='${fallbackSrc}';" />
+          </div>
+          <span class="avatar-name cute-avatar-label">${escapeHtml(avatar.name)}</span>
+        `;
+
+        item.addEventListener('click', function() {
+          document.querySelectorAll('.cute-avatar-item').forEach(function(el) { el.classList.remove('selected'); });
+          item.classList.add('selected');
+          pendingCuteAvatar = avatar;
+
+          previewCircle.innerHTML = `<img class="avatar-preview-image" src="${avatar.image}" alt="${escapeHtml(avatar.name)}" onerror="this.onerror=null; this.src='${fallbackSrc}';" />`;
+          previewName.textContent = avatar.name;
+          previewDesc.textContent = (avatar.category === 'animals' || avatar.category === 'animal') ? 'Animal Avatar' : 'Character Avatar';
+          confirmCuteAvatarBtn.disabled = false;
+        });
+
+        cuteGrid.appendChild(item);
+      });
+    }
+
+    confirmCuteAvatarBtn.addEventListener('click', function() {
+      if (!pendingCuteAvatar) return;
+      selectedAvatar = {
+        url: pendingCuteAvatar.image,
+        type: 'cute',
+        value: pendingCuteAvatar.id,
+        isCustomFile: false,
+        dataUrl: null
+      };
+      avatarPreview.src = pendingCuteAvatar.image;
+      avatarFeedback.className = 'field-feedback success';
+      avatarFeedback.innerHTML = '<i class="fas fa-circle-check"></i> Avatar selected: ' + escapeHtml(pendingCuteAvatar.name);
+      uploadPhotoBtn.innerHTML = '<i class="fas fa-upload" style="color:#93C5FD;"></i> Upload Photo';
+      closeCuteAvatarModal();
+    });
+
+    /* ────────────────────────────────
+       Privacy Policy Modal Handler
+    ──────────────────────────────── */
+    var privacyModalOverlay  = document.getElementById('privacyModalOverlay');
+    var openPrivacyPolicyBtn = document.getElementById('openPrivacyPolicyBtn');
+    var openTermsBtn         = document.getElementById('openTermsBtn');
+    var closePrivacyModalBtn = document.getElementById('closePrivacyModalBtn');
+    var privacyModalOkBtn    = document.getElementById('privacyModalOkBtn');
+
+    function openPrivacyModal(e) {
+      if (e) e.preventDefault();
+      privacyModalOverlay.classList.add('open');
+    }
+    openPrivacyPolicyBtn.addEventListener('click', openPrivacyModal);
+    if (openTermsBtn) openTermsBtn.addEventListener('click', openPrivacyModal);
+
+    function closePrivacyModal() {
+      privacyModalOverlay.classList.remove('open');
+    }
+    closePrivacyModalBtn.addEventListener('click', closePrivacyModal);
+    privacyModalOverlay.addEventListener('click', function(e) {
+      if (e.target === privacyModalOverlay) closePrivacyModal();
+    });
+
+    privacyModalOkBtn.addEventListener('click', function() {
+      closePrivacyModal();
+      privacyCheckbox.checked = true;
+      consentError.style.display = 'none';
+      updateSignupButtonState();
+    });
+
+    /* ────────────────────────────────
+       Eye Toggles & Password Strength
+    ──────────────────────────────── */
+    function setupEye(inputId, toggleId, iconId) {
+      var input  = document.getElementById(inputId);
+      var toggle = document.getElementById(toggleId);
+      var icon   = document.getElementById(iconId);
+      toggle.addEventListener('click', function() {
+        var hidden = input.type === 'password';
+        input.type     = hidden ? 'text' : 'password';
+        icon.className = hidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+      });
+    }
+
+    var passwordInput        = document.getElementById('password');
+    var confirmPasswordInput = document.getElementById('confirmPassword');
+    var passwordStrengthWrap = document.getElementById('passwordStrengthWrap');
+    var strengthBarFill      = document.getElementById('strengthBarFill');
+    var strengthLabel        = document.getElementById('strengthLabel');
+    var passwordMatchStatus  = document.getElementById('passwordMatchStatus');
+    var passwordStatus       = document.getElementById('passwordStatus');
+
+    passwordInput.addEventListener('input', function() {
+      var val = this.value;
+      passwordInput.classList.remove('has-error');
+      passwordStatus.textContent = '';
+      passwordStatus.style.display = 'none';
+
+      if (!val) {
+        passwordStrengthWrap.style.display = 'none';
+        checkPasswordMatch();
+        updateSignupButtonState();
+        return;
+      }
+      passwordStrengthWrap.style.display = 'block';
+
+      var score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[a-z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      strengthBarFill.className = 'strength-bar-fill';
+      strengthLabel.className = 'strength-label';
+
+      if (val.length < 8 || score <= 2) {
+        strengthBarFill.classList.add('weak');
+        strengthLabel.classList.add('weak');
+        strengthLabel.innerHTML = 'Password Strength: <strong>Weak</strong>';
+      } else if (score >= 3 && score <= 4) {
+        strengthBarFill.classList.add('medium');
+        strengthLabel.classList.add('medium');
+        strengthLabel.innerHTML = 'Password Strength: <strong>Medium</strong>';
+      } else {
+        strengthBarFill.classList.add('strong');
+        strengthLabel.classList.add('strong');
+        strengthLabel.innerHTML = 'Password Strength: <strong>Strong</strong>';
+      }
+
+      checkPasswordMatch();
+      updateSignupButtonState();
+    });
+
+    confirmPasswordInput.addEventListener('input', function() {
+      checkPasswordMatch();
+      updateSignupButtonState();
+    });
+
+    function checkPasswordMatch() {
+      var p1 = passwordInput.value;
+      var p2 = confirmPasswordInput.value;
+      confirmPasswordInput.classList.remove('has-error');
+
+      if (!p2) {
+        passwordMatchStatus.innerHTML = '';
+        return;
+      }
+      if (p1 === p2) {
+        passwordMatchStatus.className = 'field-feedback success';
+        passwordMatchStatus.innerHTML = '<i class="fas fa-circle-check"></i> Passwords match.';
+      } else {
+        passwordMatchStatus.className = 'field-feedback error';
+        passwordMatchStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Passwords do not match.';
+      }
+    }
+
+    /* ────────────────────────────────
+       Real-Time Availability Validation (Username & Email)
+    ──────────────────────────────── */
+    var usernameInput  = document.getElementById('username');
+    var usernameStatus = document.getElementById('usernameStatus');
+    var emailInput     = document.getElementById('email');
+    var emailStatus    = document.getElementById('emailStatus');
+
+    usernameInput.addEventListener('input', function() {
+      var raw = this.value.trim();
+      usernameInput.classList.remove('has-error');
+      if (checkUserTimeout) clearTimeout(checkUserTimeout);
+
+      if (!raw) {
+        usernameStatus.textContent = '';
+        isUsernameAvailable = null;
+        updateSignupButtonState();
+        return;
+      }
+
+      if (raw.length < 3) {
+        usernameStatus.className = 'field-feedback error';
+        usernameStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Username must be between 3 and 30 characters.';
+        isUsernameAvailable = false;
+        updateSignupButtonState();
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9_]+$/.test(raw)) {
+        usernameStatus.className = 'field-feedback error';
+        usernameStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Only letters, numbers, and underscores allowed.';
+        isUsernameAvailable = false;
+        updateSignupButtonState();
+        return;
+      }
+
+      usernameStatus.className = 'field-feedback info';
+      usernameStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking username…';
+
+      checkUserTimeout = setTimeout(async function() {
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.checkUsernameAvailability) {
+          try {
+            var check = await SafeSpaceDB.auth.checkUsernameAvailability(raw);
+            if (check.available) {
+              usernameStatus.className = 'field-feedback success';
+              usernameStatus.innerHTML = '<i class="fas fa-circle-check"></i> Username is available.';
+              isUsernameAvailable = true;
+            } else {
+              usernameStatus.className = 'field-feedback error';
+              usernameStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Username is already taken.';
+              isUsernameAvailable = false;
+            }
+          } catch (e) {
+            isUsernameAvailable = true;
+            usernameStatus.innerHTML = '';
+          }
+        } else {
+          isUsernameAvailable = true;
+          usernameStatus.innerHTML = '';
+        }
+        updateSignupButtonState();
+      }, 350);
+    });
+
+    emailInput.addEventListener('input', function() {
+      var raw = this.value.trim().toLowerCase();
+      emailInput.classList.remove('has-error');
+      if (checkEmailTimeout) clearTimeout(checkEmailTimeout);
+
+      if (!raw) {
+        emailStatus.textContent = '';
+        isEmailAvailable = null;
+        updateSignupButtonState();
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+        emailStatus.className = 'field-feedback error';
+        emailStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Please enter a valid email address.';
+        isEmailAvailable = false;
+        updateSignupButtonState();
+        return;
+      }
+
+      emailStatus.className = 'field-feedback info';
+      emailStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking email…';
+
+      checkEmailTimeout = setTimeout(async function() {
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.checkEmailAvailability) {
+          try {
+            var check = await SafeSpaceDB.auth.checkEmailAvailability(raw);
+            if (check.available) {
+              emailStatus.className = 'field-feedback success';
+              emailStatus.innerHTML = '<i class="fas fa-circle-check"></i> Email address is available.';
+              isEmailAvailable = true;
+            } else {
+              emailStatus.className = 'field-feedback error';
+              emailStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Email is already registered.';
+              isEmailAvailable = false;
+            }
+          } catch (e) {
+            isEmailAvailable = true;
+            emailStatus.innerHTML = '';
+          }
+        } else {
+          isEmailAvailable = true;
+          emailStatus.innerHTML = '';
+        }
+        updateSignupButtonState();
+      }, 350);
+    });
+
+    /* ────────────────────────────────
+       FINAL SUBMISSION (CREATE ACCOUNT)
+    ──────────────────────────────── */
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      clearFormAlert();
+
+      // Validate all three steps
+      if (!validateStep1()) {
+        showStep(1);
+        return;
+      }
+      if (!validateStep2()) {
+        showStep(2);
+        return;
+      }
+
+      if (!privacyCheckbox.checked) {
+        consentError.style.display = 'block';
+        consentError.innerHTML = '<i class="fas fa-circle-exclamation"></i> You must agree to the Privacy Policy and Terms of Use to create an account.';
+        showFormAlert('Please agree to the Privacy Policy and Terms of Use.', 'error');
+        return;
+      }
+
+      setLoading(true);
+
+      var firstName       = val('firstName');
+      var lastName        = val('lastName');
+      var birthday        = val('birthday');
+      var gender          = val('gender');
+      var otherGenderVal  = val('otherGenderInput');
+      var finalGender     = (gender === 'Other' && otherGenderVal) ? otherGenderVal : gender;
+
+      var ageObj          = calculateAge(birthday);
+      var calculatedAge   = (ageObj && ageObj.age) ? ageObj.age : null;
+
+      var email           = val('email').toLowerCase();
+      var username        = val('username');
+      var password        = document.getElementById('password').value;
+
+      var avatarUrl       = selectedAvatar.url;
+      var avatarType      = selectedAvatar.type || 'default';
+      var avatarValue     = selectedAvatar.value || 'default';
+
+      try {
+        if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
+          throw new Error('Database client is loading... Please try again.');
+        }
+
+        var payload = {
+          email:       email,
+          password:    password,
+          username:    username,
+          first_name:  firstName,
+          last_name:   lastName,
+          middle_name: null,
+          birthday:    birthday,
+          sex:         finalGender,
+          age:         calculatedAge,
+          avatar_url:  avatarUrl,
+          avatar_type: avatarType,
+          avatar_value: avatarValue,
+          preferences: {
+            topics: [],
+            anonymous_default: false,
+            daily_notifications: true
+          }
+        };
+
+        var result = await SafeSpaceDB.auth.signUp(payload);
+        if (result && result.error) throw result.error;
+
+        setLoading(false);
+
+        // If email confirmation / OTP is required
+        if (result && (result.needsEmailConfirmation || result.needsOtp)) {
+          showOtpStep(email);
+          return;
+        }
+
+        // Registration Successful! Show Success Card
+        showSuccessView(false);
+
+      } catch (err) {
+        setLoading(false);
+        var friendlyMsg = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.formatAuthError)
+          ? SafeSpaceDB.auth.formatAuthError(err)
+          : (err.message || 'Registration failed. Please try again.');
+
+        var rawMsg = (err && err.message) ? err.message.toLowerCase() : '';
+
+        if (rawMsg.includes('already registered') || rawMsg.includes('already exists') || rawMsg.includes('user_already_exists')) {
+          showFormAlert(
+            'This email is already registered. Please sign in instead.',
+            'warning',
+            `<a href="login.html" class="auth-alert-action-btn"><i class="fas fa-right-to-bracket"></i> Go to Sign In</a>`
+          );
+        } else {
+          showFormAlert(friendlyMsg, 'error');
+        }
+
+        if (typeof showToast === 'function') showToast(friendlyMsg, 'error');
+      }
+    });
+
+    /* ── Show Success Screen ── */
+    function showSuccessView(needsEmailVerification) {
+      document.getElementById('signupSection').style.display = 'none';
+      document.getElementById('otpSection').style.display = 'none';
+      var successCard = document.getElementById('signupSuccessCard');
+      var successSub = document.getElementById('successSubtitle');
+      var successBtn = document.getElementById('successLoginBtn');
+
+      if (needsEmailVerification) {
+        successSub.textContent = 'Your account has been created. Please verify your email address to continue.';
+        successBtn.textContent = 'Continue to Login';
+      } else {
+        successSub.textContent = 'Your account has been created successfully! Welcome to the Safe Space student community.';
+        successBtn.innerHTML = 'Continue to Safe Space <i class="fas fa-arrow-right"></i>';
+        successBtn.href = 'home.html';
+      }
+
+      successCard.style.display = 'block';
+      clearFormAlert();
+
+      if (typeof showToast === 'function') {
+        showToast('Account created successfully!', 'success');
+      }
+    }
+
+    /* ────────────────────────────────
+       Step Switcher: Form <-> OTP
+    ──────────────────────────────── */
+    function showOtpStep(email) {
+      registeredEmail = email || val('email');
+      document.getElementById('otpEmailDisplay').textContent = registeredEmail;
+      document.getElementById('signupSection').style.display = 'none';
+      document.getElementById('signupSuccessCard').style.display = 'none';
+      document.getElementById('otpSection').style.display = 'block';
+      clearFormAlert();
+      showFormAlert('Your account has been created. Please verify your email address to continue. We sent a 6-digit verification code to ' + registeredEmail, 'info');
+
+      var firstInp = document.querySelector('#otpInputsRow .otp-digit');
+      if (firstInp) {
+        firstInp.value = '';
+        firstInp.focus();
+      }
+    }
+
+    function showSignupStep() {
+      document.getElementById('otpSection').style.display = 'none';
+      document.getElementById('signupSuccessCard').style.display = 'none';
+      document.getElementById('signupSection').style.display = 'block';
+      clearFormAlert();
+      showStep(3);
+    }
+
+    document.getElementById('backToSignupBtn').addEventListener('click', showSignupStep);
+
+    /* ────────────────────────────────
+       OTP Digits Handling
+    ──────────────────────────────── */
+    var otpInputs = document.querySelectorAll('#otpInputsRow .otp-digit');
+    otpInputs.forEach(function(input, idx) {
+      input.addEventListener('input', function(e) {
+        var cleanVal = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = cleanVal ? cleanVal.charAt(cleanVal.length - 1) : '';
+        if (e.target.value) {
+          e.target.classList.add('filled');
+          if (idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
+        } else {
+          e.target.classList.remove('filled');
+        }
+      });
+
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+          otpInputs[idx - 1].focus();
+          otpInputs[idx - 1].value = '';
+          otpInputs[idx - 1].classList.remove('filled');
+        }
+      });
+
+      input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+        var digits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+        for (var i = 0; i < digits.length; i++) {
+          if (otpInputs[i]) {
+            otpInputs[i].value = digits[i];
+            otpInputs[i].classList.add('filled');
+          }
+        }
+        var nextIdx = Math.min(digits.length, 5);
+        if (otpInputs[nextIdx]) otpInputs[nextIdx].focus();
+      });
+    });
+
+    /* ────────────────────────────────
+       OTP Verification Submit
+    ──────────────────────────────── */
+    document.getElementById('submitOtpBtn').addEventListener('click', async function() {
+      var code = '';
+      otpInputs.forEach(function(inp) { code += inp.value.trim(); });
+
+      if (code.length < 6) {
+        showFormAlert('Please enter all 6 digits of your verification code.', 'error');
+        return;
+      }
+
+      var btn     = document.getElementById('submitOtpBtn');
+      var text    = document.getElementById('submitOtpBtnText');
+      var spinner = document.getElementById('submitOtpBtnSpinner');
+      btn.disabled          = true;
+      text.style.display    = 'none';
+      spinner.style.display = 'inline-flex';
+
+      try {
+        if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
+          throw new Error('Database client not ready. Please try again.');
+        }
+
+        var res = await SafeSpaceDB.auth.verifyOtp(registeredEmail, code, 'signup');
+        if (res && res.error) throw res.error;
+
+        showFormAlert('Verification successful! Preparing your Safe Space...', 'success');
+        if (typeof showToast === 'function') {
+          showToast('Email verified successfully! Welcome!', 'success');
+        }
+
+        setTimeout(function() {
+          if (typeof showPageLoader === 'function') showPageLoader('Welcome to Safe Space! Opening feed...');
+          window.location.href = 'home.html';
+        }, 500);
+      } catch (err) {
+        btn.disabled          = false;
+        text.style.display    = '';
+        spinner.style.display = 'none';
+
+        var msg = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.formatAuthError)
+          ? SafeSpaceDB.auth.formatAuthError(err)
+          : (err.message || 'Verification failed. Please check the code.');
+
+        showFormAlert(msg, 'error');
+        if (typeof showToast === 'function') showToast(msg, 'error');
+      }
+    });
+
+    /* ────────────────────────────────
+       Resend OTP Code
+    ──────────────────────────────── */
+    document.getElementById('resendRegisterOtpBtn').addEventListener('click', async function() {
+      var btn = document.getElementById('resendRegisterOtpBtn');
+      if (btn.disabled) return;
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        await SafeSpaceDB.auth.resendOtp(registeredEmail, 'signup');
+        showFormAlert('A new verification code was sent to ' + registeredEmail, 'success');
+        if (typeof showToast === 'function') showToast('Verification code resent!', 'success');
+
+        var countdown = 60;
+        btn.textContent = 'Resend in ' + countdown + 's';
+        if (resendTimer) clearInterval(resendTimer);
+        resendTimer = setInterval(function() {
+          countdown--;
+          if (countdown <= 0) {
+            clearInterval(resendTimer);
+            btn.disabled = false;
+            btn.textContent = 'Resend Code';
+          } else {
+            btn.textContent = 'Resend in ' + countdown + 's';
+          }
+        }, 1000);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Resend Code';
+        var msg = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.formatAuthError)
+          ? SafeSpaceDB.auth.formatAuthError(err)
+          : (err.message || 'Failed to resend code.');
+        showFormAlert(msg, 'error');
+      }
+    });
+
+    /* ────────────────────────────────
+       Alert Helpers
+    ──────────────────────────────── */
+    function showFormAlert(message, type, actionHtml) {
+      type = type || 'error';
+      var alertBox    = document.getElementById('registerAlert');
+      var alertIcon   = document.getElementById('registerAlertIcon');
+      var alertMsg    = document.getElementById('registerAlertMessage');
+      var alertAction = document.getElementById('registerAlertAction');
+
+      alertBox.className = 'auth-alert auth-alert-' + type;
+      alertMsg.textContent = message;
+
+      if (type === 'error') alertIcon.className = 'alert-icon fas fa-circle-exclamation';
+      else if (type === 'warning') alertIcon.className = 'alert-icon fas fa-triangle-exclamation';
+      else if (type === 'success') alertIcon.className = 'alert-icon fas fa-circle-check';
+      else alertIcon.className = 'alert-icon fas fa-circle-info';
+
+      if (actionHtml) {
+        alertAction.innerHTML = actionHtml;
+        alertAction.style.display = 'block';
+      } else {
+        alertAction.innerHTML = '';
+        alertAction.style.display = 'none';
+      }
+
+      alertBox.classList.remove('hidden');
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function clearFormAlert() {
+      var alertBox = document.getElementById('registerAlert');
+      alertBox.classList.add('hidden');
+      alertBox.className = 'auth-alert hidden';
+    }
+
+    function setLoading(loading) {
+      var btn     = document.getElementById('signupBtn');
+      var text    = document.getElementById('signupBtnText');
+      var spinner = document.getElementById('signupBtnSpinner');
+      btn.disabled          = loading;
+      text.style.display    = loading ? 'none'        : '';
+      spinner.style.display = loading ? 'inline-flex' : 'none';
+    }
+
+    function val(id) {
+      var el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /* ── Check URL Params ── */
+    function checkUrlParams() {
+      var params = new URLSearchParams(window.location.search);
+      var verifyEmail = params.get('verify') || params.get('email');
+      var step = params.get('step');
+
+      if (verifyEmail && step === 'otp') {
+        showOtpStep(verifyEmail);
+      }
+    }
+  </script>
+</body>
+</html>

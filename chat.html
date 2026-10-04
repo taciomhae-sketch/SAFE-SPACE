@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Chats — Safe Space</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <style>
+    .older-messages-loader {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0;
+      width: 100%;
+    }
+    .btn-load-older {
+      background: var(--card-bg, #fff);
+      color: var(--primary, #6c4fd1);
+      border: 1px solid rgba(108, 79, 209, 0.25);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-load-older:hover {
+      background: var(--primary-light, rgba(108, 79, 209, 0.08));
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Page Loading Overlay -->
+    <div class="page-loader" id="pageLoader">
+      <div class="loader-content">
+        <div class="loader-spinner-ring">
+          <div class="loader-icon-center">
+            <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+          </div>
+        </div>
+        <div class="loader-label">Safe Space</div>
+        <div class="loader-sublabel">Loading chats...</div>
+      </div>
+    </div>
+
+    <!-- Desktop & Tablet Sidebar -->
+    <aside class="desktop-sidebar">
+      <a href="home.html" class="sidebar-brand">
+        <img class="sidebar-logo" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+        <div>
+          <div class="sidebar-brand-name">SAFE SPACE</div>
+          <span class="sidebar-brand-tag">Student Support</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="home.html" class="sidebar-link" data-page="home">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="community.html" class="sidebar-link" data-page="community">
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </a>
+        <a href="chat.html" class="sidebar-link active" data-page="chat">
+          <i class="fas fa-comment-dots"></i>
+          <span>Chat</span>
+        </a>
+        <a href="resources.html" class="sidebar-link" data-page="resources">
+          <i class="fas fa-book-open"></i>
+          <span>Resources</span>
+        </a>
+        <a href="profile.html" class="sidebar-link" data-page="profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-actions">
+        <button type="button" class="sidebar-create-btn" id="sidebarCreatePostBtn">
+          <i class="fas fa-plus"></i>
+          <span>Create Post</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="sidebar-user-card" id="sidebarUserCard" title="View Profile">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">Account</span>
+            <span class="sidebar-user-role">Student</span>
+          </div>
+          <i class="fas fa-gear sidebar-settings-icon"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Column -->
+    <div class="main-content-column" style="height: 100vh; overflow: hidden;">
+      <div class="chat-desktop-layout">
+        <!-- Inbox / Contacts Column -->
+        <div class="chat-inbox-pane">
+          <!-- Page Header -->
+          <header class="page-header" style="height: auto; padding: 16px 20px 12px; align-items: flex-start;">
+            <div class="chat-header-info">
+              <h1>Chats</h1>
+              <p>Connect with people in your Safe Space</p>
+            </div>
+            <button class="add-person-btn" id="openAddPersonBtn" aria-label="Find People">
+              <i class="fas fa-user-plus"></i>
+            </button>
+          </header>
+
+          <!-- Search Bar -->
+          <div class="search-bar" style="margin-top: 4px;">
+            <i class="fas fa-magnifying-glass"></i>
+            <input
+              type="text"
+              class="search-input"
+              id="chatSearchInput"
+              placeholder="Search people to chat with..."
+            />
+          </div>
+
+          <!-- Scrollable Inbox List -->
+          <main class="page-content" id="chatMainContent">
+            <!-- Section: Recent Conversations -->
+            <div class="section-header">
+              <span class="section-title">Recent conversations</span>
+              <span class="section-count" id="recentCount">0</span>
+            </div>
+            <div id="recentConversationsContainer">
+              <div class="skeleton-card" style="padding: 10px 14px; margin-bottom: 8px;">
+                <div class="skeleton sk-avatar" style="width: 44px; height: 44px;"></div>
+                <div class="sk-info" style="flex: 1;">
+                  <div class="skeleton sk-title" style="width: 45%; height: 13px; margin-bottom: 6px;"></div>
+                  <div class="skeleton sk-subtitle" style="width: 70%; height: 11px;"></div>
+                </div>
+              </div>
+              <div class="skeleton-card" style="padding: 10px 14px; margin-bottom: 8px;">
+                <div class="skeleton sk-avatar" style="width: 44px; height: 44px;"></div>
+                <div class="sk-info" style="flex: 1;">
+                  <div class="skeleton sk-title" style="width: 35%; height: 13px; margin-bottom: 6px;"></div>
+                  <div class="skeleton sk-subtitle" style="width: 55%; height: 11px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Find People -->
+            <div class="section-header" style="margin-top: 8px;">
+              <span class="section-title">Find people</span>
+              <span class="section-count" id="contactsCount">0</span>
+            </div>
+            <div id="findContactsContainer">
+              <div class="skeleton-card" style="padding: 10px 14px; margin-bottom: 8px;">
+                <div class="skeleton sk-avatar" style="width: 44px; height: 44px;"></div>
+                <div class="sk-info" style="flex: 1;">
+                  <div class="skeleton sk-title" style="width: 40%; height: 13px; margin-bottom: 6px;"></div>
+                  <div class="skeleton sk-subtitle" style="width: 60%; height: 11px;"></div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+
+        <!-- Chat Thread Column (Desktop side-by-side & Mobile overlay) -->
+        <div class="chat-thread-pane">
+          <!-- Desktop Placeholder (shown when no chat is selected) -->
+          <div class="chat-desktop-placeholder" id="chatDesktopPlaceholder">
+            <i class="fa-regular fa-comments"></i>
+            <h3>Your Messages</h3>
+            <p>Select a conversation from the left or search for a person to start chatting safely.</p>
+          </div>
+
+          <!-- Slide-in Chat Thread Overlay / Desktop Active Thread Pane -->
+          <div class="thread-overlay" id="chatThreadOverlay">
+            <div class="thread-header">
+              <button class="thread-back" id="closeThreadBtn" aria-label="Back to inbox">
+                <i class="fas fa-arrow-left"></i>
+              </button>
+              <div class="avatar-wrapper" id="threadAvatarWrapper" style="width: 38px; height: 38px;">
+                <div class="post-avatar" id="threadAvatar" style="width: 100%; height: 100%;">
+                  <i class="fas fa-user"></i>
+                </div>
+                <span class="online-status" id="threadOnlineStatus" style="display:none;"></span>
+              </div>
+              <div class="thread-user-info">
+                <div class="thread-username" id="threadUsername">User</div>
+                <div class="thread-status" id="threadStatus">Offline</div>
+              </div>
+              <button class="header-btn" id="threadMenuBtn" style="color: var(--text-muted);" aria-label="Conversation Settings" title="Settings & Options">
+                <i class="fas fa-ellipsis-vertical"></i>
+              </button>
+            </div>
+
+            <!-- AI Assistant Mode Banner -->
+            <div class="ai-offline-banner" id="aiOfflineBanner" style="display:none;">
+              <span id="aiOfflineBannerText"><i class="fas fa-circle-info" style="margin-right:6px;"></i>Offline Mode – Basic assistance is available.</span>
+              <span id="aiOfflineBannerTag" style="font-size:10px; background:rgba(0,0,0,0.06); padding:2px 6px; border-radius:4px;">LOCAL</span>
+            </div>
+
+            <!-- Messages Scroll Area -->
+            <div class="thread-messages" id="threadMessagesContainer">
+              <!-- Bubbles rendered here -->
+            </div>
+
+            <!-- Message Input Bar -->
+            <div class="thread-input-bar">
+              <input
+                type="text"
+                class="thread-input"
+                id="chatMessageInput"
+                placeholder="Type a safe message..."
+                autocomplete="off"
+              />
+              <button class="thread-send" id="sendMessageBtn" aria-label="Send Message">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="home.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="community.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Community</span>
+      </a>
+      <a href="chat.html" class="nav-item active">
+        <i class="fas fa-comment-dots"></i>
+        <span>Chat</span>
+      </a>
+      <a href="resources.html" class="nav-item">
+        <i class="fas fa-book-open"></i>
+        <span>Resources</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- AI Assistant Support Preferences Modal -->
+  <div class="modal-overlay" id="aiPreferencesModalOverlay">
+    <div class="modal-sheet" style="max-width: 440px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-sliders" style="color:var(--primary); margin-right:8px;"></i>Support Preferences</span>
+        <button class="modal-close" id="closeAiPreferencesBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 18px 20px;">
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height: 1.5;">
+          Customize how your Safe Space AI Assistant supports you during conversations.
+        </p>
+
+        <div class="ai-pref-row">
+          <div class="ai-pref-info">
+            <h5>Motivational Messages</h5>
+            <p>Short encouraging thoughts when feeling stressed</p>
+          </div>
+          <label class="ai-pref-toggle">
+            <input type="checkbox" id="prefMotivationalMsgs" checked />
+            <span class="ai-pref-slider"></span>
+          </label>
+        </div>
+
+        <div class="ai-pref-row">
+          <div class="ai-pref-info">
+            <h5>Bible Verse Suggestions</h5>
+            <p>Comforting scripture when relevant to what you're facing</p>
+          </div>
+          <label class="ai-pref-toggle">
+            <input type="checkbox" id="prefBibleVerses" checked />
+            <span class="ai-pref-slider"></span>
+          </label>
+        </div>
+
+        <div class="ai-pref-row">
+          <div class="ai-pref-info">
+            <h5>Study & Task Support</h5>
+            <p>Help breaking assignments into manageable steps</p>
+          </div>
+          <label class="ai-pref-toggle">
+            <input type="checkbox" id="prefStudySupport" checked />
+            <span class="ai-pref-slider"></span>
+          </label>
+        </div>
+
+        <div class="ai-pref-row">
+          <div class="ai-pref-info">
+            <h5>Emotional Support & Empathy</h5>
+            <p>Active listening and safe emotional validation</p>
+          </div>
+          <label class="ai-pref-toggle">
+            <input type="checkbox" id="prefEmotionalSupport" checked />
+            <span class="ai-pref-slider"></span>
+          </label>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:16px 0;" />
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h5 style="margin:0; font-size:13px; font-weight:700; color:var(--text-dark);">Clear Conversation</h5>
+            <p style="margin:2px 0 0; font-size:11px; color:var(--text-muted);">Reset chat history with AI Assistant</p>
+          </div>
+          <button type="button" class="btn-cancel" id="clearAiChatBtn" style="height:34px; padding:0 12px; font-size:12px; border-color:#ef4444; color:#ef4444;">
+            <i class="fas fa-trash-can" style="margin-right:4px;"></i> Clear
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:12px 20px;">
+        <button type="button" class="btn-save" id="saveAiPreferencesBtn" style="width:100%; height:42px; border-radius:var(--radius-full);">Save Preferences</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Options Sheet -->
+  <div class="modal-overlay" id="chatOptionsMenu">
+    <div class="post-menu-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header" style="border:none; padding-bottom: 8px;">
+        <span class="modal-title">Chat Options</span>
+        <button class="modal-close" id="closeChatOptionsBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="post-menu-list">
+        <button class="post-menu-item" id="menuReportUserBtn">
+          <i class="fa-regular fa-flag" style="color:var(--primary);"></i>
+          <span>Report User</span>
+        </button>
+        <button class="post-menu-item danger" id="menuBlockUserBtn">
+          <i class="fa-solid fa-ban" style="color:#ef4444;"></i>
+          <span>Block User</span>
+        </button>
+        <button class="post-menu-item danger" id="menuClearChatBtn">
+          <i class="fa-regular fa-trash-can"></i>
+          <span>Clear Conversation</span>
+        </button>
+      </div>
+      <div style="padding: 8px 16px 16px;">
+        <button type="button" class="btn-cancel" id="cancelChatOptionsBtn" style="width:100%; text-align:center;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report User Modal -->
+  <div class="modal-overlay" id="reportUserModal">
+    <div class="modal-card" style="max-width: 440px; width: 92%;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;" id="reportUserModalTitle">
+          <i class="fa-regular fa-flag" style="color:var(--primary);"></i>
+          <span>Report User</span>
+        </div>
+        <button type="button" class="modal-close" id="closeReportUserModalBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="reportUserModalBody" style="padding: 16px 20px;">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Safety Alert Modal for Flagged Chat Messages -->
+  <div class="ai-warning-modal-overlay" id="aiWarningModal">
+    <div class="ai-warning-card">
+      <div class="ai-warning-icon-wrap">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <div class="ai-warning-title">Safe Space Advisory</div>
+      <div class="ai-warning-category-pill" id="aiWarningCategory">FLAGGED CONTENT</div>
+      <div class="ai-warning-desc" id="aiWarningReason">
+        Your message was flagged by our automated safety shield for containing potentially harmful or inappropriate language.
+      </div>
+      <div class="ai-warning-guidance" id="aiWarningGuidance">
+        Safe Space is an empathetic, supportive platform. Please edit your message to ensure respect, empathy, and psychological safety for all community members.
+      </div>
+      <div class="ai-warning-actions">
+        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn">Edit Message</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/ai-service.js"></script>
+  <script src="js/ai-chatbot.js"></script>
+  <script src="js/cute-avatars.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
+  <script>
+    let currentUser = null;
+    let allMembers = [];
+    let conversations = [];
+    let activeChatUser = null;
+    let messageUnsubscribe = null;
+    let inboxUnsubscribe = null;
+    let searchDebounceTimer = null;
+    let threadOldestMessageTime = null;
+    let hasMoreOlderMessages = false;
+    let isLoadingOlderMessages = false;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        currentUser = await requireAuth();
+        if (!currentUser) {
+          hidePageLoader();
+          return;
+        }
+
+        setupSearch();
+        setupThread();
+        setupInboxSubscription();
+        
+        // Load initial chat data without blocking page transition
+        await loadInitialData();
+      } catch (err) {
+        console.error('[Chat] Initialization error:', err);
+      } finally {
+        hidePageLoader();
+      }
+
+      // Check if URL specifies a user to chat with (?user=userId)
+      const params = new URLSearchParams(window.location.search);
+      const targetUserId = params.get('user');
+      if (targetUserId) {
+        let targetMember = allMembers.find(m => m.id === targetUserId);
+        if (!targetMember) {
+          try {
+            const all = await SafeSpaceDB.community.getMembers();
+            targetMember = all.find(m => m.id === targetUserId);
+          } catch (e) {}
+        }
+        if (targetMember) {
+          openThread(targetMember);
+        }
+      }
+    });
+
+    function setupInboxSubscription() {
+      if (SafeSpaceDB.messages && SafeSpaceDB.messages.subscribeToInbox) {
+        inboxUnsubscribe = SafeSpaceDB.messages.subscribeToInbox((incomingMsg) => {
+          handleIncomingGlobalMessage(incomingMsg);
+        });
+      }
+    }
+
+    function handleIncomingGlobalMessage(msg) {
+      if (!msg) return;
+      const otherUserId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
+      if (!otherUserId) return;
+
+      // 1. If currently chatting with this user:
+      if (activeChatUser && activeChatUser.id === otherUserId) {
+        if (msg.sender_id === activeChatUser.id) {
+          SafeSpaceDB.messages.markAsRead(activeChatUser.id).catch(() => {});
+        }
+      } else {
+        // 2. Thread is NOT open: if message is from the other user, increase unread badge
+        if (msg.sender_id !== currentUser.id) {
+          const convo = conversations.find(c => (c.user_id || (c.contact && c.contact.id)) === otherUserId);
+          if (convo) {
+            convo.last_message = msg.message;
+            convo.last_message_at = msg.created_at;
+            convo.unread_count = (convo.unread_count || 0) + 1;
+            renderRecentConversations();
+          } else {
+            refreshChatData();
+          }
+        }
+      }
+    }
+
+    async function loadInitialData() {
+      try {
+        if (SafeSpaceDB.users && SafeSpaceDB.users.updateLastActive) {
+          SafeSpaceDB.users.updateLastActive().catch(() => {});
+        }
+        await refreshChatData();
+      } catch (err) {
+        console.error('[SafeSpace] Error loading initial chat data:', err);
+      }
+    }
+
+    async function refreshChatData() {
+      try {
+        const [eligibleMembers, convos] = await Promise.all([
+          SafeSpaceDB.community.getFindPeopleUsers(),
+          SafeSpaceDB.messages.getConversations(25)
+        ]);
+        allMembers = eligibleMembers || [];
+        conversations = convos || [];
+
+        renderRecentConversations();
+
+        const searchInput = document.getElementById('chatSearchInput');
+        const q = searchInput ? searchInput.value.trim() : '';
+        if (q) {
+          const filtered = await SafeSpaceDB.community.getFindPeopleUsers(q);
+          renderFindPeople(filtered);
+        } else {
+          renderFindPeople(allMembers);
+        }
+      } catch (err) {
+        console.error('[SafeSpace] Error refreshing chat data:', err);
+      }
+    }
+
+    function setupSearch() {
+      const input = document.getElementById('chatSearchInput');
+      input.addEventListener('input', (e) => {
+        clearTimeout(searchDebounceTimer);
+        const q = e.target.value.trim();
+        searchDebounceTimer = setTimeout(async () => {
+          try {
+            const filtered = await SafeSpaceDB.community.getFindPeopleUsers(q);
+            renderFindPeople(filtered);
+          } catch (err) {
+            console.error(err);
+          }
+        }, 220);
+      });
+
+      document.getElementById('openAddPersonBtn').addEventListener('click', () => {
+        input.focus();
+      });
+    }
+
+    function renderRecentConversations() {
+      const container = document.getElementById('recentConversationsContainer');
+      const countEl = document.getElementById('recentCount');
+      countEl.textContent = conversations.length + 1; // +1 for AI bot
+
+      // Check for recent AI chat message
+      let aiPreview = 'Talk about school, stress, motivation & more';
+      try {
+        const history = window.AIChatbot && currentUser ? AIChatbot.loadChatHistory(currentUser.id) : [];
+        if (history && history.length > 0) {
+          const last = history[history.length - 1];
+          if (last && last.message) {
+            aiPreview = (last.sender_id === 'safe-space-ai-bot' ? 'Assistant: ' : 'You: ') + last.message.replace(/\*\*|📖|💜/g, '').replace(/<[^>]+>/g, '').trim().substring(0, 48) + '...';
+          }
+        }
+      } catch (e) {}
+
+      // Always include AI Student Assistant
+      const aiAssistantCard = `
+        <div class="conversation-item" onclick="handleOpenAiAssistant()" style="background:rgba(108, 79, 209, 0.05); border-left:3px solid var(--primary); margin-bottom:8px;">
+          <div class="avatar-wrapper">
+            <div class="conversation-avatar" style="background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; border-radius:50%; width:100%; height:100%;">
+              <i class="fas fa-robot" style="font-size:20px;"></i>
+            </div>
+            <span class="online-status" id="aiBotDot"></span>
+          </div>
+          <div class="conversation-info">
+            <div class="conversation-name" style="font-weight:800; color:var(--primary); display:flex; align-items:center; gap:6px;">
+              Safe Space AI Assistant
+              <span style="font-size:10px; background:var(--primary-light); color:var(--primary); padding:2px 6px; border-radius:999px;">24/7 BOT</span>
+            </div>
+            <div class="conversation-preview" id="aiBotStatusPreview">${escapeHTML(aiPreview)}</div>
+          </div>
+          <div class="conversation-meta">
+            <span class="conversation-time">Always on</span>
+          </div>
+        </div>
+      `;
+
+      if (conversations.length === 0) {
+        container.innerHTML = aiAssistantCard + `
+          <div class="empty-state" style="padding:24px 16px;">
+            <i class="fa-regular fa-comment-dots" style="font-size: 42px;"></i>
+            <h3 style="font-size:15px; margin-top:8px;">No peer messages yet</h3>
+            <p style="font-size:13px;">Chat with our AI Assistant above or search for a student below.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = aiAssistantCard + conversations.map(c => {
+        const uid = c.user_id || (c.contact && c.contact.id);
+        const uname = c.username || (c.contact && c.contact.username) || 'User';
+        const uavatar = c.avatar_url || (c.contact && c.contact.avatar_url);
+        const lastMsg = c.last_message || (c.lastMessage) || 'Tap to chat';
+        const lastTime = c.last_message_at || c.lastMessageTime;
+        let unread = c.unread_count || 0;
+        if (activeChatUser && (uid === activeChatUser.id)) {
+          unread = 0;
+        }
+        const isOnline = (c.is_online !== undefined)
+          ? c.is_online
+          : (c.contact && c.contact.is_online !== undefined ? c.contact.is_online : SafeSpaceDB.users.isOnline(c));
+
+        const avatarInnerHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(c.contact || c, { alt: uname, className: 'user-avatar' })
+          : (uavatar
+              ? `<img src="${escapeHTML(uavatar)}" class="user-avatar" alt="${escapeHTML(uname)}" loading="lazy" />`
+              : `<div class="conversation-avatar"><i class="fas fa-user"></i></div>`);
+
+        return `
+          <div class="conversation-item" id="convo-item-${uid}" onclick="handleOpenChatById('${uid}')">
+            <div class="avatar-wrapper">
+              ${avatarInnerHtml}
+              ${isOnline ? '<span class="online-status"></span>' : ''}
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-name">${escapeHTML(uname)}</div>
+              <div class="conversation-preview" id="convo-preview-${uid}">${escapeHTML(lastMsg)}</div>
+            </div>
+            <div class="conversation-meta">
+              <span class="conversation-time">${formatRelativeTime(lastTime)}</span>
+              ${unread > 0 ? `<span class="unread-badge" id="unread-badge-${uid}">${unread}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFindPeople(members) {
+      const container = document.getElementById('findContactsContainer');
+      const countEl = document.getElementById('contactsCount');
+      countEl.textContent = members.length;
+
+      if (members.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="padding: 28px 16px;">
+            <i class="fa-regular fa-compass" style="font-size: 42px; margin-bottom: 8px;"></i>
+            <h3 style="font-size: 15px; margin-bottom: 4px;">No new people to chat with yet</h3>
+            <p style="font-size: 13px;">You're all caught up! Everyone available is already connected with you.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = members.map(m => {
+        const isOnline = (m.is_online !== undefined) ? m.is_online : SafeSpaceDB.users.isOnline(m);
+        const avatarInnerHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(m, { alt: m.username, className: 'user-avatar' })
+          : (m.avatar_url
+              ? `<img src="${escapeHTML(m.avatar_url)}" class="user-avatar" alt="${escapeHTML(m.username)}" />`
+              : `<div class="member-avatar"><i class="fas fa-user"></i></div>`);
+
+        return `
+          <div class="member-card" style="cursor:pointer;" onclick="handleOpenChatById('${m.id}')">
+            <div class="avatar-wrapper">
+              ${avatarInnerHtml}
+              ${isOnline ? '<span class="online-status"></span>' : ''}
+            </div>
+            <div class="member-info">
+              <div class="member-name">${escapeHTML(m.username || 'Member')}</div>
+              <div class="member-bio">${escapeHTML(m.bio || 'Safe Space Member')}</div>
+            </div>
+            <button class="btn-add" style="pointer-events:none;">Message</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleOpenChatById(userId) {
+      if (userId === 'safe-space-ai-bot') {
+        handleOpenAiAssistant();
+        return;
+      }
+
+      // Check if conversation already exists in recent conversations to prevent duplicate threads
+      const existingConvo = conversations.find(c => {
+        const cid = c.user_id || (c.contact && c.contact.id);
+        return cid === userId;
+      });
+
+      if (existingConvo) {
+        const contact = existingConvo.contact || {
+          id: existingConvo.user_id,
+          username: existingConvo.username,
+          avatar_url: existingConvo.avatar_url,
+          is_online: existingConvo.is_online
+        };
+        openThread(contact);
+        return;
+      }
+
+      // Otherwise look up member in all eligible members or fetch profile
+      let member = allMembers.find(m => m.id === userId);
+      if (!member) {
+        try {
+          const all = await SafeSpaceDB.community.getMembers();
+          member = all.find(m => m.id === userId);
+        } catch (e) {}
+      }
+      if (!member) {
+        member = { id: userId, username: 'User' };
+      }
+      openThread(member);
+    }
+    window.handleOpenChatById = handleOpenChatById;
+
+    function setupThread() {
+      const overlay = document.getElementById('chatThreadOverlay');
+      const closeBtn = document.getElementById('closeThreadBtn');
+      const sendBtn = document.getElementById('sendMessageBtn');
+      const input = document.getElementById('chatMessageInput');
+
+      closeBtn.addEventListener('click', () => {
+        if (messageUnsubscribe) {
+          messageUnsubscribe();
+          messageUnsubscribe = null;
+        }
+        overlay.classList.remove('open');
+        const placeholder = document.getElementById('chatDesktopPlaceholder');
+        if (placeholder) placeholder.style.display = '';
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        const text = input.value.trim();
+        if (!text || !activeChatUser) return;
+
+        // Run AI Content Moderation before sending
+        if (window.AIService && !activeChatUser.isAi) {
+          sendBtn.disabled = true;
+          try {
+            const aiCheck = await window.AIService.moderate(text);
+            if (!aiCheck.allowed || aiCheck.status === 'BLOCKED' || (aiCheck.status === 'REVIEW' && aiCheck.category !== 'SAFE')) {
+              sendBtn.disabled = false;
+              showChatAiWarningModal(aiCheck, text);
+              return;
+            }
+          } catch (mErr) {
+            console.warn('[Chat] Moderation error, allowing send:', mErr);
+          }
+          sendBtn.disabled = false;
+        }
+
+        input.value = '';
+        const tempMsgId = 'msg-' + Date.now();
+        const userMsg = {
+          id: tempMsgId,
+          message: text,
+          sender_id: currentUser.id,
+          created_at: new Date().toISOString(),
+          is_deleted: false,
+          reactions: []
+        };
+        appendMessageBubble(userMsg);
+
+        // If talking to the AI Assistant
+        if (activeChatUser.isAi) {
+          handleAiBotResponse(text);
+          return;
+        }
+
+        try {
+          const sent = await SafeSpaceDB.messages.sendMessage(activeChatUser.id, text);
+          if (sent && sent.id) {
+            // Update wrapper id
+            const el = document.getElementById(`msg-wrap-${tempMsgId}`);
+            if (el) el.id = `msg-wrap-${sent.id}`;
+          }
+          // Dynamically refresh conversations & Find People list so messaged user immediately moves
+          refreshChatData();
+        } catch (err) {
+          const el = document.getElementById(`msg-wrap-${tempMsgId}`);
+          if (el) {
+            el.style.opacity = '0.75';
+            const retrySpan = document.createElement('div');
+            retrySpan.style.cssText = 'font-size:11px; color:var(--text-danger); margin-top:4px; cursor:pointer; text-align:right;';
+            retrySpan.innerHTML = '<i class="fas fa-circle-exclamation"></i> Failed to send. <span style="text-decoration:underline; font-weight:700;">Retry</span>';
+            retrySpan.onclick = () => {
+              retrySpan.remove();
+              el.remove();
+              input.value = text;
+              sendBtn.click();
+            };
+            el.appendChild(retrySpan);
+          }
+          showToast('Failed to send message. Tap to retry.', 'error');
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendBtn.click();
+      });
+
+      setupAiPreferencesModal();
+      setupChatReporting();
+    }
+
+    // AI Warning Modal Helper for Chat
+    let lastFlaggedChatText = '';
+    function showChatAiWarningModal(aiResult, text) {
+      lastFlaggedChatText = text || '';
+      const modal = document.getElementById('aiWarningModal');
+      const catEl = document.getElementById('aiWarningCategory');
+      const reasonEl = document.getElementById('aiWarningReason');
+      const guidEl = document.getElementById('aiWarningGuidance');
+      if (!modal) return;
+
+      const categoryName = (aiResult.category || 'HARASSMENT').replace(/_/g, ' ').toUpperCase();
+      const confidencePct = aiResult.confidence ? Math.round(aiResult.confidence * 100) : 85;
+      if (catEl) catEl.textContent = `FLAGGED: ${categoryName} (${confidencePct}% CONFIDENCE)`;
+
+      if (reasonEl) {
+        reasonEl.textContent = 'Your message may violate the Safe Space community guidelines. Please review and revise your message before sending.';
+      }
+      if (guidEl) {
+        if (aiResult.category === 'SELF_HARM' || aiResult.category === 'ENCOURAGEMENT_OF_SELF_HARM') {
+          guidEl.textContent = 'We care deeply about your emotional and physical well-being. If you are experiencing distress, please reach out to trusted guidance personnel.';
+        } else if (aiResult.category === 'THREAT' || aiResult.category === 'VIOLENCE') {
+          guidEl.textContent = 'Threats of violence, physical harm, or intimidation are strictly forbidden in Safe Space chats.';
+        } else if (aiResult.category === 'HARASSMENT' || aiResult.category === 'BULLYING') {
+          guidEl.textContent = 'Personal insults, demeaning attacks, or targeted harassment are not allowed. Please keep your message respectful and kind.';
+        } else if (aiResult.category === 'SEXUAL_HARASSMENT' || aiResult.category === 'SEXUAL_CONTENT') {
+          guidEl.textContent = 'Explicit sexual content and unwanted sexual remarks are strictly prohibited on Safe Space.';
+        } else if (aiResult.category === 'HATE' || aiResult.category === 'DISCRIMINATION') {
+          guidEl.textContent = 'Hate speech and discriminatory attacks against identities or groups are strictly prohibited.';
+        } else {
+          guidEl.textContent = 'Safe Space encourages empathy, mutual respect, and positive communication between students.';
+        }
+      }
+
+      modal.classList.add('open');
+    }
+
+    // Wire Warning Modal Close Button
+    document.addEventListener('DOMContentLoaded', () => {
+      const closeWarnBtn = document.getElementById('aiCloseWarningBtn');
+      if (closeWarnBtn) {
+        closeWarnBtn.addEventListener('click', () => {
+          const modal = document.getElementById('aiWarningModal');
+          if (modal) modal.classList.remove('open');
+          const input = document.getElementById('chatMessageInput');
+          if (input) {
+            input.value = lastFlaggedChatText;
+            input.focus();
+          }
+        });
+      }
+    });
+
+    // AI Assistant Bot Logic (Online + Offline Fallback)
+    function handleOpenAiAssistant() {
+      const aiUser = {
+        id: 'safe-space-ai-bot',
+        username: 'Safe Space AI Assistant',
+        avatar_url: null,
+        isAi: true
+      };
+      openThread(aiUser);
+    }
+    window.handleOpenAiAssistant = handleOpenAiAssistant;
+
+    window.sendAiQuickMessage = function(text) {
+      const input = document.getElementById('chatMessageInput');
+      if (input) {
+        input.value = text;
+        const sendBtn = document.getElementById('sendMessageBtn');
+        if (sendBtn) sendBtn.click();
+      }
+    };
+
+    async function handleAiBotResponse(userPrompt) {
+      const container = document.getElementById('threadMessagesContainer');
+
+      // Remove existing quick actions bar once user starts chatting
+      const quickBar = document.getElementById('aiQuickActionsBar');
+      if (quickBar) quickBar.remove();
+
+      // Realistic typing indicator with 3 pulsing dots
+      const typingBubble = document.createElement('div');
+      typingBubble.className = 'message-bubble-wrapper received';
+      typingBubble.id = 'aiTypingIndicator';
+      typingBubble.innerHTML = `
+        <div class="ai-typing-indicator">
+          <span class="ai-typing-dot"></span>
+          <span class="ai-typing-dot"></span>
+          <span class="ai-typing-dot"></span>
+          <span style="margin-left: 6px; font-weight: 500;">Safe Space AI Assistant is typing...</span>
+        </div>
+      `;
+      container.appendChild(typingBubble);
+      scrollThreadToBottom();
+
+      try {
+        const reply = await AIChatbot.generateResponse(userPrompt, currentUser ? currentUser.id : null);
+        const delay = Math.max(500, Math.min(850, (reply.text || '').length * 3));
+
+        setTimeout(() => {
+          const typingEl = document.getElementById('aiTypingIndicator');
+          if (typingEl) typingEl.remove();
+
+          const botMsg = {
+            id: 'bot-msg-' + Date.now(),
+            sender_id: 'safe-space-ai-bot',
+            message: reply.text,
+            created_at: new Date().toISOString(),
+            is_deleted: false,
+            reactions: []
+          };
+          appendMessageBubble(botMsg);
+
+          // Save to persistent AI chat history
+          if (currentUser) {
+            const history = AIChatbot.loadChatHistory(currentUser.id);
+            history.push({
+              id: 'user-msg-' + Date.now(),
+              sender_id: currentUser.id,
+              message: userPrompt,
+              created_at: new Date().toISOString(),
+              is_deleted: false,
+              reactions: []
+            });
+            history.push(botMsg);
+            AIChatbot.saveChatHistory(currentUser.id, history);
+          }
+          scrollThreadToBottom();
+        }, delay);
+      } catch (err) {
+        console.error('[SafeSpace AI] Error generating response:', err);
+        const typingEl = document.getElementById('aiTypingIndicator');
+        if (typingEl) typingEl.remove();
+
+        const fallbackMsg = {
+          id: 'bot-msg-' + Date.now(),
+          sender_id: 'safe-space-ai-bot',
+          message: "I'm here with you. What you're experiencing is important. Could you tell me a little more about what's going on?",
+          created_at: new Date().toISOString(),
+          is_deleted: false,
+          reactions: []
+        };
+        appendMessageBubble(fallbackMsg);
+        scrollThreadToBottom();
+      }
+    }
+
+    function formatDisplayName(name, fallback) {
+      if (!name) return fallback || 'Member';
+      let clean = String(name).trim();
+      if (clean.includes('@')) {
+        clean = clean.split('@')[0];
+      }
+      return clean || fallback || 'Member';
+    }
+
+    function setupAiPreferencesModal() {
+      const menuBtn = document.getElementById('threadMenuBtn');
+      const modal = document.getElementById('aiPreferencesModalOverlay');
+      const closeBtn = document.getElementById('closeAiPreferencesBtn');
+      const saveBtn = document.getElementById('saveAiPreferencesBtn');
+      const clearBtn = document.getElementById('clearAiChatBtn');
+
+      if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+          if (!activeChatUser) return;
+          if (activeChatUser.isAi) {
+            const prefs = AIChatbot.getPreferences(currentUser ? currentUser.id : null);
+            const motEl = document.getElementById('prefMotivationalMsgs');
+            const bibEl = document.getElementById('prefBibleVerses');
+            const stuEl = document.getElementById('prefStudySupport');
+            const emoEl = document.getElementById('prefEmotionalSupport');
+            if (motEl) motEl.checked = Boolean(prefs.motivationalMessages);
+            if (bibEl) bibEl.checked = Boolean(prefs.bibleVerseSuggestions);
+            if (stuEl) stuEl.checked = Boolean(prefs.studySupport);
+            if (emoEl) emoEl.checked = Boolean(prefs.emotionalSupport);
+            modal.classList.add('open');
+          } else {
+            // Open contextual chat options menu (Report User / Block User / Cancel)
+            openChatOptionsMenu();
+          }
+        });
+      }
+
+      if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          const newPrefs = {
+            motivationalMessages: Boolean(document.getElementById('prefMotivationalMsgs') && document.getElementById('prefMotivationalMsgs').checked),
+            bibleVerseSuggestions: Boolean(document.getElementById('prefBibleVerses') && document.getElementById('prefBibleVerses').checked),
+            studySupport: Boolean(document.getElementById('prefStudySupport') && document.getElementById('prefStudySupport').checked),
+            emotionalSupport: Boolean(document.getElementById('prefEmotionalSupport') && document.getElementById('prefEmotionalSupport').checked)
+          };
+          AIChatbot.savePreferences(currentUser ? currentUser.id : null, newPrefs);
+          modal.classList.remove('open');
+          showToast('Support preferences updated! 💜', 'success');
+        });
+      }
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          if (confirm('Clear your conversation history with Safe Space AI Assistant?')) {
+            AIChatbot.clearChatHistory(currentUser ? currentUser.id : null);
+            modal.classList.remove('open');
+            handleOpenAiAssistant();
+            showToast('Conversation cleared', 'info');
+          }
+        });
+      }
+    }
+
+    // Contextual Chat Reporting & Options
+    function setupChatReporting() {
+      const optionsModal = document.getElementById('chatOptionsMenu');
+      const closeOptionsBtn = document.getElementById('closeChatOptionsBtn');
+      const cancelOptionsBtn = document.getElementById('cancelChatOptionsBtn');
+      const reportUserBtn = document.getElementById('menuReportUserBtn');
+      const blockUserBtn = document.getElementById('menuBlockUserBtn');
+      const clearChatBtn = document.getElementById('menuClearChatBtn');
+
+      const reportModal = document.getElementById('reportUserModal');
+      const closeReportBtn = document.getElementById('closeReportUserModalBtn');
+
+      if (closeOptionsBtn) closeOptionsBtn.addEventListener('click', () => optionsModal.classList.remove('open'));
+      if (cancelOptionsBtn) cancelOptionsBtn.addEventListener('click', () => optionsModal.classList.remove('open'));
+      if (optionsModal) {
+        optionsModal.addEventListener('click', (e) => {
+          if (e.target === optionsModal) optionsModal.classList.remove('open');
+        });
+      }
+
+      if (closeReportBtn) closeReportBtn.addEventListener('click', () => reportModal.classList.remove('open'));
+      if (reportModal) {
+        reportModal.addEventListener('click', (e) => {
+          if (e.target === reportModal) reportModal.classList.remove('open');
+        });
+      }
+
+      if (reportUserBtn) {
+        reportUserBtn.addEventListener('click', () => {
+          optionsModal.classList.remove('open');
+          openReportUserModal();
+        });
+      }
+
+      if (blockUserBtn) {
+        blockUserBtn.addEventListener('click', async () => {
+          if (!activeChatUser) return;
+          const uname = activeChatUser.username || 'this user';
+          if (confirm(`Are you sure you want to block ${uname}? You will no longer receive messages from them.`)) {
+            try {
+              await SafeSpaceDB.users.blockUser(activeChatUser.id);
+              optionsModal.classList.remove('open');
+              showToast(`${uname} has been blocked`, 'info');
+              const overlay = document.getElementById('chatThreadOverlay');
+              if (overlay) overlay.classList.remove('open');
+              await refreshChatData();
+            } catch (err) {
+              showToast('Failed to block user', 'error');
+            }
+          }
+        });
+      }
+
+      if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', async () => {
+          if (!activeChatUser) return;
+          optionsModal.classList.remove('open');
+          const targetName = activeChatUser.username || 'this user';
+          if (confirm(`Are you sure you want to clear your conversation with ${targetName}?`)) {
+            try {
+              await SafeSpaceDB.messages.clearConversation(activeChatUser.id);
+              const container = document.getElementById('threadMessagesContainer');
+              if (container) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px 16px; color: var(--text-muted); font-size: 13px;">Conversation cleared.</div>';
+              }
+              showToast('Conversation cleared.', 'info');
+              await refreshChatData();
+            } catch (err) {
+              showToast('Failed to clear conversation', 'error');
+            }
+          }
+        });
+      }
+    }
+
+    function openChatOptionsMenu() {
+      const modal = document.getElementById('chatOptionsMenu');
+      if (modal) modal.classList.add('open');
+    }
+
+    function openReportUserModal() {
+      if (!activeChatUser) return;
+      const modal = document.getElementById('reportUserModal');
+      const modalTitle = document.getElementById('reportUserModalTitle');
+      const modalBody = document.getElementById('reportUserModalBody');
+      if (!modal || !modalBody) return;
+
+      if (modalTitle) {
+        modalTitle.innerHTML = `
+          <i class="fa-regular fa-flag" style="color:var(--primary);"></i>
+          <span>Report User</span>
+        `;
+      }
+
+      const targetUsername = activeChatUser.username || 'User';
+      const targetDisplayName = formatDisplayName(activeChatUser.username, 'User');
+      const targetHandle = `@${(activeChatUser.username || 'user').toLowerCase().replace(/\s+/g, '')}`;
+      const avatarHtml = window.SafeSpaceAvatars
+        ? window.SafeSpaceAvatars.renderHtml(activeChatUser, { alt: targetUsername, className: 'user-avatar' })
+        : (activeChatUser.avatar_url
+            ? `<img src="${escapeHTML(activeChatUser.avatar_url)}" alt="${escapeHTML(targetUsername)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`
+            : `<i class="fas fa-user"></i>`);
+
+      modalBody.innerHTML = `
+        <p style="font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 8px;">
+          You are reporting:
+        </p>
+        <div class="user-report-target-card">
+          <div class="user-report-target-avatar">
+            ${avatarHtml}
+          </div>
+          <div class="user-report-target-info">
+            <div class="user-report-target-name">${escapeHTML(targetDisplayName)}</div>
+            <div class="user-report-target-handle">${escapeHTML(targetHandle)}</div>
+          </div>
+        </div>
+
+        <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 12px 0 8px;">
+          Why are you reporting this?
+        </p>
+        <div class="report-options-list" id="userReportReasonList">
+          <label class="report-radio-option">
+            <input type="radio" name="userReportReason" value="Bullying or harassment" checked />
+            <span>Bullying or harassment</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="userReportReason" value="Hate or discrimination" />
+            <span>Hate or discrimination</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="userReportReason" value="Threatening behavior" />
+            <span>Threatening behavior</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="userReportReason" value="Inappropriate content" />
+            <span>Inappropriate content</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="userReportReason" value="Spam" />
+            <span>Spam</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="userReportReason" value="Self-harm concern" />
+            <span>Self-harm concern</span>
+          </label>
+          <label class="report-radio-option">
+            <input type="radio" name="userReportReason" value="Other" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div style="margin: 16px 0;">
+          <label for="userReportDetails" style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+            Additional details
+          </label>
+          <textarea
+            id="userReportDetails"
+            class="report-textarea"
+            rows="3"
+            placeholder="Provide any additional context (optional)..."
+            style="width:100%; box-sizing:border-box;"
+          ></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn-cancel" id="cancelReportUserBtn">Cancel</button>
+          <button type="button" class="btn-submit-action" id="submitReportUserBtn">Submit Report</button>
+        </div>
+      `;
+
+      const cancelBtn = document.getElementById('cancelReportUserBtn');
+      const submitBtn = document.getElementById('submitReportUserBtn');
+
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener('click', async () => {
+          const selectedRadio = modalBody.querySelector('input[name="userReportReason"]:checked');
+          const reason = selectedRadio ? selectedRadio.value : 'Other';
+          const detailsInput = document.getElementById('userReportDetails');
+          const details = detailsInput ? detailsInput.value.trim() : '';
+
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+          try {
+            await SafeSpaceDB.reports.createReport({
+              reporter_id: currentUser.id,
+              reported_user_id: activeChatUser.id,
+              conversation_id: activeChatUser.id,
+              reason: reason,
+              report_type: reason,
+              details: details,
+              description: details,
+              status: 'Pending'
+            });
+
+            // Confirmation View
+            modalBody.innerHTML = `
+              <div style="text-align:center; padding: 24px 16px;">
+                <div style="width:56px; height:56px; border-radius:50%; background:rgba(34, 197, 94, 0.12); color:#22c55e; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 16px;">
+                  <i class="fas fa-check"></i>
+                </div>
+                <h3 style="font-size:17px; font-weight:700; color:var(--text-dark); margin-bottom:8px;">Report Submitted</h3>
+                <p style="font-size:14px; color:var(--text-mid); line-height:1.5; margin-bottom:20px;">
+                  Thank you. Your report has been submitted for review.
+                </p>
+                <button type="button" class="btn-submit-action" id="doneReportUserBtn" style="min-width:120px; padding:10px 24px;">Done</button>
+              </div>
+            `;
+
+            const doneBtn = document.getElementById('doneReportUserBtn');
+            if (doneBtn) {
+              doneBtn.addEventListener('click', () => modal.classList.remove('open'));
+            }
+            showToast('Report submitted.', 'success');
+          } catch (err) {
+            console.error('Failed to submit report:', err);
+            showToast('Something went wrong. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Submit Report';
+          }
+        });
+      }
+
+      modal.classList.add('open');
+    }
+
+    async function openThread(member) {
+      activeChatUser = member;
+      const overlay = document.getElementById('chatThreadOverlay');
+      document.getElementById('threadUsername').textContent = member.username || 'User';
+
+      const isOnline = (member.isAi || member.id === 'safe-space-ai-bot')
+        ? true
+        : ((member.is_online !== undefined) ? member.is_online : SafeSpaceDB.users.isOnline(member));
+
+      const avatarContainer = document.getElementById('threadAvatar');
+      avatarContainer.innerHTML = member.isAi
+        ? `<div style="width:100%;height:100%;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="fas fa-robot"></i></div>`
+        : (window.SafeSpaceAvatars
+            ? window.SafeSpaceAvatars.renderHtml(member, { alt: member.username || 'User', className: 'user-avatar' })
+            : (member.avatar_url
+                ? `<img src="${escapeHTML(member.avatar_url)}" alt="" class="user-avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`
+                : `<i class="fas fa-user"></i>`));
+
+      const statusDot = document.getElementById('threadOnlineStatus');
+      if (statusDot) {
+        statusDot.style.display = isOnline ? 'block' : 'none';
+      }
+
+      const statusEl = document.getElementById('threadStatus');
+      const offlineBanner = document.getElementById('aiOfflineBanner');
+
+      if (member.isAi) {
+        statusEl.innerHTML = '<span style="color:#22c55e;">●</span> Online • AI Assistant';
+        offlineBanner.style.display = 'flex';
+
+        // Check connection & live AI backend
+        const isConnOnline = navigator.onLine;
+        if (isConnOnline) {
+          if (window.AIService) {
+            AIService.checkStatus().then(status => {
+              if (status && status.online) {
+                offlineBanner.className = 'ai-offline-banner online';
+                document.getElementById('aiOfflineBannerText').innerHTML = '🟢 AI Moderation Online – Connected (BART + RoBERTa).';
+                document.getElementById('aiOfflineBannerTag').textContent = 'ONLINE';
+              } else {
+                offlineBanner.className = 'ai-offline-banner fallback';
+                document.getElementById('aiOfflineBannerText').innerHTML = '🛡️ Safety Fallback Active – Multilingual Safe Space Support.';
+                document.getElementById('aiOfflineBannerTag').textContent = 'SHIELD';
+              }
+            }).catch(() => {});
+          } else {
+            offlineBanner.className = 'ai-offline-banner fallback';
+            document.getElementById('aiOfflineBannerText').innerHTML = '🛡️ Safety Fallback Active – Multilingual Safe Space Support.';
+            document.getElementById('aiOfflineBannerTag').textContent = 'SHIELD';
+          }
+        } else {
+          offlineBanner.className = 'ai-offline-banner fallback';
+          document.getElementById('aiOfflineBannerText').innerHTML = '🛡️ Offline Mode – Local Safety Fallback Active.';
+          document.getElementById('aiOfflineBannerTag').textContent = 'OFFLINE';
+        }
+      } else {
+        offlineBanner.style.display = 'none';
+        if (isOnline) {
+          statusEl.innerHTML = '<span style="color:#22c55e;">●</span> Online';
+        } else {
+          statusEl.textContent = 'Offline';
+        }
+      }
+
+      const msgContainer = document.getElementById('threadMessagesContainer');
+      msgContainer.innerHTML = `
+        <div class="sk-bubble-wrapper left">
+          <div class="skeleton sk-bubble"></div>
+        </div>
+        <div class="sk-bubble-wrapper right">
+          <div class="skeleton sk-bubble"></div>
+        </div>
+        <div class="sk-bubble-wrapper left">
+          <div class="skeleton sk-bubble" style="width: 50%;"></div>
+        </div>
+      `;
+      overlay.classList.add('open');
+      const placeholder = document.getElementById('chatDesktopPlaceholder');
+      if (placeholder) placeholder.style.display = 'none';
+
+      if (messageUnsubscribe) {
+        messageUnsubscribe();
+        messageUnsubscribe = null;
+      }
+
+      if (!member.isAi) {
+        // Subscribe to real-time incoming messages for peers
+        messageUnsubscribe = SafeSpaceDB.messages.subscribeToMessages(member.id, (incomingMsg) => {
+          if (incomingMsg.sender_id === member.id) {
+            appendMessageBubble(incomingMsg);
+          }
+        });
+      }
+
+      try {
+        if (member.isAi) {
+          msgContainer.innerHTML = `
+            <div class="ai-thread-intro">
+              <div class="ai-thread-intro-icon"><i class="fas fa-robot"></i></div>
+              <h3>Safe Space AI Assistant</h3>
+              <div class="ai-subtitle">Automated Student Assistant</div>
+              <p>A supportive AI assistant for students. Talk about school, stress, relationships, motivation, or anything you'd like help with.</p>
+            </div>
+          `;
+
+          const savedHistory = AIChatbot.loadChatHistory(currentUser ? currentUser.id : null);
+          if (savedHistory && savedHistory.length > 0) {
+            savedHistory.forEach(msg => appendMessageBubble(msg));
+          } else {
+            // Initial friendly welcome message
+            const welcomeMsg = {
+              id: 'bot-msg-welcome',
+              sender_id: 'safe-space-ai-bot',
+              message: "**Hey! I'm your Safe Space AI Assistant. 💜**\n\nYou can talk to me about school, stress, motivation, relationships, or whatever's on your mind. What's going on?",
+              created_at: new Date().toISOString(),
+              is_deleted: false,
+              reactions: []
+            };
+            appendMessageBubble(welcomeMsg);
+
+            // Quick actions container
+            const quickActions = document.createElement('div');
+            quickActions.className = 'ai-quick-actions';
+            quickActions.id = 'aiQuickActionsBar';
+            quickActions.innerHTML = `
+              <button type="button" class="ai-quick-btn" onclick="sendAiQuickMessage('I\\'m stressed with school')">😫 I'm stressed</button>
+              <button type="button" class="ai-quick-btn" onclick="sendAiQuickMessage('I have so many assignments and don\\'t know where to start')">📚 Study help</button>
+              <button type="button" class="ai-quick-btn" onclick="sendAiQuickMessage('Give me some motivation')">💜 I need motivation</button>
+              <button type="button" class="ai-quick-btn" onclick="sendAiQuickMessage('Can you give me a Bible verse for stress?')">📖 Bible verse</button>
+              <button type="button" class="ai-quick-btn" onclick="sendAiQuickMessage('I just need someone to listen')">🎧 Just listen</button>
+            `;
+            msgContainer.appendChild(quickActions);
+
+            if (currentUser) {
+              AIChatbot.saveChatHistory(currentUser.id, [welcomeMsg]);
+            }
+          }
+          scrollThreadToBottom();
+          return;
+        } else {
+          const messages = await SafeSpaceDB.messages.getMessagesWith(member.id, { limit: 30 });
+          try {
+            await SafeSpaceDB.messages.markAsRead(member.id);
+            const unreadBadge = document.getElementById(`unread-badge-${member.id}`);
+            if (unreadBadge) unreadBadge.remove();
+            const convo = conversations.find(c => (c.user_id || (c.contact && c.contact.id)) === member.id);
+            if (convo) convo.unread_count = 0;
+          } catch (e) {
+            console.warn('[SafeSpace] Mark read notice:', e);
+          }
+          msgContainer.innerHTML = '';
+          if (!messages || messages.length === 0) {
+            threadOldestMessageTime = null;
+            hasMoreOlderMessages = false;
+            msgContainer.innerHTML = `
+              <div style="text-align:center; padding: 40px 16px; color: var(--text-muted); font-size: 13px;">
+                This is the beginning of your safe and encrypted chat with ${escapeHTML(member.username || 'User')}. Say hello! 👋
+              </div>
+            `;
+          } else {
+            threadOldestMessageTime = messages[0].created_at;
+            hasMoreOlderMessages = messages.length >= 30;
+            messages.forEach(msg => appendMessageBubble(msg));
+          }
+        }
+        scrollThreadToBottom();
+      } catch (err) {
+        msgContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-danger);">Failed to load messages</div>';
+      }
+    }
+    window.openThread = openThread;
+
+    // Upward scroll listener for loading older messages (Pagination)
+    const msgContainerEl = document.getElementById('threadMessagesContainer');
+    if (msgContainerEl) {
+      msgContainerEl.addEventListener('scroll', async () => {
+        if (msgContainerEl.scrollTop <= 20 && hasMoreOlderMessages && !isLoadingOlderMessages && activeChatUser && !activeChatUser.isAi) {
+          isLoadingOlderMessages = true;
+          const prevHeight = msgContainerEl.scrollHeight;
+          const prevTop = msgContainerEl.scrollTop;
+
+          try {
+            const older = await SafeSpaceDB.messages.getMessagesWith(activeChatUser.id, {
+              limit: 30,
+              before: threadOldestMessageTime
+            });
+
+            if (older && older.length > 0) {
+              threadOldestMessageTime = older[0].created_at;
+              hasMoreOlderMessages = older.length >= 30;
+              // Prepend in reverse order so oldest goes to the top
+              for (let i = older.length - 1; i >= 0; i--) {
+                appendMessageBubble(older[i], true);
+              }
+              // Preserve scroll position
+              msgContainerEl.scrollTop = (msgContainerEl.scrollHeight - prevHeight) + prevTop;
+            } else {
+              hasMoreOlderMessages = false;
+            }
+          } catch (err) {
+            console.warn('[SafeSpace] Error loading older messages:', err);
+          } finally {
+            isLoadingOlderMessages = false;
+          }
+        }
+      });
+    }
+
+    function appendMessageBubble(msg, prepend) {
+      if (!msg || !msg.id) return;
+      const container = document.getElementById('threadMessagesContainer');
+      if (!container) return;
+
+      // Duplicate prevention: avoid inserting same message twice
+      const existing = document.getElementById(`msg-wrap-${msg.id}`);
+      if (existing) {
+        return;
+      }
+
+      const isSent = msg.sender_id === currentUser.id;
+      const isDeleted = Boolean(msg.is_deleted);
+      const isBot = msg.sender_id === 'safe-space-ai-bot';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `message-bubble-wrapper ${isSent ? 'sent' : 'received'}`;
+      wrapper.id = `msg-wrap-${msg.id}`;
+
+      // Build reactions HTML
+      const reactions = Array.isArray(msg.reactions) ? msg.reactions : [];
+      const reactionCounts = {};
+      let userReacted = null;
+
+      reactions.forEach(r => {
+        const emoji = typeof r === 'string' ? r : r.reaction;
+        const uid = typeof r === 'object' ? r.user_id : null;
+        if (emoji) {
+          reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
+          if (uid === currentUser.id) userReacted = emoji;
+        }
+      });
+
+      let reactionPillsHtml = '';
+      for (const emoji in reactionCounts) {
+        const isActive = userReacted === emoji ? 'active' : '';
+        reactionPillsHtml += `
+          <button class="msg-reaction-pill ${isActive}" onclick="handleMessageReaction('${msg.id}', '${emoji}')">
+            <span>${emoji}</span> <span>${reactionCounts[emoji]}</span>
+          </button>
+        `;
+      }
+
+      // Actions (Delete button for own messages, Reaction button for all)
+      const actionHtml = isDeleted ? '' : `
+        <div class="message-hover-actions">
+          <button class="msg-action-btn" onclick="toggleReactionPicker('${msg.id}')" title="React">
+            <i class="fa-regular fa-face-smile"></i>
+          </button>
+          ${isSent && !isBot ? `
+            <button class="msg-action-btn danger" onclick="confirmDeleteMessage('${msg.id}')" title="Delete message">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          ` : ''}
+        </div>
+        <!-- Reaction Picker Popover -->
+        <div class="reaction-picker-bar" id="picker-${msg.id}">
+          <button type="button" class="reaction-emoji-btn" onclick="handleMessageReaction('${msg.id}', '❤️')">❤️</button>
+          <button type="button" class="reaction-emoji-btn" onclick="handleMessageReaction('${msg.id}', '👍')">👍</button>
+          <button type="button" class="reaction-emoji-btn" onclick="handleMessageReaction('${msg.id}', '😂')">😂</button>
+          <button type="button" class="reaction-emoji-btn" onclick="handleMessageReaction('${msg.id}', '😢')">😢</button>
+          <button type="button" class="reaction-emoji-btn" onclick="handleMessageReaction('${msg.id}', '😮')">😮</button>
+        </div>
+      `;
+
+      wrapper.innerHTML = `
+        <div class="message-bubble ${isSent ? 'sent' : 'received'} ${isDeleted ? 'deleted' : ''}" id="bubble-${msg.id}">
+          ${isDeleted ? `<div><i class="fas fa-ban" style="margin-right:5px;"></i>This message was deleted.</div>` : (isBot && window.AIChatbot ? AIChatbot.formatBotMessage(msg.message) : `<div>${escapeHTML(msg.message)}</div>`)}
+          <div class="message-time ${isSent ? '' : 'received-time'}">${formatRelativeTime(msg.created_at)}</div>
+        </div>
+        ${actionHtml}
+        <div class="message-reactions-row" id="reactions-${msg.id}">
+          ${reactionPillsHtml}
+        </div>
+      `;
+
+      if (prepend && container.firstChild) {
+        container.insertBefore(wrapper, container.firstChild);
+      } else {
+        container.appendChild(wrapper);
+        scrollThreadToBottom();
+      }
+    }
+
+    // Toggle reaction picker
+    function toggleReactionPicker(msgId) {
+      const picker = document.getElementById(`picker-${msgId}`);
+      if (!picker) return;
+      document.querySelectorAll('.reaction-picker-bar.open').forEach(p => {
+        if (p !== picker) p.classList.remove('open');
+      });
+      picker.classList.toggle('open');
+    }
+    window.toggleReactionPicker = toggleReactionPicker;
+
+    // Handle reaction
+    async function handleMessageReaction(msgId, emoji) {
+      const picker = document.getElementById(`picker-${msgId}`);
+      if (picker) picker.classList.remove('open');
+
+      try {
+        const updatedReactions = await SafeSpaceDB.messages.toggleReaction(msgId, emoji);
+        // Refresh reactions container
+        const container = document.getElementById(`reactions-${msgId}`);
+        if (container && Array.isArray(updatedReactions)) {
+          const counts = {};
+          let userReacted = null;
+          updatedReactions.forEach(r => {
+            const e = typeof r === 'string' ? r : r.reaction;
+            const uid = typeof r === 'object' ? r.user_id : null;
+            if (e) {
+              counts[e] = (counts[e] || 0) + 1;
+              if (uid === currentUser.id) userReacted = e;
+            }
+          });
+          let html = '';
+          for (const k in counts) {
+            html += `
+              <button class="msg-reaction-pill ${userReacted === k ? 'active' : ''}" onclick="handleMessageReaction('${msgId}', '${k}')">
+                <span>${k}</span> <span>${counts[k]}</span>
+              </button>
+            `;
+          }
+          container.innerHTML = html;
+        }
+      } catch (err) {
+        showToast('Could not save reaction', 'error');
+      }
+    }
+    window.handleMessageReaction = handleMessageReaction;
+
+    // Delete message confirmation
+    async function confirmDeleteMessage(msgId) {
+      if (!confirm('Are you sure you want to delete this message?')) return;
+
+      try {
+        await SafeSpaceDB.messages.deleteMessage(msgId);
+        const bubble = document.getElementById(`bubble-${msgId}`);
+        const wrap = document.getElementById(`msg-wrap-${msgId}`);
+        if (bubble) {
+          bubble.className = 'message-bubble sent deleted';
+          bubble.innerHTML = `<div><i class="fas fa-ban" style="margin-right:5px;"></i>This message was deleted.</div><div class="message-time">just now</div>`;
+        }
+        if (wrap) {
+          const actions = wrap.querySelector('.message-hover-actions');
+          if (actions) actions.remove();
+          const picker = wrap.querySelector('.reaction-picker-bar');
+          if (picker) picker.remove();
+        }
+        showToast('Message deleted', 'info');
+      } catch (err) {
+        showToast(err.message || 'Failed to delete message', 'error');
+      }
+    }
+    window.confirmDeleteMessage = confirmDeleteMessage;
+
+    function scrollThreadToBottom() {
+      const container = document.getElementById('threadMessagesContainer');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Periodic lightweight polling for active statuses every 45 seconds (no full page reload)
+    setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        if (SafeSpaceDB.users && SafeSpaceDB.users.updateLastActive) {
+          SafeSpaceDB.users.updateLastActive().catch(() => {});
+        }
+        await refreshChatData();
+
+        if (activeChatUser && !activeChatUser.isAi) {
+          const members = await SafeSpaceDB.community.getMembers();
+          const found = (members || []).find(m => m.id === activeChatUser.id);
+          if (found) {
+            const isOnline = SafeSpaceDB.users.isOnline(found);
+            const statusEl = document.getElementById('threadStatus');
+            const statusDot = document.getElementById('threadOnlineStatus');
+            if (statusEl) statusEl.innerHTML = isOnline ? '<span style="color:#22c55e;">●</span> Online' : 'Offline';
+            if (statusDot) statusDot.style.display = isOnline ? 'block' : 'none';
+          }
+        }
+      } catch (e) {
+        console.warn('[SafeSpace] Status poll error:', e);
+      }
+    }, 45000);
+
+    window.addEventListener('safespace:avatar-changed', () => {
+      refreshChatData().catch(() => {});
+    });
+
+    function updateAiConnectionStatus(isOnline) {
+      const banner = document.getElementById('aiOfflineBanner');
+      const textEl = document.getElementById('aiOfflineBannerText');
+      const tagEl = document.getElementById('aiOfflineBannerTag');
+      if (!banner || !textEl || !tagEl) return;
+      if (activeChatUser && activeChatUser.isAi) {
+        if (isOnline) {
+          banner.className = 'ai-offline-banner online';
+          textEl.innerHTML = '🟢 Online Mode – AI Assistant Connected.';
+          tagEl.textContent = 'ONLINE';
+          showToast('Internet connection restored. AI Assistant is online.');
+        } else {
+          banner.className = 'ai-offline-banner';
+          textEl.innerHTML = '🟡 Offline Mode – Basic Safe Space Support Available.';
+          tagEl.textContent = 'OFFLINE';
+          showToast('Offline Mode: Safe Space is using local offline responses.');
+        }
+      }
+    }
+
+    window.addEventListener('online', () => updateAiConnectionStatus(true));
+    window.addEventListener('offline', () => updateAiConnectionStatus(false));
+  </script>
+</body>
+</html>

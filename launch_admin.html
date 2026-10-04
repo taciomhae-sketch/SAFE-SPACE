@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>Admin Reports Test Launcher</title></head>
+<body>
+<script>
+localStorage.setItem('safe_space_admin_unlocked', 'true');
+localStorage.setItem('safe_space_session_active', 'true');
+localStorage.setItem('safe_space_user', JSON.stringify({
+  id: '60d80c30-97e8-44cf-90e2-3a3c02b9975a',
+  email: 'taciomhae@gmail.com',
+  username: 'taciomhae',
+  first_name: 'Lovely',
+  last_name: 'Tacio',
+  role: 'admin'
+}));
+
+const existing = JSON.parse(localStorage.getItem('safe_space_reports') || '[]');
+if (existing.length === 0) {
+  existing.push({
+    id: 'rep-test-001',
+    post_id: '9a2ac4c2-23b0-4ead-83eb-f73b3a56cc4b',
+    reporter_id: '034da26b-664e-4f18-b6d7-ab0d4964ab62',
+    reported_user_id: 'da209d76-9050-4f04-bba0-b048f1356e1b',
+    reason: 'Bullying or harassment',
+    description: 'Targeted offensive profanity and hostile language.',
+    status: 'Pending',
+    created_at: new Date().toISOString()
+  });
+  localStorage.setItem('safe_space_reports', JSON.stringify(existing));
+}
+
+// Redirect to admin.html with reports tab
+setTimeout(() => {
+  window.location.href = 'admin.html#reports';
+}, 100);
+</script>
+</body>
+</html>

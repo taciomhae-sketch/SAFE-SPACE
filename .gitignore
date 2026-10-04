@@ -1,0 +1,12 @@
+.env
+.env.local
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+temp_chrome_*
+*.png
+.DS_Store
+Thumbs.db
+*.log

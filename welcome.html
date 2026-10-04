@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Safe Space — Welcome</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6C4FD1" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <style>
+    /* Welcome page overrides */
+    body.welcome-page {
+      background: linear-gradient(160deg, #7B52D3 0%, #5438B0 60%, #3a2780 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .welcome-container {
+      width: 100%;
+      max-width: 414px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px 60px;
+      position: relative;
+      text-align: center;
+    }
+
+    /* Decorative blobs */
+    .welcome-blob {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.07);
+      pointer-events: none;
+    }
+    .blob-1 { width: 280px; height: 280px; top: -80px; right: -80px; }
+    .blob-2 { width: 200px; height: 200px; bottom: 60px; left: -60px; }
+    .blob-3 { width: 120px; height: 120px; top: 40%; left: -30px; background: rgba(255,255,255,0.05); }
+
+    /* Logo / Icon */
+    .welcome-logo {
+      width: 90px;
+      height: 90px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.12);
+      animation: logoFloat 3s ease-in-out infinite;
+      overflow: hidden;
+    }
+    .welcome-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 24px;
+    }
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+
+    /* App name */
+    .welcome-app-name {
+      font-size: 36px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      line-height: 1.1;
+    }
+    .welcome-app-name span {
+      color: rgba(255,255,255,0.75);
+      font-weight: 400;
+      font-size: 20px;
+      display: block;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* Tagline */
+    .welcome-tagline {
+      font-size: 15px;
+      color: rgba(255,255,255,0.80);
+      margin: 16px 0 48px;
+      line-height: 1.6;
+      font-style: italic;
+      max-width: 280px;
+    }
+
+    /* Buttons */
+    .welcome-actions {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .btn-welcome-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      height: 54px;
+      background: white;
+      color: #6C4FD1;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      border: none;
+      border-radius: 999px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.20);
+    }
+    .btn-welcome-primary:hover,
+    .btn-welcome-primary:active {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+    }
+    .btn-welcome-primary:active { transform: scale(0.97); }
+
+    .btn-welcome-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      height: 54px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      border: 2px solid rgba(255,255,255,0.50);
+      border-radius: 999px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease;
+      backdrop-filter: blur(4px);
+    }
+    .btn-welcome-secondary:hover,
+    .btn-welcome-secondary:active {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-2px);
+    }
+    .btn-welcome-secondary:active { transform: scale(0.97); }
+
+    /* Footer note */
+    .welcome-footer {
+      position: absolute;
+      bottom: 24px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.5px;
+    }
+
+    /* Wave decoration bottom */
+    .welcome-wave {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 100px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 60% 60% 0 0;
+      pointer-events: none;
+    }
+    .welcome-wave::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: -20px; right: -20px;
+      height: 70px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 60% 60% 0 0;
+    }
+
+    /* Loading spinner shown while checking auth */
+    #authCheck {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(160deg, #7B52D3 0%, #5438B0 60%, #3a2780 100%);
+      z-index: 99;
+      justify-content: center;
+    }
+    #authCheck i {
+      font-size: 36px;
+      color: white;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #authCheck p {
+      color: rgba(255,255,255,0.75);
+      font-size: 14px;
+    }
+
+    /* Features strip */
+    .welcome-features {
+      display: flex;
+      gap: 20px;
+      margin: 0 0 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .feature-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.90);
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .feature-chip i { font-size: 11px; }
+  </style>
+</head>
+<body class="welcome-page">
+
+  <!-- Page Loading / Auth Check Overlay (Safe Space Logo Loading) -->
+  <div class="page-loader" id="authCheck">
+    <div class="loader-content">
+      <div class="loader-spinner-ring">
+        <div class="loader-icon-center">
+          <img class="loader-logo-img" src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space" />
+        </div>
+      </div>
+      <div class="loader-label">Safe Space</div>
+      <div class="loader-sublabel">Loading Safe Space…</div>
+    </div>
+  </div>
+
+  <div class="welcome-container">
+    <!-- Decorative blobs -->
+    <div class="welcome-blob blob-1"></div>
+    <div class="welcome-blob blob-2"></div>
+    <div class="welcome-blob blob-3"></div>
+
+    <!-- Logo -->
+    <div class="welcome-logo">
+      <img src="assets/icons/SAFE_SPACE_LOGO.png" alt="Safe Space Logo" />
+    </div>
+
+    <!-- App Name -->
+    <div class="welcome-app-name">
+      Safe Space
+      <span>Platform</span>
+    </div>
+
+    <!-- Tagline -->
+    <p class="welcome-tagline">
+      "A safe place to express, connect, and heal."
+    </p>
+
+    <!-- Feature chips -->
+    <div class="welcome-features">
+      <div class="feature-chip"><i class="fas fa-shield-halved"></i> Anonymous</div>
+      <div class="feature-chip"><i class="fas fa-heart"></i> Safe</div>
+      <div class="feature-chip"><i class="fas fa-robot"></i> AI Moderated</div>
+    </div>
+
+    <!-- CTA Buttons -->
+    <div class="welcome-actions">
+      <a href="login.html" class="btn-welcome-primary">
+        <i class="fas fa-right-to-bracket"></i>
+        LOGIN
+      </a>
+      <a href="register.html" class="btn-welcome-secondary">
+        <i class="fas fa-user-plus"></i>
+        SIGN UP
+      </a>
+    </div>
+
+    <!-- Wave -->
+    <div class="welcome-wave"></div>
+
+    <!-- Footer -->
+    <p class="welcome-footer">Aklan State University – Ibajay Campus &nbsp;|&nbsp; BSCS Group 6</p>
+  </div>
+
+  <script src="js/lib/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script>
+    // Check if user is already logged in — redirect to home if so
+    (async function() {
+      try {
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
+          var user = await SafeSpaceDB.auth.getCurrentUser();
+          if (user) {
+            window.location.replace('home.html');
+            return;
+          }
+        }
+      } catch (e) {
+        // Ignore — just show welcome screen
+      }
+      // Fade out loading, show welcome content
+      var loader = document.getElementById('authCheck');
+      if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(function() {
+          if (loader) loader.style.display = 'none';
+        }, 380);
+      }
+    })();
+  </script>
+</body>
+</html>
+
