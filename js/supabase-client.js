@@ -349,6 +349,31 @@ var SafeSpaceDB = {
       return { user: baseUser };
     },
 
+    /**
+     * Send a one-time sign-in link (Magic link) or one-time password (OTP)
+     */
+    signInWithOtp: async function(email) {
+      email = (email || '').trim().toLowerCase();
+      if (!email) throw new Error('Please enter your email address.');
+
+      if (SafeSpaceDB.isSupabaseActive()) {
+        var redirectTarget = (typeof window !== 'undefined' && window.location)
+          ? (window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/login.html'))
+          : undefined;
+
+        var res = await _db.auth.signInWithOtp({
+          email: email,
+          options: {
+            emailRedirectTo: redirectTarget,
+            shouldCreateUser: false
+          }
+        });
+        if (res.error) throw res.error;
+        return res.data;
+      }
+      return { success: true };
+    },
+
     signUp: async function(payload) {
       payload = payload || {};
       var email = payload.email;
@@ -360,10 +385,18 @@ var SafeSpaceDB = {
       if (SafeSpaceDB.isSupabaseActive()) {
         // If REQUIRE_EMAIL_CONFIRMATION is enabled, use standard Supabase signup to trigger real SMTP confirmation email
         if (typeof SAFE_SPACE_CONFIG !== 'undefined' && SAFE_SPACE_CONFIG.REQUIRE_EMAIL_CONFIRMATION) {
+          // Provide dynamic emailRedirectTo pointing to the actual local web app login page
+          var redirectTarget = (typeof window !== 'undefined' && window.location)
+            ? (window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/login.html'))
+            : undefined;
+
           var res = await _db.auth.signUp({
             email: email,
             password: password,
-            options: { data: metadata }
+            options: {
+              data: metadata,
+              emailRedirectTo: redirectTarget
+            }
           });
           if (res.error) {
             // Provide a clear explanation if SMTP is not configured in Supabase yet
@@ -510,9 +543,14 @@ var SafeSpaceDB = {
       if (!email) throw new Error('Please enter your email address.');
 
       if (SafeSpaceDB.isSupabaseActive()) {
+        var redirectTarget = (typeof window !== 'undefined' && window.location)
+          ? (window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/login.html'))
+          : undefined;
+
         var res = await _db.auth.resend({
           type: type,
-          email: email
+          email: email,
+          options: redirectTarget ? { emailRedirectTo: redirectTarget } : undefined
         });
         if (res.error) throw res.error;
         return res.data;

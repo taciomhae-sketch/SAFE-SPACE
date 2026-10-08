@@ -116,6 +116,13 @@
         </span>
       </button>
 
+      <!-- Magic Link / OTP Login Option -->
+      <div style="text-align:center; margin-top:12px;">
+        <button type="button" id="magicLinkBtn" style="background:transparent; border:none; color:rgba(255,255,255,0.9); font-size:12.5px; font-weight:600; cursor:pointer; padding:6px 10px; border-radius:6px; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.9)'">
+          <i class="fas fa-wand-magic-sparkles" style="color:#C4B5FD; margin-right:5px;"></i> Send Magic Link / One-Time Password
+        </button>
+      </div>
+
     </form>
 
     <!-- OTP Modal/Card (if user needs to verify email with Supabase OTP) -->
@@ -124,7 +131,7 @@
         <i class="fas fa-shield-halved"></i>
       </div>
       <h2 style="color:#fff; font-size:20px; font-weight:800; text-align:center; margin-bottom:4px;">VERIFY OTP</h2>
-      <p style="color:rgba(255,255,255,0.75); font-size:12px; text-transform:uppercase; letter-spacing:1.5px; text-align:center;">ENTER 6-DIGIT CODE</p>
+      <p style="color:rgba(255,255,255,0.75); font-size:12px; text-transform:uppercase; letter-spacing:1.5px; text-align:center;">ENTER VERIFICATION CODE</p>
       
       <div class="otp-email-badge">
         <i class="fas fa-envelope"></i>
@@ -138,6 +145,8 @@
         <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="3" />
         <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="4" />
         <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="5" />
+        <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="6" />
+        <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="7" />
       </div>
 
       <button type="button" class="btn-auth-primary" id="verifyOtpBtn">
@@ -389,12 +398,46 @@
       await doLogin(email, password);
     });
 
+    // Send Magic Link / OTP Button
+    var magicLinkBtn = document.getElementById('magicLinkBtn');
+    if (magicLinkBtn) {
+      magicLinkBtn.addEventListener('click', async function() {
+        var email = emailInput.value.trim();
+        if (!email) {
+          emailInput.classList.add('has-error');
+          showFormAlert('Please enter your email above to receive a Magic Link / OTP code.', 'info');
+          emailInput.focus();
+          return;
+        }
+
+        try {
+          setLoading(true);
+          await SafeSpaceDB.auth.signInWithOtp(email);
+          setLoading(false);
+          showFormAlert('Magic Link & OTP code sent! Check your Gmail inbox.', 'success');
+          if (typeof showToast === 'function') {
+            showToast('One-time sign-in code sent to your email!', 'success');
+          }
+          openOtpView(email);
+        } catch (err) {
+          setLoading(false);
+          var msg = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.formatAuthError)
+            ? SafeSpaceDB.auth.formatAuthError(err)
+            : (err.message || 'Failed to send Magic Link.');
+          showFormAlert(msg, 'error');
+        }
+      });
+    }
+
     /* ────────────────────────────────
        OTP Verification Workflow on Login
     ──────────────────────────────── */
     function openOtpView(email) {
-      otpPendingEmail = email || emailInput.value.trim();
-      document.getElementById('otpTargetEmail').textContent = otpPendingEmail;
+      otpPendingEmail = (email || emailInput.value.trim() || '').trim();
+      var displayEl = document.getElementById('otpTargetEmail');
+      if (displayEl) {
+        displayEl.textContent = otpPendingEmail || 'your email';
+      }
       
       document.getElementById('loginForm').style.display = 'none';
       document.getElementById('registerLinkRow').style.display = 'none';
@@ -402,7 +445,11 @@
       document.getElementById('loginOtpCard').classList.remove('hidden');
 
       clearFormAlert();
-      showFormAlert('Enter the 6-digit verification code sent to ' + otpPendingEmail, 'info');
+      if (otpPendingEmail) {
+        showFormAlert('Enter the 6-digit verification code sent to ' + otpPendingEmail, 'info');
+      } else {
+        showFormAlert('Enter the 6-digit verification code sent to your email', 'info');
+      }
 
       // Focus first OTP digit
       var firstInput = document.querySelector('#loginOtpInputsRow .otp-digit');
@@ -447,14 +494,14 @@
       input.addEventListener('paste', function(e) {
         e.preventDefault();
         var pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
-        var digits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+        var digits = pasteData.replace(/[^0-9]/g, '').slice(0, 8);
         for (var i = 0; i < digits.length; i++) {
           if (otpInputs[i]) {
             otpInputs[i].value = digits[i];
             otpInputs[i].classList.add('filled');
           }
         }
-        var nextIdx = Math.min(digits.length, 5);
+        var nextIdx = Math.min(digits.length, otpInputs.length - 1);
         if (otpInputs[nextIdx]) otpInputs[nextIdx].focus();
       });
     });
@@ -465,7 +512,7 @@
       otpInputs.forEach(function(inp) { code += inp.value.trim(); });
 
       if (code.length < 6) {
-        showFormAlert('Please enter the complete 6-digit verification code.', 'error');
+        showFormAlert('Please enter your complete verification code (at least 6 digits).', 'error');
         return;
       }
 
@@ -475,6 +522,24 @@
       btn.disabled = true;
       text.style.display = 'none';
       spinner.style.display = 'inline-flex';
+
+      if (!otpPendingEmail) {
+        otpPendingEmail = emailInput.value.trim();
+      }
+      if (!otpPendingEmail) {
+        var userEmail = prompt('Please enter your registered email address to verify:');
+        if (userEmail && userEmail.trim()) {
+          otpPendingEmail = userEmail.trim();
+          var targetEl = document.getElementById('otpTargetEmail');
+          if (targetEl) targetEl.textContent = otpPendingEmail;
+        } else {
+          showFormAlert('Please provide your email address to verify your code.', 'error');
+          btn.disabled = false;
+          text.style.display = '';
+          spinner.style.display = 'none';
+          return;
+        }
+      }
 
       try {
         if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
@@ -540,12 +605,57 @@
       }
     });
 
-    // Check URL parameters for direct verification mode
+    // Check URL parameters & hash fragment for direct verification or error callback
     function checkUrlParams() {
-      var params = new URLSearchParams(window.location.search);
-      var verifyEmail = params.get('verify') || params.get('email');
-      var reason = params.get('reason');
-      var message = params.get('message');
+      // 1. Inspect URL hash fragment (Supabase email link redirects here: #access_token=... or #error=...)
+      var hash = window.location.hash ? window.location.hash.substring(1) : '';
+      var hashParams = hash ? new URLSearchParams(hash) : null;
+
+      // 2. Inspect query parameters (?error=... or ?verify=...)
+      var queryParams = new URLSearchParams(window.location.search);
+
+      var errCode     = (hashParams && hashParams.get('error_code')) || queryParams.get('error_code');
+      var errDesc     = (hashParams && hashParams.get('error_description')) || queryParams.get('error_description');
+      var err         = (hashParams && hashParams.get('error')) || queryParams.get('error');
+      var accessToken = (hashParams && hashParams.get('access_token')) || queryParams.get('access_token');
+      var authType    = (hashParams && hashParams.get('type')) || queryParams.get('type');
+
+      // Clear the hash from address bar for a clean URL
+      if (hash && window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+
+      // Check if user clicked an expired or pre-scanned email link
+      if (errCode === 'otp_expired' || (errDesc && errDesc.toLowerCase().includes('expired'))) {
+        showFormAlert(
+          'The email confirmation link has expired or was already used. You can enter the 6-digit code sent to your email below, or sign in.',
+          'warning',
+          `<button type="button" class="auth-alert-action-btn" onclick="openOtpView()"><i class="fas fa-key"></i> Enter OTP Code</button>`
+        );
+        return;
+      }
+
+      if (err || errDesc) {
+        var cleanMsg = (errDesc || err || 'Authentication issue occurred').replace(/\+/g, ' ');
+        showFormAlert('Verification link issue: ' + cleanMsg, 'error');
+        return;
+      }
+
+      // Successful confirmation link click
+      if (accessToken || authType === 'signup') {
+        showFormAlert('Email verified successfully! Opening Safe Space...', 'success');
+        if (typeof showToast === 'function') {
+          showToast('Email verified successfully!', 'success');
+        }
+        setTimeout(function() {
+          window.location.href = 'home.html';
+        }, 1200);
+        return;
+      }
+
+      var verifyEmail = queryParams.get('verify') || queryParams.get('email');
+      var reason = queryParams.get('reason');
+      var message = queryParams.get('message');
 
       if (message === 'deactivated') {
         showFormAlert('Your account has been deactivated.', 'info');
@@ -553,7 +663,7 @@
         showFormAlert('Your account has been permanently deleted.', 'info');
       }
 
-      if (verifyEmail && params.get('step') === 'otp') {
+      if (verifyEmail && queryParams.get('step') === 'otp') {
         emailInput.value = verifyEmail;
         openOtpView(verifyEmail);
       } else if (reason === 'unverified' && verifyEmail) {

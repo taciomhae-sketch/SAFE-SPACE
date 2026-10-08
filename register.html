@@ -367,7 +367,7 @@
         </div>
 
         <h1 class="auth-title" style="font-size:24px;">VERIFY YOUR EMAIL</h1>
-        <p class="auth-subtitle">ENTER 6-DIGIT CODE</p>
+        <p class="auth-subtitle">ENTER VERIFICATION CODE</p>
 
         <p style="color:rgba(255,255,255,0.85); font-size:13px; text-align:center; margin-bottom:8px;">
           A verification code was sent to your email:
@@ -378,11 +378,16 @@
           <span id="otpEmailDisplay">user@example.com</span>
         </div>
 
-        <p style="color:#FDE68A; font-size:11.5px; text-align:center; margin-bottom:14px; font-weight:600;">
+        <p style="color:#FDE68A; font-size:11.5px; text-align:center; margin-bottom:8px; font-weight:600;">
           <i class="fas fa-clock"></i> Your verification code expires in 10 minutes.
         </p>
 
-        <!-- 6 OTP Digit Inputs -->
+        <p style="color:rgba(255,255,255,0.85); font-size:12px; text-align:center; margin-bottom:14px; background:rgba(255,255,255,0.08); padding:7px 12px; border-radius:8px; line-height:1.4;">
+          <i class="fas fa-circle-info" style="color:#60A5FA; margin-right:4px;"></i>
+          Check your Gmail inbox and enter the <strong>6 or 8-digit code</strong> below (you don't need to tap the email link).
+        </p>
+
+        <!-- OTP Digit Inputs (Supports 6 to 8 digits) -->
         <div class="otp-inputs-row" id="otpInputsRow">
           <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="0" />
           <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="1" />
@@ -390,6 +395,8 @@
           <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="3" />
           <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="4" />
           <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="5" />
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="6" />
+          <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="7" />
         </div>
 
         <!-- Verify Button -->
@@ -1490,14 +1497,14 @@
       input.addEventListener('paste', function(e) {
         e.preventDefault();
         var pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
-        var digits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+        var digits = pasteData.replace(/[^0-9]/g, '').slice(0, 8);
         for (var i = 0; i < digits.length; i++) {
           if (otpInputs[i]) {
             otpInputs[i].value = digits[i];
             otpInputs[i].classList.add('filled');
           }
         }
-        var nextIdx = Math.min(digits.length, 5);
+        var nextIdx = Math.min(digits.length, otpInputs.length - 1);
         if (otpInputs[nextIdx]) otpInputs[nextIdx].focus();
       });
     });
@@ -1510,7 +1517,7 @@
       otpInputs.forEach(function(inp) { code += inp.value.trim(); });
 
       if (code.length < 6) {
-        showFormAlert('Please enter all 6 digits of your verification code.', 'error');
+        showFormAlert('Please enter your complete verification code (at least 6 digits).', 'error');
         return;
       }
 
