@@ -503,10 +503,23 @@ AVATARS.forEach(function(item) {
   item.categorySingular = item.category === 'animals' ? 'animal' : 'character';
 });
 
+function isDefaultAvatarValue(val) {
+  if (!val) return true;
+  var s = String(val).trim().toLowerCase();
+  return s === '' || s === 'default' || s === 'null' || s === 'undefined' ||
+         s === 'assets/avatars/default-avatar.png' ||
+         s === 'assets/avatars/default-avatar.svg' ||
+         s.endsWith('/default-avatar.png') ||
+         s.endsWith('/default-avatar.svg') ||
+         s === 'default-avatar';
+}
+
 // Lookup by full id, shortId, filename, or cute: prefix
 function getAvatarById(id) {
   if (!id) return null;
   var raw = String(id).trim();
+  if (isDefaultAvatarValue(raw)) return null;
+
   // Strip leading prefixes
   var clean = raw.replace(/^(cute:|avatar:|predefined:)/i, '').trim().toLowerCase();
   // If it's a full path or filename like "assets/avatars/gentle-koala.png", strip directory and extension
@@ -532,42 +545,38 @@ var getCuteAvatarById = getAvatarById;
 // ============================================================================
 var SafeSpaceAvatars = {
   DEFAULT_AVATAR: DEFAULT_AVATAR,
+  DEFAULT_AVATAR_SVG: 'assets/avatars/default-avatar.svg',
   ALL: AVATARS,
 
   /**
    * Resolves authoritative avatar metadata for any user object, URL, or avatar id.
-   * Returns: { type: 'preset'|'photo'|'default', id: string, name: string, image: string, category: string }
+   * Returns: { type: 'preset'|'photo'|'default', id: string, name: string, image: string, svgImage: string, category: string }
    */
   getAvatar: function(input) {
-    if (!input) {
-      return {
-        type: 'default',
-        id: 'default',
-        name: 'Default Safe Space Avatar',
-        image: DEFAULT_AVATAR,
-        category: 'default'
-      };
-    }
+    var defaultObj = {
+      type: 'default',
+      id: 'default',
+      name: 'Default Safe Space Avatar',
+      image: DEFAULT_AVATAR,
+      svgImage: 'assets/avatars/default-avatar.svg',
+      category: 'default'
+    };
+
+    if (!input) return defaultObj;
 
     // 1. If input is a user/profile object
     if (typeof input === 'object') {
-      // Check explicit avatar_type
       var aType = input.avatar_type;
       var aVal = input.avatar_value || input.avatar_id;
       var aUrl = input.avatar_url || input.profile_photo || input.avatar;
 
-      if (aType === 'default' && (!aUrl || aUrl === 'default')) {
-        return {
-          type: 'default',
-          id: 'default',
-          name: 'Default Safe Space Avatar',
-          image: DEFAULT_AVATAR,
-          category: 'default'
-        };
+      // Check if user explicitly set or defaulted to 'default'
+      if (isDefaultAvatarValue(aUrl) && (!aVal || isDefaultAvatarValue(aVal))) {
+        return defaultObj;
       }
 
-      // Check if avatar_value or avatar_url is a preset
-      if (aVal) {
+      // Check if avatar_value is a preset
+      if (aVal && !isDefaultAvatarValue(aVal)) {
         var foundByVal = getAvatarById(aVal);
         if (foundByVal) {
           return {
@@ -576,13 +585,15 @@ var SafeSpaceAvatars = {
             shortId: foundByVal.shortId,
             name: foundByVal.name,
             image: foundByVal.image,
+            svgImage: foundByVal.svgImage || 'assets/avatars/default-avatar.svg',
             category: foundByVal.category,
             dataUrl: foundByVal.dataUrl
           };
         }
       }
 
-      if (aUrl) {
+      // Check if avatar_url is a preset
+      if (aUrl && !isDefaultAvatarValue(aUrl)) {
         var foundByUrl = getAvatarById(aUrl);
         if (foundByUrl) {
           return {
@@ -591,44 +602,33 @@ var SafeSpaceAvatars = {
             shortId: foundByUrl.shortId,
             name: foundByUrl.name,
             image: foundByUrl.image,
+            svgImage: foundByUrl.svgImage || 'assets/avatars/default-avatar.svg',
             category: foundByUrl.category,
             dataUrl: foundByUrl.dataUrl
           };
         }
 
-        // Custom uploaded photo (URL or base64)
-        if (typeof aUrl === 'string' && aUrl.trim() !== '' && aUrl !== 'default') {
+        // Custom uploaded photo (URL or base64 data URL)
+        var cleanUrl = typeof aUrl === 'string' ? aUrl.trim() : '';
+        if (cleanUrl !== '' && !isDefaultAvatarValue(cleanUrl)) {
           return {
             type: 'photo',
             id: 'custom-photo',
             name: 'Profile Photo',
-            image: aUrl.trim(),
+            image: cleanUrl,
+            svgImage: 'assets/avatars/default-avatar.svg',
             category: 'custom'
           };
         }
       }
 
-      return {
-        type: 'default',
-        id: 'default',
-        name: 'Default Safe Space Avatar',
-        image: DEFAULT_AVATAR,
-        category: 'default'
-      };
+      return defaultObj;
     }
 
     // 2. If input is a string (id, path, or URL)
     if (typeof input === 'string') {
       var str = input.trim();
-      if (!str || str === 'default' || str === 'null' || str === 'undefined') {
-        return {
-          type: 'default',
-          id: 'default',
-          name: 'Default Safe Space Avatar',
-          image: DEFAULT_AVATAR,
-          category: 'default'
-        };
-      }
+      if (isDefaultAvatarValue(str)) return defaultObj;
 
       var foundPreset = getAvatarById(str);
       if (foundPreset) {
@@ -638,6 +638,7 @@ var SafeSpaceAvatars = {
           shortId: foundPreset.shortId,
           name: foundPreset.name,
           image: foundPreset.image,
+          svgImage: foundPreset.svgImage || 'assets/avatars/default-avatar.svg',
           category: foundPreset.category,
           dataUrl: foundPreset.dataUrl
         };
@@ -650,18 +651,13 @@ var SafeSpaceAvatars = {
           id: 'custom-photo',
           name: 'Profile Photo',
           image: str,
+          svgImage: 'assets/avatars/default-avatar.svg',
           category: 'custom'
         };
       }
     }
 
-    return {
-      type: 'default',
-      id: 'default',
-      name: 'Default Safe Space Avatar',
-      image: DEFAULT_AVATAR,
-      category: 'default'
-    };
+    return defaultObj;
   },
 
   /**
@@ -694,7 +690,8 @@ var SafeSpaceAvatars = {
     // Safe escaping
     var cleanUrl = String(url).replace(/"/g, '&quot;');
     var cleanAlt = String(name).replace(/"/g, '&quot;');
-    var fallback = DEFAULT_AVATAR.replace(/"/g, '&quot;');
+    var fallback = (meta.svgImage || 'assets/avatars/default-avatar.svg').replace(/"/g, '&quot;');
+    var secondFallback = 'assets/avatars/default-avatar.svg';
 
     return '<img src="' + cleanUrl + '" alt="' + cleanAlt + '" class="' + className + '" onerror="this.onerror=null; this.src=\'' + fallback + '\';" style="' + extraStyle + '" />';
   }

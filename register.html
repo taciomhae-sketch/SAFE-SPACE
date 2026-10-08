@@ -888,6 +888,15 @@
     /* ────────────────────────────────
        Step 3: Avatar & Privacy Agreement
     ──────────────────────────────── */
+    var selectedAvatar = {
+      url: 'assets/avatars/default-avatar.png',
+      type: 'default',
+      value: 'default',
+      isCustomFile: false,
+      dataUrl: null
+    };
+    var pendingCuteAvatar = null;
+
     var avatarCircle        = document.getElementById('avatarCircle');
     var cameraBadge         = document.getElementById('cameraBadge');
     var avatarPreview       = document.getElementById('avatarPreview');
@@ -982,6 +991,10 @@
         dataUrl: null
       };
       avatarPreview.src = 'assets/avatars/default-avatar.png';
+      avatarPreview.onerror = function() {
+        this.onerror = null;
+        this.src = 'assets/avatars/default-avatar.svg';
+      };
       avatarFeedback.className = 'field-feedback info';
       avatarFeedback.innerHTML = '<i class="fas fa-user-shield"></i> Default Safe Space avatar selected.';
       uploadPhotoBtn.innerHTML = '<i class="fas fa-upload" style="color:#93C5FD;"></i> Upload Photo';
@@ -1003,6 +1016,7 @@
     chooseCuteAvatarBtn.addEventListener('click', openCuteAvatarModal);
 
     function openCuteAvatarModal() {
+      renderCuteAvatarGrid('all');
       cuteModalOverlay.classList.add('open');
     }
 
@@ -1041,7 +1055,7 @@
           item.classList.add('selected');
         }
 
-        var fallbackSrc = avatar.svgImage || 'assets/avatars/default-avatar.png';
+        var fallbackSrc = avatar.svgImage || 'assets/avatars/default-avatar.svg';
         item.innerHTML = `
           <div class="avatar-card-check"><i class="fas fa-check"></i></div>
           <div class="avatar-image-container cute-avatar-img-wrap">
@@ -1069,12 +1083,16 @@
       if (!pendingCuteAvatar) return;
       selectedAvatar = {
         url: pendingCuteAvatar.image,
-        type: 'cute',
+        type: 'predefined',
         value: pendingCuteAvatar.id,
         isCustomFile: false,
         dataUrl: null
       };
       avatarPreview.src = pendingCuteAvatar.image;
+      avatarPreview.onerror = function() {
+        this.onerror = null;
+        this.src = pendingCuteAvatar.svgImage || 'assets/avatars/default-avatar.svg';
+      };
       avatarFeedback.className = 'field-feedback success';
       avatarFeedback.innerHTML = '<i class="fas fa-circle-check"></i> Avatar selected: ' + escapeHtml(pendingCuteAvatar.name);
       uploadPhotoBtn.innerHTML = '<i class="fas fa-upload" style="color:#93C5FD;"></i> Upload Photo';

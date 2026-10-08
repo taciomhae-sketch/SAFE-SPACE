@@ -332,7 +332,7 @@ BEGIN
         id, username, email,
         first_name, middle_name, last_name,
         age, sex, birthday,
-        avatar_url, bio
+        avatar_url, avatar_type, avatar_value, bio
     )
     VALUES (
         NEW.id,
@@ -344,7 +344,9 @@ BEGIN
         (NEW.raw_user_meta_data->>'age')::INTEGER,
         NEW.raw_user_meta_data->>'sex',
         (NEW.raw_user_meta_data->>'birthday')::DATE,
-        NEW.raw_user_meta_data->>'avatar_url',
+        COALESCE(NEW.raw_user_meta_data->>'avatar_url', 'assets/avatars/default-avatar.png'),
+        COALESCE(NEW.raw_user_meta_data->>'avatar_type', 'default'),
+        COALESCE(NEW.raw_user_meta_data->>'avatar_value', 'default'),
         COALESCE(NEW.raw_user_meta_data->>'bio', 'Hello, Safe Space!')
     )
     ON CONFLICT (id) DO NOTHING;

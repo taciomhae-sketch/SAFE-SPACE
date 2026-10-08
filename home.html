@@ -574,7 +574,7 @@
         }
         const userAvatarEl = document.getElementById('sidebarUserAvatar');
         if (userAvatarEl && window.SafeSpaceAvatars) {
-          userAvatarEl.innerHTML = window.SafeSpaceAvatars.renderHtml(currentUser.avatar_url, { alt: currentUser.username });
+          userAvatarEl.innerHTML = window.SafeSpaceAvatars.renderHtml(currentUser, { alt: currentUser.username });
         }
 
         // Update post modal identity option

@@ -278,7 +278,36 @@ var SafeSpaceDB = {
             var client = _dbAdmin || _db;
             var pRes = await client.from('profiles').select('*').eq('id', user.id).single();
             var profile = pRes.data || {};
-            var fullUser = Object.assign({}, user, profile);
+            var meta = user.user_metadata || {};
+
+            // If profiles table has missing avatar info or default, but user_metadata has user's selected avatar from signup, preserve and sync it
+            var needsAvatarSync = false;
+            var avatarUpdates = {};
+            if (!profile.avatar_url && meta.avatar_url) {
+              profile.avatar_url = meta.avatar_url;
+              avatarUpdates.avatar_url = meta.avatar_url;
+              needsAvatarSync = true;
+            }
+            if ((!profile.avatar_type || profile.avatar_type === 'default') && meta.avatar_type && meta.avatar_type !== 'default') {
+              profile.avatar_type = meta.avatar_type;
+              avatarUpdates.avatar_type = meta.avatar_type;
+              needsAvatarSync = true;
+            }
+            if ((!profile.avatar_value || profile.avatar_value === 'default') && meta.avatar_value && meta.avatar_value !== 'default') {
+              profile.avatar_value = meta.avatar_value;
+              avatarUpdates.avatar_value = meta.avatar_value;
+              needsAvatarSync = true;
+            }
+
+            if (needsAvatarSync) {
+              try {
+                await client.from('profiles').update(avatarUpdates).eq('id', user.id);
+              } catch (syncErr) {
+                console.warn('[SafeSpace] Avatar sync error:', syncErr);
+              }
+            }
+
+            var fullUser = Object.assign({}, user, meta, profile);
 
             // Ensure primary researcher / admin account is recognized with full admin role
             var isPrimaryAdmin = Boolean(
@@ -330,9 +359,36 @@ var SafeSpaceDB = {
         if (res.error) throw res.error;
         if (res.data && res.data.user) {
           try {
-            var pRes = await _db.from('profiles').select('*').eq('id', res.data.user.id).single();
+            var client = _dbAdmin || _db;
+            var pRes = await client.from('profiles').select('*').eq('id', res.data.user.id).single();
             var profile = pRes.data || {};
-            var fullUser = Object.assign({}, res.data.user, profile);
+            var meta = res.data.user.user_metadata || {};
+
+            var needsAvatarSync = false;
+            var avatarUpdates = {};
+            if (!profile.avatar_url && meta.avatar_url) {
+              profile.avatar_url = meta.avatar_url;
+              avatarUpdates.avatar_url = meta.avatar_url;
+              needsAvatarSync = true;
+            }
+            if ((!profile.avatar_type || profile.avatar_type === 'default') && meta.avatar_type && meta.avatar_type !== 'default') {
+              profile.avatar_type = meta.avatar_type;
+              avatarUpdates.avatar_type = meta.avatar_type;
+              needsAvatarSync = true;
+            }
+            if ((!profile.avatar_value || profile.avatar_value === 'default') && meta.avatar_value && meta.avatar_value !== 'default') {
+              profile.avatar_value = meta.avatar_value;
+              avatarUpdates.avatar_value = meta.avatar_value;
+              needsAvatarSync = true;
+            }
+
+            if (needsAvatarSync) {
+              try {
+                await client.from('profiles').update(avatarUpdates).eq('id', res.data.user.id);
+              } catch (syncErr) {}
+            }
+
+            var fullUser = Object.assign({}, res.data.user, meta, profile);
             localStorage.setItem('safe_space_user', JSON.stringify(fullUser));
           } catch (e) {
             localStorage.setItem('safe_space_user', JSON.stringify(res.data.user));
@@ -512,9 +568,36 @@ var SafeSpaceDB = {
         var user = res.data ? res.data.user : null;
         if (user) {
           try {
-            var pRes = await _db.from('profiles').select('*').eq('id', user.id).single();
+            var client = _dbAdmin || _db;
+            var pRes = await client.from('profiles').select('*').eq('id', user.id).single();
             var profile = pRes.data || {};
-            var fullUser = Object.assign({}, user, profile);
+            var meta = user.user_metadata || {};
+
+            var needsAvatarSync = false;
+            var avatarUpdates = {};
+            if (!profile.avatar_url && meta.avatar_url) {
+              profile.avatar_url = meta.avatar_url;
+              avatarUpdates.avatar_url = meta.avatar_url;
+              needsAvatarSync = true;
+            }
+            if ((!profile.avatar_type || profile.avatar_type === 'default') && meta.avatar_type && meta.avatar_type !== 'default') {
+              profile.avatar_type = meta.avatar_type;
+              avatarUpdates.avatar_type = meta.avatar_type;
+              needsAvatarSync = true;
+            }
+            if ((!profile.avatar_value || profile.avatar_value === 'default') && meta.avatar_value && meta.avatar_value !== 'default') {
+              profile.avatar_value = meta.avatar_value;
+              avatarUpdates.avatar_value = meta.avatar_value;
+              needsAvatarSync = true;
+            }
+
+            if (needsAvatarSync) {
+              try {
+                await client.from('profiles').update(avatarUpdates).eq('id', user.id);
+              } catch (syncErr) {}
+            }
+
+            var fullUser = Object.assign({}, user, meta, profile);
             localStorage.setItem('safe_space_user', JSON.stringify(fullUser));
           } catch (e) {
             localStorage.setItem('safe_space_user', JSON.stringify(user));

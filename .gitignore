@@ -7,6 +7,8 @@ __pycache__/
 *.pyc
 temp_chrome_*
 *.png
+!assets/**/*.png
+!SAFE_SPACE_LOGO.png
 .DS_Store
 Thumbs.db
 *.log
