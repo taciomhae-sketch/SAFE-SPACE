@@ -9,24 +9,16 @@ from typing import Dict, Any, List
 
 # Benign substring collisions and harmless phrases
 BENIGN_WHITELIST_PATTERNS = [
-    # English benign words / idioms
+    # English benign idioms
     r"\b(diet|dieting|balanced diet|healthy diet)\b",
     r"\b(my\s*(phone|laptop|battery|pc|car|earphones)\s*died)\b",
     r"\b(died\s*laughing|dying\s*laughing|dead\s*tired)\b",
     r"\b(roll\s*(the\s*)?die)\b",
-    r"\b(pass|passed|passing|assignment|compassion|assist|assistant|glasses?|grass)\b",
-    r"\b(hello|shell|seashell)\b",
     r"\b(kill\s*(time|the\s*game|it|the\s*vibe))\b",
     
-    # Filipino benign collisions
-    r"\b(bohol|bobbin)\b",
-    r"\b(tanggap|tanghalian|katangian|patalastas|tanggapan)\b",
-    r"\b(gagawin|magaganda|gaganda|gumaganda)\b",
-    r"\b(tagalog|bagong|bago)\b",
+    # Filipino benign idioms / food
     r"\b(puto\s*(bumbong|cheese|pao|kutsinta)?)\b",
-    r"\b(reputasyon|kaputol)\b",
-    r"\b(tatawa\s*ako|nakakatawa|nakakatuwa)\b",
-    r"\b(kulay|balat|damit)\b"
+    r"\b(tatawa\s*ako|nakakatawa|nakakatuwa)\b"
 ]
 
 # Academic and emotional stress sharing patterns (MUST be approved as safe student support)

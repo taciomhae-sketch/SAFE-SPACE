@@ -217,12 +217,77 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
     lang_code = lang_info["code"]
     lang_conf = lang_info["confidence"]
 
+    # Step 3: Multilingual Rule Matching across normalized variants
+    test_variants = [norm["clean"], norm["evasion"], norm["deleet"], norm["deobfuscated"]]
+    matched_rule = _match_rules(test_variants, lang_code)
+
     # Step 4: Context & Intent Analysis
     ctx = ContextAnalyzer.analyze(norm)
     is_whitelisted = ctx["is_whitelisted"]
     is_academic_stress = ctx["is_academic_stress"]
     is_educational_or_reporting = ctx["is_educational_or_reporting"]
     is_targeted = ctx["is_targeted"]
+
+    rule_decision: Optional[Dict[str, Any]] = None
+    if matched_rule:
+        cat = matched_rule["category"]
+        sev = matched_rule["severity"]
+        act = matched_rule["action"]
+        conf = matched_rule["confidence"]
+        reason = matched_rule["reason"]
+
+        # Context calibration: If mild profanity and NOT targeted at a user, allow it
+        if cat == CATEGORY_PROFANITY and sev == SEVERITY_LOW and not is_targeted:
+            sev = SEVERITY_LOW
+            act = ACTION_ALLOW
+            status = STATUS_APPROVED
+        elif sev == SEVERITY_CRITICAL:
+            status = STATUS_BLOCKED
+            act = ACTION_BLOCK
+        elif sev in [SEVERITY_HIGH, SEVERITY_MEDIUM]:
+            status = STATUS_REVIEW
+            act = ACTION_WARN if sev == SEVERITY_MEDIUM else ACTION_REVIEW
+        else:
+            status = STATUS_APPROVED
+            act = ACTION_ALLOW
+
+        # If deliberate obfuscation was used with a violation, bump confidence
+        if has_obf and sev != SEVERITY_NONE:
+            conf = min(0.99, conf + 0.05)
+            reason += f" (Evasion attempts detected: {', '.join(obf_types)})"
+
+        rule_decision = {
+            "category": cat,
+            "categories": [cat],
+            "severity": sev,
+            "action": act,
+            "status": status,
+            "allowed": (status == STATUS_APPROVED),
+            "confidence": conf,
+            "reason": reason,
+            "detection_source": "fallback"
+        }
+
+        # If critical or high/medium rule matched, enforce immediately without allowing whitelist bypass
+        if not rule_decision["allowed"]:
+            return {
+                "success": True,
+                "allowed": False,
+                "status": rule_decision["status"],
+                "action": rule_decision["action"],
+                "language": detected_lang,
+                "language_confidence": lang_conf,
+                "category": rule_decision["category"],
+                "categories": rule_decision["categories"],
+                "severity": rule_decision["severity"],
+                "confidence": rule_decision["confidence"],
+                "reason": rule_decision["reason"],
+                "detection_source": "ai_and_fallback",
+                "has_obfuscation": has_obf,
+                "obfuscation_types": obf_types,
+                "is_academic_stress": False,
+                "is_targeted": is_targeted
+            }
 
     # 4A. Benign Whitelist Shortcut (e.g., "my phone died", "healthy diet", "puto bumbong")
     if is_whitelisted:
@@ -286,71 +351,6 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "is_academic_stress": False,
             "is_targeted": is_targeted
         }
-
-    # Step 5: Multilingual Rule Matching across normalized variants
-    test_variants = [norm["clean"], norm["evasion"], norm["deleet"], norm["deobfuscated"]]
-    matched_rule = _match_rules(test_variants, lang_code)
-
-    rule_decision: Optional[Dict[str, Any]] = None
-    if matched_rule:
-        cat = matched_rule["category"]
-        sev = matched_rule["severity"]
-        act = matched_rule["action"]
-        conf = matched_rule["confidence"]
-        reason = matched_rule["reason"]
-
-        # Context calibration: If mild profanity and NOT targeted at a user, allow it
-        if cat == CATEGORY_PROFANITY and sev == SEVERITY_LOW and not is_targeted:
-            sev = SEVERITY_LOW
-            act = ACTION_ALLOW
-            status = STATUS_APPROVED
-        elif sev == SEVERITY_CRITICAL:
-            status = STATUS_BLOCKED
-            act = ACTION_BLOCK
-        elif sev in [SEVERITY_HIGH, SEVERITY_MEDIUM]:
-            status = STATUS_REVIEW
-            act = ACTION_WARN if sev == SEVERITY_MEDIUM else ACTION_REVIEW
-        else:
-            status = STATUS_APPROVED
-            act = ACTION_ALLOW
-
-        # If deliberate obfuscation was used with a violation, bump confidence
-        if has_obf and sev != SEVERITY_NONE:
-            conf = min(0.99, conf + 0.05)
-            reason += f" (Evasion attempts detected: {', '.join(obf_types)})"
-
-        rule_decision = {
-            "category": cat,
-            "categories": [cat],
-            "severity": sev,
-            "action": act,
-            "status": status,
-            "allowed": (status == STATUS_APPROVED),
-            "confidence": conf,
-            "reason": reason,
-            "detection_source": "fallback"
-        }
-
-        # FAST PATH: If high-confidence or critical/high violation, return immediately
-        if conf >= 0.88 or sev in [SEVERITY_CRITICAL, SEVERITY_HIGH]:
-            return {
-                "success": True,
-                "allowed": rule_decision["allowed"],
-                "status": rule_decision["status"],
-                "action": rule_decision["action"],
-                "language": detected_lang,
-                "language_confidence": lang_conf,
-                "category": rule_decision["category"],
-                "categories": rule_decision["categories"],
-                "severity": rule_decision["severity"],
-                "confidence": rule_decision["confidence"],
-                "reason": rule_decision["reason"],
-                "detection_source": "ai_and_fallback",
-                "has_obfuscation": has_obf,
-                "obfuscation_types": obf_types,
-                "is_academic_stress": False,
-                "is_targeted": is_targeted
-            }
 
     # Step 6: AI Neural Classification
     ai_decision = _ai_classify(norm["clean"])

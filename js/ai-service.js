@@ -153,24 +153,26 @@
   };
 
   var PHONETIC_VARIANTS = [
-    { pattern: /\b(ptngina|tngina|tang1na|tangena|p-tangina|p\*tangina)\b/gi, replacement: "putangina" },
-    { pattern: /\b(pkyu|fck|fckin|fcking|f\*ck|fu\*k|fuk|fcku)\b/gi, replacement: "fuck" },
-    { pattern: /\b(b0b0|b-o-b-o|b\*b\*)\b/gi, replacement: "bobo" },
-    { pattern: /\b(t4ng4|t-a-n-g-a|tng4)\b/gi, replacement: "tanga" },
-    { pattern: /\b(g4g0|g-a-g-o|g@go)\b/gi, replacement: "gago" },
+    { pattern: /\b(ptngina|tngina|tang1na|tangena|p-tangina|p\*tangina|taena|tena|kingina|amputa|ampota|pukinangina)\b/gi, replacement: "putangina" },
+    { pattern: /\b(pkyu|fck|fckin|fcking|f\*ck|fu\*k|fuk|fcku|pakyu|pakyow|fakyu)\b/gi, replacement: "fuck" },
+    { pattern: /\b(b0b0|b-o-b-o|b\*b\*|bwbw)\b/gi, replacement: "bobo" },
+    { pattern: /\b(t4ng4|t-a-n-g-a|tng4|tnga)\b/gi, replacement: "tanga" },
+    { pattern: /\b(g4g0|g-a-g-o|g@go|ggo)\b/gi, replacement: "gago" },
     { pattern: /\b(k1ll|k\*ll|k-i-l-l)\b/gi, replacement: "kill" },
     { pattern: /\b(sh\*t|sh!t|s-h-i-t)\b/gi, replacement: "shit" },
     { pattern: /\b(b\*tch|b!tch|b1tch|b-i-t-c-h)\b/gi, replacement: "bitch" },
     { pattern: /\b(4ssh0le|a\$\$hole|a\*\*hole)\b/gi, replacement: "asshole" },
     { pattern: /\b(k\*ntot|k4nt0t)\b/gi, replacement: "kantot" },
     { pattern: /\b(t\*te|t1te)\b/gi, replacement: "tite" },
-    { pattern: /\b(p\*ke|puk1)\b/gi, replacement: "puke" }
+    { pattern: /\b(p\*ke|puk1)\b/gi, replacement: "puke" },
+    { pattern: /\b(st\*pid|stpd|idi0t)\b/gi, replacement: "stupid" }
   ];
 
   var KNOWN_SUBWORDS = [
     'bobo', 'tanga', 'gago', 'kill', 'fuck', 'shit', 'ka', 'mo', 'ako',
     'die', 'ulol', 'puke', 'tite', 'inutil', 'salot', 'puta', 'hate',
-    'yourself', 'urself', 'bitch', 'asshole', 'bastard'
+    'yourself', 'urself', 'bitch', 'asshole', 'bastard', 'stupid', 'idiot',
+    'moron', 'pakyu', 'tangina', 'amputa'
   ];
 
   var SafeSpaceNormalizer = {
@@ -282,19 +284,11 @@
   // ─────────────────────────────────────────────────────────────
   var BENIGN_WHITELIST = [
     /\b(diet|dieting|balanced diet|healthy diet)\b/i,
-    /\b(my\s*(phone|laptop|battery|pc|car|earphones)\s*died)\b/i,
+    /\b(my\s*(phone|laptop|battery|pc|car|earphones|device)\s*died)\b/i,
     /\b(died\s*laughing|dying\s*laughing|dead\s*tired)\b/i,
     /\b(roll\s*(the\s*)?die)\b/i,
-    /\b(pass|passed|passing|assignment|compassion|assist|assistant|glasses?|grass)\b/i,
-    /\b(hello|shell|seashell)\b/i,
     /\b(kill\s*(time|the\s*game|it|the\s*vibe))\b/i,
-    /\b(bohol|bobbin)\b/i,
-    /\b(tanggap|tanghalian|katangian|patalastas|tanggapan)\b/i,
-    /\b(gagawin|magaganda|gaganda|gumaganda)\b/i,
-    /\b(tagalog|bagong|bago)\b/i,
-    /\b(puto\s*(bumbong|cheese|pao|kutsinta)?)\b/i,
-    /\b(reputasyon|kaputol)\b/i,
-    /\b(nakakatawa|nakakatuwa)\b/i
+    /\b(puto\s*(bumbong|cheese|pao|kutsinta))\b/i
   ];
 
   var SAFE_ACADEMIC_STRESS = [
@@ -356,27 +350,36 @@
       category: 'THREAT',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(i('ll| will| am going to| gonna)?\s*(kill|murder|slaughter|shoot|stab)\s*(you|u|everyone|him|her|them|all of you))\b/i,
+      pattern: /\b(i('ll| will| am going to| gonna)?\s*(kill|murder|slaughter|shoot|stab|choke|strangle|slit your)\s*(you|u|everyone|him|her|them|all of you))\b/i,
       confidence: 0.98,
-      reason: 'Direct threat of physical violence or murder.'
+      reason: 'Direct threat of killing or severe physical violence.'
     },
     {
       id: 'threat_kill_fil',
       category: 'THREAT',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(papatayin\s*(kita|kayo|siya|sila)|ipapapatay\s*(kita|kayo)|sasaksakin\s*kita|babarilin\s*kita|bubugbugin\s*(kita|kayo)|patayin\s*(kita|mo|ka))\b/i,
+      pattern: /\b(papatayin\s*(kita|ka|kayo|siya|sila|nyo)|patayin\s*(kita|ka|kayo|siya|sila|mo)|ipapapatay\s*(kita|kayo)|sasaksakin\s*(kita|ka|kayo)|saksakin\s*(kita|ka|kayo)|babarilin\s*(kita|ka|kayo)|bubugbugin\s*(kita|ka|kayo)|bugbugin\s*(kita|ka|kayo)|sasaktan\s*(kita|ka|kayo|ka)|tatagain\s*(kita|ka|kayo)|lalaslasin\s*(kita|ka|kayo)|durog\s*ka\s*(sa\s*akin|sakin)|lagot\s*ka\s*(sa\s*akin|sakin)|humanda\s*ka)\b/i,
       confidence: 0.98,
       reason: 'Explicit physical threat in Filipino.'
     },
     {
-      id: 'threat_intimidate',
+      id: 'threat_physical_en',
       category: 'THREAT',
       severity: 'high',
       action: 'review',
-      pattern: /\b(you('ll| will)?\s*(pay for this|regret this|be sorry)|lagot\s*ka\s*(sa\s*akin|sakin))\b/i,
-      confidence: 0.88,
-      reason: 'Intimidating or threatening language.'
+      pattern: /\b(i('ll| will| gonna)?\s*(beat|hurt|destroy|smash|break)\s*(your\s*(face|head|skull|neck|bones)|you\s*(up|to death))|you('ll| will)?\s*(die|pay for this|regret this|be sorry|not survive))\b/i,
+      confidence: 0.90,
+      reason: 'Threatening or intimidating statement.'
+    },
+    {
+      id: 'taglish_threat_mix',
+      category: 'THREAT',
+      severity: 'critical',
+      action: 'block',
+      pattern: /\b(i('ll| will)?\s*(make sure\s*)?(sasaktan\s*kita|patayin\s*you|bugbog\s*you)|papatayin\s*kita\s*you\s*will\s*see)\b/i,
+      confidence: 0.95,
+      reason: 'Code-switched threat of violence in Taglish.'
     },
 
     // Suicide & Self-Harm Encouragement (Critical -> Block)
@@ -385,7 +388,7 @@
       category: 'ENCOURAGEMENT_OF_SELF_HARM',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(kill\s*your\s*self|kill\s*urself|kys|go\s*(and\s*)?die|drink\s*bleach|hang\s*your\s*self)\b/i,
+      pattern: /\b(kill\s*(your\s*self|urself|ur\s*self)|kys|go\s*(and\s*)?die|go\s*die|drink\s*bleach|hang\s*(your\s*self|urself)|slit\s*(your\s*wrists?|ur\s*wrists?)|jump\s*off\s*(a\s*bridge|a\s*building)|you\s*(should|deserve to)\s*(die|kill yourself)|hope\s*you\s*die)\b/i,
       confidence: 0.98,
       reason: 'Dangerous encouragement of suicide or self-harm.'
     },
@@ -394,9 +397,18 @@
       category: 'ENCOURAGEMENT_OF_SELF_HARM',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(magpakamatay\s*ka|magbigti\s*ka|mamatay\s*ka\s*na|tumalon\s*ka\s*sa\s*tulay|laslasin\s*mo\s*pulso\s*mo)\b/i,
+      pattern: /\b(magpakamatay\s*(ka|kayo|na\s*lang|ka\s*na)?|magbigti\s*(ka|kayo|ka\s*na)?|mamatay\s*ka\s*(na|sana|nalang|na\s*lang)|tumalon\s*ka\s*(sa\s*tulay|sa\s*building)|laslasin\s*mo\s*(ang\s*)?pulso\s*mo|maglaslas\s*ka|sana\s*mamatay\s*ka\s*na|dapat\s*mamatay\s*ka\s*na)\b/i,
       confidence: 0.98,
       reason: 'Dangerous encouragement of suicide in Filipino.'
+    },
+    {
+      id: 'taglish_self_harm_mix',
+      category: 'ENCOURAGEMENT_OF_SELF_HARM',
+      severity: 'critical',
+      action: 'block',
+      pattern: /\b(go\s*magpakamatay\s*na|just\s*kill\s*yourself\s*ka\s*na|magbigti\s*you\s*loser)\b/i,
+      confidence: 0.96,
+      reason: 'Code-switched encouragement of self-harm in Taglish.'
     },
 
     // Self-Harm Intent (Critical -> Block + Supportive Intervention)
@@ -405,7 +417,7 @@
       category: 'SELF_HARM',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(i\s*(want to|wanna|plan to|will|am going to)\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|disappear forever and die))\b/i,
+      pattern: /\b(i\s*(want to|wanna|plan to|will|am going to|gonna)\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|disappear forever and die))\b/i,
       confidence: 0.96,
       reason: 'Direct indication of acute self-harm or suicide intent.'
     },
@@ -414,7 +426,7 @@
       category: 'SELF_HARM',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(gusto\s*ko\s*(nang|na)?\s*(magpakamatay|mamatay|mawala\s*sa\s*mundo|patayin\s*ang\s*sarili|magbigti)|ayaw\s*ko\s*nang\s*mabuhay)\b/i,
+      pattern: /\b(gusto\s*ko\s*(nang|na)?\s*(magpakamatay|mamatay|mawala\s*sa\s*mundo|patayin\s*ang\s*sarili|magbigti|maglaslas)|ayaw\s*ko\s*nang\s*mabuhay|tapusin\s*ko\s*na\s*ang\s*buhay\s*ko)\b/i,
       confidence: 0.95,
       reason: 'Expression of acute self-harm or suicidal distress in Filipino.'
     },
@@ -425,7 +437,7 @@
       category: 'SEXUAL_HARASSMENT',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(i('ll| will| am going to)?\s*rape\s*(you|u|her|him|someone)|send\s*(nudes|explicit|tits|dick\s*pic)|touch\s*you\s*(inappropriately|there))\b/i,
+      pattern: /\b(i('ll| will| am going to)?\s*rape\s*(you|u|her|him|someone)|send\s*(nudes|explicit|tits|dick\s*pics?|pussy\s*pics?)|touch\s*you\s*(inappropriately|there))\b/i,
       confidence: 0.97,
       reason: 'Sexual violence threat or explicit sexual harassment.'
     },
@@ -434,7 +446,7 @@
       category: 'SEXUAL_HARASSMENT',
       severity: 'critical',
       action: 'block',
-      pattern: /\b(kakantutin\s*kita|kantutin\s*kita|chupain\s*mo|bastusin\s*kita|hahawakan\s*ko\s*(ang\s*)?(puke|tite|suso|pwet)\s*mo)\b/i,
+      pattern: /\b(kakantutin\s*(kita|kayo|ka)|kantutin\s*(kita|kayo|ka)|chupain\s*(mo|ako)|tsupain\s*(mo|ako)|bastusin\s*(kita|kayo)|hahawakan\s*ko\s*(ang\s*)?(puke|puki|tite|suso|pwet)\s*mo|gagahasain\s*(kita|ka)|hahalayin\s*(kita|ka))\b/i,
       confidence: 0.97,
       reason: 'Explicit sexual harassment in Filipino.'
     },
@@ -443,36 +455,47 @@
       category: 'SEXUAL_CONTENT',
       severity: 'high',
       action: 'review',
-      pattern: /\b(kantot|kantutan|chupa|tite|puke|kiki|tamod|jakol|magjakol|porn|pornograpiya)\b/i,
+      pattern: /\b(kantot|kantutan|chupa|tsupa|tite|puke|puki|kiki|tamod|jakol|magjakol|burat|bayag|pepe|porn|pornograpiya|iyot|iyutan|pokpok)\b/i,
       confidence: 0.92,
       reason: 'Sexually explicit terminology in Filipino.'
     },
 
-    // Targeted Harassment & Bullying
+    // Slurs & Severe Hate Speech (Critical -> Block)
+    {
+      id: 'slurs_en',
+      category: 'HATE',
+      severity: 'critical',
+      action: 'block',
+      pattern: /\b(nigger|nigga|faggot|fag|tranny|chink|spic|kike)\b/i,
+      confidence: 0.99,
+      reason: 'Explicit hate speech slur.'
+    },
+
+    // Targeted Harassment & Bullying (High -> Review)
     {
       id: 'harass_targeted_fil',
       category: 'HARASSMENT',
       severity: 'high',
       action: 'review',
-      pattern: /\b(bobo\s*(ka|mo|kayo)|tanga\s*(ka|mo|kayo)|inutil\s*(ka|mo|kayo)|ulol\s*(ka|mo|kayo)|gago\s*(ka|mo|kayo)|tarantado\s*(ka|mo|kayo)|salot\s*(ka|kayo)|walang\s*kwenta\s*(ka|mo)|panget\s*(mo|ka)|bwisit\s*ka)\b/i,
+      pattern: /\b(bobo|boba|bobong|boplaks|bopols|kabobohan|tanga|tangang|katangahan|gago|gaga|gagong|kagaguhan|ulol|inutil|tarantado|tarantada|salot|siraulo|sira-ulo|sira\s*ulo|walanghiya|walang\s*hiya|walang\s*kwenta|walang\s*silbi|panget\s*(mo|ka)|pangit\s*(mo|ka)|abnoy|mongoloid|timang|ungas|unggoy\s*ka|baboy\s*ka|pakyu|pakyaw|hinayupak|hayop\s*ka|hayup\s*ka)\b/i,
       confidence: 0.93,
-      reason: 'Targeted personal insult or harassment in Filipino.'
+      reason: 'Harmful insult or targeted personal harassment in Filipino.'
     },
     {
       id: 'harass_targeted_en',
       category: 'HARASSMENT',
       severity: 'high',
       action: 'review',
-      pattern: /\b(you\s*(are|'?re)\s*(stupid|an idiot|a retard|worthless|a failure|disgusting|pathetic|a loser|a piece of shit|trash))\b/i,
+      pattern: /\b(stupid|idiot|idiotic|moron|moronic|retard|retarded|imbecile|dumbass|jackass|dipshit|fatass|scumbag|loser|worthless|pathetic|piece\s*of\s*shit|waste\s*of\s*space|fuck\s*(you|u|off)|fck\s*u|stfu|gtfo)\b/i,
       confidence: 0.92,
-      reason: 'Targeted personal harassment or demeaning attack.'
+      reason: 'Harmful personal insult or demeaning attack in English.'
     },
     {
       id: 'harass_taglish_mix',
       category: 'HARASSMENT',
       severity: 'high',
       action: 'review',
-      pattern: /\b(you\s*are\s*so\s*(bobo|tanga|inutil|gago)|sobrang\s*(stupid|loser|idiot|pathetic)\s*mo|napaka-(stupid|toxic|loser)\s*mo)\b/i,
+      pattern: /\b(you\s*are\s*so\s*(bobo|tanga|inutil|gago|panget|kupal)|sobrang\s*(stupid|loser|idiot|pathetic|ugly)\s*mo|napaka-(stupid|toxic|loser|idiot)\s*mo|ang\s*(stupid|loser|idiot|toxic)\s*mo)\b/i,
       confidence: 0.94,
       reason: 'Code-switched Taglish targeted insult.'
     },
@@ -492,7 +515,7 @@
       category: 'HATE',
       severity: 'high',
       action: 'review',
-      pattern: /\b(mga\s*(bading|tomboy|bakla|bisaya|igorot|moros?|muslim|kristiyano))\s*(salot|walang\s*silbi|dapat\s*mamatay|masasama|marurumi)\b/i,
+      pattern: /\b(mga\s*(bading|tomboy|bakla|bisaya|igorot|moros?|muslim|kristiyano))\s*(salot|walang\s*silbi|dapat\s*mamatay|masasama|marurumi|patayin)\b/i,
       confidence: 0.92,
       reason: 'Identity-based hate speech or discriminatory attack in Filipino.'
     },
@@ -512,7 +535,7 @@
       category: 'PROFANITY',
       severity: 'medium',
       action: 'warn',
-      pattern: /\b(putangina|tangina|kingina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta)\b/i,
+      pattern: /\b(putangina|putang\s*ina|tangina|tang\s*ina|taena|tayna|tangena|kingina|amputa|ampota|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|hudas)\b/i,
       confidence: 0.88,
       reason: 'Strong vulgar profanity in Filipino.'
     },
@@ -521,7 +544,7 @@
       category: 'PROFANITY',
       severity: 'medium',
       action: 'warn',
-      pattern: /\b(motherfucker|asshole|bitch|bastard|fuck|fucking|cunt|dickhead|cocksucker)\b/i,
+      pattern: /\b(motherfucker|motherfucking|asshole|bitch|bastard|fuck|fucking|fucker|fucked|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore|pussy|dick|cock)\b/i,
       confidence: 0.88,
       reason: 'Explicit vulgar profanity.'
     },
@@ -530,9 +553,9 @@
       category: 'PROFANITY',
       severity: 'low',
       action: 'allow',
-      pattern: /\b(bwisit|buwisit|damn|shit|crap|hell)\b/i,
+      pattern: /\b(crap|pissed|susmaryosep|anak\s*ng\s*tinapa)\b/i,
       confidence: 0.70,
-      reason: 'Mild exclamation or informal frustration.'
+      reason: 'Mild colloquial expression or informal frustration.'
     },
 
     // Spam
@@ -720,8 +743,8 @@
       // Step A: Fast Local Evaluation (Context + Rules)
       var fastResult = this._fallbackAnalysis(originalText, norm);
 
-      // Safe stress or benign idiom -> immediate approve
-      if (fastResult.is_academic_stress || fastResult.is_whitelisted || fastResult.is_educational_or_reporting) {
+      // Safe stress or benign idiom -> immediate approve only if allowed (no violation)
+      if (fastResult.allowed && (fastResult.is_academic_stress || fastResult.is_whitelisted || fastResult.is_educational_or_reporting)) {
         this._setCache(cacheKey, fastResult);
         return fastResult;
       }
@@ -828,90 +851,7 @@
       var langInfo = SafeSpaceLanguageDetector.detect(norm.has_obfuscation ? norm.deobfuscated : text);
       var ctx = SafeSpaceContextAnalyzer.analyze(norm);
 
-      // 1. Whitelist Safeguard
-      if (ctx.is_whitelisted) {
-        return {
-          success: true,
-          online: false,
-          fallback: true,
-          is_whitelisted: true,
-          allowed: true,
-          status: 'APPROVED',
-          action: 'allow',
-          language: langInfo.language,
-          language_confidence: langInfo.confidence,
-          category: 'SAFE',
-          categories: ['SAFE'],
-          severity: 'none',
-          confidence: 0.98,
-          reason: 'Harmless benign phrase or idiom verified safe.',
-          detection_source: 'fallback',
-          has_obfuscation: norm.has_obfuscation,
-          obfuscation_types: norm.obfuscation_types,
-          is_academic_stress: false,
-          is_targeted: ctx.is_targeted,
-          sentiment: 'NEUTRAL',
-          sentiment_score: 0.5,
-          elapsedMs: 2
-        };
-      }
-
-      // 2. Academic Stress Sharing Safeguard
-      if (ctx.is_academic_stress) {
-        return {
-          success: true,
-          online: false,
-          fallback: true,
-          is_academic_stress: true,
-          allowed: true,
-          status: 'APPROVED',
-          action: 'allow',
-          language: langInfo.language,
-          language_confidence: langInfo.confidence,
-          category: 'SAFE',
-          categories: ['SAFE'],
-          severity: 'none',
-          confidence: 0.96,
-          reason: 'Safe empathetic student stress or academic sharing.',
-          detection_source: 'fallback',
-          has_obfuscation: norm.has_obfuscation,
-          obfuscation_types: norm.obfuscation_types,
-          is_targeted: ctx.is_targeted,
-          sentiment: 'NEGATIVE',
-          sentiment_score: 0.78,
-          elapsedMs: 2
-        };
-      }
-
-      // 3. Educational / Reporting Context
-      if (ctx.is_educational_or_reporting) {
-        return {
-          success: true,
-          online: false,
-          fallback: true,
-          is_educational_or_reporting: true,
-          allowed: true,
-          status: 'APPROVED',
-          action: 'allow',
-          language: langInfo.language,
-          language_confidence: langInfo.confidence,
-          category: 'SAFE',
-          categories: ['SAFE'],
-          severity: 'none',
-          confidence: 0.92,
-          reason: 'Legitimate educational discussion or reporting context.',
-          detection_source: 'fallback',
-          has_obfuscation: norm.has_obfuscation,
-          obfuscation_types: norm.obfuscation_types,
-          is_academic_stress: false,
-          is_targeted: ctx.is_targeted,
-          sentiment: 'NEUTRAL',
-          sentiment_score: 0.5,
-          elapsedMs: 2
-        };
-      }
-
-      // 4. Test Variants against Rules
+      // 1. Safety Rules First (Violations always take priority over shortcuts)
       var testStrings = [norm.clean, norm.evasion, norm.deleet, norm.deobfuscated];
       var matchedRule = null;
 
@@ -960,7 +900,7 @@
           categories: [cat],
           severity: severity,
           confidence: conf,
-          reason: reason + ' (Multilingual Safety Fallback)',
+          reason: reason + ' (Multilingual Safety Shield)',
           detection_source: 'fallback',
           has_obfuscation: norm.has_obfuscation,
           obfuscation_types: norm.obfuscation_types,
@@ -968,6 +908,89 @@
           is_targeted: ctx.is_targeted,
           sentiment: 'NEGATIVE',
           sentiment_score: 0.85,
+          elapsedMs: 2
+        };
+      }
+
+      // 2. Academic Stress Sharing Safeguard (Only reached if no rule violations)
+      if (ctx.is_academic_stress) {
+        return {
+          success: true,
+          online: false,
+          fallback: true,
+          is_academic_stress: true,
+          allowed: true,
+          status: 'APPROVED',
+          action: 'allow',
+          language: langInfo.language,
+          language_confidence: langInfo.confidence,
+          category: 'SAFE',
+          categories: ['SAFE'],
+          severity: 'none',
+          confidence: 0.96,
+          reason: 'Safe empathetic student stress or academic sharing.',
+          detection_source: 'fallback',
+          has_obfuscation: norm.has_obfuscation,
+          obfuscation_types: norm.obfuscation_types,
+          is_targeted: ctx.is_targeted,
+          sentiment: 'NEGATIVE',
+          sentiment_score: 0.78,
+          elapsedMs: 2
+        };
+      }
+
+      // 3. Whitelist Safeguard (Only reached if no rule violations)
+      if (ctx.is_whitelisted) {
+        return {
+          success: true,
+          online: false,
+          fallback: true,
+          is_whitelisted: true,
+          allowed: true,
+          status: 'APPROVED',
+          action: 'allow',
+          language: langInfo.language,
+          language_confidence: langInfo.confidence,
+          category: 'SAFE',
+          categories: ['SAFE'],
+          severity: 'none',
+          confidence: 0.98,
+          reason: 'Harmless benign phrase or idiom verified safe.',
+          detection_source: 'fallback',
+          has_obfuscation: norm.has_obfuscation,
+          obfuscation_types: norm.obfuscation_types,
+          is_academic_stress: false,
+          is_targeted: ctx.is_targeted,
+          sentiment: 'NEUTRAL',
+          sentiment_score: 0.5,
+          elapsedMs: 2
+        };
+      }
+
+      // 4. Educational / Reporting Context
+      if (ctx.is_educational_or_reporting) {
+        return {
+          success: true,
+          online: false,
+          fallback: true,
+          is_educational_or_reporting: true,
+          allowed: true,
+          status: 'APPROVED',
+          action: 'allow',
+          language: langInfo.language,
+          language_confidence: langInfo.confidence,
+          category: 'SAFE',
+          categories: ['SAFE'],
+          severity: 'none',
+          confidence: 0.92,
+          reason: 'Legitimate educational discussion or reporting context.',
+          detection_source: 'fallback',
+          has_obfuscation: norm.has_obfuscation,
+          obfuscation_types: norm.obfuscation_types,
+          is_academic_stress: false,
+          is_targeted: ctx.is_targeted,
+          sentiment: 'NEUTRAL',
+          sentiment_score: 0.5,
           elapsedMs: 2
         };
       }

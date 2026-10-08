@@ -40,15 +40,19 @@ LEET_MAP = {
 
 # Common phonetically misspelled / abbreviated vulgarities in Taglish / Filipino / English
 PHONETIC_VARIANTS = {
-    r"\b(ptngina|tngina|tang1na|tangena|p-tangina|p\*tangina)\b": "putangina",
-    r"\b(pkyu|fck|fckin|fcking|f\*ck|fu\*k|fuk|fcku)\b": "fuck",
-    r"\b(b0b0|b-o-b-o|b\*b\*)\b": "bobo",
+    r"\b(ptngina|tngina|tang1na|tangena|taena|tayna|p-tangina|p\*tangina|kingina|amputa|ampota|pukinangina)\b": "putangina",
+    r"\b(pakyu|pakyuo|pkyu|fck|fckin|fcking|f\*ck|fu\*k|fuk|fcku|fakyu)\b": "fuck",
+    r"\b(b0b0|b-o-b-o|b\*b\*|boplaks|bopols)\b": "bobo",
     r"\b(t4ng4|t-a-n-g-a|tng4)\b": "tanga",
     r"\b(g4g0|g-a-g-o|g@go)\b": "gago",
+    r"\b(t4r4nt4d0|trntdo)\b": "tarantado",
+    r"\b(s1r4ul0|sira-ulo)\b": "siraulo",
     r"\b(k1ll|k\*ll|k-i-l-l)\b": "kill",
     r"\b(sh\*t|sh!t|s-h-i-t)\b": "shit",
     r"\b(b\*tch|b!tch|b1tch|b-i-t-c-h)\b": "bitch",
     r"\b(4ssh0le|a\$\$hole|a\*\*hole)\b": "asshole",
+    r"\b(st\*pid|stpd|stup1d)\b": "stupid",
+    r"\b(1d10t|id1ot)\b": "idiot",
     r"\b(k\*ntot|k4nt0t)\b": "kantot",
     r"\b(t\*te|t1te)\b": "tite",
     r"\b(p\*ke|puk1)\b": "puke"
@@ -116,9 +120,13 @@ class TextNormalizer:
 
         # 5B. Runs of single spaced letters: "b o b o", "k i l l"
         KNOWN_SUBWORDS = [
-            'bobo', 'tanga', 'gago', 'kill', 'fuck', 'shit', 'ka', 'mo', 'ako',
-            'die', 'ulol', 'puke', 'tite', 'inutil', 'salot', 'puta', 'hate',
-            'yourself', 'urself', 'bitch', 'asshole', 'bastard'
+            'putangina', 'tangina', 'taena', 'kingina', 'amputa', 'punyeta',
+            'bobo', 'tanga', 'gago', 'ulol', 'inutil', 'tarantado', 'salot',
+            'siraulo', 'walanghiya', 'pakyu', 'leche', 'peste', 'yawa', 'kupal',
+            'ogag', 'kantot', 'tite', 'puke', 'jakol', 'chupa',
+            'kill', 'die', 'fuck', 'shit', 'bitch', 'asshole', 'bastard',
+            'stupid', 'idiot', 'moron', 'retard', 'dumbass', 'loser',
+            'hate', 'yourself', 'urself', 'ka', 'mo', 'ako'
         ]
 
         def _despace_runs(m):

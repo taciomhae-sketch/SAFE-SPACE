@@ -50,7 +50,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_THREAT,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(i('ll| will| am going to| gonna)?\s*(kill|murder|slaughter|shoot|stab)\s*(you|u|everyone|him|her|them|all of you))\b",
+            "pattern": r"\b(i('ll| will| am going to| gonna)?\s*(kill|murder|slaughter|shoot|stab|choke|strangle|slit your)\s*(you|u|everyone|him|her|them|all of you))\b",
             "confidence": 0.98,
             "reason": "Direct threat of killing or severe physical violence."
         },
@@ -59,7 +59,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_ENCOURAGEMENT_OF_SELF_HARM,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(kill\s*your\s*self|kill\s*urself|kys|go\s*(and\s*)?die|drink\s*bleach|hang\s*your\s*self)\b",
+            "pattern": r"\b(kill\s*(your\s*self|urself|ur\s*self)|kys|go\s*(and\s*)?die|go\s*die|drink\s*bleach|hang\s*(your\s*self|urself)|slit\s*(your\s*wrists?|ur\s*wrists?)|jump\s*off\s*(a\s*bridge|a\s*building)|you\s*(should|deserve to)\s*(die|kill yourself)|hope\s*you\s*die)\b",
             "confidence": 0.98,
             "reason": "Dangerous encouragement of suicide or self-harm."
         },
@@ -68,7 +68,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_SELF_HARM,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(i\s*(want to|wanna|plan to|will|am going to)\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|disappear forever and die))\b",
+            "pattern": r"\b(i\s*(want to|wanna|plan to|will|am going to|gonna)\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|disappear forever and die))\b",
             "confidence": 0.96,
             "reason": "Direct indication of acute self-harm or suicide intent."
         },
@@ -77,9 +77,18 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_SEXUAL_HARASSMENT,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(i('ll| will| am going to)?\s*rape\s*(you|u|her|him|someone)|send\s*(nudes|explicit|tits|dick\s*pic)|touch\s*you\s*(inappropriately|there))\b",
+            "pattern": r"\b(i('ll| will| am going to)?\s*rape\s*(you|u|her|him|someone)|send\s*(nudes|explicit|tits|dick\s*pics?|pussy\s*pics?)|touch\s*you\s*(inappropriately|there))\b",
             "confidence": 0.97,
             "reason": "Sexual violence threat or explicit sexual harassment."
+        },
+        {
+            "id": "crit_slurs_en",
+            "category": CATEGORY_HATE,
+            "severity": SEVERITY_CRITICAL,
+            "action": ACTION_BLOCK,
+            "pattern": r"\b(nigger|nigga|faggot|fag|tranny|chink|spic|kike)\b",
+            "confidence": 0.99,
+            "reason": "Explicit hate speech slur."
         }
     ],
 
@@ -90,7 +99,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_THREAT,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(papatayin\s*(kita|kayo|siya|sila)|ipapapatay\s*(kita|kayo)|sasaksakin\s*(kita|kayo)|babarilin\s*(kita|kayo)|bubugbugin\s*(kita|kayo)|sasaktan\s*(kita|kayo|ka)|patayin\s*(kita|mo|ka))\b",
+            "pattern": r"\b(papatayin\s*(kita|ka|kayo|siya|sila|nyo)|patayin\s*(kita|ka|kayo|siya|sila|mo)|ipapapatay\s*(kita|kayo)|sasaksakin\s*(kita|ka|kayo)|saksakin\s*(kita|ka|kayo)|babarilin\s*(kita|ka|kayo)|bubugbugin\s*(kita|ka|kayo)|bugbugin\s*(kita|ka|kayo)|sasaktan\s*(kita|ka|kayo|ka)|tatagain\s*(kita|ka|kayo)|lalaslasin\s*(kita|ka|kayo)|durog\s*ka\s*(sa\s*akin|sakin)|lagot\s*ka\s*(sa\s*akin|sakin)|humanda\s*ka)\b",
             "confidence": 0.98,
             "reason": "Explicit physical threat in Filipino."
         },
@@ -99,7 +108,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_ENCOURAGEMENT_OF_SELF_HARM,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(magpakamatay\s*ka|magbigti\s*ka|mamatay\s*ka\s*na|tumalon\s*ka\s*sa\s*tulay|laslasin\s*mo\s*pulso\s*mo)\b",
+            "pattern": r"\b(magpakamatay\s*(ka|kayo|na\s*lang|ka\s*na)?|magbigti\s*(ka|kayo|ka\s*na)?|mamatay\s*ka\s*(na|sana|nalang|na\s*lang)|tumalon\s*ka\s*(sa\s*tulay|sa\s*building)|laslasin\s*mo\s*(ang\s*)?pulso\s*mo|maglaslas\s*ka|sana\s*mamatay\s*ka\s*na|dapat\s*mamatay\s*ka\s*na)\b",
             "confidence": 0.98,
             "reason": "Dangerous encouragement of suicide in Filipino."
         },
@@ -108,7 +117,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_SELF_HARM,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(gusto\s*ko\s*(nang|na)?\s*(magpakamatay|mamatay|mawala\s*sa\s*mundo|patayin\s*ang\s*sarili|magbigti)|ayaw\s*ko\s*nang\s*mabuhay)\b",
+            "pattern": r"\b(gusto\s*ko\s*(nang|na)?\s*(magpakamatay|mamatay|mawala\s*sa\s*mundo|patayin\s*ang\s*sarili|magbigti|maglaslas)|ayaw\s*ko\s*nang\s*mabuhay|tapusin\s*ko\s*na\s*ang\s*buhay\s*ko)\b",
             "confidence": 0.95,
             "reason": "Expression of acute self-harm or suicidal distress in Filipino."
         },
@@ -117,7 +126,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_SEXUAL_HARASSMENT,
             "severity": SEVERITY_CRITICAL,
             "action": ACTION_BLOCK,
-            "pattern": r"\b(kakantutin\s*kita|kantutin\s*kita|chupain\s*mo|bastusin\s*kita|hahawakan\s*ko\s*(ang\s*)?(puke|tite|suso|pwet)\s*mo)\b",
+            "pattern": r"\b(kakantutin\s*(kita|kayo|ka)|kantutin\s*(kita|kayo|ka)|chupain\s*(mo|ako)|tsupain\s*(mo|ako)|bastusin\s*(kita|kayo)|hahawakan\s*ko\s*(ang\s*)?(puke|puki|tite|suso|pwet)\s*mo|gagahasain\s*(kita|ka)|hahalayin\s*(kita|ka))\b",
             "confidence": 0.97,
             "reason": "Explicit sexual harassment in Filipino."
         },
@@ -126,7 +135,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_SEXUAL_CONTENT,
             "severity": SEVERITY_HIGH,
             "action": ACTION_REVIEW,
-            "pattern": r"\b(kantot|kantutan|chupa|tite|puke|kiki|tamod|jakol|magjakol|porn|pornograpiya)\b",
+            "pattern": r"\b(kantot|kantutan|chupa|tsupa|tite|puke|puki|kiki|tamod|jakol|magjakol|burat|bayag|pepe|porn|pornograpiya|iyot|iyutan|pokpok)\b",
             "confidence": 0.92,
             "reason": "Sexually explicit terminology in Filipino."
         },
@@ -135,16 +144,16 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_HARASSMENT,
             "severity": SEVERITY_HIGH,
             "action": ACTION_REVIEW,
-            "pattern": r"\b(bobo\s*(ka|mo|kayo)|tanga\s*(ka|mo|kayo)|inutil\s*(ka|mo|kayo)|ulol\s*(ka|mo|kayo)|gago\s*(ka|mo|kayo)|tarantado\s*(ka|mo|kayo)|salot\s*(ka|kayo)|walang\s*kwenta\s*(ka|mo)|panget\s*(mo|ka)|bwisit\s*ka)\b",
+            "pattern": r"\b(bobo|boba|bobong|boplaks|bopols|kabobohan|tanga|tangang|katangahan|gago|gaga|gagong|kagaguhan|ulol|inutil|tarantado|tarantada|salot|siraulo|sira-ulo|sira\s*ulo|walanghiya|walang\s*hiya|walang\s*kwenta|walang\s*silbi|panget\s*(mo|ka)|pangit\s*(mo|ka)|abnoy|mongoloid|timang|ungas|unggoy\s*ka|baboy\s*ka|pakyu|pakyaw|hinayupak|hayop\s*ka|hayup\s*ka)\b",
             "confidence": 0.93,
-            "reason": "Targeted personal insult or harassment in Filipino."
+            "reason": "Harmful insult or targeted personal harassment in Filipino."
         },
         {
             "id": "fil_hate_speech",
             "category": CATEGORY_HATE,
             "severity": SEVERITY_HIGH,
             "action": ACTION_REVIEW,
-            "pattern": r"\b(mga\s*(bading|tomboy|bakla|bisaya|igorot|moros?|muslim|kristiyano))\s*(salot|walang\s*silbi|dapat\s*mamatay|masasama|marurumi)\b",
+            "pattern": r"\b(mga\s*(bading|tomboy|bakla|bisaya|igorot|moros?|muslim|kristiyano))\s*(salot|walang\s*silbi|dapat\s*mamatay|masasama|marurumi|patayin)\b",
             "confidence": 0.92,
             "reason": "Identity-based hate speech or discriminatory attack in Filipino."
         },
@@ -153,7 +162,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_PROFANITY,
             "severity": SEVERITY_MEDIUM,
             "action": ACTION_WARN,
-            "pattern": r"\b(putangina|tangina|kingina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta)\b",
+            "pattern": r"\b(putangina|putang\s*ina|tangina|tang\s*ina|taena|tayna|tangena|kingina|amputa|ampota|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|hudas)\b",
             "confidence": 0.88,
             "reason": "Strong vulgar profanity in Filipino."
         },
@@ -162,7 +171,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_PROFANITY,
             "severity": SEVERITY_LOW,
             "action": ACTION_ALLOW,
-            "pattern": r"\b(bwisit|buwisit|susmaryosep|anak\s*ng\s*tinapa|loko|loka)\b",
+            "pattern": r"\b(susmaryosep|anak\s*ng\s*tinapa)\b",
             "confidence": 0.70,
             "reason": "Mild Filipino exclamation or informal expression."
         }
@@ -175,7 +184,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_THREAT,
             "severity": SEVERITY_HIGH,
             "action": ACTION_REVIEW,
-            "pattern": r"\b(you('ll| will)?\s*(pay for this|regret this|be sorry)|i('ll| will)?\s*(beat|hurt|destroy|smash)\s*(your\s*face|you\s*up))\b",
+            "pattern": r"\b(i('ll| will| gonna)?\s*(beat|hurt|destroy|smash|break)\s*(your\s*(face|head|skull|neck|bones)|you\s*(up|to death))|you('ll| will)?\s*(die|pay for this|regret this|be sorry|not survive))\b",
             "confidence": 0.90,
             "reason": "Threatening or intimidating statement."
         },
@@ -184,9 +193,9 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_HARASSMENT,
             "severity": SEVERITY_HIGH,
             "action": ACTION_REVIEW,
-            "pattern": r"\b(you\s*(are|'?re)\s*(stupid|an idiot|a retard|worthless|a failure|disgusting|pathetic|a loser|a piece of shit|trash))\b",
+            "pattern": r"\b(stupid|idiot|idiotic|moron|moronic|retard|retarded|imbecile|dumbass|jackass|dipshit|fatass|scumbag|loser|worthless|pathetic|piece\s*of\s*shit|waste\s*of\s*space|fuck\s*(you|u|off)|fck\s*u|stfu|gtfo)\b",
             "confidence": 0.92,
-            "reason": "Targeted personal harassment or demeaning attack."
+            "reason": "Harmful personal insult or demeaning attack in English."
         },
         {
             "id": "en_bullying_incitement",
@@ -211,7 +220,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_PROFANITY,
             "severity": SEVERITY_MEDIUM,
             "action": ACTION_WARN,
-            "pattern": r"\b(motherfucker|asshole|bitch|bastard|fuck|fucking|cunt|dickhead|cocksucker)\b",
+            "pattern": r"\b(motherfucker|motherfucking|asshole|bitch|bastard|fuck|fucking|fucker|fucked|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore|pussy|dick|cock)\b",
             "confidence": 0.88,
             "reason": "Explicit vulgar profanity."
         },
@@ -220,7 +229,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_PROFANITY,
             "severity": SEVERITY_LOW,
             "action": ACTION_ALLOW,
-            "pattern": r"\b(damn|shit|crap|hell|pissed)\b",
+            "pattern": r"\b(crap|pissed)\b",
             "confidence": 0.70,
             "reason": "Mild colloquial expression or informal frustration."
         }
@@ -233,7 +242,7 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "category": CATEGORY_HARASSMENT,
             "severity": SEVERITY_HIGH,
             "action": ACTION_REVIEW,
-            "pattern": r"\b(you\s*are\s*so\s*(bobo|tanga|inutil|gago)|sobrang\s*(stupid|loser|idiot|pathetic)\s*mo|napaka-(stupid|toxic|loser)\s*mo)\b",
+            "pattern": r"\b(you\s*are\s*so\s*(bobo|tanga|inutil|gago|panget|kupal)|sobrang\s*(stupid|loser|idiot|pathetic|ugly)\s*mo|napaka-(stupid|toxic|loser|idiot)\s*mo|ang\s*(stupid|loser|idiot|toxic)\s*mo)\b",
             "confidence": 0.94,
             "reason": "Code-switched Taglish targeted insult."
         },
