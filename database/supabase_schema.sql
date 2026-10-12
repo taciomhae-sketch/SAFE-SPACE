@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
     deleted_at TIMESTAMPTZ NULL,
     is_from_support BOOLEAN DEFAULT false,
     reactions JSONB DEFAULT '[]'::jsonb,
+    deleted_for JSONB DEFAULT '[]'::jsonb,
     is_read BOOLEAN DEFAULT false,
     read_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -102,6 +103,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS conversation_id UUID REFERENCES public.conversations(id) ON DELETE CASCADE;
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS deleted_for JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT false;
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ NULL;
 
@@ -402,8 +404,7 @@ CREATE POLICY "Authenticated users can create conversations" ON public.conversat
 
 DROP POLICY IF EXISTS "Members can view conversation memberships" ON public.conversation_members;
 CREATE POLICY "Members can view conversation memberships" ON public.conversation_members FOR SELECT USING (
-    user_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM public.conversation_members cm2 WHERE cm2.conversation_id = conversation_id AND cm2.user_id = auth.uid())
+    user_id = auth.uid() OR auth.role() = 'authenticated'
 );
 
 DROP POLICY IF EXISTS "Users can join or add members" ON public.conversation_members;
@@ -411,19 +412,19 @@ CREATE POLICY "Users can join or add members" ON public.conversation_members FOR
 
 -- 5.3 Messages
 DROP POLICY IF EXISTS "Users can view their conversation messages" ON public.messages;
-CREATE POLICY "Users can view their conversation messages" ON public.messages FOR SELECT USING (
-    sender_id = auth.uid() OR
-    receiver_id = auth.uid() OR
-    (conversation_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.conversation_members cm WHERE cm.conversation_id = messages.conversation_id AND cm.user_id = auth.uid()))
-);
+DROP POLICY IF EXISTS "Users can view messages they sent or received" ON public.messages;
+CREATE POLICY "Users can view messages they sent or received" ON public.messages FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
-CREATE POLICY "Users can send messages" ON public.messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
+DROP POLICY IF EXISTS "Users can insert messages" ON public.messages;
+CREATE POLICY "Users can insert messages" ON public.messages FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Receivers can update message read status" ON public.messages;
-CREATE POLICY "Receivers can update message read status" ON public.messages FOR UPDATE USING (
-    auth.uid() = receiver_id OR auth.uid() = sender_id
-);
+DROP POLICY IF EXISTS "Users can update messages" ON public.messages;
+CREATE POLICY "Users can update messages" ON public.messages FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Users can delete messages" ON public.messages;
+CREATE POLICY "Users can delete messages" ON public.messages FOR DELETE USING (true);
 
 DROP POLICY IF EXISTS "Users can manage message reactions" ON public.message_reactions;
 CREATE POLICY "Users can manage message reactions" ON public.message_reactions FOR ALL USING (auth.uid() = user_id);

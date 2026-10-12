@@ -225,18 +225,22 @@
         <!-- Identity Selector -->
         <div class="identity-selector">
           <div class="identity-btn" id="identityToggleBtn">
-            <i class="fas fa-user-secret" id="currentIdentityIcon"></i>
-            <span id="currentIdentityLabel">Post as Anonymous</span>
-            <i class="fas fa-chevron-down"></i>
+            <span id="currentIdentityAvatarSlot" style="width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; margin-right:6px; flex-shrink:0;">
+              <i class="fas fa-user" id="currentIdentityIcon"></i>
+            </span>
+            <span id="currentIdentityLabel">Post as Me</span>
+            <i class="fas fa-chevron-down" style="margin-left:auto;"></i>
           </div>
           <div class="identity-dropdown" id="identityDropdown">
-            <div class="identity-option" data-anonymous="true">
-              <i class="fas fa-user-secret"></i>
-              <span>Post as Anonymous</span>
-            </div>
             <div class="identity-option" data-anonymous="false" id="namedIdentityOption">
-              <i class="fas fa-user"></i>
+              <span id="namedIdentityAvatarSlot" style="width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; margin-right:6px; flex-shrink:0;">
+                <i class="fas fa-user"></i>
+              </span>
               <span id="namedIdentityLabel">Post as User</span>
+            </div>
+            <div class="identity-option" data-anonymous="true">
+              <i class="fas fa-user-secret" style="margin-right:6px;"></i>
+              <span>Post as Anonymous</span>
             </div>
           </div>
         </div>
@@ -360,10 +364,6 @@
           <i class="fa-regular fa-copy"></i>
           <span>Copy Post</span>
         </button>
-        <button class="post-menu-item" id="menuShareBtn">
-          <i class="fa-regular fa-share-from-square"></i>
-          <span>Share Post</span>
-        </button>
         <button class="post-menu-item" id="menuSaveBtn">
           <i class="fa-regular fa-bookmark" id="menuSaveIcon"></i>
           <span id="menuSaveText">Save Post</span>
@@ -376,6 +376,27 @@
           <i class="fa-regular fa-trash-can"></i>
           <span>Delete Post</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Reactions / Liked By Modal -->
+  <div class="modal-overlay" id="postLikesModal">
+    <div class="modal-sheet reactions-modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="reactions-header-icon" style="color: #e11d48; font-size: 16px;"><i class="fas fa-heart"></i></span>
+          <span class="modal-title" id="likesModalTitle">Reactions</span>
+        </div>
+        <button class="modal-close" id="closeLikesModalBtn" aria-label="Close Reactions">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="reactions-modal-body">
+        <div class="reactions-list" id="likesListContainer">
+          <!-- Populated dynamically -->
+        </div>
       </div>
     </div>
   </div>
@@ -515,7 +536,7 @@
     let isLoadingMore = false;
 
     let postState = {
-      isAnonymous: true,
+      isAnonymous: false,
       selectedMood: null,
       selectedCategory: 'general',
       photoFile: null,
@@ -550,6 +571,7 @@
       setupCategoryFilter();
       setupCreatePostModal();
       setupCommentsDrawer();
+      setupLikesModal();
       setupPostOptionsMenu();
       setupReportPostModal();
       setupNotificationBell();
@@ -578,9 +600,24 @@
         }
 
         // Update post modal identity option
+        const userDisplayName = formatDisplayName(currentUser.first_name || currentUser.username, 'Me');
         const namedLabel = document.getElementById('namedIdentityLabel');
         if (namedLabel) {
-          namedLabel.textContent = `Post as ${formatDisplayName(currentUser.username || currentUser.first_name, 'me')}`;
+          namedLabel.textContent = `Post as ${userDisplayName}`;
+        }
+        const currentIdentityLabel = document.getElementById('currentIdentityLabel');
+        if (currentIdentityLabel) {
+          currentIdentityLabel.textContent = `Post as ${userDisplayName}`;
+        }
+        const currentIdentityAvatarSlot = document.getElementById('currentIdentityAvatarSlot');
+        const namedAvatarSlot = document.getElementById('namedIdentityAvatarSlot');
+        if (window.SafeSpaceAvatars) {
+          const smallAvatarHtml = window.SafeSpaceAvatars.renderHtml(currentUser.avatar_url, {
+            alt: userDisplayName,
+            style: 'width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;'
+          });
+          if (currentIdentityAvatarSlot) currentIdentityAvatarSlot.innerHTML = smallAvatarHtml;
+          if (namedAvatarSlot) namedAvatarSlot.innerHTML = smallAvatarHtml;
         }
 
         // Non-blocking check for account suspension or ban
@@ -957,11 +994,39 @@
       }
 
       container.innerHTML = posts.map(post => {
-        const isAnon = post.is_anonymous;
+        const isAnon = Boolean(post.is_anonymous);
         const authorDisplay = isAnon ? 'Anonymous' : formatDisplayName(post.author_name, 'Member');
+
+        // Check if post belongs to current user
+        const isMyPost = Boolean(currentUser && (
+          (post.user_id && post.user_id === currentUser.id) ||
+          post.is_mine === true ||
+          (post.author_id && post.author_id === currentUser.id) ||
+          (!post.user_id && post.author_name && (post.author_name === currentUser.username || post.author_name === currentUser.first_name))
+        ));
+
+        // Resolve chosen avatar (photo or cute avatar):
+        // 1. If it's my post and currentUser has a chosen avatar, always show currentUser's chosen avatar/photo
+        // 2. Otherwise use post.author_avatar or post.profiles.avatar_url
+        // 3. Fallback for demo/legacy posts without explicit user_id
+        let resolvedAvatar = null;
+        if (isMyPost && currentUser && (currentUser.avatar_url || currentUser.avatar_value)) {
+          resolvedAvatar = currentUser.avatar_url || currentUser.avatar_value;
+        } else {
+          resolvedAvatar = post.author_avatar || (post.profiles && post.profiles.avatar_url) || null;
+        }
+
+        if (!resolvedAvatar && currentUser && (currentUser.avatar_url || currentUser.avatar_value)) {
+          if (isMyPost || !post.user_id) {
+            resolvedAvatar = currentUser.avatar_url || currentUser.avatar_value;
+          }
+        }
+
         const avatarHtml = window.SafeSpaceAvatars
-          ? window.SafeSpaceAvatars.renderHtml(post.author_avatar, { alt: authorDisplay, isAnonymous: isAnon })
-          : (isAnon ? '<i class="fas fa-user-secret"></i>' : (post.author_avatar ? `<img src="${escapeHTML(post.author_avatar)}" alt="${escapeHTML(authorDisplay)}" />` : '<i class="fas fa-user"></i>'));
+          ? window.SafeSpaceAvatars.renderHtml(resolvedAvatar, { alt: authorDisplay })
+          : (resolvedAvatar
+              ? `<img src="${escapeHTML(resolvedAvatar)}" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" />`
+              : `<img src="assets/avatars/default-avatar.svg" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`);
 
         const moodMap = typeof MOOD_MAP !== 'undefined' ? MOOD_MAP : (window.MOOD_MAP || {});
         const moodMeta = post.mood && moodMap[post.mood] ? moodMap[post.mood] : null;
@@ -977,6 +1042,15 @@
         const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
         const isSaved = Array.isArray(post.saved_by) && currentUser && post.saved_by.includes(currentUser.id);
 
+        let likesSummaryText = '';
+        if (likeCount === 1) {
+          likesSummaryText = isLiked ? 'You reacted to this' : '1 reaction';
+        } else if (likeCount > 1) {
+          likesSummaryText = isLiked
+            ? (likeCount === 2 ? 'You and 1 other reacted' : `You and ${likeCount - 1} others reacted`)
+            : `${likeCount} reactions`;
+        }
+
         const aiBadgeHtml = window.AIService ? AIService.renderSentimentBadge(post.sentiment, post.sentiment_score) : '';
         const aiVerifiedHtml = (post.moderation_status === 'APPROVED' || post.moderation_category === 'SAFE')
           ? '<span class="ai-verified-tag" title="Verified Safe by Safe Space AI"><i class="fas fa-shield-halved"></i> Safe</span>'
@@ -985,11 +1059,11 @@
         return `
           <article class="post-card" id="post-${post.id}">
             <div class="post-header">
-              <div class="post-avatar">
+              <div class="post-avatar" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">
                 ${avatarHtml}
               </div>
               <div class="post-meta">
-                <div class="post-author">${escapeHTML(authorDisplay)}</div>
+                <div class="post-author" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${escapeHTML(authorDisplay)}</div>
                 <div class="post-time-mood">
                   <span>${formatRelativeTime(post.created_at)}</span>
                   <span class="post-category-tag ${escapeHTML(catClass)}">${escapeHTML(catLabel)}</span>
@@ -1011,17 +1085,33 @@
               </div>
             ` : ''}
 
+            ${likeCount > 0 ? `
+              <div class="post-reactions-bar" id="reactions-bar-${post.id}" onclick="openLikesModal('${post.id}', event)" title="See who reacted to this post" role="button" tabindex="0">
+                <i class="fas fa-heart"></i>
+                <span id="reactions-bar-text-${post.id}">${escapeHTML(likesSummaryText)}</span>
+              </div>
+            ` : `
+              <div class="post-reactions-bar" id="reactions-bar-${post.id}" style="display:none;" onclick="openLikesModal('${post.id}', event)" title="See who reacted to this post" role="button" tabindex="0">
+                <i class="fas fa-heart"></i>
+                <span id="reactions-bar-text-${post.id}"></span>
+              </div>
+            `}
+
             <div class="post-actions">
-              <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="handleLike('${post.id}')" aria-label="Like post">
-                <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
-                <span id="like-count-${post.id}">${likeCount}</span>
-              </button>
+              <div class="post-action-like-group ${isLiked ? 'liked' : ''}" id="like-group-${post.id}">
+                <button type="button" class="post-action-like-btn" onclick="handleLike('${post.id}', event)" aria-label="${isLiked ? 'Unlike post' : 'Like post'}" title="${isLiked ? 'Unlike' : 'Like'}">
+                  <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+                </button>
+                <button type="button" class="post-like-count-btn ${likeCount > 0 ? 'has-likes' : ''}" id="like-count-btn-${post.id}" onclick="openLikesModal('${post.id}', event)" aria-label="See who liked this post" title="See who reacted (${likeCount})">
+                  <span id="like-count-${post.id}">${likeCount}</span>
+                </button>
+              </div>
               <button class="post-action-btn" onclick="openComments('${post.id}')" aria-label="Comments">
                 <i class="fa-regular fa-comment"></i>
                 <span id="comment-count-${post.id}">${commentCount}</span>
               </button>
-              <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="handleSave('${post.id}')" aria-label="Bookmark post">
-                <i class="${isSaved ? 'fas' : 'fa-regular'} fa-bookmark"></i>
+              <button class="post-action-btn post-save-btn ${isSaved ? 'saved' : ''}" id="save-btn-${post.id}" onclick="handleSave('${post.id}')" aria-label="Bookmark post" title="${isSaved ? 'Remove from Saved Posts' : 'Save post'}">
+                <i class="${isSaved ? 'fas' : 'fa-regular'} fa-bookmark" id="save-icon-${post.id}"></i>
               </button>
             </div>
           </article>
@@ -1030,7 +1120,8 @@
     }
 
     // ── Surgical Like Handler ──
-    async function handleLike(postId) {
+    async function handleLike(postId, event) {
+      if (event) event.stopPropagation();
       try {
         const result = await SafeSpaceDB.posts.toggleLike(postId);
         
@@ -1058,18 +1149,49 @@
         // Surgical DOM update
         const postCard = document.getElementById(`post-${postId}`);
         if (postCard) {
-          const btn = postCard.querySelector('.post-action-btn:nth-child(1)');
+          const group = document.getElementById(`like-group-${postId}`);
+          const btn = group ? group.querySelector('.post-action-like-btn') : postCard.querySelector('.post-action-btn:nth-child(1)');
           const icon = btn ? btn.querySelector('i') : null;
           const countSpan = document.getElementById(`like-count-${postId}`);
+          const countBtn = document.getElementById(`like-count-btn-${postId}`);
+          const newCount = result.count !== undefined ? result.count : (post ? post.likes.length : 0);
+
           if (result.liked) {
             if (btn) btn.classList.add('liked');
+            if (group) group.classList.add('liked');
             if (icon) icon.className = 'fas fa-heart';
           } else {
             if (btn) btn.classList.remove('liked');
+            if (group) group.classList.remove('liked');
             if (icon) icon.className = 'fa-regular fa-heart';
           }
           if (countSpan) {
-            countSpan.textContent = result.count !== undefined ? result.count : (post ? post.likes.length : 0);
+            countSpan.textContent = newCount;
+          }
+          if (countBtn) {
+            countBtn.title = `See who reacted (${newCount})`;
+            countBtn.classList.toggle('has-likes', newCount > 0);
+          }
+
+          // Update reactions summary bar
+          const bar = document.getElementById(`reactions-bar-${postId}`);
+          const barText = document.getElementById(`reactions-bar-text-${postId}`);
+          if (bar && barText) {
+            if (newCount > 0) {
+              bar.style.display = 'inline-flex';
+              let summary = '';
+              if (newCount === 1) {
+                summary = result.liked ? 'You reacted to this' : '1 reaction';
+              } else {
+                summary = result.liked
+                  ? (newCount === 2 ? 'You and 1 other reacted' : `You and ${newCount - 1} others reacted`)
+                  : `${newCount} reactions`;
+              }
+              barText.textContent = summary;
+            } else {
+              bar.style.display = 'none';
+              barText.textContent = '';
+            }
           }
         }
       } catch (err) {
@@ -1080,10 +1202,9 @@
     // ── Surgical Bookmark / Save Handler ──
     async function handleSave(postId) {
       try {
-        const result = await SafeSpaceDB.posts.toggleSave(postId);
-        showToast(result.saved ? 'Saved to bookmarks' : 'Removed from bookmarks', 'success');
+        const post = currentFeed.find(p => p.id === postId) || (feedCache['all'] && feedCache['all'].posts ? feedCache['all'].posts.find(p => p.id === postId) : null);
+        const result = await SafeSpaceDB.posts.toggleSave(postId, post);
 
-        const post = currentFeed.find(p => p.id === postId);
         if (post) {
           if (!Array.isArray(post.saved_by)) post.saved_by = [];
           if (result.saved) {
@@ -1105,19 +1226,30 @@
 
         // Surgical DOM update
         const postCard = document.getElementById(`post-${postId}`);
-        if (postCard) {
-          const btn = postCard.querySelector('.post-action-btn:nth-child(3)');
-          const icon = btn ? btn.querySelector('i') : null;
-          if (result.saved) {
-            if (btn) btn.classList.add('saved');
-            if (icon) icon.className = 'fas fa-bookmark';
-          } else {
-            if (btn) btn.classList.remove('saved');
-            if (icon) icon.className = 'fa-regular fa-bookmark';
+        const btn = document.getElementById(`save-btn-${postId}`) || (postCard ? (postCard.querySelector('.post-save-btn') || postCard.querySelector('.post-action-btn:last-child')) : null);
+        const icon = document.getElementById(`save-icon-${postId}`) || (btn ? btn.querySelector('i') : null);
+
+        if (result.saved) {
+          if (btn) {
+            btn.classList.add('saved');
+            btn.title = 'Remove from Saved Posts';
           }
+          if (icon) icon.className = 'fas fa-bookmark';
+          showToast('Post saved! View in Saved Posts in your Profile.', 'success', {
+            actionLabel: 'View in Profile →',
+            link: 'profile.html?view=saved'
+          });
+        } else {
+          if (btn) {
+            btn.classList.remove('saved');
+            btn.title = 'Save post';
+          }
+          if (icon) icon.className = 'fa-regular fa-bookmark';
+          showToast('Removed from Saved Posts', 'info');
         }
       } catch (err) {
-        showToast('Failed to bookmark', 'error');
+        console.error('[SafeSpace] handleSave error:', err);
+        showToast('Failed to update bookmark', 'error');
       }
     }
 
@@ -1164,8 +1296,26 @@
         opt.addEventListener('click', () => {
           const isAnon = opt.dataset.anonymous === 'true';
           postState.isAnonymous = isAnon;
-          document.getElementById('currentIdentityIcon').className = isAnon ? 'fas fa-user-secret' : 'fas fa-user';
-          document.getElementById('currentIdentityLabel').textContent = isAnon ? 'Post as Anonymous' : `Post as ${formatDisplayName(currentUser.username || currentUser.first_name, 'me')}`;
+          const labelEl = document.getElementById('currentIdentityLabel');
+          const avatarSlot = document.getElementById('currentIdentityAvatarSlot');
+          const myName = formatDisplayName(currentUser ? (currentUser.first_name || currentUser.username) : '', 'Me');
+
+          if (isAnon) {
+            if (labelEl) labelEl.textContent = 'Post as Anonymous';
+            if (avatarSlot) avatarSlot.innerHTML = '<i class="fas fa-user-secret" id="currentIdentityIcon"></i>';
+          } else {
+            if (labelEl) labelEl.textContent = `Post as ${myName}`;
+            if (avatarSlot) {
+              if (currentUser && currentUser.avatar_url && window.SafeSpaceAvatars) {
+                avatarSlot.innerHTML = window.SafeSpaceAvatars.renderHtml(currentUser.avatar_url, {
+                  alt: myName,
+                  style: 'width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;'
+                });
+              } else {
+                avatarSlot.innerHTML = '<i class="fas fa-user" id="currentIdentityIcon"></i>';
+              }
+            }
+          }
           identityDropdown.classList.remove('open');
         });
       });
@@ -1671,12 +1821,123 @@
       }).join('');
     }
 
+    // ========================================================
+    // POST REACTIONS / LIKED BY MODAL
+    // ========================================================
+    let activeLikesPostId = null;
+
+    function openLikesModal(postId, event) {
+      if (event) event.stopPropagation();
+      activeLikesPostId = postId;
+      const modal = document.getElementById('postLikesModal');
+      if (!modal) return;
+      const title = document.getElementById('likesModalTitle');
+      const container = document.getElementById('likesListContainer');
+
+      const post = currentFeed.find(p => p.id === postId);
+      const initialCount = (post && Array.isArray(post.likes)) ? post.likes.length : 0;
+      if (title) title.textContent = `Reactions (${initialCount})`;
+
+      container.innerHTML = `
+        <div style="text-align:center; padding: 40px 16px; color: var(--text-muted);">
+          <i class="fas fa-circle-notch fa-spin" style="font-size:24px; color:var(--primary); margin-bottom:12px; display:inline-block;"></i>
+          <div style="font-size:13px; font-weight:600;">Loading reactions...</div>
+        </div>
+      `;
+      modal.classList.add('open');
+
+      SafeSpaceDB.posts.getPostLikes(postId).then(users => {
+        if (title) title.textContent = `Reactions (${users.length})`;
+        renderLikesList(users, postId);
+      }).catch(err => {
+        console.warn('[SafeSpace] Error fetching post likes:', err);
+        container.innerHTML = `
+          <div style="text-align:center; padding: 36px 16px; color: var(--text-muted); font-size:13px;">
+            Could not load reactions right now.
+          </div>
+        `;
+      });
+    }
+    window.openLikesModal = openLikesModal;
+
+    function renderLikesList(users, postId) {
+      const container = document.getElementById('likesListContainer');
+      if (!container) return;
+
+      if (!Array.isArray(users) || users.length === 0) {
+        container.innerHTML = `
+          <div class="reactions-empty-state">
+            <div class="reactions-empty-icon"><i class="fa-regular fa-heart"></i></div>
+            <h4>No reactions yet</h4>
+            <p>Be the first to react with love to this post!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = users.map(u => {
+        const isMe = u.is_current_user || (currentUser && currentUser.id === u.id);
+        const displayName = u.full_name || u.username || 'Safe Space Member';
+        const role = (u.role || 'student').toLowerCase();
+        let roleBadge = '';
+        if (role === 'admin') {
+          roleBadge = '<span class="reaction-role-badge admin">Admin</span>';
+        } else if (role === 'counselor') {
+          roleBadge = '<span class="reaction-role-badge counselor">Counselor</span>';
+        }
+
+        const avatarHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(u.avatar_url, { alt: displayName })
+          : (u.avatar_url ? `<img src="${escapeHTML(u.avatar_url)}" alt="${escapeHTML(displayName)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />` : `<i class="fas fa-user"></i>`);
+
+        return `
+          <div class="reaction-user-item">
+            <div class="reaction-user-avatar">
+              ${avatarHtml}
+              <span class="reaction-mini-heart"><i class="fas fa-heart"></i></span>
+            </div>
+            <div class="reaction-user-details">
+              <div class="reaction-user-name-line">
+                <span class="reaction-user-name">${escapeHTML(displayName)}</span>
+                ${isMe ? '<span class="reaction-you-badge">You</span>' : ''}
+                ${roleBadge}
+              </div>
+              <span class="reaction-user-handle">@${escapeHTML(u.username || 'user')}</span>
+            </div>
+            ${!isMe ? `
+              <a href="profile.html?user=${encodeURIComponent(u.id || u.username)}" class="reaction-profile-link" title="View Profile">
+                <span>Profile</span>
+                <i class="fas fa-chevron-right" style="font-size:10px;"></i>
+              </a>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setupLikesModal() {
+      const modal = document.getElementById('postLikesModal');
+      const closeBtn = document.getElementById('closeLikesModalBtn');
+      if (!modal) return;
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+      }
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('open')) {
+          modal.classList.remove('open');
+        }
+      });
+    }
+
     // Post Options Menu Sheet
     function setupPostOptionsMenu() {
       const modal = document.getElementById('postOptionsMenu');
       const closeBtn = document.getElementById('closePostOptionsBtn');
       const copyBtn = document.getElementById('menuCopyTextBtn');
-      const shareBtn = document.getElementById('menuShareBtn');
       const saveBtn = document.getElementById('menuSaveBtn');
       const reportBtn = document.getElementById('menuReportBtn');
       const deleteBtn = document.getElementById('menuDeleteBtn');
@@ -1695,19 +1956,6 @@
           } catch (e) {
             showToast('Unable to copy to clipboard', 'warning');
           }
-        }
-        modal.classList.remove('open');
-      });
-
-      shareBtn.addEventListener('click', () => {
-        if (navigator.share) {
-          navigator.share({
-            title: 'Safe Space Post',
-            text: 'Check out this post on Safe Space!',
-            url: window.location.href
-          }).catch(() => {});
-        } else {
-          showToast('Link ready to share! 🔗', 'info');
         }
         modal.classList.remove('open');
       });
@@ -2121,6 +2369,62 @@
         loadCategoryFeed(activeCategory, { isBackground: true, page: 0 });
       }
     });
-  </script>
+  
+    // Navigation to user profile from post author or avatar click
+    function handleAuthorClick(event, postId) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+      const feed = (typeof currentFeed !== 'undefined' && currentFeed.length) ? currentFeed : (typeof posts !== 'undefined' ? posts : []);
+      const post = feed.find(p => String(p.id) === String(postId));
+      if (!post) {
+        window.location.href = 'profile.html';
+        return;
+      }
+
+      const currentLoggedInUser = currentUser || (SafeSpaceDB ? JSON.parse(localStorage.getItem('safe_space_user')) : null);
+      const isMyPost = Boolean(currentLoggedInUser && (
+        (post.user_id && post.user_id === currentLoggedInUser.id) ||
+        post.is_mine === true ||
+        (post.author_id && post.author_id === currentLoggedInUser.id) ||
+        (!post.user_id && post.author_name && (post.author_name === currentLoggedInUser.username || post.author_name === currentLoggedInUser.first_name))
+      ));
+
+      if (isMyPost) {
+        window.location.href = 'profile.html';
+        return;
+      }
+
+      let targetId = post.user_id || post.author_id;
+      let targetUsername = (post.profiles && post.profiles.username) || (post.author_name && post.author_name !== 'Anonymous' ? post.author_name : 'Member');
+      let targetFirstName = (post.profiles && post.profiles.first_name) || targetUsername;
+      let targetLastName = (post.profiles && post.profiles.last_name) || '';
+      let targetBio = (post.profiles && post.profiles.bio) || 'Safe Space Member';
+      let targetAvatar = (post.profiles && post.profiles.avatar_url) || post.author_avatar || 'assets/avatars/default-avatar.svg';
+
+      if (!targetId) {
+        targetId = post.id ? 'user-' + post.id : targetUsername;
+      }
+
+      const profileData = {
+        id: targetId,
+        username: targetUsername,
+        first_name: targetFirstName,
+        last_name: targetLastName,
+        bio: targetBio,
+        avatar_url: targetAvatar,
+        postId: post.id
+      };
+
+      try {
+        sessionStorage.setItem('safe_space_view_profile', JSON.stringify(profileData));
+      } catch (e) {}
+
+      window.location.href = `profile.html?user=${encodeURIComponent(targetId)}`;
+    }
+    window.handleAuthorClick = handleAuthorClick;
+
+</script>
 </body>
 </html>

@@ -766,7 +766,7 @@
             <span>Refresh</span>
           </button>
 
-          <button type="button" class="admin-btn admin-btn-primary" id="openCreateUserBtn" title="Add User">
+          <button type="button" class="admin-btn admin-btn-primary" id="openCreateUserBtn" title="Add User" onclick="openCreateUserModal()">
             <i class="fas fa-user-plus"></i>
             <span class="d-none-sm">New User</span>
           </button>
@@ -1923,6 +1923,14 @@
         });
       }
 
+      // Add User / Admin button in topbar
+      const createUsrBtn = document.getElementById('openCreateUserBtn');
+      if (createUsrBtn) {
+        createUsrBtn.addEventListener('click', () => {
+          openCreateUserModal();
+        });
+      }
+
       // Filter pills listeners
       document.querySelectorAll('#reportsFilterRow .filter-pill').forEach(pill => {
         pill.addEventListener('click', () => {
@@ -2380,6 +2388,8 @@
     function closeCreateUserModal() {
       document.getElementById('createUserModal').classList.remove('open');
     }
+    window.openCreateUserModal = openCreateUserModal;
+    window.closeCreateUserModal = closeCreateUserModal;
 
     async function handleCreateUserSubmit(e) {
       e.preventDefault();

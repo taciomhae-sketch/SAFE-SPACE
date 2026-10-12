@@ -677,9 +677,6 @@ var SafeSpaceAvatars = {
    */
   renderHtml: function(input, options) {
     options = options || {};
-    if (options.isAnonymous) {
-      return '<i class="fas fa-user-secret" aria-label="Anonymous"></i>';
-    }
 
     var meta = SafeSpaceAvatars.getAvatar(input);
     var url = meta.image || DEFAULT_AVATAR;

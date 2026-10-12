@@ -6,8 +6,8 @@ var SAFE_SPACE_CONFIG = {
   // Supabase Project URL:
   SUPABASE_URL: "https://ssqswqqfsbfgjsrllprq.supabase.co",
 
-  // Supabase Public Anon Key:
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzcXN3cXFmc2JmZ2pzcmxscHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1NTI4NDcsImV4cCI6MjEwNTEyODg0N30.edh6s4TqNS8b8dzZyE-kLPzhw8YWtgWpKFf-zU3rVLg",
+  // Supabase Public Anon / Publishable Key:
+  SUPABASE_ANON_KEY: "sb_publishable_yOcs11bwjXyhA1DuUAQCBQ_dwo-zhLM",
 
   // Supabase Service Role Key (Keep empty in frontend; use only in secure backend scripts):
   SUPABASE_SERVICE_KEY: "",

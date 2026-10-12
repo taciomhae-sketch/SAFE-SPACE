@@ -275,7 +275,10 @@
     <div class="main-content-column">
       <!-- Page Header -->
       <header class="page-header">
-        <h1>Profile</h1>
+        <a href="javascript:history.back()" class="header-btn header-back-btn" id="profileBackBtn" aria-label="Back" style="display: none; margin-right: 8px;">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+        <h1 id="profilePageTitle">Profile</h1>
         <div class="header-actions">
           <button class="header-btn" id="profileSettingsBtn" aria-label="Settings">
             <i class="fas fa-gear"></i>
@@ -307,6 +310,24 @@
             <button class="bio-edit-btn" id="editBioPencilBtn" aria-label="Edit Bio">
               <i class="fas fa-pencil"></i>
             </button>
+          </div>
+
+          <!-- Other User Actions Bar (Add Friend / Message) -->
+          <div class="profile-actions-bar" id="profileActionsBar" style="display: none;">
+            <button type="button" class="btn-profile-add-friend" id="profileAddFriendBtn" onclick="handleProfileAddFriendClick()">
+              <i class="fas fa-user-plus"></i> Add Friend
+            </button>
+            <a href="#" class="btn-profile-message" id="profileMessageBtn" style="display: none;" onclick="handleProfileMessageClick(event)">
+              <i class="fas fa-comment-dots"></i> Message
+            </a>
+          </div>
+        </section>
+
+        <!-- Other User Posts Section (Visible when viewing someone else) -->
+        <section class="other-user-posts-section" id="otherUserPostsSection" style="display: none;">
+          <h3 class="other-user-posts-title" id="otherUserPostsTitle">Posts</h3>
+          <div class="feed-list" id="otherUserFeedList">
+            <!-- Injected dynamically -->
           </div>
         </section>
 
@@ -710,6 +731,27 @@
     </div>
   </div>
 
+  <!-- Post Reactions / Liked By Modal -->
+  <div class="modal-overlay" id="postLikesModal">
+    <div class="modal-sheet reactions-modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="reactions-header-icon" style="color: #e11d48; font-size: 16px;"><i class="fas fa-heart"></i></span>
+          <span class="modal-title" id="likesModalTitle">Reactions</span>
+        </div>
+        <button class="modal-close" id="closeLikesModalBtn" aria-label="Close Reactions">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="reactions-modal-body">
+        <div class="reactions-list" id="likesListContainer">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Slide-in Overlay for Sub-views (My Posts, Saved Posts, Account Info) -->
   <div class="thread-overlay" id="profileSubViewOverlay">
     <div class="thread-header">
@@ -734,18 +776,417 @@
   <script src="js/pwa.js"></script>
   <script>
     let currentUser = null;
+    let viewedUser = null;
+    let isViewingOtherUser = false;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      currentUser = await requireAuth();
-      if (!currentUser) return;
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetUserId = urlParams.get('user') || urlParams.get('userId') || urlParams.get('id');
+      const targetUsername = urlParams.get('username');
 
-      renderUserProfile();
-      setupBioEditor();
-      setupAvatarCustomization();
-      setupThemeCustomization();
-      setupMenuNavigation();
+      try {
+        currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      } catch (e) {
+        currentUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+      }
+
+      if (!currentUser) {
+        if (!targetUserId && !targetUsername) {
+          currentUser = await requireAuth();
+          if (!currentUser) return;
+        } else {
+          currentUser = JSON.parse(localStorage.getItem('safe_space_user')) || {
+            id: 'guest-viewer',
+            username: 'student',
+            first_name: 'Safe Space',
+            last_name: 'Student'
+          };
+        }
+      }
+
+      const isCurrent = (!targetUserId && !targetUsername) ||
+        (targetUserId && (targetUserId === currentUser.id || targetUserId === currentUser.username)) ||
+        (targetUsername && targetUsername === currentUser.username);
+
+      if (!isCurrent) {
+        isViewingOtherUser = true;
+        await initOtherUserProfile(targetUserId, targetUsername);
+      } else {
+        isViewingOtherUser = false;
+        renderUserProfile();
+        setupBioEditor();
+        setupAvatarCustomization();
+        setupThemeCustomization();
+        setupMenuNavigation();
+        setupLikesModal();
+      }
       hidePageLoader();
     });
+
+    // ==========================================
+    // OTHER USER PROFILE VIEW & ADD FRIEND LOGIC
+    // ==========================================
+    async function initOtherUserProfile(targetId, targetUsername) {
+      viewedUser = null;
+
+      // 1. Try sessionStorage cache from post click
+      try {
+        const cached = sessionStorage.getItem('safe_space_view_profile');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && (parsed.id === targetId || parsed.username === targetId || parsed.username === targetUsername)) {
+            viewedUser = parsed;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Query community members
+      try {
+        if (SafeSpaceDB && SafeSpaceDB.community) {
+          const members = await SafeSpaceDB.community.getMembers();
+          const match = (members || []).find(m => m.id === targetId || m.username === targetId || (targetUsername && m.username === targetUsername));
+          if (match) {
+            viewedUser = Object.assign({}, viewedUser || {}, match);
+          }
+        }
+      } catch (e) {}
+
+      // 2.5 Query Supabase profiles directly if still missing or missing UUID
+      if (!viewedUser || !viewedUser.id || (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID && !SafeSpaceDB.posts._isUUID(viewedUser.id))) {
+        try {
+          if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive()) {
+            const _db = SafeSpaceDB.getSupabaseClient();
+            if (_db) {
+              const isUuid = SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID && SafeSpaceDB.posts._isUUID(targetId);
+              let q = _db.from('profiles').select('id, username, first_name, last_name, avatar_url, bio');
+              if (isUuid) {
+                q = q.eq('id', targetId);
+              } else {
+                q = q.eq('username', targetUsername || targetId);
+              }
+              const { data: prof } = await q.maybeSingle();
+              if (prof) {
+                viewedUser = Object.assign({}, viewedUser || {}, prof);
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3. Fallback detection
+      const isLableyy = (targetId === 'lableyy' || targetUsername === 'lableyy' || targetId === '60d80c30-97e8-44cf-90e2-3a3c02b9975a') && (!currentUser || currentUser.username === 'lableyy');
+
+      if (isLableyy) {
+        viewedUser = Object.assign({
+          id: targetId || '60d80c30-97e8-44cf-90e2-3a3c02b9975a',
+          username: 'lableyy',
+          first_name: 'Lovely Mae',
+          last_name: 'Tacio',
+          bio: 'Feel free to interact with me.',
+          avatar_url: 'assets/avatars/bloom-flower.png'
+        }, viewedUser || {});
+      } else if (!viewedUser) {
+        viewedUser = {
+          id: targetId || 'user-unknown',
+          username: targetUsername || 'Member',
+          first_name: targetUsername || 'Member',
+          last_name: '',
+          bio: 'Safe Space Member',
+          avatar_url: 'assets/avatars/default-avatar.svg'
+        };
+      }
+
+      await renderOtherUserProfile(viewedUser);
+    }
+
+    async function renderOtherUserProfile(user) {
+      // 1. Header & Title
+      const pageTitle = document.getElementById('profilePageTitle');
+      if (pageTitle) pageTitle.textContent = 'Profile';
+      const backBtn = document.getElementById('profileBackBtn');
+      if (backBtn) backBtn.style.display = 'flex';
+      const settingsBtn = document.getElementById('profileSettingsBtn');
+      if (settingsBtn) settingsBtn.style.display = 'none';
+
+      // 2. Hide edit controls for other user's profile
+      const cameraBtn = document.getElementById('cameraUploadBtn');
+      if (cameraBtn) cameraBtn.style.display = 'none';
+      const pencilBtn = document.getElementById('editBioPencilBtn');
+      if (pencilBtn) pencilBtn.style.display = 'none';
+      const bioBox = document.getElementById('bioBox');
+      if (bioBox) {
+        bioBox.style.cursor = 'default';
+        bioBox.onclick = null;
+      }
+
+      // 3. Populate user info
+      document.getElementById('profileUsername').textContent = user.username || 'user';
+      const names = [user.first_name, user.middle_name, user.last_name].filter(Boolean);
+      document.getElementById('profileFullname').textContent = names.length ? names.join(' ') : (user.full_name || 'Lovely Mae Tacio');
+
+      const bioEl = document.getElementById('bioText');
+      bioEl.textContent = user.bio || 'Feel free to interact with me.';
+      bioEl.classList.add('has-bio');
+
+      // 4. Avatar (Pink flower with yellow center if bloom-flower)
+      const img = document.getElementById('profileAvatarImg');
+      const placeholder = document.getElementById('profileAvatarPlaceholderIcon');
+      let avatarUrl = user.avatar_url || 'assets/avatars/bloom-flower.png';
+      if (window.SafeSpaceAvatars) {
+        const meta = window.SafeSpaceAvatars.getAvatar(user);
+        if (meta && meta.image) avatarUrl = meta.image;
+      }
+      img.src = avatarUrl;
+      img.style.display = 'block';
+      img.style.objectFit = 'cover';
+      img.onerror = function() {
+        this.onerror = null;
+        this.src = 'assets/avatars/bloom-flower.png';
+      };
+      if (placeholder) placeholder.style.display = 'none';
+
+      // 5. Actions Bar & Add Friend Button
+      const actionsBar = document.getElementById('profileActionsBar');
+      if (actionsBar) actionsBar.style.display = 'flex';
+      await updateFriendButtonState(user.id);
+
+      // 6. Navigation / Menu: Hide personal settings, show public posts
+      const menuNav = document.querySelector('.profile-menu');
+      if (menuNav) menuNav.style.display = 'none';
+
+      const otherPostsSec = document.getElementById('otherUserPostsSection');
+      if (otherPostsSec) {
+        otherPostsSec.style.display = 'block';
+        const titleEl = document.getElementById('otherUserPostsTitle');
+        if (titleEl) titleEl.textContent = `Posts by ${user.username || 'Member'}`;
+        loadOtherUserPosts(user.id, user.username);
+      }
+    }
+
+    async function updateFriendButtonState(targetId) {
+      const btn = document.getElementById('profileAddFriendBtn');
+      const msgBtn = document.getElementById('profileMessageBtn');
+      if (!btn) return;
+
+      btn.disabled = false;
+      btn.className = 'btn-profile-add-friend';
+      btn.innerHTML = '<i class="fas fa-user-plus"></i> Add Friend';
+      btn.onclick = () => handleProfileAddFriendClick();
+      if (msgBtn) msgBtn.style.display = 'none';
+
+      try {
+        if (SafeSpaceDB && SafeSpaceDB.community) {
+          const friendships = await SafeSpaceDB.community.getFriendships();
+          const f = (friendships || []).find(x => 
+            (x.requester_id === currentUser.id && x.receiver_id === targetId) ||
+            (x.receiver_id === currentUser.id && x.requester_id === targetId)
+          );
+
+          if (f) {
+            if (f.status === 'accepted') {
+              btn.className = 'btn-profile-add-friend friends';
+              btn.innerHTML = '<i class="fas fa-user-check"></i> Friends';
+              btn.disabled = true;
+              if (msgBtn) {
+                const chatParam = targetId || (viewedUser && (viewedUser.id || viewedUser.username));
+                msgBtn.href = `chat.html?user=${encodeURIComponent(chatParam)}`;
+                msgBtn.style.display = 'inline-flex';
+              }
+            } else if (f.status === 'pending') {
+              if (f.requester_id === currentUser.id) {
+                btn.className = 'btn-profile-add-friend pending';
+                btn.innerHTML = '<i class="fa-regular fa-clock"></i> Friend Request Sent';
+                btn.disabled = true;
+              } else {
+                btn.className = 'btn-profile-add-friend accept';
+                btn.innerHTML = '<i class="fas fa-check"></i> Accept Request';
+                btn.onclick = () => handleProfileAcceptFriend(f.id, targetId);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not check friendship state:', err);
+      }
+    }
+
+    function handleProfileMessageClick(event) {
+      if (event) event.preventDefault();
+      const target = viewedUser || {};
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetParam = target.id || target.username || urlParams.get('user') || urlParams.get('userId') || urlParams.get('id');
+
+      if (!targetParam) {
+        window.location.href = 'chat.html';
+        return;
+      }
+
+      // Store in sessionStorage so chat.html can immediately load thread with complete name, avatar, and bio
+      try {
+        sessionStorage.setItem('safe_space_chat_target', JSON.stringify({
+          id: target.id || targetParam,
+          username: target.username || 'Member',
+          first_name: target.first_name || '',
+          last_name: target.last_name || '',
+          bio: target.bio || '',
+          avatar_url: target.avatar_url || ''
+        }));
+      } catch (err) {}
+
+      window.location.href = `chat.html?user=${encodeURIComponent(target.id || targetParam)}`;
+    }
+    window.handleProfileMessageClick = handleProfileMessageClick;
+
+    async function handleProfileAddFriendClick() {
+      if (!viewedUser) return;
+      const btn = document.getElementById('profileAddFriendBtn');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        }
+        await SafeSpaceDB.community.sendFriendRequest(viewedUser.id);
+        if (btn) {
+          btn.className = 'btn-profile-add-friend pending';
+          btn.innerHTML = '<i class="fa-regular fa-clock"></i> Friend Request Sent';
+          btn.disabled = true;
+        }
+        showToast(`Friend request sent to @${viewedUser.username || 'member'}! 🌸`, 'success');
+      } catch (err) {
+        console.error('Failed to send friend request:', err);
+        showToast(err.message || 'Could not send friend request', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-user-plus"></i> Add Friend';
+        }
+      }
+    }
+
+    async function handleProfileAcceptFriend(requestId, targetId) {
+      const btn = document.getElementById('profileAddFriendBtn');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Accepting...';
+        }
+        await SafeSpaceDB.community.respondFriendRequest(requestId, 'accepted');
+        showToast('Friend request accepted! 🌸', 'success');
+        await updateFriendButtonState(targetId);
+      } catch (err) {
+        console.error('Failed to accept request:', err);
+        showToast('Could not accept request', 'error');
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function loadOtherUserPosts(userId, username) {
+      const container = document.getElementById('otherUserFeedList');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading posts...</div>';
+
+      try {
+        let resolvedUserId = (viewedUser && viewedUser.id) || userId;
+        let resolvedUsername = (viewedUser && viewedUser.username) || username;
+
+        // If resolvedUserId is not a UUID, attempt to resolve it via Supabase profiles
+        if (resolvedUserId && typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID && !SafeSpaceDB.posts._isUUID(resolvedUserId)) {
+          if (SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive()) {
+            try {
+              const _db = SafeSpaceDB.getSupabaseClient();
+              const { data: pData } = await _db.from('profiles').select('id, username').eq('username', resolvedUsername || resolvedUserId).maybeSingle();
+              if (pData && pData.id) {
+                resolvedUserId = pData.id;
+                if (viewedUser) viewedUser.id = pData.id;
+              }
+            } catch (pe) {}
+          }
+        }
+
+        let userSpecificPosts = [];
+        if (resolvedUserId && typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID && SafeSpaceDB.posts._isUUID(resolvedUserId)) {
+          try {
+            userSpecificPosts = await SafeSpaceDB.posts.getFeed({ userId: resolvedUserId, limit: 50 });
+          } catch (e) {}
+        }
+
+        let generalFeed = [];
+        try {
+          generalFeed = await SafeSpaceDB.posts.getFeed({ category: 'all', limit: 100 });
+        } catch (e) {}
+
+        // Combine and deduplicate
+        const postMap = new Map();
+        (userSpecificPosts || []).forEach(p => { if (p && p.id) postMap.set(p.id, p); });
+        (generalFeed || []).forEach(p => { if (p && p.id && !postMap.has(p.id)) postMap.set(p.id, p); });
+        const allPosts = Array.from(postMap.values());
+
+        // Filter so ALL posts authored by this user are included, but NONE from the current viewer
+        const userPosts = allPosts.filter(p => {
+          // Strictly exclude the viewer's (currentUser's) posts
+          if (currentUser && currentUser.id && resolvedUserId !== currentUser.id) {
+            if (p.user_id === currentUser.id || p.author_id === currentUser.id) return false;
+            if (currentUser.username && p.author_name && p.author_name.toLowerCase() === currentUser.username.toLowerCase()) return false;
+          }
+
+          // Match if this post belongs to the viewed user (by user_id, author_id, or username)
+          const matchesId = resolvedUserId && (
+            p.user_id === resolvedUserId ||
+            p.author_id === resolvedUserId ||
+            (p.profiles && p.profiles.id === resolvedUserId)
+          );
+          const matchesUsername = resolvedUsername && (
+            (p.author_name && p.author_name.toLowerCase() === resolvedUsername.toLowerCase()) ||
+            (p.profiles && p.profiles.username && p.profiles.username.toLowerCase() === resolvedUsername.toLowerCase())
+          );
+
+          return Boolean(matchesId || matchesUsername);
+        });
+
+        if (userPosts.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state" style="padding: 24px 16px; text-align: center;">
+              <i class="fa-regular fa-newspaper" style="font-size: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px;">No posts yet</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin: 0;">${escapeHTML(resolvedUsername || 'This member')} hasn\'t shared any public posts yet.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = userPosts.map(post => {
+          const likeCount = Array.isArray(post.likes) ? post.likes.length : 0;
+          const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
+          const displayAuthorName = post.is_anonymous ? 'Anonymous' : escapeHTML(resolvedUsername || (post.profiles && post.profiles.username) || post.author_name || 'Member');
+          const postAvatar = (post.profiles && post.profiles.avatar_url) || post.author_avatar || (viewedUser && viewedUser.avatar_url) || 'assets/avatars/bloom-flower.png';
+          const postCategory = post.category ? String(post.category).toUpperCase() : '';
+
+          return `
+            <article class="post-card" style="margin-bottom: 14px;">
+              <div class="post-header">
+                <div class="post-avatar">
+                  <img src="${escapeHTML(postAvatar)}" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='assets/avatars/bloom-flower.png';" />
+                </div>
+                <div class="post-meta">
+                  <div class="post-author">${displayAuthorName}</div>
+                  <div class="post-time-mood">
+                    <span>${formatRelativeTime(post.created_at)}</span>
+                    ${postCategory ? `<span class="post-category-tag" style="margin-left:6px; font-size:10px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:10px;">${escapeHTML(postCategory)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="post-content">${escapeHTML(post.content)}</div>
+              <div class="post-actions" style="margin-top: 10px; display:flex; gap:16px;">
+                <span style="font-size: 13px; color: var(--text-muted);"><i class="fas fa-heart" style="color:#ef4444; margin-right:4px;"></i>${likeCount}</span>
+                <span style="font-size: 13px; color: var(--text-muted);"><i class="fa-regular fa-comment" style="margin-right:4px;"></i>${commentCount}</span>
+              </div>
+            </article>
+          `;
+        }).join('');
+      } catch (err) {
+        console.warn('Failed to load other user posts:', err);
+        container.innerHTML = '<p style="color:var(--text-muted); font-size:13px; text-align:center;">Could not load posts.</p>';
+      }
+    }
 
     function renderUserProfile() {
       document.getElementById('profileUsername').textContent = currentUser.username || 'user';
@@ -1607,9 +2048,12 @@
           subContent.innerHTML = myPosts.map(post => {
             const isAnon = post.is_anonymous;
             const authorDisplay = isAnon ? 'Anonymous' : (post.author_name || currentUser.username || 'Member');
+            const postAvatar = currentUser.avatar_url || currentUser.avatar_value || post.author_avatar;
             const avatarHtml = window.SafeSpaceAvatars
-              ? window.SafeSpaceAvatars.renderHtml(post.author_avatar || currentUser.avatar_url, { alt: authorDisplay, isAnonymous: isAnon })
-              : (isAnon ? '<i class="fas fa-user-secret"></i>' : '<i class="fas fa-user"></i>');
+              ? window.SafeSpaceAvatars.renderHtml(postAvatar, { alt: authorDisplay })
+              : (postAvatar
+                  ? `<img src="${escapeHTML(postAvatar)}" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" />`
+                  : `<img src="assets/avatars/default-avatar.svg" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`);
 
             const moodMeta = post.mood && MOOD_MAP[post.mood] ? MOOD_MAP[post.mood] : null;
             const rawCat = (post.category || 'general').toLowerCase();
@@ -1647,10 +2091,14 @@
                 ` : ''}
 
                 <div class="post-actions">
-                  <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="handlePostLikeInline('${post.id}', this)" aria-label="Like post">
-                    <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
-                    <span class="like-count">${likeCount}</span>
-                  </button>
+                  <div class="post-action-like-group ${isLiked ? 'liked' : ''}">
+                    <button type="button" class="post-action-like-btn" onclick="handlePostLikeInline('${post.id}', this)" aria-label="${isLiked ? 'Unlike post' : 'Like post'}" title="${isLiked ? 'Unlike' : 'Like'}">
+                      <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+                    </button>
+                    <button type="button" class="post-like-count-btn ${likeCount > 0 ? 'has-likes' : ''}" onclick="openLikesModal('${post.id}', event)" aria-label="See who liked this post" title="See who reacted (${likeCount})">
+                      <span class="like-count">${likeCount}</span>
+                    </button>
+                  </div>
                   <button class="post-action-btn" aria-label="Comments">
                     <i class="fa-regular fa-comment"></i>
                     <span>${commentCount}</span>
@@ -1706,11 +2154,29 @@
           }
 
           subContent.innerHTML = savedPosts.map(post => {
-            const isAnon = post.is_anonymous;
+            const isAnon = Boolean(post.is_anonymous);
             const authorDisplay = isAnon ? 'Anonymous' : (post.author_name || 'Member');
+            const isMyPost = Boolean(currentUser && (
+              (post.user_id && post.user_id === currentUser.id) ||
+              post.is_mine === true ||
+              (post.author_id && post.author_id === currentUser.id) ||
+              (!post.user_id && post.author_name && (post.author_name === currentUser.username || post.author_name === currentUser.first_name))
+            ));
+            let postAvatar = null;
+            if (isMyPost && currentUser && (currentUser.avatar_url || currentUser.avatar_value)) {
+              postAvatar = currentUser.avatar_url || currentUser.avatar_value;
+            } else {
+              postAvatar = post.author_avatar || (post.profiles && post.profiles.avatar_url) || null;
+            }
+            if (!postAvatar && currentUser && (isMyPost || !post.user_id)) {
+              postAvatar = currentUser.avatar_url || currentUser.avatar_value;
+            }
+
             const avatarHtml = window.SafeSpaceAvatars
-              ? window.SafeSpaceAvatars.renderHtml(post.author_avatar, { alt: authorDisplay, isAnonymous: isAnon })
-              : (isAnon ? '<i class="fas fa-user-secret"></i>' : '<i class="fas fa-user"></i>');
+              ? window.SafeSpaceAvatars.renderHtml(postAvatar, { alt: authorDisplay })
+              : (postAvatar
+                  ? `<img src="${escapeHTML(postAvatar)}" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" />`
+                  : `<img src="assets/avatars/default-avatar.svg" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`);
 
             const rawCat = (post.category || 'general').toLowerCase();
             const catLabel = rawCat.toUpperCase();
@@ -1742,10 +2208,14 @@
                 ` : ''}
 
                 <div class="post-actions">
-                  <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="handlePostLikeInline('${post.id}', this)" aria-label="Like post">
-                    <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
-                    <span class="like-count">${likeCount}</span>
-                  </button>
+                  <div class="post-action-like-group ${isLiked ? 'liked' : ''}">
+                    <button type="button" class="post-action-like-btn" onclick="handlePostLikeInline('${post.id}', this)" aria-label="${isLiked ? 'Unlike post' : 'Like post'}" title="${isLiked ? 'Unlike' : 'Like'}">
+                      <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+                    </button>
+                    <button type="button" class="post-like-count-btn ${likeCount > 0 ? 'has-likes' : ''}" onclick="openLikesModal('${post.id}', event)" aria-label="See who liked this post" title="See who reacted (${likeCount})">
+                      <span class="like-count">${likeCount}</span>
+                    </button>
+                  </div>
                   <button class="post-action-btn" aria-label="Comments">
                     <i class="fa-regular fa-comment"></i>
                     <span>${commentCount}</span>
@@ -2454,6 +2924,23 @@
           });
         }
       });
+
+      // Auto-open requested view from URL query (?view=saved or ?tab=saved-posts)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewParam = (urlParams.get('view') || urlParams.get('tab') || window.location.hash.replace('#', '')).toLowerCase();
+        if (viewParam === 'saved' || viewParam === 'saved-posts' || viewParam === 'bookmarks') {
+          setTimeout(() => {
+            const savedRow = document.getElementById('savedPostsRow');
+            if (savedRow) savedRow.click();
+          }, 150);
+        } else if (viewParam === 'posts' || viewParam === 'my-posts') {
+          setTimeout(() => {
+            const myPostsRow = document.getElementById('myPostsRow');
+            if (myPostsRow) myPostsRow.click();
+          }, 150);
+        }
+      } catch (paramErr) {}
     }
 
     // Global Post Action Helpers for Sub-views
@@ -2494,22 +2981,154 @@
       }
     }
 
+    async function handlePostSaveInline(postId, btn) {
+      try {
+        const res = await SafeSpaceDB.posts.toggleSave(postId);
+        const icon = btn.querySelector('i');
+        if (res.saved) {
+          btn.classList.add('saved');
+          if (icon) icon.className = 'fas fa-bookmark';
+          showToast('✓ Post saved to bookmarks.', 'success');
+        } else {
+          btn.classList.remove('saved');
+          if (icon) icon.className = 'fa-regular fa-bookmark';
+          showToast('✓ Post removed from bookmarks.', 'info');
+        }
+      } catch (err) {
+        showToast('Could not update bookmark', 'error');
+      }
+    }
+
     async function handlePostLikeInline(postId, btn) {
       try {
         const res = await SafeSpaceDB.posts.toggleLike(postId);
+        const group = btn.closest('.post-action-like-group') || btn;
         const icon = btn.querySelector('i');
-        const span = btn.querySelector('.like-count');
+        const span = group.querySelector('.like-count');
+        const countBtn = group.querySelector('.post-like-count-btn');
         if (res.liked) {
           btn.classList.add('liked');
+          if (group !== btn) group.classList.add('liked');
           if (icon) icon.className = 'fas fa-heart';
         } else {
           btn.classList.remove('liked');
+          if (group !== btn) group.classList.remove('liked');
           if (icon) icon.className = 'fa-regular fa-heart';
         }
         if (span && res.count !== undefined) span.textContent = res.count;
+        if (countBtn && res.count !== undefined) {
+          countBtn.title = `See who reacted (${res.count})`;
+          countBtn.classList.toggle('has-likes', res.count > 0);
+        }
       } catch (err) {
         showToast('Could not update like', 'error');
       }
+    }
+
+    // ========================================================
+    // POST REACTIONS / LIKED BY MODAL
+    // ========================================================
+    function openLikesModal(postId, event) {
+      if (event) event.stopPropagation();
+      const modal = document.getElementById('postLikesModal');
+      if (!modal) return;
+      const title = document.getElementById('likesModalTitle');
+      const container = document.getElementById('likesListContainer');
+
+      if (title) title.textContent = 'Reactions';
+      container.innerHTML = `
+        <div style="text-align:center; padding: 40px 16px; color: var(--text-muted);">
+          <i class="fas fa-circle-notch fa-spin" style="font-size:24px; color:var(--primary); margin-bottom:12px; display:inline-block;"></i>
+          <div style="font-size:13px; font-weight:600;">Loading reactions...</div>
+        </div>
+      `;
+      modal.classList.add('open');
+
+      SafeSpaceDB.posts.getPostLikes(postId).then(users => {
+        if (title) title.textContent = `Reactions (${users.length})`;
+        renderLikesList(users);
+      }).catch(err => {
+        console.warn('[SafeSpace] Error fetching post likes:', err);
+        container.innerHTML = `
+          <div style="text-align:center; padding: 36px 16px; color: var(--text-muted); font-size:13px;">
+            Could not load reactions right now.
+          </div>
+        `;
+      });
+    }
+    window.openLikesModal = openLikesModal;
+
+    function renderLikesList(users) {
+      const container = document.getElementById('likesListContainer');
+      if (!container) return;
+
+      if (!Array.isArray(users) || users.length === 0) {
+        container.innerHTML = `
+          <div class="reactions-empty-state">
+            <div class="reactions-empty-icon"><i class="fa-regular fa-heart"></i></div>
+            <h4>No reactions yet</h4>
+            <p>Be the first to react with love to this post!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = users.map(u => {
+        const isMe = u.is_current_user || (currentUser && currentUser.id === u.id);
+        const displayName = u.full_name || u.username || 'Safe Space Member';
+        const role = (u.role || 'student').toLowerCase();
+        let roleBadge = '';
+        if (role === 'admin') {
+          roleBadge = '<span class="reaction-role-badge admin">Admin</span>';
+        } else if (role === 'counselor') {
+          roleBadge = '<span class="reaction-role-badge counselor">Counselor</span>';
+        }
+
+        const avatarHtml = window.SafeSpaceAvatars
+          ? window.SafeSpaceAvatars.renderHtml(u.avatar_url, { alt: displayName })
+          : (u.avatar_url ? `<img src="${escapeHTML(u.avatar_url)}" alt="${escapeHTML(displayName)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />` : `<i class="fas fa-user"></i>`);
+
+        return `
+          <div class="reaction-user-item">
+            <div class="reaction-user-avatar">
+              ${avatarHtml}
+              <span class="reaction-mini-heart"><i class="fas fa-heart"></i></span>
+            </div>
+            <div class="reaction-user-details">
+              <div class="reaction-user-name-line">
+                <span class="reaction-user-name">${escapeHTML(displayName)}</span>
+                ${isMe ? '<span class="reaction-you-badge">You</span>' : ''}
+                ${roleBadge}
+              </div>
+              <span class="reaction-user-handle">@${escapeHTML(u.username || 'user')}</span>
+            </div>
+            ${!isMe ? `
+              <a href="profile.html?user=${encodeURIComponent(u.id || u.username)}" class="reaction-profile-link" title="View Profile">
+                <span>Profile</span>
+                <i class="fas fa-chevron-right" style="font-size:10px;"></i>
+              </a>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setupLikesModal() {
+      const modal = document.getElementById('postLikesModal');
+      const closeBtn = document.getElementById('closeLikesModalBtn');
+      if (!modal) return;
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+      }
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('open')) {
+          modal.classList.remove('open');
+        }
+      });
     }
 
     async function handlePostSaveInline(postId, btn) {

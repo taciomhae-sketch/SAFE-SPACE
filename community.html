@@ -341,8 +341,8 @@
 
         return `
           <div class="member-card">
-            <div class="member-avatar">${avatarHtml}</div>
-            <div class="member-info">
+            <div class="member-avatar" onclick="window.location.href='profile.html?user=${member.id}'" style="cursor:pointer;" title="View Profile">${avatarHtml}</div>
+            <div class="member-info" onclick="window.location.href='profile.html?user=${member.id}'" style="cursor:pointer;" title="View Profile">
               <div class="member-name">${escapeHTML(member.username || 'Member')}</div>
               <div class="member-bio">${escapeHTML(member.bio || 'Safe Space Member')}</div>
             </div>
@@ -446,12 +446,12 @@
 
       container.innerHTML = filtered.map(friend => `
         <div class="member-card">
-          <div class="member-avatar">
+          <div class="member-avatar" onclick="window.location.href='profile.html?user=${friend.id}'" style="cursor:pointer;" title="View Profile">
             ${window.SafeSpaceAvatars
               ? window.SafeSpaceAvatars.renderHtml(friend, { alt: friend.username || 'Friend' })
               : (friend.avatar_url ? `<img src="${escapeHTML(friend.avatar_url)}" alt="${escapeHTML(friend.username)}" />` : `<i class="fas fa-user"></i>`)}
           </div>
-          <div class="member-info">
+          <div class="member-info" onclick="window.location.href='profile.html?user=${friend.id}'" style="cursor:pointer;" title="View Profile">
             <div class="member-name">${escapeHTML(friend.username)}</div>
             <div class="member-bio">${escapeHTML(friend.bio || '')}</div>
           </div>

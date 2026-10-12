@@ -32,8 +32,9 @@ function getThemeSettings() {
 }
 
 // Toast notification helper
-function showToast(message, type) {
+function showToast(message, type, options) {
   type = type || 'info';
+  options = options || {};
   var container = document.getElementById('toastContainer');
   if (!container) {
     container = document.createElement('div');
@@ -50,8 +51,16 @@ function showToast(message, type) {
   if (type === 'warning') icon = 'exclamation-triangle';
   if (type === 'error') icon = 'times-circle';
 
-  toast.innerHTML = '<i class="fas fa-' + icon + '"></i> <span>' + escapeHTML(message) + '</span>';
+  var actionHtml = '';
+  if (options.link && options.actionLabel) {
+    actionHtml = ' <a href="' + escapeHTML(options.link) + '" class="toast-action-btn" style="margin-left:10px; background:rgba(255,255,255,0.22); color:#fff; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,0.3);">' + escapeHTML(options.actionLabel) + '</a>';
+  }
+
+  var textHtml = options.allowHtml ? message : escapeHTML(message);
+  toast.innerHTML = '<i class="fas fa-' + icon + '"></i> <span>' + textHtml + '</span>' + actionHtml;
   container.appendChild(toast);
+
+  var duration = options.duration || (options.link ? 5000 : 3500);
 
   setTimeout(function() {
     toast.classList.add('toast-show');
@@ -60,7 +69,7 @@ function showToast(message, type) {
   setTimeout(function() {
     toast.classList.remove('toast-show');
     setTimeout(function() { toast.remove(); }, 300);
-  }, 3500);
+  }, duration);
 }
 
 // Escape HTML utility to prevent XSS

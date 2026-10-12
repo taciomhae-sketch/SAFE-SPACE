@@ -1,5 +1,5 @@
 // Safe Space PWA Service Worker
-const CACHE_NAME = 'safe-space-v1.0.0';
+const CACHE_NAME = 'safe-space-v2.0.4';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -48,7 +48,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-first for pages, Cache-first for static assets, fallback to offline.html
+// Fetch: Network-first for pages and scripts, Cache-first for static media
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
@@ -58,18 +58,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML navigation requests -> Network first, fallback to cache, then offline.html
-  if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
+  // HTML navigation and JS/CSS scripts -> Network first, fallback to cache
+  if (
+    request.mode === 'navigate' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))
+  ) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          }
           return response;
         })
         .catch(() => {
           return caches.match(request).then((cachedResponse) => {
-            return cachedResponse || caches.match('./offline.html');
+            return cachedResponse || (request.mode === 'navigate' ? caches.match('./offline.html') : null);
           });
         })
     );
