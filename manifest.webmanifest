@@ -32,8 +32,11 @@
       "src": "assets/icons/icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "src": "SAFE_SPACE_LOGO.png",
-      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/SAFE_SPACE_LOGO.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }

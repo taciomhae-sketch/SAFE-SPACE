@@ -1,8 +1,9 @@
 // Safe Space PWA Service Worker
-const CACHE_NAME = 'safe-space-v2.0.4';
+const CACHE_NAME = 'safe-space-v2.1.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
+  './welcome.html',
   './login.html',
   './register.html',
   './community.html',
@@ -16,6 +17,7 @@ const STATIC_ASSETS = [
   './js/app.js',
   './js/pwa.js',
   './manifest.webmanifest',
+  './assets/icons/SAFE_SPACE_LOGO.png',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './assets/icons/icon.svg',
