@@ -1715,14 +1715,22 @@
     let activePostFilter = 'all';
     let activePostCategory = 'all';
 
-    // Banned keywords persistent state
+    // Banned keywords persistent state (21 keywords filter)
     let bannedKeywords = [
       'gago', 'tarantado', 'boboka', 'bobo', 'ulol', 'tangina',
-      'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you'
+      'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you',
+      'bitch', 'tado', 'yawa', 'letche', 'fuck off', 'fuck you', 'stfu', 'shit', 'gagu'
     ];
     try {
       const stored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
-      if (Array.isArray(stored) && stored.length > 0) bannedKeywords = stored;
+      if (Array.isArray(stored) && stored.length > 0) {
+        stored.forEach(w => {
+          if (w && typeof w === 'string' && !bannedKeywords.includes(w.toLowerCase().trim())) {
+            bannedKeywords.push(w.toLowerCase().trim());
+          }
+        });
+      }
+      localStorage.setItem('safe_space_banned_keywords', JSON.stringify(bannedKeywords));
     } catch (e) {}
 
     function hidePageLoader() {

@@ -472,19 +472,27 @@
   <!-- AI Safety Alert Modal for Flagged Content -->
   <div class="ai-warning-modal-overlay" id="aiWarningModal">
     <div class="ai-warning-card">
-      <div class="ai-warning-icon-wrap">
-        <i class="fas fa-shield-halved"></i>
+      <div class="ai-warning-icon-wrap" style="background:#FEF2F2; color:#EF4444;">
+        <i class="fas fa-triangle-exclamation"></i>
       </div>
-      <div class="ai-warning-title">Safe Space Advisory</div>
+      <div class="ai-warning-title">Harmful Content Warning</div>
+      <div class="ai-warning-question-banner" id="aiWarningQuestion" style="font-size:13px; font-weight:800; color:#B91C1C; background:#FEE2E2; border-radius:12px; padding:10px 14px; margin:10px 0 12px; border:1px solid #FCA5A5; line-height:1.45; text-align:center;">
+        Harmful content warning, are you going to continue posting it?
+      </div>
       <div class="ai-warning-category-pill" id="aiWarningCategory">FLAGGED CONTENT</div>
       <div class="ai-warning-desc" id="aiWarningReason">
-        Your post was flagged by our automated AI model for containing potentially harmful or inappropriate language.
+        Your post was flagged for containing potentially harmful or inappropriate language.
       </div>
-      <div class="ai-warning-guidance">
+      <div class="ai-warning-guidance" id="aiWarningGuidance">
         Safe Space is an empathetic, supportive platform. Please edit your message to ensure respect, empathy, and psychological safety for all community members.
       </div>
-      <div class="ai-warning-actions">
-        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn">Edit Post</button>
+      <div class="ai-warning-actions" style="display:flex; gap:10px;">
+        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn" style="flex:1;">
+          <i class="fas fa-pen"></i> Edit Post
+        </button>
+        <button type="button" class="ai-btn-continue" id="aiProceedWarningBtn" style="flex:1; background:#EF4444; color:#FFFFFF; border:none; padding:12px 14px; border-radius:12px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:background 0.2s;">
+          <i class="fas fa-paper-plane"></i> Continue Posting
+        </button>
       </div>
     </div>
   </div>
@@ -1400,59 +1408,34 @@
         });
       });
 
-      // Submit post with AI Moderation & Sentiment Analysis
-      submitBtn.addEventListener('click', async () => {
-        const content = postTextarea.value.trim();
-        if (!content) {
-          showToast('Please enter your thoughts before posting', 'warning');
-          return;
-        }
+      // Track source of active warning modal ('post' | 'comment') and proceed callback
+      window._pendingWarningCallback = null;
 
+      async function executePostPublish(content, aiResult) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-sparkles fa-spin" style="margin-right:6px;"></i>AI Moderating...';
+        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin" style="margin-right:6px;"></i>Posting...';
 
         try {
-          // ── Step 1: Run AI Moderation & Sentiment Analysis ──
-          let aiResult = {
-            status: 'APPROVED',
-            category: 'SAFE',
-            confidence: 1.0,
-            sentiment: 'NEUTRAL',
-            sentiment_score: 0.5
-          };
-
-          if (window.AIService) {
-            aiResult = await AIService.moderate(content);
-          }
-
-          // ── Step 2: Handle Flagged Content ──
-          if (aiResult.status === 'BLOCKED' || (aiResult.status === 'REVIEW' && aiResult.category !== 'SAFE')) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Post';
-            showAiWarningModal(aiResult);
-            return;
-          }
-
-          submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin" style="margin-right:6px;"></i>Posting...';
-
           let photoUrl = null;
           if (postState.photoFile) {
             photoUrl = await SafeSpaceDB.storage.uploadImage(postState.photoFile, 'post-photos');
           }
 
-          // ── Step 3: Save Post with AI Metadata ──
+          var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || aiResult.status === 'REVIEW' || (aiResult.category && aiResult.category !== 'SAFE');
+
+          // ── Save Post with AI Metadata ──
           const newPost = await SafeSpaceDB.posts.createPost({
             content,
             mood: postState.selectedMood,
             is_anonymous: postState.isAnonymous,
             photo_url: photoUrl,
             category: postState.selectedCategory || 'general',
-            sentiment: aiResult.sentiment,
-            sentiment_score: aiResult.sentiment_score,
-            moderation_status: aiResult.status,
-            moderation_category: aiResult.category,
-            moderation_confidence: aiResult.confidence,
-            moderation_reason: aiResult.reason
+            sentiment: aiResult.sentiment || 'NEUTRAL',
+            sentiment_score: aiResult.sentiment_score || 0.5,
+            moderation_status: isFlagged ? 'REVIEW' : (aiResult.status || 'APPROVED'),
+            moderation_category: aiResult.category || (isFlagged ? 'HARASSMENT' : 'SAFE'),
+            moderation_confidence: aiResult.confidence || 0.95,
+            moderation_reason: aiResult.reason || (isFlagged ? 'Flagged by safety filter; confirmed by user' : 'Approved')
           });
 
           // Invalidate / update category caches reactive to new post
@@ -1488,12 +1471,79 @@
           moodContainer.style.display = 'none';
           modal.classList.remove('open');
 
-          var sentimentNote = aiResult.sentiment === 'POSITIVE' ? ' · Positive ✨' : (aiResult.sentiment === 'NEGATIVE' ? ' · Seeking Support 💙' : '');
-          showToast(`Shared with the community!${sentimentNote}`, 'success');
+          if (isFlagged) {
+            showToast('Post submitted. Flagged for counselor review.', 'info');
+          } else {
+            var sentimentNote = aiResult.sentiment === 'POSITIVE' ? ' · Positive ✨' : (aiResult.sentiment === 'NEGATIVE' ? ' · Seeking Support 💙' : '');
+            showToast(`Shared with the community!${sentimentNote}`, 'success');
+          }
+        } catch (err) {
+          console.error('[CreatePost] Error:', err);
+          showToast(err.message || 'Failed to share post. Try again.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Post';
+        }
+      }
+
+      // Submit post with AI Moderation & Sentiment Analysis
+      submitBtn.addEventListener('click', async () => {
+        const content = postTextarea.value.trim();
+        if (!content && !postState.photoFile) {
+          showToast('Please enter your thoughts before posting', 'warning');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-sparkles fa-spin" style="margin-right:6px;"></i>AI Moderating...';
+
+        try {
+          // ── Step 1: Run AI Moderation & Sentiment Analysis ──
+          let aiResult = {
+            allowed: true,
+            status: 'APPROVED',
+            category: 'SAFE',
+            confidence: 1.0,
+            sentiment: 'NEUTRAL',
+            sentiment_score: 0.5
+          };
+
+          if (window.AIService && content) {
+            aiResult = await AIService.moderate(content);
+          }
+
+          // ── Step 2: Handle Flagged Content ──
+          var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || aiResult.status === 'REVIEW' || (aiResult.category && aiResult.category !== 'SAFE');
+
+          if (isFlagged) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Post';
+
+            // Send notification first as requested
+            try {
+              const currentUser = await SafeSpaceDB.auth.getCurrentUser();
+              if (currentUser && SafeSpaceDB.notifications) {
+                await SafeSpaceDB.notifications.createNotification({
+                  user_id: currentUser.id,
+                  type: 'warning',
+                  message: 'Harmful content warning, are you going to continue posting it?'
+                });
+              }
+            } catch (ne) {}
+
+            showToast('Harmful content warning, are you going to continue posting it?', 'error');
+
+            showAiWarningModal(aiResult, 'post', function() {
+              executePostPublish(content, aiResult);
+            });
+            return;
+          }
+
+          // Safe post: publish directly
+          await executePostPublish(content, aiResult);
         } catch (err) {
           console.error(err);
-          showToast('Failed to share post. Try again.', 'error');
-        } finally {
+          showToast('Failed to moderate or share post. Try again.', 'error');
           submitBtn.disabled = false;
           submitBtn.textContent = 'Post';
         }
@@ -1538,54 +1588,73 @@
     }
 
     // AI Warning Modal Helper
-    function showAiWarningModal(aiResult, source) {
+    function showAiWarningModal(aiResult, source, onProceed) {
       activeWarningSource = source || 'post';
+      window._pendingWarningCallback = (typeof onProceed === 'function') ? onProceed : null;
       const modal = document.getElementById('aiWarningModal');
       const catEl = document.getElementById('aiWarningCategory');
       const reasonEl = document.getElementById('aiWarningReason');
+      const questionEl = document.getElementById('aiWarningQuestion');
       const closeWarnBtn = document.getElementById('aiCloseWarningBtn');
+      const proceedWarnBtn = document.getElementById('aiProceedWarningBtn');
       if (!modal) return;
 
       const categoryName = (aiResult.category || 'HARASSMENT').replace(/_/g, ' ').toUpperCase();
       const confidencePct = aiResult.confidence ? Math.round(aiResult.confidence * 100) : 85;
       if (catEl) catEl.textContent = `FLAGGED: ${categoryName} (${confidencePct}% CONFIDENCE)`;
       
-      let guidance = 'Your message may violate the Safe Space community guidelines. Please review and revise your message before posting.';
-      if (aiResult.category === 'SELF_HARM' || aiResult.category === 'ENCOURAGEMENT_OF_SELF_HARM') {
-        guidance = 'We care deeply about your emotional and physical well-being. If you are experiencing distress, please reach out to our supportive student guidance counselors.';
-      } else if (aiResult.category === 'THREAT' || aiResult.category === 'VIOLENCE') {
-        guidance = 'Safe Space is strictly committed to safety for all students. Threats of harm or violence are prohibited. Please review and revise your message.';
-      } else if (aiResult.category === 'HARASSMENT' || aiResult.category === 'BULLYING') {
-        guidance = 'Personal insults, demeaning attacks, or targeted harassment are not allowed. Please keep your message respectful and kind.';
-      } else if (aiResult.category === 'SEXUAL_HARASSMENT' || aiResult.category === 'SEXUAL_CONTENT') {
-        guidance = 'Explicit sexual language and unwanted sexual comments violate our campus safety standards. Please revise your message.';
-      } else if (aiResult.category === 'HATE' || aiResult.category === 'DISCRIMINATION') {
-        guidance = 'Discriminatory language or hate speech targeting identities, gender, or orientation is prohibited on Safe Space.';
+      if (questionEl) {
+        questionEl.textContent = activeWarningSource === 'comment'
+          ? 'Harmful content warning, are you going to continue posting this comment?'
+          : 'Harmful content warning, are you going to continue posting it?';
+      }
+
+      let guidance = 'Your message contains language flagged by our community safety filter. Please review and revise before posting.';
+      if (aiResult.reason) {
+        guidance = aiResult.reason;
       }
 
       if (reasonEl) {
         reasonEl.textContent = guidance;
       }
       if (closeWarnBtn) {
-        closeWarnBtn.textContent = activeWarningSource === 'comment' ? 'Edit Comment' : 'Edit Post';
+        closeWarnBtn.innerHTML = activeWarningSource === 'comment' ? '<i class="fas fa-pen"></i> Edit Comment' : '<i class="fas fa-pen"></i> Edit Post';
+      }
+      if (proceedWarnBtn) {
+        proceedWarnBtn.style.display = window._pendingWarningCallback ? 'inline-flex' : 'none';
+        proceedWarnBtn.innerHTML = activeWarningSource === 'comment' ? '<i class="fas fa-arrow-right"></i> Continue Posting' : '<i class="fas fa-arrow-right"></i> Continue Posting';
       }
 
       modal.classList.add('open');
     }
 
-    // Close Warning Modal Handler
+    // Warning Modal Action Handlers
     document.addEventListener('DOMContentLoaded', () => {
       const closeWarnBtn = document.getElementById('aiCloseWarningBtn');
       if (closeWarnBtn) {
         closeWarnBtn.addEventListener('click', () => {
           const modal = document.getElementById('aiWarningModal');
           if (modal) modal.classList.remove('open');
+          window._pendingWarningCallback = null;
           if (activeWarningSource === 'comment') {
             const commentInput = document.getElementById('newCommentInput');
             if (commentInput) commentInput.focus();
           } else {
             const textarea = document.getElementById('postContentInput');
             if (textarea) textarea.focus();
+          }
+        });
+      }
+
+      const proceedWarnBtn = document.getElementById('aiProceedWarningBtn');
+      if (proceedWarnBtn) {
+        proceedWarnBtn.addEventListener('click', () => {
+          const modal = document.getElementById('aiWarningModal');
+          if (modal) modal.classList.remove('open');
+          if (typeof window._pendingWarningCallback === 'function') {
+            const cb = window._pendingWarningCallback;
+            window._pendingWarningCallback = null;
+            cb();
           }
         });
       }
@@ -1706,22 +1775,9 @@
         }
       });
 
-      sendBtn.addEventListener('click', async () => {
-        const content = input.value.trim();
-        if (!content || !activeCommentPostId) return;
-
+      async function executeCommentPublish(content) {
         sendBtn.disabled = true;
         try {
-          // AI Content Moderation Check for Comments
-          if (window.AIService) {
-            const aiCheck = await AIService.moderate(content);
-            if (!aiCheck.allowed || aiCheck.status === 'BLOCKED' || (aiCheck.status === 'REVIEW' && aiCheck.category !== 'SAFE')) {
-              showAiWarningModal(aiCheck, 'comment');
-              sendBtn.disabled = false;
-              return;
-            }
-          }
-
           const replyOpts = activeReplyTarget ? {
             parent_id: activeReplyTarget.commentId,
             reply_to: activeReplyTarget.username
@@ -1748,6 +1804,48 @@
         } catch (err) {
           showToast('Could not post comment', 'error');
         } finally {
+          sendBtn.disabled = false;
+        }
+      }
+
+      sendBtn.addEventListener('click', async () => {
+        const content = input.value.trim();
+        if (!content || !activeCommentPostId) return;
+
+        sendBtn.disabled = true;
+        try {
+          // AI Content Moderation Check for Comments
+          if (window.AIService) {
+            const aiCheck = await AIService.moderate(content);
+            var isCommentFlagged = !aiCheck.allowed || aiCheck.status === 'BLOCKED' || aiCheck.status === 'REVIEW' || (aiCheck.category && aiCheck.category !== 'SAFE');
+
+            if (isCommentFlagged) {
+              sendBtn.disabled = false;
+
+              // Send notification first as requested
+              try {
+                const currentUser = await SafeSpaceDB.auth.getCurrentUser();
+                if (currentUser && SafeSpaceDB.notifications) {
+                  await SafeSpaceDB.notifications.createNotification({
+                    user_id: currentUser.id,
+                    type: 'warning',
+                    message: 'Harmful content warning, are you going to continue posting this comment?'
+                  });
+                }
+              } catch (ne) {}
+
+              showToast('Harmful content warning, are you going to continue posting it?', 'error');
+
+              showAiWarningModal(aiCheck, 'comment', function() {
+                executeCommentPublish(content);
+              });
+              return;
+            }
+          }
+
+          await executeCommentPublish(content);
+        } catch (err) {
+          showToast('Could not post comment', 'error');
           sendBtn.disabled = false;
         }
       });

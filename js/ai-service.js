@@ -851,8 +851,75 @@
       var langInfo = SafeSpaceLanguageDetector.detect(norm.has_obfuscation ? norm.deobfuscated : text);
       var ctx = SafeSpaceContextAnalyzer.analyze(norm);
 
-      // 1. Safety Rules First (Violations always take priority over shortcuts)
+      // 0. Banned Words & Slang Filter Check (From Admin AI Governance panel)
+      var defaultBannedWords = [
+        'gago', 'tarantado', 'boboka', 'bobo', 'ulol', 'tangina',
+        'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you',
+        'bitch', 'tado', 'yawa', 'letche', 'leche', 'fuck off', 'fuck you',
+        'stfu', 'shit', 'gagu'
+      ];
+      var activeBannedWords = defaultBannedWords.slice();
+      try {
+        if (typeof localStorage !== 'undefined') {
+          var customStored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
+          if (Array.isArray(customStored) && customStored.length > 0) {
+            customStored.forEach(function(w) {
+              if (w && typeof w === 'string') {
+                var wClean = w.trim().toLowerCase();
+                if (wClean && activeBannedWords.indexOf(wClean) === -1) {
+                  activeBannedWords.push(wClean);
+                }
+              }
+            });
+          }
+        }
+      } catch (e) {}
+
       var testStrings = [norm.clean, norm.evasion, norm.deleet, norm.deobfuscated];
+      var matchedBannedWord = null;
+
+      for (var b = 0; b < activeBannedWords.length; b++) {
+        var bw = activeBannedWords[b];
+        if (!bw) continue;
+        var escapedBw = bw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var bwRegex = new RegExp('(?:^|[\\s.,!?;:_\\-"\'`~()\\/\\[\\]])' + escapedBw + '(?:$|[\\s.,!?;:_\\-"\'`~()\\/\\[\\]])', 'i');
+        for (var ts = 0; ts < testStrings.length; ts++) {
+          if (bwRegex.test(testStrings[ts]) || (bw.length > 3 && testStrings[ts].indexOf(bw) !== -1)) {
+            matchedBannedWord = bw;
+            break;
+          }
+        }
+        if (matchedBannedWord) break;
+      }
+
+      if (matchedBannedWord) {
+        return {
+          success: true,
+          online: false,
+          fallback: true,
+          allowed: false,
+          status: 'REVIEW',
+          action: 'warn',
+          language: langInfo.language,
+          language_confidence: langInfo.confidence,
+          category: 'HARASSMENT',
+          categories: ['HARASSMENT', 'PROFANITY'],
+          severity: 'high',
+          confidence: 0.98,
+          reason: 'Harmful language detected from Banned Words & Slang Filter: "' + matchedBannedWord + '"',
+          matched_word: matchedBannedWord,
+          detection_source: 'banned_filter',
+          has_obfuscation: norm.has_obfuscation,
+          obfuscation_types: norm.obfuscation_types,
+          is_academic_stress: false,
+          is_targeted: ctx.is_targeted,
+          sentiment: 'NEGATIVE',
+          sentiment_score: 0.90,
+          elapsedMs: 1
+        };
+      }
+
+      // 1. Safety Rules First (Violations always take priority over shortcuts)
       var matchedRule = null;
 
       for (var r = 0; r < FALLBACK_RULES.length; r++) {

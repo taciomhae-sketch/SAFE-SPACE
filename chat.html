@@ -448,10 +448,13 @@
   <!-- AI Safety Alert Modal for Flagged Chat Messages -->
   <div class="ai-warning-modal-overlay" id="aiWarningModal">
     <div class="ai-warning-card">
-      <div class="ai-warning-icon-wrap">
-        <i class="fas fa-shield-halved"></i>
+      <div class="ai-warning-icon-wrap" style="background:#FEF2F2; color:#EF4444;">
+        <i class="fas fa-triangle-exclamation"></i>
       </div>
-      <div class="ai-warning-title">Safe Space Advisory</div>
+      <div class="ai-warning-title">Harmful Content Warning</div>
+      <div class="ai-warning-question-banner" id="aiWarningQuestion" style="font-size:13px; font-weight:800; color:#B91C1C; background:#FEE2E2; border-radius:12px; padding:10px 14px; margin:10px 0 12px; border:1px solid #FCA5A5; line-height:1.45; text-align:center;">
+        Harmful content warning, are you going to continue sending it?
+      </div>
       <div class="ai-warning-category-pill" id="aiWarningCategory">FLAGGED CONTENT</div>
       <div class="ai-warning-desc" id="aiWarningReason">
         Your message was flagged by our automated safety shield for containing potentially harmful or inappropriate language.
@@ -459,8 +462,13 @@
       <div class="ai-warning-guidance" id="aiWarningGuidance">
         Safe Space is an empathetic, supportive platform. Please edit your message to ensure respect, empathy, and psychological safety for all community members.
       </div>
-      <div class="ai-warning-actions">
-        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn">Edit Message</button>
+      <div class="ai-warning-actions" style="display:flex; gap:10px;">
+        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn" style="flex:1;">
+          <i class="fas fa-pen"></i> Edit Message
+        </button>
+        <button type="button" class="ai-btn-continue" id="aiProceedWarningBtn" style="flex:1; background:#EF4444; color:#FFFFFF; border:none; padding:12px 14px; border-radius:12px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:background 0.2s;">
+          <i class="fas fa-paper-plane"></i> Continue Sending
+        </button>
       </div>
     </div>
   </div>
@@ -968,6 +976,50 @@
         const text = input.value.trim();
         if (!text || !activeChatUser) return;
 
+        async function executeSendMessage(msgText) {
+          isSending = true;
+          sendBtn.disabled = true;
+          input.value = '';
+
+          const tempMsgId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+            ? crypto.randomUUID()
+            : ('msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6));
+
+          const userMsg = {
+            id: tempMsgId,
+            message: msgText,
+            sender_id: currentUser ? currentUser.id : 'me',
+            created_at: new Date().toISOString(),
+            is_deleted: false,
+            reactions: []
+          };
+          appendMessageBubble(userMsg);
+
+          // If talking to the AI Assistant
+          if (activeChatUser.isAi) {
+            isSending = false;
+            sendBtn.disabled = false;
+            handleAiBotResponse(msgText);
+            return;
+          }
+
+          try {
+            const sent = await SafeSpaceDB.messages.sendMessage(activeChatUser.id, msgText, tempMsgId);
+            if (sent && sent.id) {
+              const el = document.getElementById(`msg-wrap-${tempMsgId}`);
+              if (el && el.id !== `msg-wrap-${sent.id}`) {
+                el.id = `msg-wrap-${sent.id}`;
+              }
+            }
+            refreshChatData();
+          } catch (err) {
+            console.warn('[Chat] sendMessage error:', err);
+          } finally {
+            isSending = false;
+            sendBtn.disabled = false;
+          }
+        }
+
         isSending = true;
         sendBtn.disabled = true;
 
@@ -978,7 +1030,23 @@
             if (!aiCheck.allowed || aiCheck.status === 'BLOCKED' || (aiCheck.status === 'REVIEW' && aiCheck.category !== 'SAFE')) {
               isSending = false;
               sendBtn.disabled = false;
-              showChatAiWarningModal(aiCheck, text);
+
+              // Send warning notification first
+              try {
+                if (currentUser && SafeSpaceDB.notifications) {
+                  await SafeSpaceDB.notifications.createNotification({
+                    user_id: currentUser.id,
+                    type: 'warning',
+                    message: 'Harmful content warning, are you going to continue sending it?'
+                  });
+                }
+              } catch (ne) {}
+
+              showToast('Harmful content warning, are you going to continue sending it?', 'error');
+
+              showChatAiWarningModal(aiCheck, text, function() {
+                executeSendMessage(text);
+              });
               return;
             }
           } catch (mErr) {
@@ -986,44 +1054,7 @@
           }
         }
 
-        input.value = '';
-        const tempMsgId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
-          ? crypto.randomUUID()
-          : ('msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6));
-
-        const userMsg = {
-          id: tempMsgId,
-          message: text,
-          sender_id: currentUser ? currentUser.id : 'me',
-          created_at: new Date().toISOString(),
-          is_deleted: false,
-          reactions: []
-        };
-        appendMessageBubble(userMsg);
-
-        // If talking to the AI Assistant
-        if (activeChatUser.isAi) {
-          isSending = false;
-          sendBtn.disabled = false;
-          handleAiBotResponse(text);
-          return;
-        }
-
-        try {
-          const sent = await SafeSpaceDB.messages.sendMessage(activeChatUser.id, text, tempMsgId);
-          if (sent && sent.id) {
-            const el = document.getElementById(`msg-wrap-${tempMsgId}`);
-            if (el && el.id !== `msg-wrap-${sent.id}`) {
-              el.id = `msg-wrap-${sent.id}`;
-            }
-          }
-          refreshChatData();
-        } catch (err) {
-          console.warn('[Chat] sendMessage error:', err);
-        } finally {
-          isSending = false;
-          sendBtn.disabled = false;
-        }
+        await executeSendMessage(text);
       });
 
       input.addEventListener('keydown', (e) => {
@@ -1040,20 +1071,29 @@
 
     // AI Warning Modal Helper for Chat
     let lastFlaggedChatText = '';
-    function showChatAiWarningModal(aiResult, text) {
+    let pendingChatWarningCallback = null;
+
+    function showChatAiWarningModal(aiResult, text, onProceed) {
       lastFlaggedChatText = text || '';
+      pendingChatWarningCallback = (typeof onProceed === 'function') ? onProceed : null;
       const modal = document.getElementById('aiWarningModal');
       const catEl = document.getElementById('aiWarningCategory');
       const reasonEl = document.getElementById('aiWarningReason');
       const guidEl = document.getElementById('aiWarningGuidance');
+      const questionEl = document.getElementById('aiWarningQuestion');
+      const proceedWarnBtn = document.getElementById('aiProceedWarningBtn');
       if (!modal) return;
 
       const categoryName = (aiResult.category || 'HARASSMENT').replace(/_/g, ' ').toUpperCase();
       const confidencePct = aiResult.confidence ? Math.round(aiResult.confidence * 100) : 85;
       if (catEl) catEl.textContent = `FLAGGED: ${categoryName} (${confidencePct}% CONFIDENCE)`;
 
+      if (questionEl) {
+        questionEl.textContent = 'Harmful content warning, are you going to continue sending it?';
+      }
+
       if (reasonEl) {
-        reasonEl.textContent = 'Your message may violate the Safe Space community guidelines. Please review and revise your message before sending.';
+        reasonEl.textContent = aiResult.reason || 'Your message contains language flagged by our community safety filter.';
       }
       if (guidEl) {
         if (aiResult.category === 'SELF_HARM' || aiResult.category === 'ENCOURAGEMENT_OF_SELF_HARM') {
@@ -1071,20 +1111,38 @@
         }
       }
 
+      if (proceedWarnBtn) {
+        proceedWarnBtn.style.display = pendingChatWarningCallback ? 'inline-flex' : 'none';
+      }
+
       modal.classList.add('open');
     }
 
-    // Wire Warning Modal Close Button
+    // Wire Warning Modal Action Buttons
     document.addEventListener('DOMContentLoaded', () => {
       const closeWarnBtn = document.getElementById('aiCloseWarningBtn');
       if (closeWarnBtn) {
         closeWarnBtn.addEventListener('click', () => {
           const modal = document.getElementById('aiWarningModal');
           if (modal) modal.classList.remove('open');
+          pendingChatWarningCallback = null;
           const input = document.getElementById('chatMessageInput');
           if (input) {
             input.value = lastFlaggedChatText;
             input.focus();
+          }
+        });
+      }
+
+      const proceedWarnBtn = document.getElementById('aiProceedWarningBtn');
+      if (proceedWarnBtn) {
+        proceedWarnBtn.addEventListener('click', () => {
+          const modal = document.getElementById('aiWarningModal');
+          if (modal) modal.classList.remove('open');
+          if (typeof pendingChatWarningCallback === 'function') {
+            const cb = pendingChatWarningCallback;
+            pendingChatWarningCallback = null;
+            cb();
           }
         });
       }
