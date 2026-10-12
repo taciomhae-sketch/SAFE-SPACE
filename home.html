@@ -1064,14 +1064,20 @@
           ? '<span class="ai-verified-tag" title="Verified Safe by Safe Space AI"><i class="fas fa-shield-halved"></i> Safe</span>'
           : '';
 
+        const isClickable = !isAnon;
+        const avatarHtmlTag = isClickable
+          ? `<div class="post-avatar is-clickable" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${avatarHtml}</div>`
+          : `<div class="post-avatar is-anonymous" title="Anonymous Member">${avatarHtml}</div>`;
+        const authorHtmlTag = isClickable
+          ? `<div class="post-author is-clickable" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${escapeHTML(authorDisplay)}</div>`
+          : `<div class="post-author is-anonymous" title="Anonymous Member">${escapeHTML(authorDisplay)}</div>`;
+
         return `
           <article class="post-card" id="post-${post.id}">
             <div class="post-header">
-              <div class="post-avatar" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">
-                ${avatarHtml}
-              </div>
+              ${avatarHtmlTag}
               <div class="post-meta">
-                <div class="post-author" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${escapeHTML(authorDisplay)}</div>
+                ${authorHtmlTag}
                 <div class="post-time-mood">
                   <span>${formatRelativeTime(post.created_at)}</span>
                   <span class="post-category-tag ${escapeHTML(catClass)}">${escapeHTML(catLabel)}</span>
@@ -2476,8 +2482,7 @@
       }
       const feed = (typeof currentFeed !== 'undefined' && currentFeed.length) ? currentFeed : (typeof posts !== 'undefined' ? posts : []);
       const post = feed.find(p => String(p.id) === String(postId));
-      if (!post) {
-        window.location.href = 'profile.html';
+      if (!post || post.is_anonymous) {
         return;
       }
 

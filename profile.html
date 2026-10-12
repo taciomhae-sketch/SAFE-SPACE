@@ -829,11 +829,26 @@
     async function initOtherUserProfile(targetId, targetUsername) {
       viewedUser = null;
 
+      // Anonymity guard: never allow viewing anonymous profile
+      if (
+        (targetId && (targetId.toLowerCase() === 'anonymous' || targetId.toLowerCase().startsWith('user-anon'))) ||
+        (targetUsername && targetUsername.toLowerCase() === 'anonymous')
+      ) {
+        try { sessionStorage.removeItem('safe_space_view_profile'); } catch (e) {}
+        window.location.replace('home.html');
+        return;
+      }
+
       // 1. Try sessionStorage cache from post click
       try {
         const cached = sessionStorage.getItem('safe_space_view_profile');
         if (cached) {
           const parsed = JSON.parse(cached);
+          if (parsed && (parsed.is_anonymous || parsed.username === 'Anonymous')) {
+            sessionStorage.removeItem('safe_space_view_profile');
+            window.location.replace('home.html');
+            return;
+          }
           if (parsed && (parsed.id === targetId || parsed.username === targetId || parsed.username === targetUsername)) {
             viewedUser = parsed;
           }
@@ -1120,13 +1135,16 @@
         (generalFeed || []).forEach(p => { if (p && p.id && !postMap.has(p.id)) postMap.set(p.id, p); });
         const allPosts = Array.from(postMap.values());
 
-        // Filter so ALL posts authored by this user are included, but NONE from the current viewer
+        // Filter so ALL public posts authored by this user are included, but NONE from the current viewer
         const userPosts = allPosts.filter(p => {
           // Strictly exclude the viewer's (currentUser's) posts
           if (currentUser && currentUser.id && resolvedUserId !== currentUser.id) {
             if (p.user_id === currentUser.id || p.author_id === currentUser.id) return false;
             if (currentUser.username && p.author_name && p.author_name.toLowerCase() === currentUser.username.toLowerCase()) return false;
           }
+
+          // Strictly protect anonymity: NEVER expose anonymous posts on a public profile!
+          if (p.is_anonymous) return false;
 
           // Match if this post belongs to the viewed user (by user_id, author_id, or username)
           const matchesId = resolvedUserId && (

@@ -7312,18 +7312,32 @@ body.dark-theme .support-badge-org {
   padding: 0 4px;
 }
 
-.post-header .post-avatar {
+.post-header .post-avatar.is-clickable {
   cursor: pointer;
   transition: transform var(--transition);
 }
-.post-header .post-avatar:hover {
+.post-header .post-avatar.is-clickable:hover {
   transform: scale(1.05);
 }
-.post-header .post-author {
+.post-header .post-author.is-clickable {
   cursor: pointer;
   transition: color var(--transition);
 }
-.post-header .post-author:hover {
+.post-header .post-author.is-clickable:hover {
   color: var(--primary);
   text-decoration: underline;
+}
+
+.post-header .post-avatar.is-anonymous,
+.post-header .post-author.is-anonymous {
+  cursor: default !important;
+  pointer-events: none;
+  user-select: none;
+}
+.post-header .post-avatar.is-anonymous:hover {
+  transform: none !important;
+}
+.post-header .post-author.is-anonymous:hover {
+  color: var(--text-dark) !important;
+  text-decoration: none !important;
 }
