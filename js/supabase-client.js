@@ -1772,6 +1772,12 @@ var SafeSpaceDB = {
       posts = posts.filter(function(p) { return p.id !== postId; });
       localStorage.setItem('safe_space_posts', JSON.stringify(posts));
 
+      try {
+        var ov = JSON.parse(localStorage.getItem('safe_space_post_moderation_overrides') || '{}');
+        delete ov[postId];
+        localStorage.setItem('safe_space_post_moderation_overrides', JSON.stringify(ov));
+      } catch (ove) {}
+
       if (typeof SafeSpaceDB._broadcastModerationSync === 'function') {
         SafeSpaceDB._broadcastModerationSync(postId, 'deleted');
       }
@@ -4340,6 +4346,14 @@ var SafeSpaceDB = {
       }
 
       return { success: true };
+    },
+
+    deletePost: async function(postId) {
+      return await SafeSpaceDB.posts.adminDeletePost(postId);
+    },
+
+    adminDeletePost: async function(postId) {
+      return await SafeSpaceDB.posts.adminDeletePost(postId);
     },
 
     // ──────────────────────────────────────────

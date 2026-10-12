@@ -1654,10 +1654,20 @@
           <textarea id="delNotesInput" class="admin-form-control" placeholder="Internal notes for faculty audit..."></textarea>
         </div>
 
+        <div class="admin-form-group" style="margin-top:12px; background:#FEF2F2; padding:10px 12px; border-radius:8px; border:1px solid #FECACA;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; color:#DC2626; margin:0;">
+            <input type="checkbox" id="delPermanentCheckbox" checked style="accent-color:#DC2626; width:16px; height:16px;" />
+            <span>Permanently delete post (remove completely from dashboard & database)</span>
+          </label>
+          <p style="font-size:11px; color:var(--text-muted); margin:4px 0 0 24px;">
+            When checked, this post will be completely erased from the dashboard and database.
+          </p>
+        </div>
+
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
           <button type="button" class="admin-btn admin-btn-outline" onclick="closeDeletePostModal()">Cancel</button>
           <button type="button" class="admin-btn admin-btn-danger" id="confirmDeletePostBtn" onclick="executeDeletePost()">
-            <i class="fas fa-trash"></i> Remove Post
+            <i class="fas fa-trash"></i> Delete Post
           </button>
         </div>
       </div>
@@ -2793,7 +2803,30 @@
     }
 
     async function handleDeletePost(postId) {
-      openDeletePostModal(postId);
+      if (!confirm('Are you sure you want to permanently delete this post? This will completely remove it from the dashboard and database.')) {
+        return;
+      }
+      try {
+        const card = document.getElementById(`post-card-${postId}`);
+        if (card) {
+          card.style.opacity = '0.4';
+          card.style.pointerEvents = 'none';
+        }
+        showToast('Deleting post from dashboard...', 'info');
+        await SafeSpaceDB.posts.adminDeletePost(postId);
+        cachedPosts = (cachedPosts || []).filter(p => String(p.id) !== String(postId));
+        renderCommunityPosts();
+        showToast('Post deleted successfully from dashboard.', 'success');
+        await loadAdminDashboardData();
+      } catch (err) {
+        console.error('[Admin] Delete post error:', err);
+        showToast('Failed to delete post: ' + (err.message || 'Error occurred.'), 'error');
+        const card = document.getElementById(`post-card-${postId}`);
+        if (card) {
+          card.style.opacity = '1';
+          card.style.pointerEvents = '';
+        }
+      }
     }
 
     async function openPostCommentsModal(postId) {
@@ -3486,21 +3519,29 @@
       const customReason = document.getElementById('delCustomReasonInput').value.trim();
       const reason = (selectReason === 'custom' && customReason) ? customReason : selectReason;
       const notes = document.getElementById('delNotesInput').value.trim();
+      const isPermanent = document.getElementById('delPermanentCheckbox') ? document.getElementById('delPermanentCheckbox').checked : true;
 
       const btn = document.getElementById('deletePostConfirmModal').querySelector('.admin-btn-danger');
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...'; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...'; }
 
       try {
-        await SafeSpaceDB.admin.softDeletePost(postId, reason, reportId, notes);
-        showToast('Violating post soft-deleted. Author violation count incremented.', 'success');
+        if (isPermanent) {
+          await SafeSpaceDB.posts.adminDeletePost(postId);
+          cachedPosts = (cachedPosts || []).filter(p => String(p.id) !== String(postId));
+          renderCommunityPosts();
+          showToast('Post permanently deleted from dashboard and database.', 'success');
+        } else {
+          await SafeSpaceDB.admin.softDeletePost(postId, reason, reportId, notes);
+          showToast('Violating post soft-deleted from student feed.', 'success');
+        }
         closeDeletePostModal();
         if (typeof closePostReviewModal === 'function') closePostReviewModal();
         closeReviewReportModal();
         await loadAdminDashboardData();
       } catch (err) {
-        showToast('Failed to remove post: ' + err.message, 'error');
+        showToast('Failed to delete post: ' + err.message, 'error');
       } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-can"></i> Remove Post'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-can"></i> Delete Post'; }
       }
     }
 
