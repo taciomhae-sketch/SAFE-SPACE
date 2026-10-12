@@ -3136,6 +3136,36 @@ select.auth-input {
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
 }
 
+/* Chat navigation red notification dot */
+.sidebar-link, .nav-item {
+  position: relative;
+}
+
+.chat-unread-dot {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 9px;
+  height: 9px;
+  background: #EF4444;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4);
+  pointer-events: none;
+  animation: pulse-chat-dot 2s infinite ease-in-out;
+}
+
+.nav-item .chat-unread-dot {
+  top: 4px;
+  right: calc(50% - 18px);
+}
+
+@keyframes pulse-chat-dot {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.2); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
 .notif-drawer-overlay {
   position: fixed;
   inset: 0;

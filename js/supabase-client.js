@@ -1233,12 +1233,13 @@ var SafeSpaceDB = {
             try {
               var postOwnerRes = await _db.from('posts').select('user_id').eq('id', postId).maybeSingle();
               if (postOwnerRes.data && postOwnerRes.data.user_id && postOwnerRes.data.user_id !== currentUser.id) {
-                await _db.from('notifications').insert({
+                var actorName = SafeSpaceDB._displayName(currentUser);
+                await SafeSpaceDB.notifications.createNotification({
                   user_id: postOwnerRes.data.user_id,
                   actor_id: currentUser.id,
                   type: 'like',
                   post_id: postId,
-                  is_read: false
+                  message: actorName + ' liked your post.'
                 });
               }
             } catch (ne) {}
@@ -1266,6 +1267,17 @@ var SafeSpaceDB = {
       } else {
         post.likes.push(currentUser.id);
         isLiked = true;
+
+        if (post.user_id && post.user_id !== currentUser.id) {
+          var actorName = SafeSpaceDB._displayName(currentUser);
+          SafeSpaceDB.notifications.createNotification({
+            user_id: post.user_id,
+            actor_id: currentUser.id,
+            type: 'like',
+            post_id: postId,
+            message: actorName + ' liked your post.'
+          }).catch(function() {});
+        }
       }
       localStorage.setItem('safe_space_posts', JSON.stringify(posts));
       return { liked: isLiked, count: post.likes.length };
@@ -1441,18 +1453,41 @@ var SafeSpaceDB = {
           if (res.error) throw res.error;
           var c = res.data;
 
-          // Generate real notification in DB for post owner
+          // Generate real notification in DB for post owner and parent comment author
           try {
             var postOwnerRes = await _db.from('posts').select('user_id').eq('id', postId).maybeSingle();
+            var actorName = SafeSpaceDB._displayName(currentUser);
+            var snippet = content.length > 50 ? (content.substring(0, 47) + '...') : content;
+
+            var repliedToParent = false;
+            var parentAuthorId = null;
+            if (parentId) {
+              var parentCommentRes = await _db.from('post_comments').select('user_id').eq('id', parentId).maybeSingle();
+              if (parentCommentRes.data && parentCommentRes.data.user_id && parentCommentRes.data.user_id !== currentUser.id) {
+                repliedToParent = true;
+                parentAuthorId = parentCommentRes.data.user_id;
+                await SafeSpaceDB.notifications.createNotification({
+                  user_id: parentCommentRes.data.user_id,
+                  actor_id: currentUser.id,
+                  type: 'comment',
+                  post_id: postId,
+                  comment_id: c.id,
+                  message: actorName + ' replied to your comment: "' + snippet + '"'
+                });
+              }
+            }
+
             if (postOwnerRes.data && postOwnerRes.data.user_id && postOwnerRes.data.user_id !== currentUser.id) {
-              await _db.from('notifications').insert({
-                user_id: postOwnerRes.data.user_id,
-                actor_id: currentUser.id,
-                type: 'comment',
-                post_id: postId,
-                comment_id: c.id,
-                is_read: false
-              });
+              if (!repliedToParent || postOwnerRes.data.user_id !== parentAuthorId) {
+                await SafeSpaceDB.notifications.createNotification({
+                  user_id: postOwnerRes.data.user_id,
+                  actor_id: currentUser.id,
+                  type: 'comment',
+                  post_id: postId,
+                  comment_id: c.id,
+                  message: actorName + ' replied to your post: "' + snippet + '"'
+                });
+              }
             }
           } catch (ne) {}
 
@@ -1494,6 +1529,19 @@ var SafeSpaceDB = {
         if (!Array.isArray(post.comments)) post.comments = [];
         post.comments.push(comment);
         localStorage.setItem('safe_space_posts', JSON.stringify(posts));
+
+        if (post.user_id && post.user_id !== currentUser.id) {
+          var actorName = SafeSpaceDB._displayName(currentUser);
+          var snippet = content.length > 50 ? (content.substring(0, 47) + '...') : content;
+          SafeSpaceDB.notifications.createNotification({
+            user_id: post.user_id,
+            actor_id: currentUser.id,
+            type: 'comment',
+            post_id: postId,
+            comment_id: comment.id,
+            message: actorName + ' replied to your post: "' + snippet + '"'
+          }).catch(function() {});
+        }
       }
       return comment;
     },
@@ -1535,6 +1583,24 @@ var SafeSpaceDB = {
             };
             var upRes = await dbClient.from('post_comments').update({ reactions: updatedReactions }).eq('id', commentId);
             if (upRes.error) throw upRes.error;
+
+            if (reacted) {
+              try {
+                var commentAuthorRes = await dbClient.from('post_comments').select('user_id').eq('id', commentId).maybeSingle();
+                if (commentAuthorRes.data && commentAuthorRes.data.user_id && commentAuthorRes.data.user_id !== currentUser.id) {
+                  var actorName = SafeSpaceDB._displayName(currentUser);
+                  await SafeSpaceDB.notifications.createNotification({
+                    user_id: commentAuthorRes.data.user_id,
+                    actor_id: currentUser.id,
+                    type: 'like',
+                    post_id: postId,
+                    comment_id: commentId,
+                    message: actorName + ' liked your comment.'
+                  });
+                }
+              } catch (ne) {}
+            }
+
             return { reacted: reacted, count: likesList.length };
           }
         } catch (err) {
@@ -1561,6 +1627,18 @@ var SafeSpaceDB = {
             } else {
               c.reactions.likes.push(currentUser.id);
               isReacted = true;
+
+              if (c.user_id && c.user_id !== currentUser.id) {
+                var actorName = SafeSpaceDB._displayName(currentUser);
+                SafeSpaceDB.notifications.createNotification({
+                  user_id: c.user_id,
+                  actor_id: currentUser.id,
+                  type: 'like',
+                  post_id: postId,
+                  comment_id: commentId,
+                  message: actorName + ' liked your comment.'
+                }).catch(function() {});
+              }
             }
             c.likes = c.reactions.likes;
             localStorage.setItem('safe_space_posts', JSON.stringify(posts));
@@ -2067,7 +2145,40 @@ var SafeSpaceDB = {
         localStorage.setItem('safe_space_messages', JSON.stringify(messages));
       }
 
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          var bcm = new BroadcastChannel('safespace_messages_channel');
+          bcm.postMessage({ type: 'messages_read', userId: currentUser.id });
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('safespace:messages-read'));
+        }
+      } catch (be) {}
+
       return Math.max(updatedCount, localMarked);
+    },
+
+    getUnreadCount: async function() {
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) return 0;
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID(currentUser.id)) {
+        try {
+          var client = _dbAdmin || _db;
+          var res = await client.from('messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('receiver_id', currentUser.id)
+            .eq('is_read', false);
+          if (!res.error && typeof res.count === 'number') {
+            return res.count;
+          }
+        } catch (e) {}
+      }
+
+      var allLocal = JSON.parse(localStorage.getItem('safe_space_messages') || '[]');
+      return allLocal.filter(function(m) {
+        return m && m.receiver_id === currentUser.id && (m.is_read === false || m.is_read === 0 || !m.is_read);
+      }).length;
     },
 
     sendMessage: async function(receiverId, text, customId) {
@@ -2531,6 +2642,81 @@ var SafeSpaceDB = {
   // NOTIFICATIONS (MODULE 3 & BELL)
   // ==========================================
   notifications: {
+    createNotification: async function(payload) {
+      if (!payload || !payload.user_id) return null;
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      var actorId = payload.actor_id || (currentUser ? currentUser.id : null);
+      if (actorId && String(payload.user_id) === String(actorId)) {
+        return null; // Don't notify yourself
+      }
+
+      function _genUUID() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+
+      var notifId = _genUUID();
+      var notifData = {
+        id: notifId,
+        user_id: payload.user_id,
+        actor_id: actorId,
+        type: payload.type || 'announcement',
+        post_id: (payload.post_id && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID(payload.post_id)) ? payload.post_id : null,
+        comment_id: (payload.comment_id && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID(payload.comment_id)) ? payload.comment_id : null,
+        message: payload.message || 'New notification',
+        is_read: false,
+        created_at: new Date().toISOString()
+      };
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID(payload.user_id)) {
+        try {
+          var client = _dbAdmin || _db;
+          var sbPayload = {
+            user_id: notifData.user_id,
+            actor_id: notifData.actor_id,
+            type: notifData.type,
+            post_id: notifData.post_id,
+            comment_id: notifData.comment_id,
+            message: notifData.message,
+            is_read: false
+          };
+          var res = await client.from('notifications').insert(sbPayload);
+          if (res.error) {
+            console.warn('[SafeSpace] Supabase createNotification notice:', res.error.message);
+          }
+        } catch (e) {
+          console.warn('[SafeSpace] Supabase createNotification exception:', e);
+        }
+      }
+
+      // Always save to recipient's local storage as well
+      try {
+        var key = 'safe_space_notifications_' + payload.user_id;
+        var existing = JSON.parse(localStorage.getItem(key) || '[]');
+        existing.unshift(notifData);
+        if (existing.length > 50) existing.pop();
+        localStorage.setItem(key, JSON.stringify(existing));
+      } catch (lse) {}
+
+      // Broadcast event so active tabs refresh badges instantly
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          var bc = new BroadcastChannel('safespace_notifications_channel');
+          bc.postMessage({ type: 'notification_created', user_id: payload.user_id });
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('safespace:new-notification', { detail: { user_id: payload.user_id } }));
+        }
+      } catch (bce) {}
+
+      return notifData;
+    },
+
     getNotifications: async function() {
       var currentUser = await SafeSpaceDB.auth.getCurrentUser();
       if (!currentUser) return [];

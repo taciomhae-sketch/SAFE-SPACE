@@ -326,6 +326,73 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   });
+
+  // Initial badge update & periodic synchronization
+  updateNavigationBadges();
+  setInterval(updateNavigationBadges, 4000);
+
+  // Listen for broadcast channel updates
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      var msgChan = new BroadcastChannel('safespace_messages_channel');
+      msgChan.onmessage = function() { updateNavigationBadges(); };
+
+      var notifChan = new BroadcastChannel('safespace_notifications_channel');
+      notifChan.onmessage = function() { updateNavigationBadges(); };
+    }
+  } catch (e) {}
+
+  window.addEventListener('safespace:messages-read', updateNavigationBadges);
+  window.addEventListener('safespace:message-sent', updateNavigationBadges);
+  window.addEventListener('safespace:new-notification', updateNavigationBadges);
 });
+
+// ============================================================
+// Realtime Notification & Chat Badges System
+// ============================================================
+async function updateNavigationBadges() {
+  if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) return;
+  try {
+    var user = await SafeSpaceDB.auth.getCurrentUser();
+    if (!user) return;
+
+    // 1. Unread Messages -> Red Dot on Chat Navigation Icons
+    if (SafeSpaceDB.messages && typeof SafeSpaceDB.messages.getUnreadCount === 'function') {
+      var unreadMsgs = await SafeSpaceDB.messages.getUnreadCount();
+      var chatLinks = document.querySelectorAll('a.sidebar-link[data-page="chat"], a.sidebar-link[href*="chat.html"], a.nav-item[href*="chat.html"], [data-chat-link]');
+      chatLinks.forEach(function(link) {
+        var existingDot = link.querySelector('.chat-unread-dot');
+        if (unreadMsgs > 0) {
+          if (!existingDot) {
+            var dot = document.createElement('span');
+            dot.className = 'chat-unread-dot';
+            dot.setAttribute('aria-label', unreadMsgs + ' unread message(s)');
+            link.appendChild(dot);
+          }
+        } else {
+          if (existingDot) existingDot.remove();
+        }
+      });
+    }
+
+    // 2. Unread Notifications -> Notification Bell Badge
+    if (SafeSpaceDB.notifications && typeof SafeSpaceDB.notifications.getUnreadCount === 'function') {
+      var unreadNotifs = await SafeSpaceDB.notifications.getUnreadCount();
+      var notifBadges = document.querySelectorAll('#notifBadge, .notif-bell-badge');
+      notifBadges.forEach(function(badge) {
+        if (unreadNotifs > 0) {
+          badge.textContent = unreadNotifs > 99 ? '99+' : unreadNotifs;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      });
+    }
+  } catch (err) {}
+}
+
+window.SafeSpaceBadges = {
+  refresh: updateNavigationBadges
+};
 
 
