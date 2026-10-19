@@ -86,8 +86,20 @@ if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {
             echo json_encode($client->getFeed());
             break;
 
+        case 'admin_reports':
+            require_once __DIR__ . '/admin_auth.php';
+            require_admin_authorization(true);
+            echo json_encode($client->request('GET', 'reports?select=*,reporter:reporter_id(username,first_name,last_name),post:post_id(content,user_id)&order=created_at.desc'));
+            break;
+
+        case 'admin_users':
+            require_once __DIR__ . '/admin_auth.php';
+            require_admin_authorization(true);
+            echo json_encode($client->request('GET', 'profiles?select=id,username,first_name,last_name,email,role,is_admin,is_deactivated,account_status,violation_count&order=created_at.desc'));
+            break;
+
         default:
-            echo json_encode(['success' => true, 'service' => 'Safe Space Supabase PHP API']);
+            echo json_encode(['success' => true, 'service' => 'Safe Space Supabase PHP API', 'status' => 'Admin Authentication: Enabled']);
             break;
     }
 }

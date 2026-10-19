@@ -13,10 +13,10 @@
   --primary-light:  rgba(108, 79, 209, 0.14);
   --primary-ultra:  rgba(108, 79, 209, 0.07);
   --primary-glow:   rgba(108, 79, 209, 0.35);
-  --auth-bg:        #CE9AE4;
-  --auth-bg-dark:   #B578CE;
-  --auth-bg-soft:   #DFB8F0;
-  --auth-bg-light:  #EDD5F8;
+  --auth-bg:        #C898E9;
+  --auth-bg-dark:   #B278D9;
+  --auth-bg-soft:   #D7B0F0;
+  --auth-bg-light:  #ECD5F9;
   --auth-input-bg:  rgba(255, 255, 255, 0.18);
   --outer-bg:       #F5EEFF;
   --page-bg:        #FFFFFF;
@@ -227,7 +227,7 @@ body.auth-page {
     justify-content: center;
     align-items: center;
     padding: 32px 16px;
-    background: radial-gradient(circle at 50% 25%, #E4C0F3 0%, #A362BF 100%);
+    background: radial-gradient(circle at 50% 25%, #D7B0F0 0%, #C898E9 40%, #B278D9 100%);
   }
   .auth-container {
     max-width: 440px;
@@ -307,7 +307,7 @@ body.auth-page {
   font-weight: 700;
   color: var(--text-white);
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 14px;
 }
 
 .auth-form {
@@ -456,6 +456,23 @@ select.auth-input {
 }
 .btn-auth-primary:active { transform: scale(0.97); opacity: 0.9; }
 .btn-auth-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+#magicLinkBtn,
+#magicLinkBtn * {
+  color: #000000 !important;
+}
+
+#magicLinkBtn {
+  font-size: 13.5px !important;
+  letter-spacing: 0.5px;
+}
+
+#loginBtn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
 
 .auth-link-row {
   text-align: center;
@@ -668,41 +685,78 @@ select.auth-input {
   justify-content: center;
   font-size: 28px;
   color: #FFFFFF;
-  margin: 10px auto 16px;
+  margin: 4px auto 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 .otp-email-badge {
-  background: rgba(0, 0, 0, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: var(--radius-full);
-  padding: 6px 16px;
+  padding: 8px 18px;
   color: #FFFFFF;
   font-weight: 700;
   font-size: 13px;
   margin: 8px 0 16px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   max-width: 100%;
   word-break: break-all;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.otp-email-badge:hover,
+.otp-email-badge:focus-visible {
+  background: rgba(0, 0, 0, 0.44);
+  border-color: rgba(255, 255, 255, 0.65);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30);
+  color: #FFFFFF;
+  outline: none;
+}
+.otp-email-badge:active {
+  transform: translateY(0) scale(0.98);
+}
+.otp-email-badge .otp-email-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-left: 2px;
+  letter-spacing: 0.3px;
+  color: #FFFFFF;
+  transition: background 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+.otp-email-badge:hover .otp-email-action {
+  background: rgba(255, 255, 255, 0.38);
+  transform: scale(1.03);
 }
 .otp-inputs-row {
   display: flex;
-  gap: clamp(4px, 1.5vw, 7px);
+  gap: clamp(4px, 1.5vw, 8px);
   justify-content: center;
-  margin: 12px auto 20px;
+  margin: 14px auto 18px;
   width: 100%;
   max-width: 390px;
 }
 .otp-digit {
   flex: 1 1 0;
   max-width: 44px;
-  min-width: 32px;
+  min-width: 30px;
   height: 50px;
   background: rgba(255, 255, 255, 0.22);
   border: 2px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--radius-md);
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 800;
   color: #FFFFFF;
   text-align: center;
@@ -2624,7 +2678,7 @@ select.auth-input {
 
 .auth-page .page-loader,
 .welcome-page .page-loader {
-  background: linear-gradient(160deg, #E4C0F3 0%, #B578CE 60%, #82429F 100%);
+  background: linear-gradient(160deg, #D7B0F0 0%, #C898E9 60%, #B278D9 100%);
 }
 
 .auth-page .page-loader .loader-label,

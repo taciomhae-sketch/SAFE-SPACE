@@ -67,10 +67,10 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "id": "crit_self_harm_intent_en",
             "category": CATEGORY_SELF_HARM,
             "severity": SEVERITY_CRITICAL,
-            "action": ACTION_BLOCK,
-            "pattern": r"\b(i\s*(want to|wanna|plan to|will|am going to|gonna)\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|disappear forever and die))\b",
+            "action": ACTION_REVIEW,
+            "pattern": r"\b(i\s*(want to|wanna|plan to|will|am going to|gonna|thought about|have been thinking about|am thinking about)\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|disappear forever)|ending my life|end my life|kill myself|commit suicide)\b",
             "confidence": 0.96,
-            "reason": "Direct indication of acute self-harm or suicide intent."
+            "reason": "Direct indication of acute self-harm or suicide concern."
         },
         {
             "id": "crit_rape_threat_en",

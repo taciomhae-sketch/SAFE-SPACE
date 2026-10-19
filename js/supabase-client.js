@@ -309,12 +309,10 @@ var SafeSpaceDB = {
 
             var fullUser = Object.assign({}, user, meta, profile);
 
-            // Ensure primary researcher / admin account is recognized with full admin role
+            // Ensure primary researcher / admin account (Lovely Mae Tacio) is strictly verified by immutable ID
             var isPrimaryAdmin = Boolean(
-              (user.email && (user.email.toLowerCase() === 'taciomhae@gmail.com' || user.email.toLowerCase().includes('admin'))) ||
-              (fullUser.username && (fullUser.username.toLowerCase() === 'taciomhae' || fullUser.username.toLowerCase().includes('admin'))) ||
-              fullUser.role === 'admin' ||
-              fullUser.is_admin === true
+              user.id === '60d80c30-97e8-44cf-90e2-3a3c02b9975a' &&
+              (fullUser.role === 'admin' || fullUser.is_admin === true || (user.email && user.email.toLowerCase() === 'taciomhae@gmail.com'))
             );
 
             if (isPrimaryAdmin) {
@@ -325,6 +323,12 @@ var SafeSpaceDB = {
                 try {
                   await client.from('profiles').update({ role: 'admin' }).eq('id', user.id);
                 } catch (syncErr) {}
+              }
+            } else {
+              // Strictly strip admin privileges from any other account attempting to impersonate
+              if (fullUser.id !== '60d80c30-97e8-44cf-90e2-3a3c02b9975a') {
+                if (fullUser.role === 'admin') fullUser.role = 'student';
+                fullUser.is_admin = false;
               }
             }
 
@@ -340,14 +344,15 @@ var SafeSpaceDB = {
       var storedUser = JSON.parse(localStorage.getItem('safe_space_user'));
       if (storedUser) {
         var isStoredAdmin = Boolean(
-          (storedUser.email && (storedUser.email.toLowerCase() === 'taciomhae@gmail.com' || storedUser.email.toLowerCase().includes('admin'))) ||
-          (storedUser.username && (storedUser.username.toLowerCase() === 'taciomhae' || storedUser.username.toLowerCase().includes('admin'))) ||
-          storedUser.role === 'admin' ||
-          storedUser.is_admin === true
+          storedUser.id === '60d80c30-97e8-44cf-90e2-3a3c02b9975a' &&
+          (storedUser.role === 'admin' || storedUser.is_admin === true || (storedUser.email && storedUser.email.toLowerCase() === 'taciomhae@gmail.com'))
         );
         if (isStoredAdmin) {
           storedUser.role = 'admin';
           storedUser.is_admin = true;
+        } else {
+          if (storedUser.role === 'admin') storedUser.role = 'student';
+          storedUser.is_admin = false;
         }
       }
       return storedUser;
@@ -467,17 +472,14 @@ var SafeSpaceDB = {
             throw new Error('User already registered. An account with this email already exists. Please log in instead.');
           }
 
-          // If waiting for email confirmation
-          if (res.data && res.data.user && !res.data.session) {
-            return {
-              user: res.data.user,
-              session: null,
-              needsEmailConfirmation: true,
-              needsOtp: true,
-              email: email
-            };
-          }
-          return res.data;
+          // Return pending 6-digit OTP verification state before user can proceed to login
+          return {
+            user: res.data ? res.data.user : null,
+            session: null,
+            needsEmailConfirmation: true,
+            needsOtp: true,
+            email: email
+          };
         }
 
         // Auto-confirm fallback via Admin API (when REQUIRE_EMAIL_CONFIRMATION is false)
@@ -514,7 +516,8 @@ var SafeSpaceDB = {
           }
         }
       }
-      // Demo Signup
+      // Demo Signup: Generate strictly 6-digit verification code so flow matches production
+      var demoOtp = String(Math.floor(100000 + Math.random() * 900000));
       var newUser = {
         id: 'user-' + Date.now(),
         email: email,
@@ -527,39 +530,64 @@ var SafeSpaceDB = {
         birthday: metadata.birthday || null,
         bio: metadata.bio || 'Hello, Safe Space!',
         avatar_url: metadata.avatar_url || null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        email_confirmed: false
       };
       localStorage.setItem('safe_space_user', JSON.stringify(newUser));
-      return { user: newUser };
+      try {
+        localStorage.setItem('safe_space_pending_otp_' + (email || '').toLowerCase(), JSON.stringify({
+          code: demoOtp,
+          expires_at: Date.now() + 10 * 60 * 1000,
+          user: newUser
+        }));
+      } catch (e) {}
+
+      return {
+        user: newUser,
+        session: null,
+        needsEmailConfirmation: true,
+        needsOtp: true,
+        email: email,
+        demoOtp: demoOtp
+      };
     },
 
     /**
-     * Verifies Supabase OTP verification code for signup or email
+     * Verifies Supabase OTP verification code for signup or email (strictly 6 digits)
      */
     verifyOtp: async function(email, token, type) {
       email = (email || '').trim().toLowerCase();
       token = (token || '').trim();
       type = type || 'signup';
 
-      if (!token) throw new Error('Please enter the 6-digit verification code.');
+      if (!token) throw new Error('Please enter your 6-digit verification code.');
+      var cleanCode = token.replace(/\D/g, '');
+      if (cleanCode.length !== 6 || !/^\d{6}$/.test(cleanCode)) {
+        throw new Error('Verification code must be strictly 6 digits.');
+      }
+      token = cleanCode;
 
       if (SafeSpaceDB.isSupabaseActive()) {
-        // Attempt verify with requested type (usually 'signup')
+        // Attempt verify with requested type
         var res = await _db.auth.verifyOtp({
           email: email,
           token: token,
           type: type
         });
 
-        // If signup failed, also try type: 'email' (handles tokens configured as email OTP in Supabase)
-        if (res.error && type === 'signup') {
-          var fallbackRes = await _db.auth.verifyOtp({
-            email: email,
-            token: token,
-            type: 'email'
-          });
-          if (!fallbackRes.error) {
-            res = fallbackRes;
+        // If initial verify failed, try alternate OTP types (email, signup, magiclink)
+        if (res.error) {
+          var typesToTry = ['email', 'signup', 'magiclink'].filter(function(t) { return t !== type; });
+          for (var i = 0; i < typesToTry.length; i++) {
+            var fbRes = await _db.auth.verifyOtp({
+              email: email,
+              token: token,
+              type: typesToTry[i]
+            });
+            if (!fbRes.error) {
+              res = fbRes;
+              break;
+            }
           }
         }
 
@@ -606,9 +634,15 @@ var SafeSpaceDB = {
         return res.data;
       }
 
-      // Demo fallback: accept any 6-digit code or '123456'
-      if (token.length < 4) {
-        throw new Error('Please enter a valid verification code.');
+      // Demo fallback: require exactly 6 digits
+      var pending = null;
+      try {
+        pending = JSON.parse(localStorage.getItem('safe_space_pending_otp_' + email) || 'null');
+      } catch (e) {}
+
+      var expectedCode = (pending && pending.code) ? pending.code : '123456';
+      if (token !== expectedCode && token !== '123456') {
+        throw new Error('Invalid 6-digit verification code. Please check the code and try again.');
       }
       var stored = JSON.parse(localStorage.getItem('safe_space_user')) || Object.assign({}, INITIAL_DEMO_DATA.currentUser);
       stored.email = email || stored.email;
@@ -618,7 +652,7 @@ var SafeSpaceDB = {
     },
 
     /**
-     * Resends Supabase OTP verification code
+     * Resends Supabase OTP verification code (6 digits)
      */
     resendOtp: async function(email, type) {
       email = (email || '').trim().toLowerCase();
@@ -638,7 +672,17 @@ var SafeSpaceDB = {
         if (res.error) throw res.error;
         return res.data;
       }
-      return { success: true };
+
+      // Demo mode resend: generate fresh strictly 6-digit code
+      var newDemoOtp = String(Math.floor(100000 + Math.random() * 900000));
+      try {
+        localStorage.setItem('safe_space_pending_otp_' + email, JSON.stringify({
+          code: newDemoOtp,
+          expires_at: Date.now() + 10 * 60 * 1000
+        }));
+      } catch (e) {}
+
+      return { success: true, demoOtp: newDemoOtp };
     },
 
     /**
@@ -653,7 +697,7 @@ var SafeSpaceDB = {
         return 'Wrong password or email. Please check your credentials and try again.';
       }
       if (lower.includes('email not confirmed') || lower.includes('email_not_confirmed')) {
-        return 'This account is not verified yet. Please enter the OTP code sent to your email or check your inbox.';
+        return 'This account is not verified yet. Please enter the 6-digit OTP code sent to your email before you can proceed to login.';
       }
       if (lower.includes('user already registered') || lower.includes('already exists') || lower.includes('user_already_exists')) {
         return 'This email is already registered. Please sign in instead.';

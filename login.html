@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#CE9AE4" />
+  <meta name="theme-color" content="#C898E9" />
   <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 </head>
@@ -39,7 +39,7 @@
     <!-- Title -->
     <h1 class="auth-title">LOGIN</h1>
     <p class="auth-subtitle">TO CONTINUE</p>
-    <p class="auth-welcome">Welcome to Safe Space App</p>
+    <p class="auth-welcome" style="margin-bottom:14px;">Welcome to Safe Space</p>
 
     <!-- Already Signed In Notice Card (Shown if an active session exists) -->
     <div id="alreadySignedInCard" class="already-signed-in-card hidden" style="display:none;">
@@ -80,7 +80,7 @@
           class="auth-input"
           type="email"
           id="emailInput"
-          placeholder="someone@gmail.com"
+          placeholder="Email"
           autocomplete="email"
           required
         />
@@ -108,35 +108,47 @@
         </button>
       </div>
 
-      <!-- Submit Button -->
-      <button type="submit" class="btn-auth-primary" id="loginBtn">
-        <span id="loginBtnText">LOGIN</span>
+      <!-- Direct Login Notice / Button (No box, smaller size) -->
+      <button type="submit" id="loginBtn" disabled style="background:transparent; border:none; outline:none; box-shadow:none; color:rgba(255,255,255,0.9); width:100%; height:auto; padding:6px 0; font-weight:700; font-size:12px; letter-spacing:0.8px; text-transform:uppercase; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px; margin-bottom:8px;" title="Verification required: You must receive and use the 6-digit verification code first before you can proceed to login">
+        <span id="loginBtnText" style="display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-lock" style="font-size:11px; opacity:0.85;"></i> LOGIN (VERIFICATION REQUIRED)
+        </span>
         <span id="loginBtnSpinner" style="display:none;">
           <i class="fas fa-circle-notch fa-spin"></i> Signing in…
         </span>
       </button>
 
-      <!-- Magic Link / OTP Login Option -->
-      <div style="text-align:center; margin-top:12px;">
-        <button type="button" id="magicLinkBtn" style="background:transparent; border:none; color:rgba(255,255,255,0.9); font-size:12.5px; font-weight:600; cursor:pointer; padding:6px 10px; border-radius:6px; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.9)'">
-          <i class="fas fa-wand-magic-sparkles" style="color:#C4B5FD; margin-right:5px;"></i> Send Magic Link / One-Time Password
-        </button>
-      </div>
+      <!-- Primary Action: Send 6-Digit Code / Magic OTP -->
+      <button type="button" class="btn-auth-primary" id="magicLinkBtn" style="color:#000000 !important; font-size:13.5px; font-weight:800; letter-spacing:0.5px; height:48px; margin-top:0; margin-bottom:8px;">
+        <span id="magicLinkBtnText" style="color:#000000 !important; font-size:13.5px;">
+          <i class="fas fa-paper-plane" style="margin-right:6px; color:#000000 !important; font-size:12.5px;"></i> SEND 6-DIGIT VERIFICATION CODE
+        </span>
+        <span id="magicLinkBtnSpinner" style="display:none; color:#000000 !important; font-size:13.5px;">
+          <i class="fas fa-circle-notch fa-spin"></i> Sending 6-digit code…
+        </span>
+      </button>
+
+      <p style="font-size:11.5px; color:rgba(255,255,255,0.85); text-align:center; margin-top:10px; line-height:1.4;">
+        <i class="fas fa-shield-halved" style="color:#E9D5FF; margin-right:4px;"></i> You must receive a 6-digit verification code first before you can proceed to login.
+      </p>
 
     </form>
 
     <!-- OTP Modal/Card (if user needs to verify email with Supabase OTP) -->
-    <div id="loginOtpCard" class="otp-card hidden" style="display:none; width:100%; margin-top:10px;">
-      <div class="otp-header-icon">
+    <div id="loginOtpCard" class="otp-card hidden" style="display:none; width:100%; margin-top:0;">
+      <div class="otp-header-icon" style="margin-top:2px; margin-bottom:12px;">
         <i class="fas fa-shield-halved"></i>
       </div>
       <h2 style="color:#fff; font-size:20px; font-weight:800; text-align:center; margin-bottom:4px;">VERIFY OTP</h2>
-      <p style="color:rgba(255,255,255,0.75); font-size:12px; text-transform:uppercase; letter-spacing:1.5px; text-align:center;">ENTER VERIFICATION CODE</p>
+      <p style="color:rgba(255,255,255,0.75); font-size:12px; text-transform:uppercase; letter-spacing:1.5px; text-align:center;">ENTER 6-DIGIT VERIFICATION CODE</p>
       
-      <div class="otp-email-badge">
+      <a href="https://mail.google.com/" target="_blank" rel="noopener noreferrer" class="otp-email-badge" id="otpEmailBadgeLink" title="Click to open your Gmail inbox in a new tab">
         <i class="fas fa-envelope"></i>
         <span id="otpTargetEmail">user@gmail.com</span>
-      </div>
+        <span class="otp-email-action" id="otpEmailActionBadge">
+          <i class="fas fa-arrow-up-right-from-square"></i> Open Gmail
+        </span>
+      </a>
 
       <div class="otp-inputs-row" id="loginOtpInputsRow">
         <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="0" />
@@ -145,8 +157,10 @@
         <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="3" />
         <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="4" />
         <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="5" />
-        <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="6" />
-        <input type="text" maxlength="1" inputmode="numeric" class="otp-digit" data-idx="7" />
+      </div>
+
+      <div style="text-align:center; margin-top:-8px; margin-bottom:14px; color:rgba(255,255,255,0.85); font-size:12px; font-weight:500;">
+        <i class="fas fa-shield-halved" style="color:#E9D5FF; margin-right:4px;"></i> Enter 6-digit verification code
       </div>
 
       <button type="button" class="btn-auth-primary" id="verifyOtpBtn">
@@ -350,12 +364,12 @@
 
         var rawMsg = (err && err.message) ? err.message.toLowerCase() : '';
 
-        // If email not confirmed, provide instant OTP verification button
+        // If email not confirmed, provide instant 6-digit OTP verification button
         if (rawMsg.includes('email not confirmed') || rawMsg.includes('email_not_confirmed')) {
           showFormAlert(
-            'Your account email is not verified yet. Please enter the OTP code sent to your email.',
+            'Your account email is not verified yet. Please enter the 6-digit verification code sent to your email before you can proceed to login.',
             'warning',
-            `<button type="button" class="auth-alert-action-btn" onclick="openOtpView('${escapeHTML(email)}')"><i class="fas fa-key"></i> Enter OTP Code</button>`
+            `<button type="button" class="auth-alert-action-btn" onclick="openOtpView('${escapeHTML(email)}')"><i class="fas fa-key"></i> Enter 6-Digit Code</button>`
           );
         } else if (rawMsg.includes('invalid') || friendlyMsg.toLowerCase().includes('wrong password')) {
           passwordInput.classList.add('has-error');
@@ -378,52 +392,59 @@
       var email    = emailInput.value.trim();
       var password = passwordInput.value;
 
-      if (!email && !password) {
-        emailInput.classList.add('has-error');
-        passwordInput.classList.add('has-error');
-        showFormAlert('Please enter your email and password.', 'error');
-        return;
-      }
+      var email = emailInput.value.trim();
+
       if (!email) {
         emailInput.classList.add('has-error');
-        showFormAlert('Please enter your email address.', 'error');
-        return;
-      }
-      if (!password) {
-        passwordInput.classList.add('has-error');
-        showFormAlert('Please enter your password.', 'error');
+        showFormAlert('Please enter your email address to receive your 6-digit verification code.', 'error');
+        emailInput.focus();
         return;
       }
 
-      await doLogin(email, password);
+      // Mandatory 6-digit OTP verification: send code first
+      if (magicLinkBtn) {
+        magicLinkBtn.click();
+      }
     });
 
-    // Send Magic Link / OTP Button
+    // Send 6-Digit Verification Code (Magic OTP) Button
     var magicLinkBtn = document.getElementById('magicLinkBtn');
     if (magicLinkBtn) {
       magicLinkBtn.addEventListener('click', async function() {
         var email = emailInput.value.trim();
         if (!email) {
           emailInput.classList.add('has-error');
-          showFormAlert('Please enter your email above to receive a Magic Link / OTP code.', 'info');
+          showFormAlert('Please enter your email above to receive your 6-digit verification code.', 'info');
           emailInput.focus();
           return;
         }
 
+        var btnText = document.getElementById('magicLinkBtnText');
+        var btnSpinner = document.getElementById('magicLinkBtnSpinner');
+
         try {
-          setLoading(true);
+          magicLinkBtn.disabled = true;
+          if (btnText) btnText.style.display = 'none';
+          if (btnSpinner) btnSpinner.style.display = 'inline-flex';
+
           await SafeSpaceDB.auth.signInWithOtp(email);
-          setLoading(false);
-          showFormAlert('Magic Link & OTP code sent! Check your Gmail inbox.', 'success');
+
+          magicLinkBtn.disabled = false;
+          if (btnText) btnText.style.display = '';
+          if (btnSpinner) btnSpinner.style.display = 'none';
+
           if (typeof showToast === 'function') {
-            showToast('One-time sign-in code sent to your email!', 'success');
+            showToast('6-digit verification code sent to your email!', 'success');
           }
           openOtpView(email);
         } catch (err) {
-          setLoading(false);
+          magicLinkBtn.disabled = false;
+          if (btnText) btnText.style.display = '';
+          if (btnSpinner) btnSpinner.style.display = 'none';
+
           var msg = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.formatAuthError)
             ? SafeSpaceDB.auth.formatAuthError(err)
-            : (err.message || 'Failed to send Magic Link.');
+            : (err.message || 'Failed to send verification code.');
           showFormAlert(msg, 'error');
         }
       });
@@ -432,11 +453,40 @@
     /* ────────────────────────────────
        OTP Verification Workflow on Login
     ──────────────────────────────── */
+    function getEmailInboxUrl(email) {
+      if (!email) return 'https://mail.google.com/';
+      var clean = String(email).trim().toLowerCase();
+      if (clean.indexOf('@gmail.com') !== -1 || clean.indexOf('@googlemail.com') !== -1) {
+        return 'https://mail.google.com/mail/u/?authuser=' + encodeURIComponent(clean);
+      }
+      if (clean.indexOf('@yahoo.com') !== -1) {
+        return 'https://mail.yahoo.com/';
+      }
+      if (clean.indexOf('@outlook.com') !== -1 || clean.indexOf('@hotmail.com') !== -1 || clean.indexOf('@live.com') !== -1) {
+        return 'https://outlook.live.com/mail/';
+      }
+      return 'https://mail.google.com/mail/u/?authuser=' + encodeURIComponent(clean);
+    }
+
     function openOtpView(email) {
       otpPendingEmail = (email || emailInput.value.trim() || '').trim();
       var displayEl = document.getElementById('otpTargetEmail');
+      var badgeLink = document.getElementById('otpEmailBadgeLink');
+      var actionBadge = document.getElementById('otpEmailActionBadge');
+      
       if (displayEl) {
         displayEl.textContent = otpPendingEmail || 'your email';
+      }
+
+      var inboxUrl = getEmailInboxUrl(otpPendingEmail);
+      var isGmail = !otpPendingEmail || otpPendingEmail.toLowerCase().indexOf('@gmail') !== -1;
+      
+      if (badgeLink) {
+        badgeLink.href = inboxUrl;
+        badgeLink.title = 'Click to open ' + (isGmail ? 'Gmail' : 'Email') + ' inbox (' + (otpPendingEmail || '') + ') in a new tab';
+      }
+      if (actionBadge) {
+        actionBadge.innerHTML = '<i class="fas fa-arrow-up-right-from-square"></i> ' + (isGmail ? 'Open Gmail' : 'Open Inbox');
       }
       
       document.getElementById('loginForm').style.display = 'none';
@@ -445,11 +495,6 @@
       document.getElementById('loginOtpCard').classList.remove('hidden');
 
       clearFormAlert();
-      if (otpPendingEmail) {
-        showFormAlert('Enter the 6-digit verification code sent to ' + otpPendingEmail, 'info');
-      } else {
-        showFormAlert('Enter the 6-digit verification code sent to your email', 'info');
-      }
 
       // Focus first OTP digit
       var firstInput = document.querySelector('#loginOtpInputsRow .otp-digit');
@@ -460,6 +505,18 @@
     }
 
     window.openOtpView = openOtpView;
+
+    // Direct click handler on OTP email badge to ensure latest email is opened
+    var otpBadgeLink = document.getElementById('otpEmailBadgeLink');
+    if (otpBadgeLink) {
+      otpBadgeLink.addEventListener('click', function() {
+        var currentEmail = otpPendingEmail || (emailInput ? emailInput.value.trim() : '');
+        otpBadgeLink.href = getEmailInboxUrl(currentEmail);
+        if (typeof showToast === 'function') {
+          showToast('Opening ' + (currentEmail.toLowerCase().indexOf('@gmail') !== -1 ? 'Gmail' : 'email') + ' inbox…', 'info');
+        }
+      });
+    }
 
     document.getElementById('closeOtpBtn').addEventListener('click', function() {
       document.getElementById('loginOtpCard').style.display = 'none';
@@ -494,14 +551,14 @@
       input.addEventListener('paste', function(e) {
         e.preventDefault();
         var pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
-        var digits = pasteData.replace(/[^0-9]/g, '').slice(0, 8);
-        for (var i = 0; i < digits.length; i++) {
+        var rawDigits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+        for (var i = 0; i < rawDigits.length; i++) {
           if (otpInputs[i]) {
-            otpInputs[i].value = digits[i];
+            otpInputs[i].value = rawDigits[i];
             otpInputs[i].classList.add('filled');
           }
         }
-        var nextIdx = Math.min(digits.length, otpInputs.length - 1);
+        var nextIdx = Math.min(rawDigits.length, otpInputs.length - 1);
         if (otpInputs[nextIdx]) otpInputs[nextIdx].focus();
       });
     });
@@ -511,8 +568,8 @@
       var code = '';
       otpInputs.forEach(function(inp) { code += inp.value.trim(); });
 
-      if (code.length < 6) {
-        showFormAlert('Please enter your complete verification code (at least 6 digits).', 'error');
+      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+        showFormAlert('Please enter your complete 6-digit verification code.', 'error');
         return;
       }
 
@@ -546,7 +603,7 @@
           throw new Error('Database client not ready. Please try again.');
         }
 
-        var res = await SafeSpaceDB.auth.verifyOtp(otpPendingEmail, code, 'signup');
+        var res = await SafeSpaceDB.auth.verifyOtp(otpPendingEmail, code, 'email');
         if (res && res.error) throw res.error;
 
         showFormAlert('Email verified successfully! Signing you in...', 'success');
@@ -578,8 +635,12 @@
         btn.disabled = true;
         btn.textContent = 'Sending...';
 
-        await SafeSpaceDB.auth.resendOtp(otpPendingEmail, 'signup');
-        showFormAlert('A new verification code was sent to ' + otpPendingEmail, 'success');
+        var res = await SafeSpaceDB.auth.resendOtp(otpPendingEmail, 'signup');
+        var resendMsg = 'A new 6-digit verification code was sent to ' + otpPendingEmail;
+        if (res && res.demoOtp) {
+          resendMsg += ' (Code: ' + res.demoOtp + ')';
+        }
+        showFormAlert(resendMsg, 'success');
         if (typeof showToast === 'function') showToast('Verification code resent!', 'success');
 
         var countdown = 60;
@@ -630,7 +691,7 @@
         showFormAlert(
           'The email confirmation link has expired or was already used. You can enter the 6-digit code sent to your email below, or sign in.',
           'warning',
-          `<button type="button" class="auth-alert-action-btn" onclick="openOtpView()"><i class="fas fa-key"></i> Enter OTP Code</button>`
+          `<button type="button" class="auth-alert-action-btn" onclick="openOtpView()"><i class="fas fa-key"></i> Enter 6-Digit Code</button>`
         );
         return;
       }
@@ -656,6 +717,21 @@
       var verifyEmail = queryParams.get('verify') || queryParams.get('email');
       var reason = queryParams.get('reason');
       var message = queryParams.get('message');
+      var isVerified = queryParams.get('verified') === 'true';
+
+      if (isVerified) {
+        if (verifyEmail) {
+          emailInput.value = verifyEmail;
+        }
+        showFormAlert('Email verified successfully! You can now proceed to login.', 'success');
+        if (typeof showToast === 'function') {
+          showToast('Email verified! Please enter your password to sign in.', 'success');
+        }
+        setTimeout(function() {
+          if (passwordInput) passwordInput.focus();
+        }, 300);
+        return;
+      }
 
       if (message === 'deactivated') {
         showFormAlert('Your account has been deactivated.', 'info');
@@ -669,9 +745,9 @@
       } else if (reason === 'unverified' && verifyEmail) {
         emailInput.value = verifyEmail;
         showFormAlert(
-          'Your account is not verified yet. Please enter your OTP code.',
+          'Your account is not verified yet. Please enter the 6-digit verification code before you can proceed to login.',
           'warning',
-          `<button type="button" class="auth-alert-action-btn" onclick="openOtpView('${escapeHTML(verifyEmail)}')"><i class="fas fa-key"></i> Enter OTP Code</button>`
+          `<button type="button" class="auth-alert-action-btn" onclick="openOtpView('${escapeHTML(verifyEmail)}')"><i class="fas fa-key"></i> Enter 6-Digit Code</button>`
         );
       }
     }

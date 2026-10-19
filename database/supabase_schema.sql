@@ -9,6 +9,28 @@
 -- 4. Copy and paste THIS ENTIRE FILE into the editor.
 -- 5. Click "Run" (or Ctrl + Enter).
 -- Everything is idempotent (IF NOT EXISTS / ON CONFLICT DO NOTHING).
+--
+-- ─────────────────────────────────────────────────────────────────────
+-- HOW TO MAKE SUPABASE SEND ONLY 6 DIGITS (NOT 8 DIGITS) IN EMAILS:
+--
+-- STEP 1: CHANGE OTP LENGTH SETTING IN SUPABASE DASHBOARD
+-- 1. Open: https://supabase.com/dashboard/project/ssqswqqfsbfgjsrllprq/auth/providers
+-- 2. Click on the "Email" provider to expand it.
+-- 3. Scroll down to "Mailer OTP Length".
+-- 4. Change it from 8 to 6.
+-- 5. Scroll down and click "Save".
+--
+-- STEP 2: SETUP 6-DIGIT EMAIL TEMPLATES (CONFIRM SIGNUP & MAGIC LINK)
+-- 1. In Supabase Dashboard -> Authentication -> Email Templates -> "Confirm signup"
+-- 2. Set Subject: Safe Space Email Verification Code
+-- 3. Set Body:
+--    <h2>Safe Space Verification Code</h2>
+--    <p>Your 6-digit verification code is:</p>
+--    <h1 style="font-size:32px; letter-spacing:6px; color:#8B5CF6;">{{ .Token }}</h1>
+--    <p>Please enter this 6-digit code on the Safe Space verification screen before you can proceed to login.</p>
+--    <p>This verification code will expire in 10 minutes.</p>
+-- 4. Click Save.
+-- 5. Repeat for "Magic Link" template if OTP login is used!
 -- =====================================================================
 
 -- 1. EXTENSIONS
@@ -598,7 +620,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS violation_count INTEGER DEF
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS banned_at TIMESTAMPTZ;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ban_reason TEXT;
 
--- Grant primary administrator privileges to thesis owner
+-- Grant primary administrator privileges strictly to the verified account of Lovely Mae Tacio
 UPDATE public.profiles
 SET role = 'admin', is_admin = true
-WHERE email = 'taciomhae@gmail.com' OR username = 'taciomhae';
+WHERE id = '60d80c30-97e8-44cf-90e2-3a3c02b9975a' OR (email = 'taciomhae@gmail.com' AND username = 'lableyy');

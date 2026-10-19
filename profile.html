@@ -387,7 +387,7 @@
             <i class="fas fa-chevron-right menu-chevron"></i>
           </a>
 
-          <a href="admin.html" class="menu-row" id="adminPortalRow" style="border: 1px solid rgba(108, 79, 209, 0.2); background: rgba(108, 79, 209, 0.04);">
+          <a href="admin.html" class="menu-row" id="adminPortalRow" style="display: none; border: 1px solid rgba(108, 79, 209, 0.2); background: rgba(108, 79, 209, 0.04);">
             <div class="menu-icon" style="background: rgba(108, 79, 209, 0.15); color: var(--primary);"><i class="fas fa-shield-halved"></i></div>
             <span class="menu-label" style="font-weight: 700; color: var(--primary);">Admin &amp; AI Dashboard</span>
             <span style="margin-left:auto; font-size:10px; font-weight:800; background:var(--primary); color:#fff; padding:2px 7px; border-radius:10px;">PORTAL</span>
@@ -1265,6 +1265,19 @@
       // Synchronize desktop sidebar avatar if available
       if (window.initDesktopSidebar) {
         window.initDesktopSidebar();
+      }
+
+      // STRICT ACCOUNT-SPECIFIC AUTHORIZATION:
+      // Exclusively authorized for Lovely Mae Tacio (UUID 60d80c30-97e8-44cf-90e2-3a3c02b9975a).
+      // Impersonators who change their name or username are strictly denied.
+      const adminPortalRow = document.getElementById('adminPortalRow');
+      if (adminPortalRow) {
+        const isAuthorizedAdminAccount = Boolean(
+          currentUser &&
+          currentUser.id === '60d80c30-97e8-44cf-90e2-3a3c02b9975a' &&
+          (currentUser.role === 'admin' || currentUser.is_admin === true)
+        );
+        adminPortalRow.style.display = isAuthorizedAdminAccount ? 'flex' : 'none';
       }
     }
 

@@ -640,33 +640,60 @@
     </div>
   </div>
 
-  <!-- Access Denied Screen (Passcode unlock for Thesis Evaluation) -->
+  <!-- Access Denied & Authentication View -->
   <div id="accessDeniedView" style="display:none;" class="access-denied-container">
-    <div class="access-denied-card">
+    <!-- State A: Unauthorized Account / Impersonation (NO password prompt) -->
+    <div class="access-denied-card" id="cardUnauthorizedAccount" style="display:none;">
       <div style="width:64px; height:64px; border-radius:50%; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 16px;">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <h3 style="font-size:20px; font-weight:800; color:var(--text-dark); margin:0 0 8px 0;">Access Denied</h3>
+      <p style="font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:14px;" id="unauthorizedAccountMessage">
+        This administrative portal is restricted exclusively to the authorized system administrator (<strong>Lovely Mae Tacio</strong>). Your account does not have authorization to access or view this area.
+      </p>
+      <div style="display:inline-flex; align-items:center; gap:6px; background:#FEF2F2; color:#DC2626; border:1px solid #FCA5A5; font-size:12px; font-weight:700; padding:6px 14px; border-radius:12px; margin-bottom:20px;">
+        <i class="fas fa-lock"></i> Authorization: Denied
+      </div>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <a href="home.html" class="admin-btn admin-btn-primary" style="flex:1; justify-content:center;">
+          <i class="fas fa-arrow-left"></i> Return to Feed
+        </a>
+        <a href="profile.html" class="admin-btn admin-btn-outline" style="flex:1; justify-content:center;">
+          Return to Profile
+        </a>
+      </div>
+    </div>
+
+    <!-- State B: Authorized Account (Lovely Mae Tacio) - Secure Server-Side Password Unlock -->
+    <div class="access-denied-card" id="cardAuthorizedAccountAuth" style="display:none;">
+      <div style="width:64px; height:64px; border-radius:50%; background:#EDE9FE; color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 16px;">
         <i class="fas fa-lock"></i>
       </div>
       <h3 style="font-size:20px; font-weight:800; color:var(--text-dark); margin:0 0 8px 0;">Admin Portal Authentication</h3>
-      <p style="font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:20px;">
-        This portal allows administrators and counselors to supervise the Safe Space platform, moderate students, and govern the AI engine.
+      <p style="font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:14px;">
+        Welcome, <strong>Lovely Mae Tacio</strong>. Please authenticate with your administrator credentials to access the Safe Space Admin &amp; AI Dashboard.
       </p>
 
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(108, 79, 209, 0.08); color:var(--primary); border:1px solid rgba(108, 79, 209, 0.2); font-size:12px; font-weight:700; padding:4px 12px; border-radius:12px; margin-bottom:18px;">
+        <i class="fas fa-shield-check"></i> Admin Authentication: Enabled
+      </div>
+
       <div style="background:var(--bg-hover, #F8F6FD); border-radius:14px; padding:16px; margin-bottom:20px; text-align:left; border:1px solid var(--border);">
-        <label style="font-size:12px; font-weight:700; color:var(--text-dark); display:block; margin-bottom:6px;">
-          <i class="fas fa-key" style="color:var(--primary); margin-right:4px;"></i> Evaluator / Faculty Passcode:
+        <label for="adminPasscodeInput" style="font-size:12px; font-weight:700; color:var(--text-dark); display:block; margin-bottom:6px;">
+          <i class="fas fa-key" style="color:var(--primary); margin-right:4px;"></i> Administrator Password:
         </label>
         <div style="display:flex; gap:8px;">
-          <input type="password" id="adminPasscodeInput" placeholder="safespace2026" style="flex:1; height:38px; border-radius:8px; border:1px solid var(--border); padding:0 12px; font-size:13px;" />
-          <button type="button" id="adminPasscodeSubmitBtn" class="admin-btn admin-btn-primary" style="height:38px; padding:0 16px;">Unlock</button>
+          <input type="password" id="adminPasscodeInput" placeholder="Enter administrator password" autocomplete="current-password" style="flex:1; height:38px; border-radius:8px; border:1px solid var(--border); padding:0 12px; font-size:13px;" />
+          <button type="button" id="adminPasscodeSubmitBtn" class="admin-btn admin-btn-primary" style="height:38px; padding:0 16px;">Verify &amp; Unlock</button>
         </div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
-          Thesis Demo Code: <strong>safespace2026</strong> or log in with an Administrator account.
+        <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+          <i class="fas fa-info-circle"></i> Authenticating for: <strong>Lovely Mae Tacio</strong> &bull; Secure server-side credential verification.
         </div>
       </div>
 
       <div style="display:flex; gap:10px; justify-content:center;">
-        <a href="home.html" class="admin-btn admin-btn-outline" style="flex:1; justify-content:center;">
-          <i class="fas fa-arrow-left"></i> Return to Feed
+        <a href="profile.html" class="admin-btn admin-btn-outline" style="flex:1; justify-content:center;">
+          <i class="fas fa-arrow-left"></i> Return to Profile
         </a>
       </div>
     </div>
@@ -707,10 +734,6 @@
           <i class="fas fa-robot" style="color:var(--primary);"></i>
           <span>AI Governance</span>
           <span class="badge-count" id="navFlaggedBadge" style="display:none; background:#FEF3C7; color:#D97706;">0</span>
-        </div>
-        <div class="admin-nav-item" data-tab="chat-supervision">
-          <i class="fas fa-comments"></i>
-          <span>Chat Supervision</span>
         </div>
         <div class="admin-nav-item" data-tab="resources">
           <i class="fas fa-book-medical"></i>
@@ -1309,25 +1332,7 @@
         </section>
 
         <!-- ==========================================
-             TAB 6: CHAT & CONSULTATION SUPERVISION
-             ========================================== -->
-        <section id="tab-chat-supervision" class="admin-tab-pane" style="display:none;">
-          <div class="admin-panel">
-            <div class="panel-header">
-              <div>
-                <h4 class="panel-title"><i class="fas fa-comments" style="color:var(--primary);"></i> Counselor Sessions &amp; Chat Supervision</h4>
-                <span style="font-size:12px; color:var(--text-muted);">Monitor guidance counselor support requests and active student counseling channels</span>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px;" id="chatSessionsContainer">
-              <div style="padding:24px; text-align:center; color:var(--text-muted);">Loading active counseling channels...</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ==========================================
-             TAB 7: RESOURCES & BIBLE SCRIPTURE MGMT
+             TAB 6: RESOURCES & BIBLE SCRIPTURE MGMT
              ========================================== -->
         <section id="tab-resources" class="admin-tab-pane" style="display:none;">
           <div class="admin-panel">
@@ -1787,32 +1792,36 @@
         hidePageLoader();
       }, 1000);
 
-      // Fast synchronous check from local storage to show dashboard immediately (0ms flash)
-      let localUser = null;
-      try {
-        localUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
-      } catch (e) {}
-      currentUser = localUser;
-
-      const isUnlocked = localStorage.getItem('safe_space_admin_unlocked') === 'true';
+      const AUTHORIZED_ADMIN_ID = '60d80c30-97e8-44cf-90e2-3a3c02b9975a';
 
       function checkIsAdmin(u) {
         if (!u) return false;
-        const uEmail = String(u.email || '').toLowerCase();
-        const uRole = String(u.role || '').toLowerCase();
-        const uName = String(u.username || '').toLowerCase();
-        return Boolean(
-          u.is_admin === true ||
-          uRole === 'admin' ||
-          uRole === 'counselor' ||
-          uRole === 'moderator' ||
-          uEmail.includes('admin') ||
-          uEmail === 'taciomhae@gmail.com' ||
-          uName === 'taciomhae'
-        );
+        // Strictly authorize ONLY the verified account belonging to Lovely Mae Tacio (UUID 60d80c30-97e8-44cf-90e2-3a3c02b9975a).
+        // Name impersonation or changing display name/username does NOT grant access.
+        return Boolean(u.id === AUTHORIZED_ADMIN_ID && (u.role === 'admin' || u.is_admin === true));
       }
 
-      let isAdminUser = checkIsAdmin(currentUser);
+      function showAccessDeniedScreen(isAuthorizedAccount) {
+        clearTimeout(loaderTimeout);
+        hidePageLoader();
+        const iface = document.getElementById('adminInterface');
+        if (iface) iface.style.display = 'none';
+
+        const deniedView = document.getElementById('accessDeniedView');
+        if (deniedView) deniedView.style.display = 'flex';
+
+        const unauthCard = document.getElementById('cardUnauthorizedAccount');
+        const authCard = document.getElementById('cardAuthorizedAccountAuth');
+
+        if (isAuthorizedAccount) {
+          if (unauthCard) unauthCard.style.display = 'none';
+          if (authCard) authCard.style.display = 'block';
+          setupPasswordUnlockHandler();
+        } else {
+          if (authCard) authCard.style.display = 'none';
+          if (unauthCard) unauthCard.style.display = 'block';
+        }
+      }
 
       function activateAdminDashboard() {
         clearTimeout(loaderTimeout);
@@ -1824,7 +1833,7 @@
         hidePageLoader();
 
         const hashTab = (window.location.hash || '').replace('#', '');
-        const targetTab = (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'chat-supervision', 'resources'].includes(hashTab)) ? hashTab : 'overview';
+        const targetTab = (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'resources'].includes(hashTab)) ? hashTab : 'overview';
         switchAdminTab(targetTab);
 
         loadAdminDashboardData().catch(err => {
@@ -1833,58 +1842,123 @@
         renderKeywordsList();
       }
 
-      // If authorized by role or previously unlocked, activate immediately!
-      if (isAdminUser || isUnlocked) {
-        activateAdminDashboard();
+      // Check current user from Supabase and local cache
+      try {
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
+          currentUser = await SafeSpaceDB.auth.getCurrentUser();
+        }
+      } catch (e) {
+        console.warn('[Admin] Live auth check error:', e);
       }
 
-      // In background, verify live session from Supabase
-      if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
-        SafeSpaceDB.auth.getCurrentUser().then(u => {
-          if (u) {
-            currentUser = u;
-            isAdminUser = checkIsAdmin(currentUser);
-            if (isAdminUser || isUnlocked) {
-              const deniedView = document.getElementById('accessDeniedView');
-              if (deniedView && deniedView.style.display !== 'none') {
-                activateAdminDashboard();
-              }
-              const nameEl = document.getElementById('adminUserName');
-              if (nameEl) nameEl.textContent = currentUser.username || currentUser.first_name || 'Admin';
-              const roleEl = document.getElementById('adminUserRoleTag');
-              if (roleEl) roleEl.textContent = (currentUser.role || 'Administrator').toUpperCase();
+      if (!currentUser) {
+        try {
+          currentUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        } catch (err) {}
+      }
+
+      // 1. Not logged in -> Denied (Unauthorized)
+      if (!currentUser || !currentUser.id) {
+        showAccessDeniedScreen(false);
+        return;
+      }
+
+      // 2. Strict Account Check:
+      // If user ID does not match Lovely Mae Tacio (UUID 60d80c30-97e8-44cf-90e2-3a3c02b9975a) -> Immediate Denied
+      if (currentUser.id !== AUTHORIZED_ADMIN_ID) {
+        showAccessDeniedScreen(false);
+        return;
+      }
+
+      // 3. User is Lovely Mae Tacio. Update sidebar display
+      const nameEl = document.getElementById('adminUserName');
+      if (nameEl) nameEl.textContent = 'Lovely Mae Tacio';
+      const roleEl = document.getElementById('adminUserRoleTag');
+      if (roleEl) roleEl.textContent = 'ADMINISTRATOR';
+
+      // Check if active verified admin session token exists in sessionStorage
+      const existingAdminToken = sessionStorage.getItem('safe_space_admin_session_token');
+      if (existingAdminToken) {
+        try {
+          const checkResp = await fetch('api/admin_auth.php?action=check_access', {
+            headers: { 'Authorization': `Bearer ${existingAdminToken}` }
+          });
+          if (checkResp.ok) {
+            const checkData = await checkResp.json();
+            if (checkData && checkData.authorized) {
+              activateAdminDashboard();
+              return;
             }
           }
-        }).catch(err => {
-          console.warn('[Admin] Auth check error:', err);
-        });
+        } catch (netErr) {
+          console.warn('[Admin] Server session validation network error:', netErr);
+        }
       }
 
-      if (!isAdminUser && !isUnlocked) {
-        clearTimeout(loaderTimeout);
-        document.getElementById('accessDeniedView').style.display = 'flex';
-        hidePageLoader();
+      // If session not active or expired, present secure password verification card
+      showAccessDeniedScreen(true);
 
+      function setupPasswordUnlockHandler() {
         const submitBtn = document.getElementById('adminPasscodeSubmitBtn');
         const passInput = document.getElementById('adminPasscodeInput');
-        if (submitBtn && passInput) {
-          const handlePasscodeUnlock = () => {
-            const val = passInput.value.trim();
-            if (val === 'safespace2026' || val === 'admin123' || val === 'asu-safespace') {
-              localStorage.setItem('safe_space_admin_unlocked', 'true');
+        if (!submitBtn || !passInput || submitBtn._handlerBound) return;
+        submitBtn._handlerBound = true;
+
+        const handlePasscodeUnlock = async () => {
+          const val = passInput.value.trim();
+          if (!val) {
+            showToast('Please enter your administrator password.', 'warning');
+            passInput.focus();
+            return;
+          }
+
+          submitBtn.disabled = true;
+          const origHtml = submitBtn.innerHTML;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+          try {
+            let accessToken = '';
+            try {
+              if (SafeSpaceDB && SafeSpaceDB.auth && SafeSpaceDB.auth.getSession) {
+                const s = await SafeSpaceDB.auth.getSession();
+                accessToken = (s && s.access_token) ? s.access_token : '';
+              }
+            } catch (sErr) {}
+
+            const resp = await fetch('api/admin_auth.php?action=verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                password: val,
+                access_token: accessToken,
+                user_id: currentUser.id
+              })
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.success && data.admin_token) {
+              sessionStorage.setItem('safe_space_admin_session_token', data.admin_token);
               showToast('Admin portal unlocked 🛡️', 'success');
               activateAdminDashboard();
             } else {
-              showToast('Invalid passcode. Use safespace2026 for demonstration.', 'error');
+              showToast(data.error || 'Access denied. Invalid credentials or unauthorized account.', 'error');
+              passInput.value = '';
+              passInput.focus();
             }
-          };
+          } catch (fetchErr) {
+            console.error('[Admin] Verification error:', fetchErr);
+            showToast('Connection error. Please ensure the backend server is reachable.', 'error');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origHtml;
+          }
+        };
 
-          submitBtn.addEventListener('click', handlePasscodeUnlock);
-          passInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handlePasscodeUnlock();
-          });
-        }
-        return;
+        submitBtn.addEventListener('click', handlePasscodeUnlock);
+        passInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') handlePasscodeUnlock();
+        });
       }
     });
 
@@ -1904,7 +1978,7 @@
       // Listen to browser hash changes (e.g. back/forward buttons or direct links)
       window.addEventListener('hashchange', () => {
         const hashTab = (window.location.hash || '').replace('#', '');
-        if (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'chat-supervision', 'resources'].includes(hashTab)) {
+        if (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'resources'].includes(hashTab)) {
           switchAdminTab(hashTab);
         }
       });
@@ -1921,10 +1995,13 @@
       // Logout / Lock
       const logoutBtn = document.getElementById('adminLogoutBtn');
       if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-          localStorage.removeItem('safe_space_admin_unlocked');
+        logoutBtn.addEventListener('click', async () => {
+          sessionStorage.removeItem('safe_space_admin_session_token');
+          try {
+            await fetch('api/admin_auth.php?action=logout', { method: 'POST' });
+          } catch (e) {}
           showToast('Admin portal locked.', 'info');
-          window.location.reload();
+          window.location.replace('profile.html');
         });
       }
 
@@ -2050,7 +2127,6 @@
         posts: ['Community Posts & Moderation', 'Inspect Submissions, Comments & Sentiment'],
         reports: ['Safety Reports Triage', 'Resolve Harassment & Emergency Flags'],
         'ai-governance': ['AI Governance & Control Center', 'Configure BART Zero-Shot & RoBERTa Sensitivity'],
-        'chat-supervision': ['Chat Supervision', 'Monitor Guidance Counselor Support Sessions'],
         resources: ['Campus Helplines & Bible', 'Institutional Emergency Services & Scriptures']
       };
 
