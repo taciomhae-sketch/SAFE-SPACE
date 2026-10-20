@@ -379,6 +379,19 @@
           </label>
         </div>
 
+        <div class="ai-pref-row" style="flex-direction:column; align-items:flex-start; gap:8px;">
+          <div class="ai-pref-info" style="width:100%;">
+            <h5><i class="fas fa-sparkles" style="color:var(--primary); margin-right:6px;"></i>Generative AI Engine (Google Gemini)</h5>
+            <p>Optional: Enter a Gemini API Key for live AI responses. If empty, Safe Space uses its smart adaptive engine.</p>
+          </div>
+          <div style="display:flex; width:100%; gap:8px;">
+            <input type="password" id="prefGeminiApiKey" placeholder="AIzaSy... (Optional API Key)" style="flex:1; height:38px; border:1px solid var(--border); border-radius:8px; padding:0 12px; font-size:12px; font-family:monospace; background:var(--bg-input, #fff); color:var(--text-dark);" />
+            <button type="button" id="toggleGeminiKeyVis" class="btn-cancel" style="height:38px; padding:0 12px; font-size:12px;" title="Show/Hide Key">
+              <i class="fas fa-eye" id="toggleGeminiKeyIcon"></i>
+            </button>
+          </div>
+        </div>
+
         <hr style="border:0; border-top:1px solid var(--border); margin:16px 0;" />
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1268,10 +1281,12 @@
             const bibEl = document.getElementById('prefBibleVerses');
             const stuEl = document.getElementById('prefStudySupport');
             const emoEl = document.getElementById('prefEmotionalSupport');
+            const gemEl = document.getElementById('prefGeminiApiKey');
             if (motEl) motEl.checked = Boolean(prefs.motivationalMessages);
             if (bibEl) bibEl.checked = Boolean(prefs.bibleVerseSuggestions);
             if (stuEl) stuEl.checked = Boolean(prefs.studySupport);
             if (emoEl) emoEl.checked = Boolean(prefs.emotionalSupport);
+            if (gemEl) gemEl.value = prefs.geminiApiKey || '';
             modal.classList.add('open');
           } else {
             // Open contextual chat options menu (Report User / Block User / Cancel)
@@ -1280,19 +1295,50 @@
         });
       }
 
+      const toggleVisBtn = document.getElementById('toggleGeminiKeyVis');
+      if (toggleVisBtn) {
+        toggleVisBtn.addEventListener('click', () => {
+          const gemEl = document.getElementById('prefGeminiApiKey');
+          const icon = document.getElementById('toggleGeminiKeyIcon');
+          if (gemEl && icon) {
+            if (gemEl.type === 'password') {
+              gemEl.type = 'text';
+              icon.className = 'fas fa-eye-slash';
+            } else {
+              gemEl.type = 'password';
+              icon.className = 'fas fa-eye';
+            }
+          }
+        });
+      }
+
       if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.remove('open'));
 
       if (saveBtn) {
         saveBtn.addEventListener('click', () => {
+          const gemEl = document.getElementById('prefGeminiApiKey');
           const newPrefs = {
             motivationalMessages: Boolean(document.getElementById('prefMotivationalMsgs') && document.getElementById('prefMotivationalMsgs').checked),
             bibleVerseSuggestions: Boolean(document.getElementById('prefBibleVerses') && document.getElementById('prefBibleVerses').checked),
             studySupport: Boolean(document.getElementById('prefStudySupport') && document.getElementById('prefStudySupport').checked),
-            emotionalSupport: Boolean(document.getElementById('prefEmotionalSupport') && document.getElementById('prefEmotionalSupport').checked)
+            emotionalSupport: Boolean(document.getElementById('prefEmotionalSupport') && document.getElementById('prefEmotionalSupport').checked),
+            geminiApiKey: gemEl ? gemEl.value.trim() : ''
           };
           AIChatbot.savePreferences(currentUser ? currentUser.id : null, newPrefs);
           modal.classList.remove('open');
           showToast('Support preferences updated! 💜', 'success');
+
+          // Refresh banner if active chat is AI
+          if (activeChatUser && activeChatUser.isAi) {
+            const isConnOnline = navigator.onLine;
+            const offlineBanner = document.getElementById('aiOfflineBanner');
+            if (offlineBanner && isConnOnline) {
+              const hasGemini = AIChatbot.hasGeminiKey();
+              offlineBanner.className = 'ai-offline-banner online';
+              document.getElementById('aiOfflineBannerText').innerHTML = hasGemini ? '✨ Gemini AI Active – Live Adaptive Student Assistant.' : '🟢 Safe Space AI Assistant – Online & Ready to Support.';
+              document.getElementById('aiOfflineBannerTag').textContent = hasGemini ? 'LIVE AI' : 'ONLINE';
+            }
+          }
         });
       }
 
@@ -1588,29 +1634,18 @@
         statusEl.innerHTML = '<span style="color:#22c55e;">●</span> Online • AI Assistant';
         offlineBanner.style.display = 'flex';
 
-        // Check connection & live AI backend
+        // Check connection & live AI Assistant engine status
         const isConnOnline = navigator.onLine;
         if (isConnOnline) {
-          if (window.AIService) {
-            AIService.checkStatus().then(status => {
-              if (status && status.online) {
-                offlineBanner.className = 'ai-offline-banner online';
-                document.getElementById('aiOfflineBannerText').innerHTML = '🟢 AI Moderation Online – Connected (BART + RoBERTa).';
-                document.getElementById('aiOfflineBannerTag').textContent = 'ONLINE';
-              } else {
-                offlineBanner.className = 'ai-offline-banner fallback';
-                document.getElementById('aiOfflineBannerText').innerHTML = '🛡️ Safety Fallback Active – Multilingual Safe Space Support.';
-                document.getElementById('aiOfflineBannerTag').textContent = 'SHIELD';
-              }
-            }).catch(() => {});
-          } else {
-            offlineBanner.className = 'ai-offline-banner fallback';
-            document.getElementById('aiOfflineBannerText').innerHTML = '🛡️ Safety Fallback Active – Multilingual Safe Space Support.';
-            document.getElementById('aiOfflineBannerTag').textContent = 'SHIELD';
-          }
+          const hasGemini = window.AIChatbot && window.AIChatbot.hasGeminiKey && window.AIChatbot.hasGeminiKey();
+          offlineBanner.className = 'ai-offline-banner online';
+          document.getElementById('aiOfflineBannerText').innerHTML = hasGemini
+            ? '✨ Gemini AI Active – Live Adaptive Student Assistant.'
+            : '🟢 Safe Space AI Assistant – Online & Ready to Support.';
+          document.getElementById('aiOfflineBannerTag').textContent = hasGemini ? 'LIVE AI' : 'ONLINE';
         } else {
           offlineBanner.className = 'ai-offline-banner fallback';
-          document.getElementById('aiOfflineBannerText').innerHTML = '🛡️ Offline Mode – Local Safety Fallback Active.';
+          document.getElementById('aiOfflineBannerText').innerHTML = '🛡️ Offline Mode – Local Safety Shield Active.';
           document.getElementById('aiOfflineBannerTag').textContent = 'OFFLINE';
         }
       } else {
@@ -2058,13 +2093,14 @@
       if (!banner || !textEl || !tagEl) return;
       if (activeChatUser && activeChatUser.isAi) {
         if (isOnline) {
+          const hasGemini = window.AIChatbot && window.AIChatbot.hasGeminiKey && window.AIChatbot.hasGeminiKey();
           banner.className = 'ai-offline-banner online';
-          textEl.innerHTML = '🟢 Online Mode – AI Assistant Connected.';
-          tagEl.textContent = 'ONLINE';
+          textEl.innerHTML = hasGemini ? '✨ Gemini AI Active – Live Adaptive Student Assistant.' : '🟢 Safe Space AI Assistant – Online & Ready to Support.';
+          tagEl.textContent = hasGemini ? 'LIVE AI' : 'ONLINE';
           showToast('Internet connection restored. AI Assistant is online.');
         } else {
-          banner.className = 'ai-offline-banner';
-          textEl.innerHTML = '🟡 Offline Mode – Basic Safe Space Support Available.';
+          banner.className = 'ai-offline-banner fallback';
+          textEl.innerHTML = '🛡️ Offline Mode – Local Safety Shield Active.';
           tagEl.textContent = 'OFFLINE';
           showToast('Offline Mode: Safe Space is using local offline responses.');
         }

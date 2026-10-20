@@ -20,6 +20,10 @@ var SAFE_SPACE_CONFIG = {
   // AI Moderation & Sentiment Analysis Service (FastAPI):
   AI_API_URL: "http://127.0.0.1:8000",
 
+  // Optional Google Gemini API Key for dynamic generative Safe Space AI Assistant:
+  // Can also be set in Support Preferences via the Chat UI
+  GEMINI_API_KEY: "",
+
   // App Metadata
   APP_NAME: "Safe Space",
   VERSION: "2.0.0",

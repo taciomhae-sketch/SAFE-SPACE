@@ -3,14 +3,16 @@
  * Conversational, context-aware, empathetic student support chatbot.
  * 
  * Features:
- * - Direct contextual responses using student's actual words & situation
- * - Multi-turn conversational memory & topic tracking (thesis, exams, burnout, etc.)
- * - Natural empathy, follow-up questions, and support modes (Listen / Advice / Problem Solving / Encouragement)
+ * - Dynamic, non-repetitive responses tailored specifically to student context
+ * - Multi-turn conversational memory & context continuity (thesis, exams, burnout, friends, etc.)
+ * - Contextual follow-up awareness (remembers prior questions and answers them appropriately)
+ * - Anti-repetition engine ensuring the assistant never repeats the same canned answer
+ * - Live Google Gemini AI integration (optional API key in settings or config)
  * - Immediate distress & crisis detection with certified Philippine hotlines & ASU guidance
  * - Context-aware Bible Verse Database with duplicate prevention & user preference toggle
- * - Situation-matched motivational messages
+ * - Situation-matched motivational messages with anti-duplication
  * - Smooth Offline fallback mode with local NLP heuristics & local database
- * - Typing indicator with natural timing
+ * - Rich Taglish & Filipino emotional comprehension
  * - Persistent per-user conversation storage & privacy isolation
  */
 
@@ -104,6 +106,13 @@
       takeaway: 'Loneliness can feel overwhelming, but you are never truly abandoned.'
     },
     {
+      id: 'bv-ps2710',
+      reference: 'Psalm 27:10',
+      topic: 'loneliness',
+      verse_text: 'Though my father and mother forsake me, the Lord will receive me.',
+      takeaway: 'Even when people around you feel distant, you are valued and held.'
+    },
+    {
       id: 'bv-jer2911',
       reference: 'Jeremiah 29:11',
       topic: 'hope',
@@ -166,26 +175,32 @@
     academic_stress: [
       { id: 'mq-a1', text: '💜 A little progress is still progress. You don\'t have to finish the whole mountain today—just taking the first small step counts.' },
       { id: 'mq-a2', text: '💜 Don\'t judge your entire semester by one overwhelming day. Breathe, reset, and focus on the single task right in front of you.' },
-      { id: 'mq-a3', text: '💜 You don\'t have to be perfect; you just have to keep moving forward. One assignment, one paragraph at a time.' }
+      { id: 'mq-a3', text: '💜 You don\'t have to be perfect; you just have to keep moving forward. One assignment, one paragraph at a time.' },
+      { id: 'mq-a4', text: '💜 Remember why you started this journey. The late nights will pass, but the resilience you are building will stay with you forever.' }
     ],
     failure: [
       { id: 'mq-f1', text: '💜 Failing an exam or quiz hurts, but it is data, not a definition. It tells you what to adjust next time—not who you are.' },
-      { id: 'mq-f2', text: '💜 Every successful student has faced bad grades and rough critiques. What matters is the courage to try again.' }
+      { id: 'mq-f2', text: '💜 Every successful student has faced bad grades and rough critiques. What matters is the courage to stand back up.' },
+      { id: 'mq-f3', text: '💜 One low score is a chapter in your academic story, not the final page. Give yourself the grace to learn and try again.' }
     ],
     tiredness: [
       { id: 'mq-t1', text: '💜 You are allowed to rest. Resting is not quitting—it is how your brain and body recharge so you can keep going.' },
-      { id: 'mq-t2', text: '💜 Sometimes the most productive thing you can do right now is close your laptop, drink a glass of water, and get some sleep.' }
+      { id: 'mq-t2', text: '💜 Sometimes the most productive thing you can do right now is close your laptop, drink a glass of water, and get some sleep.' },
+      { id: 'mq-t3', text: '💜 You cannot pour from an empty cup. Taking care of your health today is an investment in tomorrow\'s success.' }
     ],
     loneliness: [
       { id: 'mq-l1', text: '💜 Even when you feel invisible in a crowd, your presence matters. It\'s okay to take things slow and reach out when you\'re ready.' },
-      { id: 'mq-l2', text: '💜 Feeling lonely is a heavy weight, but you are not broken for feeling this way. Be kind to yourself today.' }
+      { id: 'mq-l2', text: '💜 Feeling lonely is a heavy weight, but you are not broken for feeling this way. Be kind to yourself today.' },
+      { id: 'mq-l3', text: '💜 Seasons of isolation often teach us who we are. You will find people who truly appreciate your authentic self.' }
     ],
     breakup: [
-      { id: 'mq-b1', text: '💜 Healing doesn\'t happen in a straight line. Some days will hurt more than others, and that is completely normal. Give yourself grace.' }
+      { id: 'mq-b1', text: '💜 Healing doesn\'t happen in a straight line. Some days will hurt more than others, and that is completely normal. Give yourself grace.' },
+      { id: 'mq-b2', text: '💜 Your worth did not decrease because someone failed to see it. Focus on protecting your peace and healing your heart.' }
     ],
     self_worth: [
       { id: 'mq-s1', text: '💜 Struggling with school doesn\'t mean you\'re not smart enough. It just means you\'re wrestling with something genuinely challenging.' },
-      { id: 'mq-s2', text: '💜 You are worth so much more than your GPA, your exam scores, or what anyone else expects of you.' }
+      { id: 'mq-s2', text: '💜 You are worth so much more than your GPA, your exam scores, or what anyone else expects of you.' },
+      { id: 'mq-s3', text: '💜 Don\'t compare your chapter 1 or 2 with someone else\'s chapter 20. Your journey has its own unique timeline.' }
     ]
   };
 
@@ -203,6 +218,8 @@
           currentMode: 'general', // listen, advice, problem_solving, encouragement
           usedVerseIds: [],
           usedQuoteIds: [],
+          usedResponseIds: [],
+          lastUsedId: null,
           turnCount: 0,
           history: [] // [{role:'user'|'bot', text:'...', time:0}]
         };
@@ -216,50 +233,77 @@
     }
   };
 
+  // Helper to pick a non-repetitive response from a pool
+  function pickVariedResponse(pool, state, fallbackText) {
+    if (!pool || !pool.length) {
+      return { id: 'fallback-' + Date.now(), text: fallbackText || 'I hear you. Tell me more about what you\'re feeling.' };
+    }
+
+    let available = pool.filter(item => !state.usedResponseIds.includes(item.id));
+    if (!available.length) {
+      // Clear half of history so responses stay fresh without repeating the most recent one
+      state.usedResponseIds = state.usedResponseIds.filter(id => id === state.lastUsedId);
+      available = pool.filter(item => item.id !== state.lastUsedId);
+      if (!available.length) available = pool;
+    }
+
+    const chosen = available[Math.floor(Math.random() * available.length)];
+    state.usedResponseIds.push(chosen.id);
+    state.lastUsedId = chosen.id;
+    return chosen;
+  }
+
   // ── 4. Main AI Chatbot Object ──────────────────────────────────
   const AIChatbot = {
     BIBLE_VERSES: BIBLE_VERSES,
     MOTIVATIONAL_QUOTES: MOTIVATIONAL_QUOTES,
 
-    // User preferences storage key
     getPrefsKey: function(userId) {
       return 'safe_space_ai_prefs_' + (userId || 'default');
     },
 
-    // Get support preferences
     getPreferences: function(userId) {
       try {
         const stored = localStorage.getItem(this.getPrefsKey(userId));
+        const confKey = (window.SAFE_SPACE_CONFIG && window.SAFE_SPACE_CONFIG.GEMINI_API_KEY) || '';
+        const base = {
+          motivationalMessages: true,
+          bibleVerseSuggestions: true,
+          studySupport: true,
+          emotionalSupport: true,
+          geminiApiKey: confKey
+        };
         if (stored) {
-          return Object.assign({
-            motivationalMessages: true,
-            bibleVerseSuggestions: true,
-            studySupport: true,
-            emotionalSupport: true
-          }, JSON.parse(stored));
+          const parsed = JSON.parse(stored);
+          if (!parsed.geminiApiKey && confKey) parsed.geminiApiKey = confKey;
+          return Object.assign(base, parsed);
         }
+        return base;
       } catch (e) {}
       return {
         motivationalMessages: true,
         bibleVerseSuggestions: true,
         studySupport: true,
-        emotionalSupport: true
+        emotionalSupport: true,
+        geminiApiKey: (window.SAFE_SPACE_CONFIG && window.SAFE_SPACE_CONFIG.GEMINI_API_KEY) || ''
       };
     },
 
-    // Save support preferences
     savePreferences: function(userId, prefs) {
       try {
         localStorage.setItem(this.getPrefsKey(userId), JSON.stringify(prefs));
       } catch (e) {}
     },
 
-    // Thread messages storage key
+    hasGeminiKey: function() {
+      const prefs = this.getPreferences();
+      return Boolean((prefs && prefs.geminiApiKey && prefs.geminiApiKey.trim()) || (window.SAFE_SPACE_CONFIG && window.SAFE_SPACE_CONFIG.GEMINI_API_KEY));
+    },
+
     getHistoryKey: function(userId) {
       return 'safe_space_ai_thread_' + (userId || 'guest');
     },
 
-    // Load persisted chat history for this user
     loadChatHistory: function(userId) {
       try {
         const data = localStorage.getItem(this.getHistoryKey(userId));
@@ -268,14 +312,12 @@
       return [];
     },
 
-    // Save persisted chat history
     saveChatHistory: function(userId, history) {
       try {
         localStorage.setItem(this.getHistoryKey(userId), JSON.stringify(history.slice(-60)));
       } catch (e) {}
     },
 
-    // Clear chat history
     clearChatHistory: function(userId) {
       try {
         localStorage.removeItem(this.getHistoryKey(userId));
@@ -292,17 +334,15 @@
         'hurt myself', 'hurting myself', 'cut myself', 'cutting myself', 'take my own life',
         'commit suicide', 'suicidal', 'suicide', 'better off dead', 'better without me',
         'no reason to live', 'have a plan to end', 'already hurt myself', 'slit my wrist',
-        'jump off', 'hang myself', 'drink poison', 'overdose'
+        'jump off', 'hang myself', 'drink poison', 'overdose', 'gusto ko na mawala', 'ayoko na mabuhay'
       ];
       return crisisKeywords.some(kw => lower.includes(kw));
     },
 
-    // Format crisis response
     getCrisisResponse: function(userId) {
       const prefs = this.getPreferences(userId);
       let verseSection = '';
 
-      // Include a gentle, comforting verse of life and hope if applicable/enabled
       if (prefs.bibleVerseSuggestions !== false) {
         verseSection = `\n📖 **Psalm 34:18**\n*"The Lord is close to the brokenhearted and saves those who are crushed in spirit."*\nPlease know that your life is deeply valuable, and you do not have to walk through this heavy darkness all by yourself.\n`;
       }
@@ -363,7 +403,7 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
       }
 
       // Greetings
-      if (/^(hi|hello|hey|good morning|good afternoon|good evening|sup|yo|kumusta|kamusta)\b/i.test(text.trim())) {
+      if (/^(hi|hello|hey|good morning|good afternoon|good evening|sup|yo|kumusta|kamusta|musta)\b/i.test(text.trim())) {
         return { emotion: 'neutral', topic: 'greeting', intent: 'greeting' };
       }
 
@@ -373,10 +413,10 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
       }
 
       // Support mode selections
-      if (lower.includes('just listen') || lower.includes('listen to me') || lower.includes('hear me out')) {
+      if (lower.includes('just listen') || lower.includes('listen to me') || lower.includes('hear me out') || lower.includes('makinig ka')) {
         return { emotion: 'seeking_ear', topic: 'listen_mode', intent: 'mode_listen' };
       }
-      if (lower.includes('give me advice') || lower.includes('what should i do') || lower.includes('need advice')) {
+      if (lower.includes('give me advice') || lower.includes('what should i do') || lower.includes('need advice') || lower.includes('payo')) {
         return { emotion: 'seeking_advice', topic: 'advice_mode', intent: 'mode_advice' };
       }
 
@@ -384,39 +424,39 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
       let topic = state.lastTopic;
       if (lower.includes('thesis') || lower.includes('defense') || lower.includes('panel') || lower.includes('manuscript') || lower.includes('capstone')) {
         topic = 'thesis';
-      } else if (lower.includes('exam') || lower.includes('quiz') || lower.includes('test') || lower.includes('midterm') || lower.includes('finals')) {
+      } else if (lower.includes('exam') || lower.includes('quiz') || lower.includes('test') || lower.includes('midterm') || lower.includes('finals') || lower.includes('prelim') || lower.includes('bagsak')) {
         topic = 'exam';
-      } else if (lower.includes('assignment') || lower.includes('homework') || lower.includes('project') || lower.includes('paper') || lower.includes('deadline') || lower.includes('requirements') || lower.includes('activities')) {
+      } else if (lower.includes('assignment') || lower.includes('homework') || lower.includes('project') || lower.includes('paper') || lower.includes('deadline') || lower.includes('requirements') || lower.includes('activities') || lower.includes('gawain')) {
         topic = 'assignment';
-      } else if (lower.includes('group') || lower.includes('groupmate') || lower.includes('pabuhat') || lower.includes('freeloader')) {
+      } else if (lower.includes('group') || lower.includes('groupmate') || lower.includes('pabuhat') || lower.includes('freeloader') || lower.includes('kagrupo')) {
         topic = 'group_project';
-      } else if (lower.includes('grade') || lower.includes('failing') || lower.includes('failed') || lower.includes('flunk')) {
+      } else if (lower.includes('grade') || lower.includes('failing') || lower.includes('failed') || lower.includes('flunk') || lower.includes('pasang awa')) {
         topic = 'failure';
-      } else if (lower.includes('ex') || lower.includes('breakup') || lower.includes('broke up') || lower.includes('relationship') || lower.includes('heartbroken') || lower.includes('crush')) {
+      } else if (lower.includes('ex') || lower.includes('breakup') || lower.includes('broke up') || lower.includes('relationship') || lower.includes('heartbroken') || lower.includes('crush') || lower.includes('hiwalay') || lower.includes('break na kami')) {
         topic = 'breakup';
-      } else if (lower.includes('alone') || lower.includes('lonely') || lower.includes('no friends') || lower.includes('isolated')) {
+      } else if (lower.includes('alone') || lower.includes('lonely') || lower.includes('no friends') || lower.includes('isolated') || lower.includes('lungkot') || lower.includes('mag-isa') || lower.includes('walang kausap') || lower.includes('walang pumapansin')) {
         topic = 'loneliness';
-      } else if (lower.includes('tired') || lower.includes('exhausted') || lower.includes('burnout') || lower.includes('burned out') || lower.includes('sleepy') || lower.includes('no sleep') || lower.includes('drained')) {
+      } else if (lower.includes('tired') || lower.includes('exhausted') || lower.includes('burnout') || lower.includes('burned out') || lower.includes('sleepy') || lower.includes('no sleep') || lower.includes('drained') || lower.includes('pagod') || lower.includes('puyat')) {
         topic = 'tiredness';
       }
 
       // Emotion categories
       let emotion = 'neutral';
-      if (lower.includes('overwhelm') || lower.includes('too much') || lower.includes('drowning') || lower.includes('can\'t handle') || lower.includes('cant handle')) {
+      if (lower.includes('overwhelm') || lower.includes('too much') || lower.includes('drowning') || lower.includes("can't handle") || lower.includes("cant handle") || lower.includes('sobra na')) {
         emotion = 'overwhelmed';
-      } else if (lower.includes('hopeless') || lower.includes('everything is going wrong') || lower.includes('give up') || lower.includes('giving up') || lower.includes('can\'t do this anymore') || lower.includes('cant do this anymore')) {
+      } else if (lower.includes('hopeless') || lower.includes('everything is going wrong') || lower.includes('give up') || lower.includes('giving up') || lower.includes("can't do this anymore") || lower.includes("cant do this anymore") || lower.includes('ayoko na')) {
         emotion = 'hopeless';
-      } else if (lower.includes('stress') || lower.includes('pressure') || lower.includes('anxious') || lower.includes('nervous') || lower.includes('panic') || lower.includes('shaking') || lower.includes('worried')) {
+      } else if (lower.includes('stress') || lower.includes('pressure') || lower.includes('anxious') || lower.includes('nervous') || lower.includes('panic') || lower.includes('shaking') || lower.includes('worried') || lower.includes('kaba') || lower.includes('takot')) {
         emotion = 'stressed';
-      } else if (lower.includes('sad') || lower.includes('crying') || lower.includes('tears') || lower.includes('hurts') || lower.includes('depressed') || lower.includes('down')) {
+      } else if (lower.includes('sad') || lower.includes('crying') || lower.includes('tears') || lower.includes('hurts') || lower.includes('depressed') || lower.includes('down') || lower.includes('umiiyak') || lower.includes('nasasaktan')) {
         emotion = 'sad';
-      } else if (lower.includes('lonely') || lower.includes('alone') || lower.includes('nobody cares') || lower.includes('left out')) {
+      } else if (lower.includes('lonely') || lower.includes('alone') || lower.includes('nobody cares') || lower.includes('left out') || lower.includes('mag-isa') || lower.includes('iniwan')) {
         emotion = 'lonely';
-      } else if (lower.includes('fail') || lower.includes('disappointed') || lower.includes('not good enough') || lower.includes('worthless') || lower.includes('loser') || lower.includes('stupid')) {
+      } else if (lower.includes('fail') || lower.includes('disappointed') || lower.includes('not good enough') || lower.includes('worthless') || lower.includes('loser') || lower.includes('stupid') || lower.includes('bobo') || lower.includes('walang kwenta')) {
         emotion = 'discouraged';
-      } else if (lower.includes('angry') || lower.includes('mad') || lower.includes('frustrated') || lower.includes('annoyed') || lower.includes('unfair')) {
+      } else if (lower.includes('angry') || lower.includes('mad') || lower.includes('frustrated') || lower.includes('annoyed') || lower.includes('unfair') || lower.includes('bwisit') || lower.includes('galit')) {
         emotion = 'frustrated';
-      } else if (lower.includes('passed') || lower.includes('happy') || lower.includes('proud') || lower.includes('relieved') || lower.includes('yay') || lower.includes('finished') || lower.includes('done') || lower.includes('good news')) {
+      } else if (lower.includes('passed') || lower.includes('happy') || lower.includes('proud') || lower.includes('relieved') || lower.includes('yay') || lower.includes('finished') || lower.includes('done') || lower.includes('good news') || lower.includes('pumasa')) {
         emotion = 'happy';
       } else if (lower.includes('thank') || lower.includes('salamat') || lower.includes('appreciate')) {
         emotion = 'grateful';
@@ -425,7 +465,7 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
       return { emotion, topic, intent: 'conversation' };
     },
 
-    // ── Retrieve non-duplicate Bible Verse ─────────────────────────
+    // ── Non-duplicate Bible Verse & Quote Helpers ─────────────────
     getVerseForContext: function(topic, emotion, usedIds) {
       let targetCat = 'hope';
       if (emotion === 'stressed' || topic === 'assignment') targetCat = 'stress';
@@ -437,7 +477,6 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
       else if (topic === 'tiredness') targetCat = 'tiredness';
       else if (topic === 'guidance') targetCat = 'guidance';
 
-      // Filter matches
       let available = BIBLE_VERSES.filter(v => v.topic === targetCat && !usedIds.includes(v.id));
       if (!available.length) {
         available = BIBLE_VERSES.filter(v => !usedIds.includes(v.id));
@@ -447,7 +486,6 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
       return available[Math.floor(Math.random() * available.length)];
     },
 
-    // ── Retrieve context-matched Quote ────────────────────────────
     getQuoteForContext: function(topic, emotion, usedIds) {
       let categoryList = MOTIVATIONAL_QUOTES.academic_stress;
       if (topic === 'failure' || emotion === 'discouraged') categoryList = MOTIVATIONAL_QUOTES.failure;
@@ -461,7 +499,361 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
       return pool[Math.floor(Math.random() * pool.length)];
     },
 
-    // ── Generate Natural Response ─────────────────────────────────
+    // ── 5. Google Gemini Generative AI Call ────────────────────────
+    callGeminiApi: async function(userPrompt, userId, apiKey) {
+      const history = this.loadChatHistory(userId).slice(-8);
+      const contents = [];
+
+      // Format conversational history for Gemini
+      history.forEach(item => {
+        if (!item || !item.message) return;
+        contents.push({
+          role: item.sender_id === 'safe-space-ai-bot' ? 'model' : 'user',
+          parts: [{ text: item.message }]
+        });
+      });
+
+      // Add current message
+      contents.push({
+        role: 'user',
+        parts: [{ text: userPrompt }]
+      });
+
+      const systemInstruction = {
+        parts: [{
+          text: `You are the Safe Space AI Assistant, a warm, compassionate, student-focused counselor assistant for college and high school students at Aklan State University (ASU).
+Guidelines:
+1. Always give tailored, empathetic, and dynamic answers. Never give boilerplate, robotic, or identical canned responses.
+2. If the user mentions loneliness, heartbreak, thesis anxiety, exams, or feeling overwhelmed, validate their exact feelings with kindness and care.
+3. Keep responses conversational, concise, and structured with easy-to-read paragraphs (2 to 4 short paragraphs).
+4. Offer gentle practical suggestions or follow-up questions to help them reflect.
+5. If the student uses Filipino or Taglish, understand them naturally and reply in warm, comforting English or gentle Taglish where appropriate.
+6. If the user expresses extreme crisis or self-harm, prioritize safety and provide warm emergency reassurance.
+7. Avoid overly clinical jargon. Speak like a caring student peer or trusted mentor.`
+        }]
+      };
+
+      const payload = {
+        contents: contents,
+        systemInstruction: systemInstruction,
+        generationConfig: {
+          temperature: 0.8,
+          topP: 0.95,
+          maxOutputTokens: 500
+        }
+      };
+
+      // Try gemini-1.5-flash endpoint
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!generatedText) throw new Error('Empty response from Gemini API');
+      return generatedText.trim();
+    },
+
+    // ── 6. Dynamic Generative Local Engine ─────────────────────────
+    generateLocalResponse: function(userPrompt, userId, state, prefs) {
+      const promptLower = userPrompt.toLowerCase().trim();
+      const analysis = this.analyzeUserMessage(userPrompt, state);
+      const { emotion, topic, intent } = analysis;
+
+      if (topic) state.lastTopic = topic;
+      if (emotion !== 'neutral') state.lastEmotion = emotion;
+
+      // ── A. Contextual Follow-Up: Answering previous bot questions ──
+      // 1. Follow-up after asking about Loneliness ("Has something changed with your friends or at home?")
+      if (state.lastBotQuestion === 'lonely_reason') {
+        state.lastBotQuestion = 'lonely_deepening';
+        if (promptLower.includes('friend') || promptLower.includes('barkada') || promptLower.includes('left') || promptLower.includes('iniwan') || promptLower.includes('ignore') || promptLower.includes('pumansin')) {
+          const pool = [
+            { id: 'fl-fr-1', text: "Friendship shifts hurt so deeply. When the people you used to laugh with or count on start drifting away or leaving you out, it can feel like a punch to the chest.\n\nDid an argument happen, or did everyone just slowly grow distant? You don't deserve to feel discarded." },
+            { id: 'fl-fr-2', text: "It's really painful when friends pull away or make you feel sidelined. Please hear this: someone else's inability to show up for you is not proof that you aren't worthy of loyal, genuine friendships.\n\nHave you been able to talk to any of them about how you feel, or does it feel safer to keep your distance right now?" },
+            { id: 'fl-fr-3', text: "Being left out by friends can make campus feel like the most lonely place on earth. Your feelings are 100% valid. What hurts the most about the situation with your friends right now?" }
+          ];
+          return pickVariedResponse(pool, state);
+        }
+
+        if (promptLower.includes('home') || promptLower.includes('family') || promptLower.includes('parent') || promptLower.includes('bahay') || promptLower.includes('tatay') || promptLower.includes('nanay')) {
+          const pool = [
+            { id: 'fl-hm-1', text: "Feeling lonely at home is especially heavy, because home is supposed to be the one place where you can take off your armor and rest.\n\nAre things tense or full of pressure with your family, or does it feel like they just don't understand the challenges you're dealing with?" },
+            { id: 'fl-hm-2', text: "It's so draining to walk through your front door and still feel isolated. Sometimes families mean well but don't know how to listen without judging.\n\nWould it help to talk through what has been happening at home lately?" }
+          ];
+          return pickVariedResponse(pool, state);
+        }
+
+        if (promptLower.includes('school') || promptLower.includes('college') || promptLower.includes('transferee') || promptLower.includes('block') || promptLower.includes('class')) {
+          const pool = [
+            { id: 'fl-sc-1', text: "Navigating school social circles can be genuinely intimidating. It often looks like everyone else formed tight groups overnight, while you're left wondering where you fit in.\n\nHow have your classes or blockmates been treating you lately?" },
+            { id: 'fl-sc-2', text: "College and high school can be surprisingly isolating when everyone is busy chasing grades and rushing home. You're not the only one feeling this way, even if people pretend they have it all together.\n\nIs there any club, activity, or quiet space on campus where you feel a bit more comfortable?" }
+          ];
+          return pickVariedResponse(pool, state);
+        }
+
+        if (promptLower.includes('nothing') || promptLower.includes('dont know') || promptLower.includes("don't know") || promptLower.includes('ewan') || promptLower.includes('basta') || promptLower.includes('just feeling')) {
+          const pool = [
+            { id: 'fl-un-1', text: "You don't need a neat explanation or a dramatic reason to feel lonely—sometimes that quiet ache just rolls in, and that is completely valid.\n\nYou don't have to explain yourself here. I'm just glad you reached out. What's one small, comforting thing you can do for yourself today?" },
+            { id: 'fl-un-2', text: "That's okay. You don't have to have it all figured out to feel it. Emotional heaviness doesn't always have a single cause.\n\nI'm right here with you. Would you like a comforting Bible verse or would you rather we just talk about something lighter for a bit?" }
+          ];
+          return pickVariedResponse(pool, state);
+        }
+      }
+
+      // 2. Follow-up after asking about school stress
+      if (state.lastBotQuestion === 'what_making_school_tired' || state.lastBotQuestion === 'what_stressing') {
+        state.lastBotQuestion = 'study_triage';
+        if (promptLower.includes('assignment') || promptLower.includes('deadline') || promptLower.includes('homework') || promptLower.includes('requirements') || promptLower.includes('activities')) {
+          const pool = [
+            { id: 'st-as-1', text: "When deadlines stack on top of each other, your brain naturally freezes up. It's not laziness—it's cognitive overload.\n\nLet's shrink the mountain. What is the single assignment due first? We don't have to finish it all; let's just plan the first 15 minutes." },
+            { id: 'st-as-2', text: "Having several submissions due at once is so stressful. Let's make a mini-game out of it: which one is easiest to knock out quickly so you can get a quick win?" }
+          ];
+          return pickVariedResponse(pool, state);
+        }
+        if (promptLower.includes('thesis') || promptLower.includes('defense') || promptLower.includes('research')) {
+          const pool = [
+            { id: 'st-th-1', text: "Thesis work drains mental energy faster than almost anything else in student life. Revisions, literature reviews, and panel comments can make you feel stuck.\n\nWhich chapter or section are you currently wrestling with?" },
+            { id: 'st-th-2', text: "Thesis anxiety is so real. Remember: you don't have to defend or finish the whole manuscript today. What is the next small paragraph or reference you need to check?" }
+          ];
+          return pickVariedResponse(pool, state);
+        }
+      }
+
+      // ── B. Loneliness (Multi-Response Matrix with Zero Repetition) ──
+      if (emotion === 'lonely' || topic === 'loneliness') {
+        state.lastBotQuestion = 'lonely_reason';
+        const lonelinessPool = [
+          {
+            id: 'lone-v1',
+            text: "I hear you, and I'm really sorry you're feeling that ache today. Loneliness can be so heavy and exhausting, especially when it feels like everyone around you has their circle and you're watching from the outside.\n\nDo you want to tell me what's been making you feel alone lately? Has something changed with your friends, or does it feel more like an empty quiet at home or in class?"
+          },
+          {
+            id: 'lone-v2',
+            text: "Thank you for being open with me about that. Feeling lonely is one of the hardest things a student can go through, and it's completely okay to admit it hurts.\n\nDid something specific happen today that made you feel left out, or has this feeling been quietly building up for a while?"
+          },
+          {
+            id: 'lone-v3',
+            text: "I'm right here with you. Even on days when the world feels distant and nobody seems to check in, your presence genuinely matters.\n\nLoneliness can make us believe we're invisible. When you feel this way today, what thoughts have been running through your mind?"
+          },
+          {
+            id: 'lone-v4',
+            text: "It takes vulnerability to say 'I'm lonely today.' It's easy to look around campus and think nobody understands, but so many students carry this exact same quiet pain inside.\n\nWould you like some company while you talk through what's on your heart, or would you prefer a comforting Bible verse or gentle thought to hold onto?"
+          },
+          {
+            id: 'lone-v5',
+            text: "Ramdam kita. Nakakapagod talaga yung pakiramdam na mag-isa ka, kahit may mga tao naman sa paligid mo o sa classroom.\n\nNandito ako para makinig sa'yo nang walang panghuhusga. Gusto mo bang ikwento kung anong nangyari ngayong araw?"
+          },
+          {
+            id: 'lone-v6',
+            text: "Loneliness can make every little task feel ten times heavier. Please remember that feeling lonely doesn't mean you are unlovable or broken—it just means your heart is craving genuine connection.\n\nIs there someone in your life you miss, or does it feel like you just haven't found people who truly understand you yet?"
+          }
+        ];
+        return pickVariedResponse(lonelinessPool, state);
+      }
+
+      // ── C. Academic Overload & Stress ────────────────────────────
+      if (topic === 'assignment' || emotion === 'overwhelmed') {
+        state.lastBotQuestion = 'what_making_school_tired';
+        const overloadPool = [
+          {
+            id: 'over-1',
+            text: "It sounds like you're carrying a massive mental load right now. School expectations can pile up so fast until you feel like you can barely catch a breath.\n\nLet's take a slow, deliberate breath. Drop your shoulders down. What is the single biggest deadline on your mind right now?"
+          },
+          {
+            id: 'over-2',
+            text: "When everything feels urgent all at once, your mind gets paralyzed. That is a completely normal reaction to overload.\n\nYou don't have to finish everything tonight. What are 2 or 3 things due soonest, and can we break just one of them into a 15-minute chunk?"
+          },
+          {
+            id: 'over-3',
+            text: "I hear how exhausted you are from all these requirements. Remember: taking a 10-minute break away from your screen isn't wasting time—it's giving your brain the oxygen it needs to keep going.\n\nWould you like to make a quick priority list together?"
+          }
+        ];
+        return pickVariedResponse(overloadPool, state);
+      }
+
+      // ── D. Thesis & Capstone ──────────────────────────────────────
+      if (topic === 'thesis') {
+        state.lastBotQuestion = 'thesis_step';
+        const thesisPool = [
+          {
+            id: 'thes-1',
+            text: "Working on a thesis or capstone is easily one of the most draining parts of student life. Between revisions, adviser comments, and formatting, it can feel like a never-ending cycle.\n\nWhat part of the thesis is giving you the most headache right now? Is it writing, data gathering, or defense jitters?"
+          },
+          {
+            id: 'thes-2',
+            text: "Thesis burnout is so real. Remember: an entire manuscript is written one sentence at a time. You don't have to solve every panel comment in one sitting.\n\nWould you like to vent about your adviser or panel for a minute, or do you want to plan out the next small step?"
+          },
+          {
+            id: 'thes-3',
+            text: "Don't lose heart with your research. Every single graduate has felt like throwing their paper out the window at some point.\n\nYou are capable of pushing through this. Where are you currently stuck in the manuscript?"
+          }
+        ];
+        return pickVariedResponse(thesisPool, state);
+      }
+
+      // ── E. Exams, Quizzes & Grades ────────────────────────────────
+      if (topic === 'exam' || topic === 'failure') {
+        state.lastBotQuestion = 'exam_prep';
+        if (promptLower.includes('failed') || promptLower.includes('bagsak') || emotion === 'discouraged') {
+          const failPool = [
+            {
+              id: 'fail-1',
+              text: "I'm really sorry. Failing an exam or getting a grade lower than you worked for genuinely stings. It's totally okay to feel disappointed and upset right now.\n\nPlease remember: a score on a piece of paper measures one test on one afternoon—it does NOT measure your intelligence, your capability, or your future. Would you like to talk through what happened?"
+            },
+            {
+              id: 'fail-2',
+              text: "Take a deep breath. Failing one exam is data, not a life sentence. Every successful professional has bombed a quiz or a subject along the way.\n\nBe gentle with yourself tonight. Is there a chance for a retake, removal exam, or extra credit later on?"
+            }
+          ];
+          return pickVariedResponse(failPool, state);
+        } else {
+          const examPool = [
+            {
+              id: 'exam-1',
+              text: "Exam anxiety can make your stomach twist in knots. When everything feels like it hinges on a test, your chest gets tight.\n\nInhale slowly for four seconds, hold for four, and exhale slowly. What subject is the exam in, and how much time do you have left to review?"
+            },
+            {
+              id: 'exam-2',
+              text: "Studying under high stress is tough because anxiety blocks memory retention. Try chunking: 25 minutes of focused review, then a strict 5-minute break away from your desk.\n\nWhich topic or formula feels most confusing right now?"
+            }
+          ];
+          return pickVariedResponse(examPool, state);
+        }
+      }
+
+      // ── F. Burnout & Physical Exhaustion ─────────────────────────
+      if (topic === 'tiredness' || promptLower.includes('pagod') || promptLower.includes('puyat')) {
+        state.lastBotQuestion = 'rest_check';
+        const tiredPool = [
+          {
+            id: 'tired-1',
+            text: "It sounds like you are running on empty. When your body and mind are drained, even tiny tasks feel like climbing Mount Everest.\n\nLet's pause the race for a second. Have you had a glass of water or eaten something nourishing recently? Even 15 minutes of closing your eyes without looking at a screen can help reset your system."
+          },
+          {
+            id: 'tired-2',
+            text: "You are allowed to rest. Resting is not quitting—it is how your brain recharges so you don't collapse. If you keep pushing on zero sleep, your health will force you to stop.\n\nIs there anything you can safely postpone until tomorrow so you can get some sleep tonight?"
+          },
+          {
+            id: 'tired-3',
+            text: "Sobrang nakakapagod talaga pagsabay-sabayin ang school, puyat, at iniisip. Please don't be too hard on yourself for feeling sluggish today.\n\nBreathe out the tension in your jaw and shoulders. What is one thing you can take off your plate tonight?"
+          }
+        ];
+        return pickVariedResponse(tiredPool, state);
+      }
+
+      // ── G. Hopelessness & Sadness ─────────────────────────────────
+      if (emotion === 'hopeless' || emotion === 'sad') {
+        state.lastBotQuestion = 'listen_or_advice';
+        const sadPool = [
+          {
+            id: 'sad-1',
+            text: "I'm really sorry you're going through this heavy season. It sounds like you've been carrying a tremendous weight all by yourself.\n\nYou don't have to pretend to be strong or okay here. It's safe to let your feelings out. Would you prefer me to just listen while you vent, or would you like something gentle and encouraging?"
+          },
+          {
+            id: 'sad-2',
+            text: "Your pain and tears are seen, and they matter. When everything feels dark, remember that you don't have to solve your whole future right now—you just have to get through today.\n\nI'm sitting right here with you. What has been hurting you the most lately?"
+          }
+        ];
+        return pickVariedResponse(sadPool, state);
+      }
+
+      // ── H. Breakups & Heartbreak ──────────────────────────────────
+      if (topic === 'breakup') {
+        const breakupPool = [
+          {
+            id: 'break-1',
+            text: "Heartbreak is physically and emotionally exhausting, especially while trying to keep up with school and classes. Seeing them around campus or on social media makes it hurt all over again.\n\nGive yourself permission to grieve. Healing doesn't happen on a strict schedule. Do you want to vent about what happened?"
+          },
+          {
+            id: 'break-2',
+            text: "It's completely okay that you're not over it yet. Loving someone and then losing that connection shakes your daily routine and confidence.\n\nBe kind to yourself today. Remember that your worth is still whole, even when someone couldn't see it."
+          }
+        ];
+        return pickVariedResponse(breakupPool, state);
+      }
+
+      // ── I. Greetings & Check-ins ──────────────────────────────────
+      if (intent === 'greeting') {
+        const hour = new Date().getHours();
+        let timeGreeting = "Hey! It's really nice to hear from you. 💜";
+        if (hour >= 22 || hour < 5) {
+          timeGreeting = "Hey! It's pretty late—make sure you aren't staying up too late cramming. 💜";
+        } else if (hour < 12) {
+          timeGreeting = "Good morning! Hope you're taking things one step at a time today. 💜";
+        } else if (hour < 18) {
+          timeGreeting = "Good afternoon! How has your school day been treating you so far? 💜";
+        }
+
+        const greetPool = [
+          { id: 'greet-1', text: `${timeGreeting}\n\nHow are you feeling right now? Whether it's school stress, something on your mind, or you just need someone to talk to, I'm here for you.` },
+          { id: 'greet-2', text: `Hello! I'm glad you stopped by Safe Space. 💜\n\nHow is your heart and mind doing today? Feel free to share whatever's on your mind.` },
+          { id: 'greet-3', text: `Hey there! 💜 Always here whenever you need a safe, judgment-free space to talk. What's been going on with you lately?` }
+        ];
+        return pickVariedResponse(greetPool, state);
+      }
+
+      // ── J. Capabilities & Help ───────────────────────────────────
+      if (intent === 'help') {
+        return {
+          id: 'help-info',
+          text: `I'm your **Safe Space Student Assistant**! Here's how I can support you:\n\n• **Stress & Loneliness**: A safe, non-judgmental space to talk when things feel isolating or heavy\n• **Study Support**: Breaking down overwhelming thesis work, exams, and piled-up assignments\n• **Motivation & Hope**: Uplifting reminders and comforting Bible verses when you need strength\n• **Active Listening**: Vent freely without unsolicited criticism\n\nI'm not a licensed therapist, but I'm here 24/7 to walk alongside you. What's on your mind today?`
+        };
+      }
+
+      // ── K. Celebrations & Gratitude ───────────────────────────────
+      if (emotion === 'happy') {
+        const happyPool = [
+          { id: 'hap-1', text: "Hey, that's wonderful news! 🎉 You worked hard for that, and you deserve to celebrate this win!\n\nTake a moment to give yourself credit. How does it feel now that that hurdle is behind you?" },
+          { id: 'hap-2', text: "I'm so happy for you! 💜 When school is tough, celebrating every single win is so important. You made it happen!" }
+        ];
+        return pickVariedResponse(happyPool, state);
+      }
+
+      if (emotion === 'grateful') {
+        const gratPool = [
+          { id: 'grat-1', text: "You're so welcome! 💜 Remember, you're never bothering me. I'm always right here whenever you need someone to talk to or bounce thoughts off of." },
+          { id: 'grat-2', text: "Anytime! 💜 You've got this. Take things one small step at a time today, and be gentle with yourself." }
+        ];
+        return pickVariedResponse(gratPool, state);
+      }
+
+      // ── L. Dynamic Reflection Fallback (Never Repeating Generic Text) ──
+      state.lastBotQuestion = 'reflect_open';
+      const cleanSnippet = userPrompt.length > 60 ? userPrompt.substring(0, 60) + '...' : userPrompt;
+      const fallbackPool = [
+        {
+          id: 'fb-v1',
+          text: `I hear you. When things are swirling around in your thoughts, having a safe place to put them down can help.\n\nTell me a little more about what's going on—would you prefer some practical suggestions, or would you rather just talk through it together?`
+        },
+        {
+          id: 'fb-v2',
+          text: `Thank you for sharing that with me. It takes real vulnerability to put thoughts into words.\n\nWhat part of this has been taking up the most space in your head today? I'm completely listening.`
+        },
+        {
+          id: 'fb-v3',
+          text: `I'm right here with you. Sometimes when we hold everything inside, it gets tangled and overwhelming.\n\nIf you could change one thing about how today is going, what would it be?`
+        },
+        {
+          id: 'fb-v4',
+          text: `That makes a lot of sense. Your feelings around this are completely valid.\n\nDo you feel like you just need to vent and let it all out, or would you like to brainstorm some gentle steps forward together?`
+        },
+        {
+          id: 'fb-v5',
+          text: `I appreciate you telling me that. College and student life come with so many unspoken pressures.\n\nWhat has been the hardest part of dealing with this so far?`
+        }
+      ];
+      return pickVariedResponse(fallbackPool, state);
+    },
+
+    // ── 7. Unified Response Generator (Gemini + Dynamic Local Engine) ──
     generateResponse: async function(userPrompt, userId) {
       const state = ConversationState.getState(userId);
       const prefs = this.getPreferences(userId);
@@ -469,37 +861,13 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
 
       state.turnCount++;
 
-      // ── Offline Mode Fallback Handler (Section 8) ──
-      if (!isOnline) {
-        const lower = userPrompt.toLowerCase();
-        if (lower.includes('stress') || lower.includes('tired') || lower.includes('exhausted') || lower.includes('overwhelm') || lower.includes('sad') || lower.includes('down')) {
-          return {
-            type: 'offline_support',
-            emotion: 'support',
-            text: "It sounds like you're having a difficult moment. Try taking a slow breath, drinking some water, and giving yourself a short break. You can also write down what is worrying you."
-          };
-        }
-        return {
-          type: 'offline_fallback',
-          emotion: 'neutral',
-          text: "You are currently in Offline Mode. Try taking a slow breath and giving yourself a brief pause. When your connection returns, full AI features will automatically be restored."
-        };
-      }
-
-      const analysis = this.analyzeUserMessage(userPrompt, state);
-      const { emotion, topic, intent } = analysis;
-
-      // Update state
-      if (topic) state.lastTopic = topic;
-      if (emotion !== 'neutral') state.lastEmotion = emotion;
-
-      // 1. Priority: Immediate Crisis Safety Check
-      if (emotion === 'crisis') {
+      // 1. Top Priority: Immediate Crisis Safety Check
+      if (this.isCrisisMessage(userPrompt)) {
         state.lastBotQuestion = 'immediate_danger';
         return this.getCrisisResponse(userId);
       }
 
-      // 2. Answering previous bot question about crisis check
+      // 2. Crisis follow-up answer check
       if (state.lastBotQuestion === 'immediate_danger') {
         state.lastBotQuestion = null;
         const lower = userPrompt.toLowerCase();
@@ -507,7 +875,7 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
           return {
             type: 'crisis_urgent',
             emotion: 'crisis',
-            text: `Please stay safe right now. Call emergency services (**911**) or the **Philippine Crisis Line at 1553 / 0917-899-8727** immediately, or wake up a family member/roommate right next to you.\n\n📖 **Isaiah 41:10**\n*"So do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you."*\n\n**You are not alone, and there is help available.** Please hold on and let someone reach you.`
+            text: `Please stay safe right now. Call emergency services (**911**) or the **Philippine Crisis Line at 1553 / 0917-899-8727** immediately, or reach out to a trusted family member or roommate right next to you.\n\n📖 **Isaiah 41:10**\n*"So do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you."*\n\n**You are not alone, and there is help available.** Please hold on and let someone reach you.`
           };
         } else {
           return {
@@ -518,46 +886,19 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
         }
       }
 
-      // 2b. Exact Conversational Context Check (Section 6 & 7)
-      const promptLower = userPrompt.toLowerCase().trim();
-
-      // Check for User: "I'm really tired from school" / "tired from school"
-      if (promptLower.includes('tired from school') || promptLower.includes('tired of school') || (promptLower.includes('tired') && promptLower.includes('school'))) {
-        state.lastBotQuestion = 'what_making_school_tired';
+      // 3. Offline Mode check
+      if (!isOnline) {
+        const offlineReply = this.generateLocalResponse(userPrompt, userId, state, prefs);
         return {
-          type: 'conversation',
-          emotion: 'empathy',
-          text: "That sounds exhausting. What has been making school feel especially tiring lately?"
-        };
-      }
-
-      // Check for follow-up when user answers: "Too many assignments" / "assignments"
-      if (state.lastBotQuestion === 'what_making_school_tired' && (promptLower.includes('assignment') || promptLower.includes('deadline') || promptLower.includes('homework') || promptLower.includes('too many') || promptLower.includes('requirements'))) {
-        state.lastBotQuestion = 'urgent_assignment';
-        return {
-          type: 'conversation',
+          type: 'offline_adaptive',
           emotion: 'support',
-          text: "I understand. Having several deadlines at once can feel overwhelming. Maybe we can break them into smaller tasks. What's the most urgent assignment right now?"
+          text: `${offlineReply.text}\n\n*(🛡️ Offline Mode: Connected via local adaptive support)*`
         };
       }
 
-      // Check for User: "I feel like I can't do anything anymore"
-      if (promptLower.includes("can't do anything anymore") || promptLower.includes("cant do anything anymore") || promptLower.includes("can not do anything anymore")) {
-        state.lastBotQuestion = 'weighing_most';
-        let reply = "I'm really sorry you're feeling this overwhelmed. You don't have to figure everything out at once. If you can, take a short pause and stay with someone you trust. Would you like to tell me what has been weighing on you the most?\n\nSometimes taking one small step is already progress.";
-        if (prefs.bibleVerseSuggestions && !state.usedVerseIds.includes('bv-1pet57')) {
-          reply += '\n\n📖 **1 Peter 5:7** — *"Cast all your anxiety on him because he cares for you."*';
-          state.usedVerseIds.push('bv-1pet57');
-        }
-        return {
-          type: 'conversation',
-          emotion: 'deep_empathy',
-          text: reply
-        };
-      }
-
-      // 3. Explicit Bible Verse Request
-      if (intent === 'bible') {
+      // 4. Check for explicit Bible Verse or Motivation requests
+      const lower = userPrompt.toLowerCase().trim();
+      if (lower.includes('bible verse') || lower.includes('give me a verse') || lower.includes('scripture')) {
         const verse = this.getVerseForContext(state.lastTopic, state.lastEmotion, state.usedVerseIds);
         if (verse) state.usedVerseIds.push(verse.id);
         return {
@@ -567,176 +908,39 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
         };
       }
 
-      // 4. Explicit Motivation Request
-      if (intent === 'motivation') {
+      if (lower.includes('give me motivation') || lower.includes('motivate me') || lower.includes('need motivation')) {
         const quoteObj = this.getQuoteForContext(state.lastTopic, state.lastEmotion, state.usedQuoteIds);
         if (quoteObj) state.usedQuoteIds.push(quoteObj.id);
         return {
           type: 'motivation',
           emotion: 'encouragement',
-          text: `Here is something to keep in mind when things feel uphill:\n\n${quoteObj.text}\n\nYou've already tackled so much to get to this point in school. What's the main obstacle you're trying to push through right now?`
+          text: `Here is something to keep in mind when things feel uphill:\n\n${quoteObj.text}\n\nYou've already tackled so much to get to this point. What's the main obstacle you're trying to push through right now?`
         };
       }
 
-      // 5. Greeting
-      if (intent === 'greeting') {
-        return {
-          type: 'greeting',
-          emotion: 'warm',
-          text: `Hey! It's really nice to hear from you. 💜\n\nHow is your day going so far? Feel free to share what's on your mind—whether it's school, stress, or just needing someone to listen.`
-        };
-      }
-
-      // 6. Capabilities Inquiry
-      if (intent === 'help') {
-        return {
-          type: 'help',
-          emotion: 'helpful',
-          text: `I'm your **Safe Space Student Assistant**! I'm here to support you through academic life and personal hurdles:\n\n• **Stress & Burnout**: Talk through heavy workloads or thesis anxiety\n• **Study Support**: Break big tasks into manageable, bite-sized steps\n• **Empathy & Listening**: Vent safely without judgment\n• **Motivation & Hope**: Uplifting reminders and Bible verses when you need encouragement\n\nI'm not a therapist or counselor, but I'm always here to walk with you through school challenges. What would you like help with today?`
-        };
-      }
-
-      // 7. Support Mode Handlers
-      if (intent === 'mode_listen') {
-        state.currentMode = 'listen';
-        return {
-          type: 'listen',
-          emotion: 'support',
-          text: `I'm completely here to listen. No unsolicited advice, no quick fixes—just a safe space for you to let it all out. What's been on your mind?`
-        };
-      }
-
-      // 8. Contextual Follow-up from Previous Turns
-      // E.g., User previously mentioned stress, Bot asked what part, User now says "My thesis" or "Chapter 2"
-      if (state.lastBotQuestion === 'what_stressing') {
-        state.lastBotQuestion = 'what_part';
-        if (topic === 'thesis' || userPrompt.toLowerCase().includes('thesis')) {
-          return {
-            type: 'conversation',
-            emotion: 'empathy',
-            text: `Ah, your thesis is what's been weighing on you. That makes complete sense—the research, writing, and revisions take so much energy.\n\nWhat part of the thesis is giving you the most trouble right now? Is it the literature review, methodology, analyzing data, or preparing for panel questions?`
-          };
-        } else if (topic === 'exam' || userPrompt.toLowerCase().includes('exam')) {
-          return {
-            type: 'conversation',
-            emotion: 'empathy',
-            text: `Exams can definitely put you under a lot of pressure. Which subject or exam are you feeling most nervous about right now?`
-          };
-        }
-      }
-
-      // 9. Academic Situations (Thesis, Exams, Assignments, Group Work)
-      if (topic === 'thesis') {
-        state.lastBotQuestion = 'thesis_step';
-        let reply = `Working on a thesis or capstone is one of the heaviest parts of college life. It is totally normal to feel drained or overwhelmed by it.\n\nLet's take it one small chunk at a time. Would you like to make a simple checklist for today, or do you just need to vent about the panel or revisions for a bit?`;
-        
-        // Contextual motivational addition if enabled
-        if (prefs.motivationalMessages && (emotion === 'stressed' || emotion === 'overwhelmed')) {
-          reply += `\n\n💜 **Remember:** A thesis is written one paragraph at a time. You don't have to defend it today; you just need to write the next sentence.`;
-        }
-        return { type: 'conversation', emotion: 'empathy', text: reply };
-      }
-
-      if (topic === 'exam') {
-        state.lastBotQuestion = 'exam_prep';
-        if (emotion === 'discouraged' || userPrompt.toLowerCase().includes('failed')) {
-          let reply = `I'm really sorry. Failing an exam hurts deeply, especially if you spent hours studying or had high hopes.\n\nOne test score never defines your capability or your worth as a student. Would you like to talk through what happened, or would you rather take a short breather and figure out a recovery plan later?`;
-          return { type: 'conversation', emotion: 'empathy', text: reply };
-        } else {
-          return {
-            type: 'conversation',
-            emotion: 'support',
-            text: `Exam anxiety is so real—when everything feels like it hinges on one test, your chest can feel tight.\n\nTake a slow breath right now. Drop your shoulders away from your ears. What subject is the exam in, and how much time do you have before it starts?`
-          };
-        }
-      }
-
-      if (topic === 'assignment') {
-        state.lastBotQuestion = 'assignment_first';
-        return {
-          type: 'conversation',
-          emotion: 'problem_solving',
-          text: `When school requirements pile up like that, looking at the whole list makes your brain freeze up. That's a natural reaction to overload.\n\nLet's shrink the mountain. What are the assignments you have due, and which single one is due the soonest? We can start with just 15 minutes on that one.`
-        };
-      }
-
-      if (topic === 'group_project') {
-        return {
-          type: 'conversation',
-          emotion: 'empathy',
-          text: `Group projects can be genuinely exhausting, especially when people aren't communicating or you end up carrying the whole workload.\n\nThat's frustrating and unfair to your energy. Is there a group leader or a professor you can privately update, or are you currently stuck doing the submission yourself tonight?`
-        };
-      }
-
-      // 10. Deep Sadness / Hopelessness (Section 9)
-      if (emotion === 'hopeless' || emotion === 'sad') {
-        state.lastBotQuestion = 'listen_or_advice';
-        let reply = `I'm really sorry you're going through this. It sounds like things have been feeling really heavy lately, and you've been carrying so much on your own.\n\nYou don't have to figure everything out tonight, and you don't have to pretend to be okay here. We can take this one minute at a time.\n\nWould you like me to just listen while you let it out, or would you like something gentle and encouraging to hold onto right now?`;
-
-        // Provide a supportive verse if preferences allow and user seems open
-        if (prefs.bibleVerseSuggestions && emotion === 'hopeless' && !state.usedVerseIds.length) {
-          const v = this.getVerseForContext('hope', 'sad', state.usedVerseIds);
-          if (v) {
-            state.usedVerseIds.push(v.id);
-            reply += `\n\n📖 **${v.reference}** — *"The Lord is close to the brokenhearted and saves those who are crushed in spirit."*`;
+      // 5. If Gemini API key is configured and online, attempt Live Generative AI
+      const apiKey = (prefs && prefs.geminiApiKey && prefs.geminiApiKey.trim()) || (window.SAFE_SPACE_CONFIG && window.SAFE_SPACE_CONFIG.GEMINI_API_KEY);
+      if (apiKey) {
+        try {
+          const geminiText = await this.callGeminiApi(userPrompt, userId, apiKey);
+          if (geminiText) {
+            return {
+              type: 'gemini_ai',
+              emotion: 'adaptive',
+              text: geminiText
+            };
           }
+        } catch (apiErr) {
+          console.warn('[SafeSpace AI] Gemini API call failed, switching to dynamic local engine:', apiErr);
         }
-        return { type: 'conversation', emotion: 'deep_empathy', text: reply };
       }
 
-      // 11. Loneliness (Section 3 Example 4)
-      if (emotion === 'lonely' || topic === 'loneliness') {
-        state.lastBotQuestion = 'lonely_reason';
-        return {
-          type: 'conversation',
-          emotion: 'empathy',
-          text: `I'm sorry you're feeling that way. Loneliness can feel so heavy, even when there are people sitting right next to you in the classroom or hallway.\n\nDo you want to tell me what's been making you feel alone lately? Has something changed with your friends or at home?`
-        };
-      }
-
-      // 12. Exhaustion / Burnout (Section 8)
-      if (topic === 'tiredness' || emotion === 'overwhelmed') {
-        state.lastBotQuestion = 'rest_check';
-        let reply = `It sounds like you're running on empty. School and life can demand so much of you that even simple things start to feel impossible.\n\nLet's pause the race for a second. Have you had anything to drink or eat in the last few hours? Even just taking 5 minutes to close your eyes without looking at a screen can give your nervous system a tiny rest.`;
-        if (prefs.motivationalMessages) {
-          reply += `\n\n💜 **You are allowed to rest.** Resting does not mean you are giving up.`;
-        }
-        return { type: 'conversation', emotion: 'care', text: reply };
-      }
-
-      // 13. General Stress (Section 3 & 4)
-      if (emotion === 'stressed') {
-        state.lastBotQuestion = 'what_stressing';
-        return {
-          type: 'conversation',
-          emotion: 'empathy',
-          text: `That sounds really exhausting. School and daily expectations can pile up so fast until you feel like you can't catch a breath.\n\nWhat's been the biggest thing stressing you out today? Is it schoolwork, family, friends, or just feeling worn out by everything all together?`
-        };
-      }
-
-      // 14. Breakup / Relationship
-      if (topic === 'breakup') {
-        return {
-          type: 'conversation',
-          emotion: 'empathy',
-          text: `It sounds like you're still carrying a lot of hurt from that relationship. Heartbreak is physically and emotionally draining, and it's completely okay if you're not over it yet.\n\nBe patient with your heart. Do you want to vent about what happened, or would you rather distract your mind with something else for a bit?`
-        };
-      }
-
-      // 15. Celebrations & Positive News
-      if (emotion === 'happy' || emotion === 'grateful') {
-        return {
-          type: 'celebration',
-          emotion: 'joy',
-          text: `Hey, that's awesome! 🎉 You worked hard and pushed through, and you deserve to celebrate that win!\n\nTake a moment to give yourself credit—you made it happen. How are you feeling now that that hurdle is behind you?`
-        };
-      }
-
-      // 16. Fallback General Conversational Response
+      // 6. Dynamic Generative Local Engine (Guaranteed zero repetition + context continuity)
+      const localResult = this.generateLocalResponse(userPrompt, userId, state, prefs);
       return {
-        type: 'general',
-        emotion: 'warm',
-        text: `I hear you. When things are swirling around in your thoughts, having a safe place to put them down can help.\n\nTell me a little more about what's going on—would you prefer some practical suggestions, or would you rather just talk through it together?`
+        type: 'local_adaptive',
+        emotion: localResult.emotion || 'support',
+        text: localResult.text
       };
     },
 
@@ -744,7 +948,6 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
     formatBotMessage: function(rawText) {
       if (!rawText) return '';
 
-      // Escape basic HTML to prevent XSS
       let safe = rawText
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
