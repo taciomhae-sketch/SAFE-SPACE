@@ -412,12 +412,35 @@ If you're able, please tell me: **Are you in immediate danger right now, or have
         return { emotion: 'curious', topic: 'capabilities', intent: 'help' };
       }
 
-      // Support mode selections
+      // Support mode selections & explicit user commands for suggestions/advice
+      const isSuggestionCommand = (
+        lower.includes('suggest') ||
+        lower.includes('suggestion') ||
+        lower.includes('recommend') ||
+        lower.includes('give me advice') ||
+        lower.includes('what should i do') ||
+        lower.includes('what to do') ||
+        lower.includes('tips') ||
+        lower.includes('payo') ||
+        lower.includes('ano gagawin') ||
+        lower.includes('anong pwede') ||
+        lower.includes('make a plan') ||
+        lower.includes('study plan') ||
+        lower.includes('schedule') ||
+        lower.includes('draft a message') ||
+        lower.includes('help me write') ||
+        lower.includes('how can i') ||
+        lower.includes('how do i') ||
+        lower.includes('how to') ||
+        lower.includes('ideas')
+      );
+
+      if (isSuggestionCommand) {
+        return { emotion: 'seeking_advice', topic: state.lastTopic, intent: 'suggestion_command' };
+      }
+
       if (lower.includes('just listen') || lower.includes('listen to me') || lower.includes('hear me out') || lower.includes('makinig ka')) {
         return { emotion: 'seeking_ear', topic: 'listen_mode', intent: 'mode_listen' };
-      }
-      if (lower.includes('give me advice') || lower.includes('what should i do') || lower.includes('need advice') || lower.includes('payo')) {
-        return { emotion: 'seeking_advice', topic: 'advice_mode', intent: 'mode_advice' };
       }
 
       // Student Academic Topics
@@ -529,7 +552,8 @@ Guidelines:
 4. Offer gentle practical suggestions or follow-up questions to help them reflect.
 5. If the student uses Filipino or Taglish, understand them naturally and reply in warm, comforting English or gentle Taglish where appropriate.
 6. If the user expresses extreme crisis or self-harm, prioritize safety and provide warm emergency reassurance.
-7. Avoid overly clinical jargon. Speak like a caring student peer or trusted mentor.`
+7. Avoid overly clinical jargon. Speak like a caring student peer or trusted mentor.
+8. Be extremely flexible and responsive to user commands. When the user asks for suggestions, advice, a plan, study schedule, message draft, or coping technique, immediately give them structured, creative, practical suggestions matching exactly what they want.`
         }]
       };
 
@@ -625,6 +649,207 @@ Guidelines:
           ];
           return pickVariedResponse(pool, state);
         }
+      }
+
+      // ── B0. FLEXIBLE USER COMMANDS & ACTIONABLE SUGGESTIONS ENGINE ──
+      // Triggered when user commands or asks the AI for suggestions, advice, plans, or tips
+      if (
+        intent === 'suggestion_command' ||
+        promptLower.includes('suggest') ||
+        promptLower.includes('suggestion') ||
+        promptLower.includes('recommend') ||
+        promptLower.includes('give me advice') ||
+        promptLower.includes('what should i do') ||
+        promptLower.includes('what to do') ||
+        promptLower.includes('how to') ||
+        promptLower.includes('tips') ||
+        promptLower.includes('payo') ||
+        promptLower.includes('ano gagawin') ||
+        promptLower.includes('anong pwede') ||
+        promptLower.includes('make a plan') ||
+        promptLower.includes('study plan') ||
+        promptLower.includes('schedule') ||
+        promptLower.includes('draft a message') ||
+        promptLower.includes('help me write') ||
+        promptLower.includes('how can i') ||
+        promptLower.includes('how do i')
+      ) {
+        state.lastBotQuestion = 'suggestion_feedback';
+
+        // 1. Suggestions for Thesis, Defense & Research
+        if (promptLower.includes('thesis') || promptLower.includes('defense') || promptLower.includes('panel') || promptLower.includes('capstone') || promptLower.includes('manuscript') || state.lastTopic === 'thesis') {
+          const thesisSuggestions = [
+            {
+              id: 'sug-th-1',
+              text: `Here are practical, flexible suggestions to tackle your thesis effectively:
+
+• **The 1-Paragraph Sprint**: Don't sit down to write a whole chapter. Commit to writing just 1 single clear paragraph or summarizing 1 research paper.
+• **Outline with Bullet Points First**: Write your raw thoughts as bullet points before converting them into formal academic paragraphs.
+• **Adviser Revision Matrix**: Make a simple 2-column table: Left column = Adviser/Panel Comment; Right column = Action Taken & Page Number. It keeps your revisions organized and defensible.
+• **Practice 3 Core Defense Questions**:
+  1. *'What is the specific problem you are solving?'*
+  2. *'Why did you choose this exact methodology/architecture?'*
+  3. *'What are the boundaries and limitations of your project?'*
+
+Which of these would you like to focus on right now?`
+            },
+            {
+              id: 'sug-th-2',
+              text: `Here are actionable suggestions for managing thesis workload and panel confidence:
+
+• **Group Chapter 2 into 3 Themes**: If your Literature Review feels messy, group related papers into 3 themes and tackle one theme per study session.
+• **Voice-to-Text Draft**: When writing block hits, dictate your explanation out loud into your phone notes, then polish the grammar afterward.
+• **Mock 3-Minute Presentation**: Record yourself on your phone explaining your project's background, methodology, and expected results in under 3 minutes.
+
+Would you like more suggestions on defense preparation or manuscript writing?`
+            }
+          ];
+          return pickVariedResponse(thesisSuggestions, state);
+        }
+
+        // 2. Suggestions for Loneliness, Making Friends & Social Comfort
+        if (promptLower.includes('lonel') || promptLower.includes('alone') || promptLower.includes('friend') || promptLower.includes('social') || promptLower.includes('barkada') || promptLower.includes('classmate') || promptLower.includes('left out') || promptLower.includes('mag-isa') || state.lastTopic === 'loneliness') {
+          const loneSuggestions = [
+            {
+              id: 'sug-ln-1',
+              text: `Here are gentle, zero-pressure suggestions for dealing with loneliness and opening doors to connection:
+
+• **The Micro-Interaction Rule**: You don't need a huge group right away. Start with a 5-second connection—ask a seatmate for a page number, lend a pen, or wish someone luck before class.
+• **Change Your Physical Environment**: If sitting alone in your room feels heavy, go study in the campus library, cafeteria, or a quiet cafe. Background presence helps your nervous system feel less isolated.
+• **Reconnect on Low Stakes**: Send a low-pressure text or funny school meme to an old friend without expecting an immediate deep chat.
+• **Explore Campus Guilds & Clubs**: Look for ASU student organizations or interest clubs (tech, arts, sports, volunteer) where connection happens naturally over shared activities.
+
+Which of these feels most comfortable to try?`
+            },
+            {
+              id: 'sug-ln-2',
+              text: `Here are thoughtful suggestions when you feel left out or disconnected:
+
+• **Treat Yourself to a Solo Date**: Buy your favorite snack or drink, put on headphones, and take a 15-minute campus stroll without rushing.
+• **Journal What You Wish You Could Say**: Write down the words you wish you could share with someone today. It releases emotional pressure from circling in your head.
+• **Share on Safe Space Community**: Post an anonymous thought or encouragement on our Community Feed—you'll see you aren't the only student carrying these feelings.
+
+Would you like suggestions on how to start conversations with classmates, or focus on self-care tonight?`
+            }
+          ];
+          return pickVariedResponse(loneSuggestions, state);
+        }
+
+        // 3. Suggestions for Academic Overload, Homework & Study Plans
+        if (promptLower.includes('study') || promptLower.includes('assignment') || promptLower.includes('homework') || promptLower.includes('deadline') || promptLower.includes('schedule') || promptLower.includes('plan') || promptLower.includes('routine') || promptLower.includes('procrastinat') || state.lastTopic === 'assignment') {
+          const studySuggestions = [
+            {
+              id: 'sug-st-1',
+              text: `Here is a flexible, high-yield study plan and routine you can start right now:
+
+• **The 15-Minute 'No Pressure' Rule**: Set a timer for just 15 minutes. Tell yourself you are allowed to stop after 15 minutes. Starting is the hardest friction point; momentum usually takes over.
+• **Task Triage (Red / Yellow / Green)**:
+  - 🔴 *Red (Urgent)*: Due within 24 hours or carries high grade weight (do first).
+  - 🟡 *Yellow (Important)*: Due in 2–3 days (schedule for tomorrow).
+  - 🟢 *Green (Minor)*: Minor readings or distant activities (park for later).
+• **25/5 Pomodoro Cycle**: 25 minutes of deep focus (phone in bag or another room), followed by a strict 5-minute stretch/water break.
+
+Tell me the assignments you have due, and we can organize them into a step-by-step checklist!`
+            },
+            {
+              id: 'sug-st-2',
+              text: `Here are practical suggestions to defeat academic procrastination:
+
+• **Break Projects into Micro-Tasks**: Never write 'Finish Research Paper'. Write '1. Download 2 PDFs', '2. Read abstract', '3. Write 3-sentence introduction'.
+• **Single-Task Desk**: Remove every notebook and browser tab except the ONE assignment you are currently doing to eliminate decision fatigue.
+• **Post-Study Reward**: Plan a specific reward after 45 minutes of studying (e.g., your favorite snack, 1 episode, or gaming break).
+
+Would you like me to help break down a specific project for you?`
+            }
+          ];
+          return pickVariedResponse(studySuggestions, state);
+        }
+
+        // 4. Suggestions for Exams, Quizzes & Test Prep
+        if (promptLower.includes('exam') || promptLower.includes('quiz') || promptLower.includes('test') || promptLower.includes('review') || promptLower.includes('memorize') || promptLower.includes('finals') || promptLower.includes('midterm') || state.lastTopic === 'exam') {
+          const examSuggestions = [
+            {
+              id: 'sug-ex-1',
+              text: `Here are proven study suggestions to prepare for exams and reduce test anxiety:
+
+• **The 'Blurting' Technique**: Read a section for 10 minutes, close your notes, and write down everything you remember on a blank sheet. Then check what you missed.
+• **Feynman Teaching Method**: Explain the most difficult topic out loud in plain words as if teaching someone who has never heard of it. Gaps in your explanation reveal what to review.
+• **Active Recall over Re-reading**: Turn slide titles into questions and quiz yourself before looking at the answers.
+• **Prioritize Sleep Before Exam Day**: Cramming all night ruins cognitive recall. Your brain needs sleep to cement facts into long-term memory.
+
+What subject is your exam in? We can plan a targeted review strategy!`
+            }
+          ];
+          return pickVariedResponse(examSuggestions, state);
+        }
+
+        // 5. Suggestions for Calming Down, Anxiety & Breathing
+        if (promptLower.includes('calm') || promptLower.includes('relax') || promptLower.includes('anxiety') || promptLower.includes('panic') || promptLower.includes('breath') || promptLower.includes('stress') || promptLower.includes('kaba')) {
+          const calmSuggestions = [
+            {
+              id: 'sug-cl-1',
+              text: `Here are immediate, science-backed suggestions to calm your nervous system right now:
+
+• **Physiological Sigh**: Take two deep inhales through your nose (one deep breath, then an extra top-off sniff), followed by a slow, long exhale through your mouth. Repeat 3 times to quickly slow your heart rate.
+• **5-4-3-2-1 Sensory Grounding**:
+  - Look for **5 things** you can see
+  - Touch **4 things** you can feel (your clothes, desk, floor)
+  - Listen for **3 things** you can hear
+  - Notice **2 things** you can smell
+  - Notice **1 thing** you can taste or breathe in
+• **Cold Water Face Splash**: Splashing cold water on your face triggers the mammalian dive reflex, naturally lowering elevated adrenaline.
+
+Let's do one slow exhale together. How does your chest and breathing feel now?`
+            }
+          ];
+          return pickVariedResponse(calmSuggestions, state);
+        }
+
+        // 6. Suggestions for Groupmate Issues & Drafting Messages
+        if (promptLower.includes('group') || promptLower.includes('pabuhat') || promptLower.includes('prof') || promptLower.includes('email') || promptLower.includes('draft') || promptLower.includes('message')) {
+          const msgSuggestions = [
+            {
+              id: 'sug-msg-1',
+              text: `Here are practical suggestions and ready-to-use message templates:
+
+• **Groupmate Follow-up Template**:
+  *'Hi guys! Just wanted to check in on our parts for [Project Name]. To make sure we don't rush before the deadline, can everyone send their updates by [Day, Time] so we can compile? Thanks everyone!'*
+• **Respectful Professor Inquiry Template**:
+  *'Good day, Prof. [Name]! I hope you are having a good week. I am respectfully reaching out regarding [Subject/Assignment]. Could you please clarify [your question]? Thank you very much for your time and guidance.'*
+• **Clear Task Delegation**: In group chats, always assign specific names next to specific bullet points in writing to prevent people from assuming someone else is doing it.
+
+Would you like me to tailor a message for a specific situation or person?`
+            }
+          ];
+          return pickVariedResponse(msgSuggestions, state);
+        }
+
+        // 7. General Open-Ended Suggestion Command (User said "give suggestion" or "suggest something")
+        const generalSuggestions = [
+          {
+            id: 'sug-gen-1',
+            text: `I'd be glad to give you some flexible suggestions! Here are 4 helpful options depending on what you need most right now:
+
+• 📚 **Study & Task Suggestions**: How to beat procrastination, organize deadlines, and study in 25-minute sprints.
+• 🧘 **Calm & Stress Relief Suggestions**: Quick breathing resets and grounding exercises when everything feels too loud.
+• 💜 **Connection & Loneliness Suggestions**: Low-pressure ways to make friends, communicate, and feel supported.
+• 📝 **Thesis & Academic Help**: Outlining advice, research paper matrices, and defense confidence tips.
+
+Which of these would you like suggestions for? Or tell me a specific topic and I'll tailor it for you!`
+          },
+          {
+            id: 'sug-gen-2',
+            text: `I'm ready with suggestions! To give you exactly what you want, what's on your mind?
+
+• **School & Deadlines**: Fast ways to prioritize assignments and study without burnout
+• **Mental Wellness & Rest**: Practical tips to decompress, sleep better, and calm down
+• **Social & Relationships**: Handling difficult groupmates, friendship drift, or feeling isolated
+• **Uplifting Inspiration**: Motivational reminders and comforting Bible verses
+
+Tell me which one you'd like suggestions on!`
+          }
+        ];
+        return pickVariedResponse(generalSuggestions, state);
       }
 
       // ── B. Loneliness (Multi-Response Matrix with Zero Repetition) ──
@@ -958,6 +1183,9 @@ Guidelines:
 
       // Format italic: *text* -> <em>text</em>
       safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+      // Format bullet points nicely
+      safe = safe.replace(/^[•\-] (.*)$/gm, '<span style="display:block; margin: 4px 0 4px 10px; line-height: 1.5;"><span style="color:var(--primary, #C898E9); font-weight:bold; margin-right:6px;">•</span>$1</span>');
 
       // Split into paragraphs by double newlines
       const paragraphs = safe.split(/\n\n+/);
