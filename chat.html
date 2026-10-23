@@ -2844,8 +2844,8 @@
         const groupId = activeChatUser.id;
         const senderNick = (SafeSpaceDB.nicknames && msg.sender_id) ? SafeSpaceDB.nicknames.getNicknameSync(msg.sender_id, groupId) : null;
         const senderName = senderNick || msg.sender_name || 'Member';
-        const senderAvatar = msg.sender_avatar || 'assets/avatars/default.png';
-        const avatarHtml = `<img src="${escapeHTML(senderAvatar)}" alt="" onerror="this.src='assets/avatars/default.png';" />`;
+        const senderAvatar = msg.sender_avatar || 'assets/avatars/default-avatar.png';
+        const avatarHtml = `<img src="${escapeHTML(senderAvatar)}" alt="" onerror="this.src='assets/avatars/default-avatar.png';" />`;
         groupSenderHeaderHtml = `
           <div class="group-msg-sender-tag">
             <span class="group-sender-avatar">${avatarHtml}</span>
