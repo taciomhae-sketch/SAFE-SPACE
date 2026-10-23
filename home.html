@@ -1711,16 +1711,6 @@
         submitBtn.innerHTML = '<i class="fas fa-sparkles fa-spin" style="margin-right:6px;"></i>AI Moderating...';
 
         try {
-          // ── Step 1: Run AI Moderation & Sentiment Analysis ──
-          let aiResult = {
-            allowed: true,
-            status: 'APPROVED',
-            category: 'SAFE',
-            confidence: 1.0,
-            sentiment: 'NEUTRAL',
-            sentiment_score: 0.5
-          };
-
           // ── Step 1: Run AI Moderation & Sentiment Analysis on Original Text ──
           let originalText = content;
           let aiResult = {
