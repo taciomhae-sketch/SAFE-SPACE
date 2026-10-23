@@ -1698,12 +1698,23 @@
             sentiment_score: 0.5
           };
 
-          // Pre-censor profanity using asterisks rule
-          content = SafeSpaceDB.censorProfanity(content);
+          // ── Step 1: Run AI Moderation & Sentiment Analysis on Original Text ──
+          let originalText = content;
+          let aiResult = {
+            allowed: true,
+            status: 'APPROVED',
+            category: 'SAFE',
+            confidence: 1.0,
+            sentiment: 'NEUTRAL',
+            sentiment_score: 0.5
+          };
 
-          if (window.AIService && content) {
-            aiResult = await AIService.moderate(content);
+          if (window.AIService && originalText) {
+            aiResult = await AIService.moderate(originalText);
           }
+
+          // Pre-censor profanity using asterisks rule for published content
+          let censoredContent = SafeSpaceDB.censorProfanity(originalText);
 
           // ── Step 2: Handle Flagged Content ──
           var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || aiResult.status === 'REVIEW' || (aiResult.category && aiResult.category !== 'SAFE');
@@ -1715,13 +1726,13 @@
             showToast('Safety check: Please review your post before sharing.', 'warning');
 
             showAiWarningModal(aiResult, 'post', function() {
-              executePostPublish(content, aiResult);
+              executePostPublish(censoredContent, aiResult);
             });
             return;
           }
 
           // Safe post: publish directly
-          await executePostPublish(content, aiResult);
+          await executePostPublish(censoredContent, aiResult);
         } catch (err) {
           console.error('[PostSubmission] Error:', err);
           showToast(err.message || 'Failed to moderate or share post. Try again.', 'error');
@@ -1876,16 +1887,19 @@
       // Support Resources Button
       if (resourcesBtn) {
         resourcesBtn.style.display = (cfg && cfg.show_support_resources) ? 'inline-flex' : 'none';
+        resourcesBtn.innerHTML = '<i class="fas fa-hand-holding-heart"></i> <span>View Support Resources</span>';
       }
 
       // Community Guidelines Button
       if (guidelinesBtn) {
         guidelinesBtn.style.display = (cfg && cfg.show_guidelines_button) ? 'inline-flex' : 'none';
+        guidelinesBtn.innerHTML = '<i class="fas fa-book-bookmark"></i> <span>View Community Guidelines</span>';
       }
 
       // Cancel Posting Button
       if (cancelWarnBtn) {
-        cancelWarnBtn.innerHTML = '<i class="fas fa-times"></i> <span>Cancel ' + (activeWarningSource === 'comment' ? 'Comment' : 'Posting') + '</span>';
+        const cancelText = (cfg && cfg.secondary_button_label) || ('Cancel ' + (activeWarningSource === 'comment' ? 'Comment' : 'Posting'));
+        cancelWarnBtn.innerHTML = '<i class="fas fa-times"></i> <span>' + escapeHTML(cancelText) + '</span>';
       }
 
       // Continue Button (Strictly suppressed if can_continue is false, e.g. threats or critical self-harm)
@@ -1893,7 +1907,8 @@
         const canContinue = cfg ? cfg.can_continue : (aiResult.allowed !== false && aiResult.status !== 'BLOCKED');
         if (canContinue && window._pendingWarningCallback) {
           proceedWarnBtn.style.display = 'inline-flex';
-          proceedWarnBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Continue ' + (activeWarningSource === 'comment' ? 'Commenting' : 'Posting') + '</span>';
+          const continueText = (cfg && cfg.continue_label) || ('Continue ' + (activeWarningSource === 'comment' ? 'Commenting' : 'Posting') + ', if permitted');
+          proceedWarnBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>' + escapeHTML(continueText) + '</span>';
         } else {
           proceedWarnBtn.style.display = 'none';
         }

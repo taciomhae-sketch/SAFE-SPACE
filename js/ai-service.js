@@ -1096,8 +1096,8 @@
     var config = {
       category: category,
       risk_level: risk,
-      title: 'Trigger Warning — Sensitive Content Detected',
-      message: 'Your post may contain sensitive or emotionally distressing content related to topics such as self-harm, violence, abuse, nudity, or other difficult experiences. Please review your content before sharing it with the community. You may edit your post, cancel the submission, or continue if the content complies with our community guidelines.',
+      title: 'Sensitive Content Detected',
+      message: 'Your post may contain sensitive or distressing material. Please review it before sharing it with the community.',
       can_continue: (status !== 'BLOCKED' && severity !== 'critical' && category !== 'THREAT' && category !== 'VIOLENCE' && category !== 'ENCOURAGEMENT_OF_SELF_HARM' && category !== 'NUDITY'),
       show_support_resources: false,
       show_guidelines_button: false,
@@ -1105,58 +1105,61 @@
       has_trigger_warning: isSensitive,
       trigger_warning_category: category,
       trigger_warning_label: twLabel,
-      primary_button_label: 'Review / Edit Post',
-      secondary_button_label: 'Cancel Posting'
+      primary_button_label: 'Review Post',
+      secondary_button_label: 'Cancel Posting',
+      continue_label: 'Continue, if permitted by the moderation policy'
     };
 
-    if (category === 'NUDITY' || category === 'SEXUAL_CONTENT' || category === 'SEXUAL_HARASSMENT') {
-      config.title = 'Trigger Warning — Nudity Detected';
+    if (category === 'SELF_HARM' || category === 'ENCOURAGEMENT_OF_SELF_HARM') {
+      config.title = 'Your Post May Indicate a Safety Concern';
+      config.message = 'Some parts of your post suggest that you may be experiencing serious distress. You deserve support, and you do not have to face difficult moments alone. Would you like to review your post or explore available support resources before continuing?';
+      config.show_support_resources = true;
+      config.show_guidelines_button = false;
+      config.is_imminent_danger = (severity === 'critical' || category === 'SELF_HARM');
+      config.primary_button_label = 'Review My Post';
+      config.secondary_button_label = 'Cancel Posting';
+      config.can_continue = false;
+    } else if (category === 'BULLYING' || category === 'HARASSMENT' || category === 'HATE') {
+      config.title = 'Please Review Your Post';
+      config.message = 'Your post may contain language that could hurt or target another person. Consider revising it to help maintain a respectful and supportive community.';
+      config.can_continue = (status !== 'BLOCKED');
+      config.show_support_resources = false;
+      config.show_guidelines_button = false;
+      config.primary_button_label = 'Edit Post';
+      config.secondary_button_label = 'Cancel Posting';
+      config.continue_label = 'Continue, if permitted by the moderation policy';
+    } else if (category === 'THREAT' || category === 'VIOLENCE') {
+      config.title = 'Potentially Harmful Content Detected';
+      config.message = 'Your post may contain content that could put someone at risk. Please review it before continuing. Content that violates community safety rules cannot be published.';
+      config.show_guidelines_button = true;
+      config.show_support_resources = false;
+      config.can_continue = false;
+      config.primary_button_label = 'Edit Post';
+      config.secondary_button_label = 'Cancel Posting';
+    } else if (category === 'NUDITY' || category === 'SEXUAL_CONTENT' || category === 'SEXUAL_HARASSMENT') {
+      config.title = 'Potentially Harmful Content Detected';
       config.message = 'Your post contains nudity, sexual solicitation, or explicit content. Safe Space strictly prohibits nudity and sexually explicit content to maintain a safe, respectful environment for students.';
       config.can_continue = false;
       config.show_guidelines_button = true;
       config.show_support_resources = false;
       config.primary_button_label = 'Edit Post';
-    } else if (category === 'SELF_HARM' || category === 'ENCOURAGEMENT_OF_SELF_HARM') {
-      config.title = 'Trigger Warning — Safety & Crisis Concern';
-      config.message = 'Your post may discuss self-harm or suicide-related experiences. Please consider whether you want to share this content publicly. If you are seeking help, support resources are available.';
-      config.show_support_resources = true;
-      config.show_guidelines_button = false;
-      config.is_imminent_danger = (severity === 'critical' || category === 'SELF_HARM');
-      config.primary_button_label = 'Review My Post';
-      config.can_continue = false;
-    } else if (category === 'THREAT' || category === 'VIOLENCE') {
-      config.title = 'Trigger Warning — Violence or Threat Detected';
-      config.message = 'Your post may contain descriptions of violence or threatening language. Please review it before sharing. Content that threatens or endangers others may be restricted under our community guidelines.';
-      config.show_guidelines_button = true;
-      config.show_support_resources = false;
-      config.can_continue = false;
-      config.primary_button_label = 'Edit Post';
-    } else if (category === 'BULLYING' || category === 'HARASSMENT' || category === 'HATE') {
-      config.title = 'Trigger Warning — Bullying or Harassment';
-      config.message = 'Your post may contain language that could target or hurt another person. Please consider revising it to maintain a respectful and supportive community.';
+      config.secondary_button_label = 'Cancel Posting';
+    } else if (category === 'TRAUMA' || category === 'ABUSE' || category === 'DISTRESS' || category === 'ALARMING' || category === 'SENSITIVE') {
+      config.title = 'Sensitive Content Detected';
+      config.message = 'Your post may contain sensitive or distressing material. Please review it before sharing it with the community.';
       config.can_continue = (status !== 'BLOCKED');
-      config.show_support_resources = false;
-      config.show_guidelines_button = false;
-      config.primary_button_label = 'Edit Post';
-    } else if (category === 'TRAUMA' || category === 'ABUSE') {
-      config.title = 'Trigger Warning — Trauma or Abuse';
-      config.message = 'Your post may describe traumatic or sensitive experiences. A content warning can help other students make an informed decision before viewing it.';
-      config.can_continue = true;
       config.show_support_resources = true;
       config.show_guidelines_button = false;
       config.primary_button_label = 'Review Post';
-    } else if (category === 'DISTRESS' || category === 'ALARMING' || category === 'SENSITIVE') {
-      config.title = 'Trigger Warning — Distressing Emotional Content';
-      config.message = 'Your post may contain emotionally distressing material. Please review your content before publishing.';
-      config.can_continue = true;
-      config.show_support_resources = true;
-      config.show_guidelines_button = false;
-      config.primary_button_label = 'Review Post';
+      config.secondary_button_label = 'Cancel Posting';
+      config.continue_label = 'Continue, if permitted by the moderation policy';
     } else {
-      config.title = 'Trigger Warning — Sensitive Content Detected';
-      config.message = reason || 'Your post may contain sensitive or distressing material. Please review your content before publishing.';
+      config.title = 'Sensitive Content Detected';
+      config.message = reason || 'Your post may contain sensitive or distressing material. Please review it before sharing it with the community.';
       config.can_continue = (status !== 'BLOCKED');
-      config.primary_button_label = 'Review / Edit Post';
+      config.primary_button_label = 'Review Post';
+      config.secondary_button_label = 'Cancel Posting';
+      config.continue_label = 'Continue, if permitted by the moderation policy';
     }
 
     return config;

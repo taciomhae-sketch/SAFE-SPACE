@@ -188,6 +188,91 @@ def get_risk_level(category: str, severity: str, status: str) -> str:
     return "low"
 
 
+def get_warning_config(category: str, severity: str, status: str, reason: str = "", is_academic_stress: bool = False, is_targeted: bool = False) -> Dict[str, Any]:
+    cat = (category or "HARASSMENT").upper()
+    sev = (severity or "medium").lower()
+    stat = (status or "REVIEW").upper()
+    risk = get_risk_level(cat, sev, stat)
+
+    is_sensitive = (cat not in [CATEGORY_SAFE, "NONE"])
+    tw_label = "Sensitive Content"
+    if "NUDITY" in cat or "SEXUAL" in cat:
+        tw_label = "Nudity / Explicit Content"
+    elif "SELF_HARM" in cat or "CRISIS" in cat:
+        tw_label = "Self-Harm / Crisis Concern"
+    elif "THREAT" in cat or "VIOLEN" in cat:
+        tw_label = "Violence or Threatening Content"
+    elif "BULLY" in cat or "HARASS" in cat or "HATE" in cat:
+        tw_label = "Bullying or Harassment"
+    elif "TRAUMA" in cat or "ABUSE" in cat:
+        tw_label = "Trauma or Sensitive Experiences"
+    elif "DISTRESS" in cat or "ALARM" in cat or "SENSITIVE" in cat:
+        tw_label = "Distressing Emotional Content"
+
+    config = {
+        "category": cat,
+        "risk_level": risk,
+        "title": "Sensitive Content Detected",
+        "message": "Your post may contain sensitive or distressing material. Please review it before sharing it with the community.",
+        "can_continue": (stat != STATUS_BLOCKED and sev != SEVERITY_CRITICAL and cat not in [CATEGORY_THREAT, CATEGORY_VIOLENCE, CATEGORY_ENCOURAGEMENT_OF_SELF_HARM, CATEGORY_NUDITY]),
+        "show_support_resources": False,
+        "show_guidelines_button": False,
+        "is_imminent_danger": False,
+        "has_trigger_warning": is_sensitive,
+        "trigger_warning_category": cat,
+        "trigger_warning_label": tw_label,
+        "primary_button_label": "Review Post",
+        "secondary_button_label": "Cancel Posting",
+        "continue_label": "Continue, if permitted by the moderation policy"
+    }
+
+    if cat in [CATEGORY_SELF_HARM, CATEGORY_ENCOURAGEMENT_OF_SELF_HARM]:
+        config["title"] = "Your Post May Indicate a Safety Concern"
+        config["message"] = "Some parts of your post suggest that you may be experiencing serious distress. You deserve support, and you do not have to face difficult moments alone. Would you like to review your post or explore available support resources before continuing?"
+        config["show_support_resources"] = True
+        config["show_guidelines_button"] = False
+        config["is_imminent_danger"] = (sev == SEVERITY_CRITICAL or cat == CATEGORY_SELF_HARM)
+        config["primary_button_label"] = "Review My Post"
+        config["secondary_button_label"] = "Cancel Posting"
+        config["can_continue"] = False
+    elif cat in [CATEGORY_BULLYING, CATEGORY_HARASSMENT, CATEGORY_HATE]:
+        config["title"] = "Please Review Your Post"
+        config["message"] = "Your post may contain language that could hurt or target another person. Consider revising it to help maintain a respectful and supportive community."
+        config["can_continue"] = (stat != STATUS_BLOCKED)
+        config["show_support_resources"] = False
+        config["show_guidelines_button"] = False
+        config["primary_button_label"] = "Edit Post"
+        config["secondary_button_label"] = "Cancel Posting"
+        config["continue_label"] = "Continue, if permitted by the moderation policy"
+    elif cat in [CATEGORY_THREAT, CATEGORY_VIOLENCE]:
+        config["title"] = "Potentially Harmful Content Detected"
+        config["message"] = "Your post may contain content that could put someone at risk. Please review it before continuing. Content that violates community safety rules cannot be published."
+        config["show_guidelines_button"] = True
+        config["show_support_resources"] = False
+        config["can_continue"] = False
+        config["primary_button_label"] = "Edit Post"
+        config["secondary_button_label"] = "Cancel Posting"
+    elif cat in [CATEGORY_NUDITY, CATEGORY_SEXUAL_CONTENT, CATEGORY_SEXUAL_HARASSMENT]:
+        config["title"] = "Potentially Harmful Content Detected"
+        config["message"] = "Your post contains nudity, sexual solicitation, or explicit content. Safe Space strictly prohibits nudity and sexually explicit content to maintain a safe, respectful environment for students."
+        config["can_continue"] = False
+        config["show_guidelines_button"] = True
+        config["show_support_resources"] = False
+        config["primary_button_label"] = "Edit Post"
+        config["secondary_button_label"] = "Cancel Posting"
+    elif cat in ["DISTRESS", "ALARMING", "SENSITIVE", "TRAUMA", "ABUSE"]:
+        config["title"] = "Sensitive Content Detected"
+        config["message"] = "Your post may contain sensitive or distressing material. Please review it before sharing it with the community."
+        config["can_continue"] = (stat != STATUS_BLOCKED)
+        config["show_support_resources"] = True
+        config["show_guidelines_button"] = False
+        config["primary_button_label"] = "Review Post"
+        config["secondary_button_label"] = "Cancel Posting"
+        config["continue_label"] = "Continue, if permitted by the moderation policy"
+
+    return config
+
+
 def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Comprehensive Multilingual Moderation Pipeline:
@@ -473,6 +558,14 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
         "status": final_decision["status"],
         "action": final_decision["action"],
         "risk_level": get_risk_level(final_decision["category"], final_decision["severity"], final_decision["status"]),
+        "warning_config": get_warning_config(
+            final_decision["category"],
+            final_decision["severity"],
+            final_decision["status"],
+            final_decision["reason"],
+            final_decision.get("is_academic_stress", False),
+            is_targeted
+        ),
         "language": detected_lang,
         "language_confidence": lang_conf,
         "category": final_decision["category"],

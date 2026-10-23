@@ -197,6 +197,7 @@ async def moderate_endpoint(request: TextRequest):
         "original_text":       mod_result.get("original_text", text),
         "censored_text":       mod_result.get("censored_text", text),
         "has_profanity":       mod_result.get("has_profanity", False),
+        "warning_config":      mod_result.get("warning_config", {}),
         # — Sentiment fields —
         "sentiment":           sent_result["sentiment"],
         "sentiment_score":     sent_result["sentiment_score"],
