@@ -32,7 +32,10 @@ from config import (
 )
 from moderation import moderate
 from sentiment import analyze_sentiment
-from censor import censor_profanity, contains_profanity, get_profanities_found
+from censor import (
+    censor_profanity, contains_profanity, get_profanities_found,
+    add_custom_word, remove_custom_word, get_custom_words
+)
 from support_recommender import generate_support_recommendation
 from typing import Optional
 
@@ -78,6 +81,10 @@ class SupportRequest(BaseModel):
     category: Optional[str] = "SAFE"
     risk_level: Optional[str] = "low"
     language: Optional[str] = "english"
+
+
+class KeywordRequest(BaseModel):
+    word: str
 
 
 # ── Helper: Safe Error Response ───────────────────────────────
@@ -219,6 +226,38 @@ async def censor_endpoint(request: TextRequest):
         "censored_text": censored,
         "has_profanity": (censored != text),
         "profanities_found": get_profanities_found(text)
+    }
+
+
+@app.get("/censor/dictionary", summary="Get Configured Profanity Dictionary")
+async def get_censor_dictionary():
+    words = get_custom_words()
+    return {
+        "success": True,
+        "custom_words": words,
+        "count": len(words)
+    }
+
+
+@app.post("/censor/dictionary", summary="Add Prohibited Keyword")
+async def add_censor_keyword(request: KeywordRequest):
+    added = add_custom_word(request.word)
+    return {
+        "success": added,
+        "word": request.word,
+        "message": f"Added '{request.word}' to profanity filter." if added else f"Word '{request.word}' already exists or is invalid.",
+        "custom_words": get_custom_words()
+    }
+
+
+@app.delete("/censor/dictionary", summary="Remove Prohibited Keyword")
+async def remove_censor_keyword(request: KeywordRequest):
+    removed = remove_custom_word(request.word)
+    return {
+        "success": removed,
+        "word": request.word,
+        "message": f"Removed '{request.word}' from filter." if removed else f"Word '{request.word}' not found.",
+        "custom_words": get_custom_words()
     }
 
 

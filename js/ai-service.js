@@ -27,125 +27,226 @@
   var DEFAULT_API_URL = 'http://127.0.0.1:8000';
 
   // ─────────────────────────────────────────────────────────────
-  // 0. PARTIAL PROFANITY CENSORSHIP ENGINE
+  // 0. PARTIAL PROFANITY CENSORSHIP ENGINE (WORD-BY-WORD SCANNER)
   // ─────────────────────────────────────────────────────────────
-  var PROFANITY_PATTERNS = [
-    // Filipino compound / spaced profanities
-    '\\bputang[\\s\\-_]*ina\\b',
-    '\\bpukinang[\\s\\-_]*ina\\b',
-    '\\bpuki[\\s\\-_]*nang[\\s\\-_]*ina\\b',
-    '\\btang[\\s\\-_]*ina\\b',
-    '\\btang[\\s\\-_]*ena\\b',
-    '\\banak[\\s\\-_]*ng[\\s\\-_]*puta\\b',
-    '\\bhayop[\\s\\-_]*ka\\b',
-    '\\bhayup[\\s\\-_]*ka\\b',
+  var BASE_PROFANITY_PATTERNS = [
+    // Filipino Multiword Expressions
+    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+k+[i1!]+n+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+k+[i1!]+[\\s\\-_]+n+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[\\s\\-_]+[i1!e3]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+[\\s\\-_]+[e3]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])a+n+[a@4]+k+[\\s\\-_]+n+g+[\\s\\-_]+p+[uUoO*]+t+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])h+[a@4]+y+[uUoO]+p+[\\s\\-_]+k+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])l+[e3]+[ct]+s?h+[e3]+[\\s\\-_]+k+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+[a@4]+k+[\\s\\-_]+y+[uU]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])f+[a@4]+k+[\\s\\-_]+y+[uU]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[\\s\\-_]*i+n+[a@4]+(?![a-zA-Z0-9])',
 
-    // Filipino single profanities
-    '\\bputangina\\b',
-    '\\bpukinangina\\b',
-    '\\btangina\\b',
-    '\\btangena\\b',
-    '\\btaena\\b',
-    '\\btayna\\b',
-    '\\bkingina\\b',
-    '\\bamputa\\b',
-    '\\bampota\\b',
-    '\\bpunyeta\\b',
-    '\\bleche\\b',
-    '\\bletse\\b',
-    '\\bpiste\\b',
-    '\\bpeste\\b',
-    '\\byawa\\b',
-    '\\bkupal\\b',
-    '\\bogag\\b',
-    '\\bpota\\b',
-    '\\bputa\\b',
-    '\\blintik\\b',
-    '\\bhudas\\b',
-    '\\bgago(?:ng)?\\b',
-    '\\bgaga\\b',
-    '\\bkagaguhan\\b',
-    '\\btarantado\\b',
-    '\\btarantada\\b',
-    '\\bkatarantadohan\\b',
-    '\\bbobo(?:ng)?\\b',
-    '\\bboba\\b(?!\\s+(?:tea|milk|drink))',
-    '\\bkabobohan\\b',
-    '\\bbopols\\b',
-    '\\bboplaks\\b',
-    '\\bulol\\b',
-    '\\binutil\\b',
-    '\\btanga(?:ng)?\\b',
-    '\\bkatangahan\\b',
-    '\\bbwisit\\b',
-    '\\bbuwisit\\b',
-    '\\bhinayupak\\b',
-    '\\bkantot(?:an|in)?\\b',
-    '\\bchupa(?:in)?\\b',
-    '\\btsupa(?:in)?\\b',
-    '\\btite\\b',
-    '\\bpuke\\b',
-    '\\bpuki\\b',
-    '\\bkiki\\b',
-    '\\btamod\\b',
-    '\\bjakol\\b',
-    '\\bburat\\b',
-    '\\bbayag\\b',
-    '\\bpepe\\b',
-    '\\biyot(?:an)?\\b',
-    '\\bpokpok\\b',
+    // Filipino Single Profanities & Local Variations
+    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+k+[i1!]+n+[a@4]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[e3]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+[e3]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+y+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[i1!]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])a+m+p+[uUoO*]+t+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+n+y+[e3]+t+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])l+[e3]+[ct]+s?h+[e3]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+[ei]+s+t+[e3]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])y+[a@4]+w+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+u+p+[a@4]+l+(?:s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])o+g+[a@4]+g+(?:s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+[uUoO*]+t+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])l+[i1!]+n+t+[i1!]+k+(?:s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])h+u+d+[a@4]+s+(?:s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])g+[a@4]+g+[oO0uU]+(?:ng)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])g+[a@4]+g+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[a@4]+g+[a@4]+g+u+h+[a@4]+n+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+r+[a@4]+n+t+[a@4]+d+[oO0uUa@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[a@4]+t+[a@4]+r+[a@4]+n+t+[a@4]+d+[oO0]+h+[a@4]+n+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[oO0]+b+[oO0]+(?:ng)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[oO0]+b+[aA@4]+(?!\\s*(?:tea|milk|drink))(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[a@4]+b+[oO0]+b+[oO0]+h+[a@4]+n+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[oO0]+p+[oO0]+l+s+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[oO0]+p+l+[a@4]+k+s+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])u+l+[oO0]+l+(?:s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])i+n+u+t+[i1!]+l+(?:s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[a@4]+(?:ng)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[a@4]+t+[a@4]+n+g+[a@4]+h+[a@4]+n+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+u*w+[i1!]+s+[i1!]+t+(?:s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])h+[i1!]+n+[a@4]+y+u+p+[a@4]+k+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[a@4]+n+t+[o0]+t+(?:an|in)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])c+h+u+p+[a@4]+(?:in)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+s+u+p+[a@4]+(?:in)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[i1!]+t+[e3]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+k+[e3i1!]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[i1!]+k+[i1!]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+m+[o0]+d+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])j+[a@4]+k+[o0]+l+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+u+r+[a@4]+t+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[a@4]+y+[a@4]+g+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+[e3]+p+[e3]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])i+y+[o0]+t+(?:an)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+[o0]+k+p+[o0]+k+(?![a-zA-Z0-9])',
 
-    // English profanities
-    '\\bmotherfuck(?:er|ers|ing)?\\b',
-    '\\bfuck(?:ing|ers?|ed|s)?\\b',
-    '\\bbullshit(?:s)?\\b',
-    '\\bdipshit(?:s)?\\b',
-    '\\bhorseshit\\b',
-    '\\bshit(?:s|ted|ting|ty)?\\b',
-    '\\bbitch(?:es|ing|y)?\\b',
-    '\\basshole(?:s)?\\b',
-    '\\bdumbass(?:es)?\\b',
-    '\\bjackass(?:es)?\\b',
-    '\\bfatass(?:es)?\\b',
-    '\\bbastard(?:s)?\\b',
-    '\\bcunt(?:s)?\\b',
-    '\\bdickhead(?:s)?\\b',
-    '\\bdick(?:s)?\\b',
-    '\\bcocksucker(?:s)?\\b',
-    '\\bcock(?:s)?\\b',
-    '\\bpuss(?:y|ies)\\b',
-    '\\btwat(?:s)?\\b',
-    '\\bwanker(?:s)?\\b',
-    '\\bslut(?:s|ty)?\\b',
-    '\\bwhore(?:s)?\\b',
-    '(?<![a-zA-Z0-9])ass(?:es)?(?![a-zA-Z0-9])'
+    // English Profanities, Vulgarities & Leetspeak
+    '(?<![a-zA-Z0-9])s+h+u+t+[\\s\\-_]+t+h+e+[\\s\\-_]+f+[uU*vV]+c+k+[\\s\\-_]+u+p+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])f+[uU*vV]+c+k+[\\s\\-_]+(?:y+o+u+|o+f+f+|u+)(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])m+[o0]+t+h+e+r+f+[uU*vV]+c+k+(?:e+r+s?|i+n+g+|e+d+|s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])f+[uU*vV]+c+k+(?:i+n+g+|e+r+s?|e+d+|s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])f+[\\*]+c*k+(?:i+n+g+|e+r+s?|e+d+|s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])f+u+k+(?:i+n+g+|e+r+s?|e+d+|s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+u+l+l+s+h+[iI1!*]+t+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])d+[i1!]+p+s+h+[iI1!*]+t+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])h+[o0]+r+s+e+s+h+[iI1!*]+t+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])s+h+[iI1!*]+t+(?:s+|t+e+d+|t+i+n+g+|t+y+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[iI1!*]+t+c+h+(?:e+s+|i+n+g+|y+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[iI1!*]+c+h+(?:e+s+|i+n+g+|y+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])a+[s$5]+h+[o0]+l+e+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])d+u+m+b+a+[s$5]{2,}(?:e+s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])j+[a@4]+c+k+a+[s$5]{2,}(?:e+s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])f+[a@4]+t+a+[s$5]{2,}(?:e+s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])b+[a@4]+s+t+[a@4]+r+d+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])c+u+n+t+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])d+[iI1!*]+c+k+h+e+[a@4]+d+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])d+[iI1!*]+c+k+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])c+[o0]+c+k+s+u+c+k+e+r+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])c+[o0]+c+k+(?:s+)?(?!(?:tail|roach|[a-zA-Z0-9]))',
+    '(?<![a-zA-Z0-9])p+u+s+s+y+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+s+s+i+e+s+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+w+[a@4]+t+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])w+[a@4]+n+k+e+r+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])s+l+u+t+(?:s+|t+y+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])w+h+[o0]+r+e+(?:s+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])s+t+f+u+(?![a-zA-Z0-9])',
+    // Standalone 'ass' without colliding with classic, pass, assistant, compassion, asset
+    '(?<![a-zA-Z0-9])a+[s$5]{2,}(?:es)?(?![a-zA-Z0-9])'
   ];
 
-  var COMPILED_PROFANITY_REGEX = new RegExp(PROFANITY_PATTERNS.join('|'), 'gi');
+  function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function getStoredCustomKeywords() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        var stored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
+        if (Array.isArray(stored)) {
+          return stored.map(function(w) { return String(w || '').trim().toLowerCase(); }).filter(Boolean);
+        }
+      }
+    } catch (e) {}
+    return [];
+  }
 
   var SafeSpaceCensor = {
+    customWords: [],
+    compiledRegex: null,
+
+    init: function() {
+      this.customWords = getStoredCustomKeywords();
+      this.recompile();
+    },
+
+    recompile: function() {
+      var patterns = BASE_PROFANITY_PATTERNS.slice();
+      var seen = {};
+      for (var i = 0; i < this.customWords.length; i++) {
+        var w = this.customWords[i];
+        if (w && !seen[w]) {
+          seen[w] = true;
+          if (w.indexOf(' ') !== -1) {
+            var parts = w.split(/\s+/).map(escapeRegex);
+            patterns.push('(?<![a-zA-Z0-9])' + parts.join('\\s+') + '(?![a-zA-Z0-9])');
+          } else {
+            patterns.push('(?<![a-zA-Z0-9])' + escapeRegex(w) + '(?:s|es)?(?![a-zA-Z0-9])');
+          }
+        }
+      }
+      this.compiledRegex = new RegExp(patterns.join('|'), 'gi');
+    },
+
+    addWord: function(w) {
+      var word = String(w || '').trim().toLowerCase();
+      if (!word || this.customWords.indexOf(word) !== -1) return false;
+      this.customWords.push(word);
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('safe_space_banned_keywords', JSON.stringify(this.customWords));
+        }
+      } catch (e) {}
+      this.recompile();
+      return true;
+    },
+
+    removeWord: function(w) {
+      var word = String(w || '').trim().toLowerCase();
+      var idx = this.customWords.indexOf(word);
+      if (idx !== -1) {
+        this.customWords.splice(idx, 1);
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('safe_space_banned_keywords', JSON.stringify(this.customWords));
+          }
+        } catch (e) {}
+        this.recompile();
+        return true;
+      }
+      return false;
+    },
+
+    getWords: function() {
+      return this.customWords.slice();
+    },
+
     censorWord: function(w) {
       if (!w || typeof w !== 'string' || w.length <= 2) return w;
       var asterisks = '*'.repeat ? '*'.repeat(w.length - 2) : new Array(w.length - 1).join('*');
       return w.charAt(0) + asterisks + w.charAt(w.length - 1);
     },
 
+    maskExpression: function(raw) {
+      var self = this;
+      var stopWords = {
+        'the': 1, 'of': 1, 'and': 1, 'or': 1, 'to': 1, 'in': 1, 'on': 1, 'at': 1,
+        'by': 1, 'for': 1, 'with': 1, 'about': 1, 'ng': 1, 'mga': 1, 'sa': 1, 'kay': 1,
+        'ni': 1, 'na': 1, 'ang': 1
+      };
+      var parts = raw.split(/(\s+|[-_]+)/);
+      var censored = [];
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        if (!p || /^\s+$/.test(p) || p === '-' || p === '_') {
+          censored.push(p);
+        } else if (stopWords[p.toLowerCase()]) {
+          censored.push(p);
+        } else {
+          censored.push(self.censorWord(p));
+        }
+      }
+      return censored.join('');
+    },
+
     censor: function(text) {
       if (!text || typeof text !== 'string') return text;
+      if (!this.compiledRegex) this.init();
       var self = this;
-      return text.replace(COMPILED_PROFANITY_REGEX, function(fullMatch) {
-        return fullMatch.replace(/[a-zA-Z]+/g, function(token) {
-          return self.censorWord(token);
-        });
+      return text.replace(this.compiledRegex, function(fullMatch) {
+        return self.maskExpression(fullMatch);
       });
     },
 
     hasProfanity: function(text) {
       if (!text || typeof text !== 'string') return false;
-      COMPILED_PROFANITY_REGEX.lastIndex = 0;
-      return COMPILED_PROFANITY_REGEX.test(text);
+      if (!this.compiledRegex) this.init();
+      this.compiledRegex.lastIndex = 0;
+      return this.compiledRegex.test(text);
     }
   };
+
+  SafeSpaceCensor.init();
 
   // ─────────────────────────────────────────────────────────────
   // 1. MULTILINGUAL LANGUAGE DETECTOR
