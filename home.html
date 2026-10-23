@@ -638,35 +638,39 @@
         // Reveal the application shell to the user immediately
         hidePageLoader();
 
-        // Update current user identity in sidebar
-        const userNameEl = document.getElementById('sidebarUserName');
-        if (userNameEl) {
-          userNameEl.textContent = formatDisplayName(currentUser.first_name || currentUser.username, 'Account');
-        }
-        const userAvatarEl = document.getElementById('sidebarUserAvatar');
-        if (userAvatarEl && window.SafeSpaceAvatars) {
-          userAvatarEl.innerHTML = window.SafeSpaceAvatars.renderHtml(currentUser, { alt: currentUser.username });
-        }
+        // Update current user identity in sidebar safely
+        try {
+          const userNameEl = document.getElementById('sidebarUserName');
+          if (userNameEl) {
+            userNameEl.textContent = formatDisplayName(currentUser.first_name || currentUser.username, 'Account');
+          }
+          const userAvatarEl = document.getElementById('sidebarUserAvatar');
+          if (userAvatarEl && window.SafeSpaceAvatars) {
+            userAvatarEl.innerHTML = window.SafeSpaceAvatars.renderHtml(currentUser, { alt: currentUser.username });
+          }
 
-        // Update post modal identity option
-        const userDisplayName = formatDisplayName(currentUser.first_name || currentUser.username, 'Me');
-        const namedLabel = document.getElementById('namedIdentityLabel');
-        if (namedLabel) {
-          namedLabel.textContent = `Post as ${userDisplayName}`;
-        }
-        const currentIdentityLabel = document.getElementById('currentIdentityLabel');
-        if (currentIdentityLabel) {
-          currentIdentityLabel.textContent = `Post as ${userDisplayName}`;
-        }
-        const currentIdentityAvatarSlot = document.getElementById('currentIdentityAvatarSlot');
-        const namedAvatarSlot = document.getElementById('namedIdentityAvatarSlot');
-        if (window.SafeSpaceAvatars) {
-          const smallAvatarHtml = window.SafeSpaceAvatars.renderHtml(currentUser.avatar_url, {
-            alt: userDisplayName,
-            style: 'width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;'
-          });
-          if (currentIdentityAvatarSlot) currentIdentityAvatarSlot.innerHTML = smallAvatarHtml;
-          if (namedAvatarSlot) namedAvatarSlot.innerHTML = smallAvatarHtml;
+          // Update post modal identity option
+          const userDisplayName = formatDisplayName(currentUser.first_name || currentUser.username, 'Me');
+          const namedLabel = document.getElementById('namedIdentityLabel');
+          if (namedLabel) {
+            namedLabel.textContent = `Post as ${userDisplayName}`;
+          }
+          const currentIdentityLabel = document.getElementById('currentIdentityLabel');
+          if (currentIdentityLabel) {
+            currentIdentityLabel.textContent = `Post as ${userDisplayName}`;
+          }
+          const currentIdentityAvatarSlot = document.getElementById('currentIdentityAvatarSlot');
+          const namedAvatarSlot = document.getElementById('namedIdentityAvatarSlot');
+          if (window.SafeSpaceAvatars) {
+            const smallAvatarHtml = window.SafeSpaceAvatars.renderHtml(currentUser.avatar_url, {
+              alt: userDisplayName,
+              style: 'width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;'
+            });
+            if (currentIdentityAvatarSlot) currentIdentityAvatarSlot.innerHTML = smallAvatarHtml;
+            if (namedAvatarSlot) namedAvatarSlot.innerHTML = smallAvatarHtml;
+          }
+        } catch (uiErr) {
+          console.warn('[Home] User UI populate warning:', uiErr);
         }
 
         // Non-blocking check for account suspension or ban
@@ -684,12 +688,29 @@
         await loadCategoryFeed('all', { isBackground: false, page: 0 });
       } catch (initErr) {
         console.error('[Home] Initialization error:', initErr);
+        const container = document.getElementById('feedContainer');
+        if (container && container.querySelector('.skeleton-post')) {
+          renderFeedError('all');
+        }
       } finally {
         hidePageLoader();
       }
 
       // Stage 4: Secondary independent widget data (Daily Scripture)
       loadDailyScripture().catch(err => console.warn(err));
+
+      // Stage 5: Skeleton Watchdog Timer — guarantees feed never stays stuck on skeleton
+      setTimeout(async () => {
+        const container = document.getElementById('feedContainer');
+        if (container && container.querySelector('.skeleton-post')) {
+          console.warn('[Home] Watchdog: Skeleton still present after 4s. Forcing fresh feed fetch.');
+          try {
+            await loadCategoryFeed(activeCategory || 'all', { isBackground: false, page: 0 });
+          } catch (wErr) {
+            renderFeedError(activeCategory || 'all');
+          }
+        }
+      }, 4000);
     });
 
     // ── Instant Category Switching Logic ──
@@ -764,8 +785,11 @@
           limit: PAGE_SIZE
         });
 
-        // If a newer request was dispatched while this was fetching, drop this stale result
-        if (requestId !== currentFeedRequestId) {
+        const container = document.getElementById('feedContainer');
+        const hasVisiblePosts = container && container.querySelector('.post-card');
+
+        // Guard: Only drop if a different category was selected while this was loading AND posts are already rendered
+        if (requestId !== currentFeedRequestId && activeCategory !== category && hasVisiblePosts) {
           return;
         }
 
@@ -799,7 +823,6 @@
           renderLoadMoreState(hasMore);
         }
       } catch (err) {
-        if (requestId !== currentFeedRequestId) return;
         console.error(`[SafeSpace] Feed query error for "${category}":`, err);
 
         const container = document.getElementById('feedContainer');
@@ -810,7 +833,7 @@
           showToast('Could not refresh feed. Displaying existing posts.', 'info');
         }
       } finally {
-        if (requestId === currentFeedRequestId) {
+        if (requestId === currentFeedRequestId || !document.querySelector('.post-card')) {
           isCategoryLoading = false;
           showCategoryBadge(false);
           const feedContainer = document.getElementById('feedContainer');

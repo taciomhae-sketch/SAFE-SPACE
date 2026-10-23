@@ -962,8 +962,7 @@ var SafeSpaceDB = {
       if (SafeSpaceDB.isSupabaseActive()) {
         try {
           var postColumns = [
-            'id', 'user_id', 'content', 'mood', 'category', 'photo_url', 'is_anonymous', 'archived', 'created_at', 'updated_at',
-            'sentiment', 'sentiment_score', 'moderation_status', 'moderation_category',
+            '*',
             'profiles:user_id(id, username, first_name, last_name, avatar_url)',
             'post_likes(user_id)',
             'post_comments(id, user_id, content, reactions, created_at, profiles:user_id(username, first_name, last_name, avatar_url))',
@@ -990,8 +989,14 @@ var SafeSpaceDB = {
             query = query.range(from, to);
           }
 
-          var res = await query;
-          if (res.error) {
+          // Race query against a 7-second timeout to prevent indefinite hangs
+          var queryPromise = query;
+          var timeoutPromise = new Promise(function(_, reject) {
+            setTimeout(function() { reject(new Error('Feed query timed out')); }, 7000);
+          });
+
+          var res = await Promise.race([queryPromise, timeoutPromise]);
+          if (res && res.error) {
             console.warn('[SafeSpace] Supabase feed query warning, trying fallback:', res.error.message);
             var fallbackQuery = _db.from('posts').select(`
               *,
