@@ -12,3 +12,4 @@ temp_chrome_*
 .DS_Store
 Thumbs.db
 *.log
+*.zip

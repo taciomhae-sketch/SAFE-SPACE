@@ -9045,3 +9045,23 @@ body.dark-theme .support-badge-org {
   gap: 6px;
 }
 
+/* ============================================================
+   Safe Space AI: Suggested Support Recommendation Component
+   ============================================================ */
+.ai-support { background:#FAF8FF; border:1px solid #E8E1FA; border-radius:12px; padding:12px 14px; margin:10px 0; }
+.ai-support-head { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.85rem; }
+.ai-badge { background:#6C4FD1; color:#fff; border-radius:999px; padding:2px 8px; font-size:.7rem; }
+.ai-support-text, .ai-support-more { margin:8px 0 0; line-height:1.5; font-size:.9rem; }
+.ai-view-more { background:none; border:0; color:#6C4FD1; font-weight:600; cursor:pointer; padding:6px 0; }
+.ai-support-foot { font-size:.72rem; color:#7a6fa8; margin-top:6px; }
+.ai-resources-btn { display:inline-block; margin-top:8px; color:#6C4FD1; font-weight:600; font-size:.85rem; }
+
+[data-theme="dark"] .ai-support {
+  background: #1e1b2e;
+  border-color: #3b2f63;
+}
+[data-theme="dark"] .ai-support-foot {
+  color: #a499d3;
+}
+
+
