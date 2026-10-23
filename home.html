@@ -1151,55 +1151,91 @@
             ? `<div class="post-author is-clickable" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${escapeHTML(authorDisplay)}</div>`
             : `<div class="post-author is-anonymous" title="Anonymous Member">${escapeHTML(authorDisplay)}</div>`;
 
+          const pMeta = (aiMetaStore && post.id && aiMetaStore[post.id]) ? aiMetaStore[post.id] : {};
+
           let rec = post.ai_recommendation;
           if (typeof rec === 'string' && (rec.startsWith('{') || rec.startsWith('"'))) {
             try { rec = JSON.parse(rec); } catch (e) {}
           }
-          if (!rec && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender && post.content) {
+          if (typeof rec === 'string' && rec.trim()) {
+            rec = {
+              type: 'CAMPUS_SUPPORT',
+              situation_summary: 'Community student support.',
+              preview: rec.trim(),
+              more: '',
+              message: rec.trim(),
+              disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
+              show_resources_button: false,
+              emergency_numbers: [],
+              collapsible: false
+            };
+          }
+
+          // If rec is not present, generate it dynamically for EVERY post
+          if ((!rec || (!rec.preview && !rec.message)) && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender) {
             rec = window.SafeSpaceSupportRecommender.generate(
-              post.content,
+              post.content || '',
               currentSentiment,
               post.moderation_category || 'SAFE',
               (pMeta && pMeta.risk_level) || 'low',
               (pMeta && pMeta.language) || 'english',
               {
                 isAnonymous: isAnon,
-                recentReplies: feedRecentReplies.slice(-5)
+                recentReplies: feedRecentReplies.slice(-5),
+                category: post.category,
+                hasPhoto: Boolean(post.photo_url)
               }
             );
           }
+
+          // Absolute fallback guarantee: all posts MUST have a Suggested Support from Safe Space AI
+          if (!rec || (!rec.preview && !rec.message)) {
+            const hasPhotoOnly = !post.content && post.photo_url;
+            rec = {
+              type: hasPhotoOnly ? 'CAMPUS_PHOTO_MOMENT' : 'CAMPUS_SUPPORT',
+              situation_summary: hasPhotoOnly ? 'Student sharing a campus visual moment.' : 'Support for student sharing in the Safe Space community.',
+              preview: hasPhotoOnly
+                ? 'Thanks for sharing a moment from campus life with the community; visual memories add warmth to our collective experience.'
+                : 'Connecting with fellow students and sharing thoughts in Safe Space helps build a supportive campus atmosphere.',
+              more: hasPhotoOnly
+                ? 'Taking pauses to capture everyday campus sights is a great way to stay grounded. Feel free to add a caption or reflections whenever you like.'
+                : 'Feel free to join ongoing discussions or reach out anytime you need encouragement, study tips, or a sounding board.',
+              message: hasPhotoOnly
+                ? 'Thanks for sharing a moment from campus life with the community; visual memories add warmth to our collective experience. Taking pauses to capture everyday campus sights is a great way to stay grounded.'
+                : 'Connecting with fellow students and sharing thoughts in Safe Space helps build a supportive campus atmosphere. Feel free to join ongoing discussions or reach out anytime you need encouragement or a sounding board.',
+              disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
+              show_resources_button: false,
+              emergency_numbers: [],
+              collapsible: true
+            };
+          }
+
           if (rec && (rec.preview || rec.message)) {
             feedRecentReplies.push(rec.preview || rec.message);
           }
 
+          const previewText = rec.preview || rec.message || '';
+          const disclaimerText = rec.disclaimer || 'Suggested Support from Safe Space AI · Practical student coping recommendation.';
+          const hasMore = rec.collapsible !== false && rec.more && rec.more.trim();
+          const moreText = hasMore ? rec.more.trim() : (rec.more || '');
+          const resBtnHtml = rec.show_resources_button ? `
+            <a href="resources.html" class="ai-resources-btn">View Verified Support Resources</a>
+          ` : '';
 
-          let supportRecHtml = '';
-          if (rec && (rec.preview || rec.message)) {
-            const previewText = rec.preview || rec.message || '';
-            const disclaimerText = rec.disclaimer || 'Suggested Support from Safe Space AI · Practical student coping recommendation.';
-            const hasMore = rec.collapsible !== false && rec.more && rec.more.trim();
-            const moreText = hasMore ? rec.more.trim() : (rec.more || '');
-            const resBtnHtml = rec.show_resources_button ? `
-              <a href="resources.html" class="ai-resources-btn">View Verified Support Resources</a>
-            ` : '';
-
-            supportRecHtml = `
-              <div class="ai-support" id="ai-support-${post.id}">
-                <div class="ai-support-head">
-                  <strong>Suggested Support from Safe Space AI</strong>
-                  <span class="ai-badge"><i class="fas fa-wand-magic-sparkles"></i> AI Generated</span>
-                </div>
-                <p class="ai-support-text">${escapeHTML(previewText)}</p>
-                <div class="ai-support-more" id="ai-support-more-${post.id}" ${hasMore ? 'hidden' : (moreText ? '' : 'hidden')}>${escapeHTML(moreText)}</div>
-                ${hasMore ? `<button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="toggleAiSupportViewMore('${post.id}')" aria-expanded="false">View more</button>` : ''}
-                ${resBtnHtml}
-                <div class="ai-support-foot">${escapeHTML(disclaimerText)}</div>
+          const supportRecHtml = `
+            <div class="ai-support" id="ai-support-${post.id}">
+              <div class="ai-support-head">
+                <strong>Suggested Support from Safe Space AI</strong>
+                <span class="ai-badge"><i class="fas fa-wand-magic-sparkles"></i> AI Generated</span>
               </div>
-            `;
-          }
+              <p class="ai-support-text">${escapeHTML(previewText)}</p>
+              <div class="ai-support-more" id="ai-support-more-${post.id}" ${hasMore ? 'hidden' : (moreText ? '' : 'hidden')}>${escapeHTML(moreText)}</div>
+              ${hasMore ? `<button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="toggleAiSupportViewMore('${post.id}')" aria-expanded="false">View more</button>` : ''}
+              ${resBtnHtml}
+              <div class="ai-support-foot">${escapeHTML(disclaimerText)}</div>
+            </div>
+          `;
 
-
-          const pMeta = (aiMetaStore && post.id && aiMetaStore[post.id]) ? aiMetaStore[post.id] : {};
           const isPostSensitive = Boolean(
             post.has_trigger_warning === true ||
             pMeta.has_trigger_warning === true ||

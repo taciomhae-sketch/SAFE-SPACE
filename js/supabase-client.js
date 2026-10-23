@@ -1275,8 +1275,39 @@ var SafeSpaceDB = {
       var trigger_warning_label = options.trigger_warning_label || null;
 
       var ai_recommendation = options.ai_recommendation || (typeof modCheck !== 'undefined' && modCheck ? modCheck.support_recommendation : null);
-      if (!ai_recommendation && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender && content) {
-        ai_recommendation = window.SafeSpaceSupportRecommender.generate(content, sentiment || 'NEUTRAL', moderation_category || 'SAFE');
+      if ((!ai_recommendation || (!ai_recommendation.preview && !ai_recommendation.message)) && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender) {
+        ai_recommendation = window.SafeSpaceSupportRecommender.generate(
+          content || '',
+          sentiment || 'NEUTRAL',
+          moderation_category || 'SAFE',
+          'low',
+          'english',
+          {
+            isAnonymous: is_anonymous,
+            category: category,
+            hasPhoto: Boolean(photo_url)
+          }
+        );
+      }
+      if (!ai_recommendation || (!ai_recommendation.preview && !ai_recommendation.message)) {
+        var hasPhotoOnly = !content && photo_url;
+        ai_recommendation = {
+          type: hasPhotoOnly ? 'CAMPUS_PHOTO_MOMENT' : 'CAMPUS_SUPPORT',
+          situation_summary: hasPhotoOnly ? 'Student sharing a campus visual moment.' : 'Support for student sharing in the Safe Space community.',
+          preview: hasPhotoOnly
+            ? 'Thanks for sharing a moment from campus life with the community; visual memories add warmth to our collective experience.'
+            : 'Connecting with fellow students and sharing thoughts in Safe Space helps build a supportive campus atmosphere.',
+          more: hasPhotoOnly
+            ? 'Taking pauses to capture everyday campus sights is a great way to stay grounded. Feel free to add a caption or reflections whenever you like.'
+            : 'Feel free to join ongoing discussions or reach out anytime you need encouragement, study tips, or a sounding board.',
+          message: hasPhotoOnly
+            ? 'Thanks for sharing a moment from campus life with the community; visual memories add warmth to our collective experience. Taking pauses to capture everyday campus sights is a great way to stay grounded.'
+            : 'Connecting with fellow students and sharing thoughts in Safe Space helps build a supportive campus atmosphere. Feel free to join ongoing discussions or reach out anytime you need encouragement or a sounding board.',
+          disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
+          show_resources_button: false,
+          emergency_numbers: [],
+          collapsible: true
+        };
       }
 
       if (!has_trigger_warning && typeof modCheck !== 'undefined' && modCheck && modCheck.warning_config) {
