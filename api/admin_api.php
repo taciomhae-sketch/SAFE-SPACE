@@ -23,7 +23,7 @@ switch ($action) {
     // ── 1. DASHBOARD OVERVIEW STATS ───────────────────────────────────
     case 'stats':
         $usersRes = $client->request('GET', 'profiles?select=id,role,is_deactivated,created_at');
-        $postsRes = $client->request('GET', 'posts?select=id,created_at,archived,deleted_at');
+        $postsRes = $client->request('GET', 'posts?select=id,sentiment,sentiment_score,moderation_status,moderation_category,ai_recommendation,is_user_confirmed,created_at,archived,deleted_at');
         $reportsRes = $client->request('GET', 'reports?select=id,status');
 
         $users = ($usersRes['success'] && is_array($usersRes['data'])) ? $usersRes['data'] : [];
@@ -36,14 +36,118 @@ switch ($action) {
             return ($r['status'] ?? '') === 'pending' || ($r['status'] ?? '') === 'under_review';
         }));
 
+        $postsAnalyzed = $totalPosts;
+        $warningsDisplayed = 0;
+        $postsBlocked = 0;
+        $postsRequiringReview = 0;
+        $recommendationsGenerated = 0;
+
+        foreach ($posts as $p) {
+            $status = strtoupper($p['moderation_status'] ?? 'APPROVED');
+            $cat = strtoupper($p['moderation_category'] ?? 'SAFE');
+            $isConfirmed = !empty($p['is_user_confirmed']);
+
+            if ($isConfirmed || $status === 'REVIEW' || $status === 'BLOCKED' || $cat !== 'SAFE') {
+                $warningsDisplayed++;
+            }
+            if ($status === 'BLOCKED' || !empty($p['deleted_at'])) {
+                $postsBlocked++;
+            }
+            if ($status === 'REVIEW') {
+                $postsRequiringReview++;
+            }
+            if (!empty($p['ai_recommendation'])) {
+                $recommendationsGenerated++;
+            }
+        }
+
         echo json_encode([
             'success' => true,
             'data' => [
                 'total_users' => $totalUsers,
                 'total_posts' => $totalPosts,
                 'pending_reports' => $pendingReports,
+                'posts_analyzed' => $postsAnalyzed,
+                'safety_warnings_displayed' => $warningsDisplayed,
+                'posts_blocked' => $postsBlocked,
+                'posts_requiring_review' => $postsRequiringReview,
+                'recommendations_generated' => $recommendationsGenerated,
                 'admin_status' => 'Admin Authentication: Enabled',
                 'authorized_account' => AUTHORIZED_ADMIN_NAME
+            ]
+        ]);
+        break;
+
+    // ── 1B. AGGREGATED AI MODERATION & SENTIMENT ANALYTICS ───────────────
+    case 'ai_metrics':
+        $postsRes = $client->request('GET', 'posts?select=id,sentiment,sentiment_score,moderation_status,moderation_category,ai_recommendation,is_user_confirmed,created_at,archived,deleted_at');
+        $posts = ($postsRes['success'] && is_array($postsRes['data'])) ? $postsRes['data'] : [];
+
+        $totalPosts = count($posts);
+        $warningsCount = 0;
+        $blockedCount = 0;
+        $reviewCount = 0;
+        $recCount = 0;
+
+        $sentimentCounts = ['POSITIVE' => 0, 'NEUTRAL' => 0, 'NEGATIVE' => 0];
+        $categoryCounts = [
+            'SAFE' => 0,
+            'SELF_HARM' => 0,
+            'BULLYING_HARASSMENT' => 0,
+            'THREAT_VIOLENCE' => 0,
+            'DISTRESS_SENSITIVE' => 0,
+            'OTHER' => 0
+        ];
+
+        foreach ($posts as $p) {
+            $sent = strtoupper($p['sentiment'] ?? 'NEUTRAL');
+            if (isset($sentimentCounts[$sent])) {
+                $sentimentCounts[$sent]++;
+            } else {
+                $sentimentCounts['NEUTRAL']++;
+            }
+
+            $cat = strtoupper($p['moderation_category'] ?? 'SAFE');
+            if ($cat === 'SAFE') {
+                $categoryCounts['SAFE']++;
+            } elseif ($cat === 'SELF_HARM' || $cat === 'ENCOURAGEMENT_OF_SELF_HARM') {
+                $categoryCounts['SELF_HARM']++;
+            } elseif ($cat === 'BULLYING' || $cat === 'HARASSMENT' || $cat === 'HATE') {
+                $categoryCounts['BULLYING_HARASSMENT']++;
+            } elseif ($cat === 'THREAT' || $cat === 'VIOLENCE') {
+                $categoryCounts['THREAT_VIOLENCE']++;
+            } elseif ($cat === 'DISTRESS' || $cat === 'ALARMING' || $cat === 'SENSITIVE') {
+                $categoryCounts['DISTRESS_SENSITIVE']++;
+            } else {
+                $categoryCounts['OTHER']++;
+            }
+
+            $status = strtoupper($p['moderation_status'] ?? 'APPROVED');
+            if (!empty($p['is_user_confirmed']) || $status === 'REVIEW' || $status === 'BLOCKED' || $cat !== 'SAFE') {
+                $warningsCount++;
+            }
+            if ($status === 'BLOCKED' || !empty($p['deleted_at'])) {
+                $blockedCount++;
+            }
+            if ($status === 'REVIEW') {
+                $reviewCount++;
+            }
+            if (!empty($p['ai_recommendation'])) {
+                $recCount++;
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'posts_analyzed' => $totalPosts,
+                'safety_warnings_displayed' => $warningsCount,
+                'posts_revised_or_blocked' => $blockedCount,
+                'posts_requiring_review' => $reviewCount,
+                'recommendations_generated' => $recCount,
+                'sentiment_distribution' => $sentimentCounts,
+                'category_distribution' => $categoryCounts,
+                'last_updated' => date('c')
             ]
         ]);
         break;

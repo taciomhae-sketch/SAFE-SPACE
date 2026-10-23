@@ -146,6 +146,21 @@ var SafeSpaceDB = {
   },
 
   /**
+   * Partial Profanity Censorship: Replaces middle letters with asterisks
+   * while preserving the first and last letters.
+   */
+  censorProfanity: function(text) {
+    if (!text || typeof text !== 'string') return text;
+    if (typeof window !== 'undefined' && window.SafeSpaceCensor && typeof window.SafeSpaceCensor.censor === 'function') {
+      return window.SafeSpaceCensor.censor(text);
+    }
+    if (typeof window !== 'undefined' && typeof window.censorProfanity === 'function') {
+      return window.censorProfanity(text);
+    }
+    return text;
+  },
+
+  /**
    * Broadcast real-time moderation changes across tabs and windows
    */
   _broadcastModerationSync: function(postId, action) {
@@ -948,6 +963,7 @@ var SafeSpaceDB = {
         try {
           var postColumns = [
             'id', 'user_id', 'content', 'mood', 'category', 'photo_url', 'is_anonymous', 'archived', 'created_at', 'updated_at',
+            'sentiment', 'sentiment_score', 'moderation_status', 'moderation_category',
             'profiles:user_id(id, username, first_name, last_name, avatar_url)',
             'post_likes(user_id)',
             'post_comments(id, user_id, content, reactions, created_at, profiles:user_id(username, first_name, last_name, avatar_url))',
@@ -1012,7 +1028,52 @@ var SafeSpaceDB = {
             if (!resolvedAvatar && currentUser && (p.user_id === currentUser.id)) {
               resolvedAvatar = currentUser.avatar_url || null;
             }
+
+            var localAiMeta = {};
+            try {
+              localAiMeta = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
+            } catch (me) {}
+            var pMeta = (p.id && localAiMeta[p.id]) ? localAiMeta[p.id] : {};
+
+            var finalSentiment = p.sentiment || pMeta.sentiment;
+            if (!finalSentiment) {
+              if (p.mood === 'support' || p.mood === 'sad') finalSentiment = 'NEGATIVE';
+              else if (p.mood === 'love' || p.mood === 'like' || p.mood === 'haha') finalSentiment = 'POSITIVE';
+              else finalSentiment = 'NEUTRAL';
+            }
+            var finalScore = (p.sentiment_score !== undefined && p.sentiment_score !== null)
+              ? p.sentiment_score
+              : (pMeta.sentiment_score !== undefined ? pMeta.sentiment_score : 0.50);
+
+            var finalStatus = p.moderation_status || pMeta.moderation_status || 'APPROVED';
+            var finalCat = p.moderation_category || pMeta.moderation_category || 'SAFE';
+
+            var resolvedRec = p.ai_recommendation || pMeta.ai_recommendation || null;
+            if (typeof resolvedRec === 'string' && (resolvedRec.startsWith('{') || resolvedRec.startsWith('"'))) {
+              try { resolvedRec = JSON.parse(resolvedRec); } catch (e) {}
+            }
+            if (!resolvedRec && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender && p.content) {
+              resolvedRec = window.SafeSpaceSupportRecommender.generate(p.content, finalSentiment, finalCat, pMeta.risk_level || 'low');
+            }
+
+            var hasTriggerWarning = (p.has_trigger_warning !== undefined && p.has_trigger_warning !== null)
+              ? Boolean(p.has_trigger_warning)
+              : (pMeta.has_trigger_warning !== undefined ? Boolean(pMeta.has_trigger_warning) : false);
+            var triggerCategory = p.trigger_warning_category || pMeta.trigger_warning_category || null;
+            var triggerLabel = p.trigger_warning_label || pMeta.trigger_warning_label || null;
+            var resolvedPhoto = p.photo_url || pMeta.photo_url || null;
+
             return Object.assign({}, p, {
+              sentiment: finalSentiment,
+              sentiment_score: finalScore,
+              moderation_status: finalStatus,
+              moderation_category: finalCat,
+              ai_recommendation: resolvedRec,
+              has_trigger_warning: hasTriggerWarning,
+              trigger_warning_category: triggerCategory,
+              trigger_warning_label: triggerLabel,
+              photo_url: resolvedPhoto,
+              content: SafeSpaceDB.censorProfanity(p.content),
               author_name: p.is_anonymous ? 'Anonymous' : SafeSpaceDB._displayName(p.profiles),
               author_avatar: resolvedAvatar,
               likes: p.post_likes ? p.post_likes.map(function(l) { return l.user_id; }) : [],
@@ -1034,7 +1095,7 @@ var SafeSpaceDB = {
                   user_id: c.user_id,
                   username: SafeSpaceDB._displayName(c.profiles),
                   avatar_url: c.profiles ? c.profiles.avatar_url : null,
-                  content: c.content,
+                  content: SafeSpaceDB.censorProfanity(c.content),
                   reactions: r,
                   likes: likesList,
                   parent_id: parentId,
@@ -1101,6 +1162,17 @@ var SafeSpaceDB = {
       }
 
       return posts.map(function(p) {
+        var localAiMeta = {};
+        try {
+          localAiMeta = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
+        } catch (me) {}
+        var pMeta = (p.id && localAiMeta[p.id]) ? localAiMeta[p.id] : {};
+        var hasTriggerWarning = (p.has_trigger_warning !== undefined && p.has_trigger_warning !== null)
+          ? Boolean(p.has_trigger_warning)
+          : (pMeta.has_trigger_warning !== undefined ? Boolean(pMeta.has_trigger_warning) : false);
+        var triggerCategory = p.trigger_warning_category || pMeta.trigger_warning_category || null;
+        var triggerLabel = p.trigger_warning_label || pMeta.trigger_warning_label || null;
+
         var postSavedBy = Array.isArray(p.saved_by) ? p.saved_by : [];
         if (saved.includes(p.id) && currentUser && !postSavedBy.includes(currentUser.id)) {
           postSavedBy = postSavedBy.concat([currentUser.id]);
@@ -1114,14 +1186,18 @@ var SafeSpaceDB = {
           category: p.category || 'general',
           saved_by: postSavedBy,
           likes: Array.isArray(p.likes) ? p.likes : [],
-          comments: Array.isArray(p.comments) ? p.comments : []
+          comments: Array.isArray(p.comments) ? p.comments : [],
+          has_trigger_warning: hasTriggerWarning,
+          trigger_warning_category: triggerCategory,
+          trigger_warning_label: triggerLabel
         });
       });
     },
 
     createPost: async function(options) {
       options = options || {};
-      var content = options.content;
+      var rawContent = options.content || '';
+      var content = SafeSpaceDB.censorProfanity(rawContent);
       var mood = options.mood || null;
       var photo_url = options.photo_url || null;
       var is_anonymous = Boolean(options.is_anonymous);
@@ -1152,7 +1228,9 @@ var SafeSpaceDB = {
       // Authoritative Content Moderation Shield (prevents direct bypass)
       if (typeof window !== 'undefined' && window.AIService && content) {
         var modCheck = await window.AIService.moderate(content);
-        if (!modCheck.allowed || modCheck.status === 'BLOCKED' || (modCheck.status === 'REVIEW' && modCheck.category !== 'SAFE')) {
+        var isFlagged = !modCheck.allowed || modCheck.status === 'BLOCKED' || modCheck.status === 'REVIEW' || (modCheck.category && modCheck.category !== 'SAFE');
+
+        if (isFlagged) {
           if (SafeSpaceDB.admin && SafeSpaceDB.admin.logModerationEvent) {
             SafeSpaceDB.admin.logModerationEvent({
               user_id: currentUser.id,
@@ -1161,20 +1239,45 @@ var SafeSpaceDB = {
               category: modCheck.category,
               severity: modCheck.severity,
               confidence: modCheck.confidence,
-              action: 'blocked',
+              action: options.is_user_confirmed ? 'user_confirmed_warning' : 'flagged',
               reason: modCheck.reason,
               detection_source: modCheck.detection_source || (modCheck.online ? 'ai' : 'fallback'),
               online: modCheck.online
             }).catch(function() {});
           }
-          throw new Error('Your post may violate the Safe Space community guidelines. Please review and revise your message before posting.');
+
+          // Strictly block high-risk violations that are not allowed to be published
+          if (modCheck.warning_config && modCheck.warning_config.can_continue === false) {
+            throw new Error('Content that violates community safety rules cannot be published. Please revise your content.');
+          }
+
+          // If the user has not confirmed posting via the warning modal, block direct submission
+          if (!options.is_user_confirmed && options.moderation_status !== 'REVIEW') {
+            throw new Error('Your post was flagged by the safety filter. Please review and revise before posting.');
+          }
         }
+
         sentiment = sentiment || modCheck.sentiment;
         sentiment_score = (typeof sentiment_score === 'number') ? sentiment_score : modCheck.sentiment_score;
-        moderation_status = modCheck.status;
-        moderation_category = modCheck.category;
-        moderation_confidence = modCheck.confidence;
-        moderation_reason = modCheck.reason;
+        moderation_status = options.is_user_confirmed ? 'REVIEW' : (modCheck.status || moderation_status);
+        moderation_category = modCheck.category || moderation_category;
+        moderation_confidence = modCheck.confidence || moderation_confidence;
+        moderation_reason = options.is_user_confirmed ? ('User chose Continue Posting after safety warning: ' + (modCheck.reason || modCheck.category)) : (modCheck.reason || moderation_reason);
+      }
+
+      var has_trigger_warning = Boolean(options.has_trigger_warning);
+      var trigger_warning_category = options.trigger_warning_category || null;
+      var trigger_warning_label = options.trigger_warning_label || null;
+
+      var ai_recommendation = options.ai_recommendation || (typeof modCheck !== 'undefined' && modCheck ? modCheck.support_recommendation : null);
+      if (!ai_recommendation && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender && content) {
+        ai_recommendation = window.SafeSpaceSupportRecommender.generate(content, sentiment || 'NEUTRAL', moderation_category || 'SAFE');
+      }
+
+      if (!has_trigger_warning && typeof modCheck !== 'undefined' && modCheck && modCheck.warning_config) {
+        has_trigger_warning = Boolean(modCheck.warning_config.has_trigger_warning);
+        trigger_warning_category = trigger_warning_category || modCheck.warning_config.trigger_warning_category || modCheck.category;
+        trigger_warning_label = trigger_warning_label || modCheck.warning_config.trigger_warning_label;
       }
 
       if (SafeSpaceDB.isSupabaseActive()) {
@@ -1193,7 +1296,11 @@ var SafeSpaceDB = {
             sentiment: sentiment,
             sentiment_score: sentiment_score,
             moderation_status: moderation_status,
-            moderation_category: moderation_category
+            moderation_category: moderation_category,
+            ai_recommendation: typeof ai_recommendation === 'object' ? JSON.stringify(ai_recommendation) : ai_recommendation,
+            has_trigger_warning: has_trigger_warning,
+            trigger_warning_category: trigger_warning_category,
+            trigger_warning_label: trigger_warning_label
           });
 
           var res = await _db.from('posts').insert(aiPayload).select('*, profiles:user_id(id, username, avatar_url)').single();
@@ -1205,13 +1312,39 @@ var SafeSpaceDB = {
 
           if (res.error) throw res.error;
           var p = res.data;
+          var resolvedPostSentiment = p.sentiment || sentiment || 'NEUTRAL';
+          var resolvedPostScore = (p.sentiment_score !== undefined && p.sentiment_score !== null) ? p.sentiment_score : (sentiment_score !== undefined ? sentiment_score : 0.50);
+          var resolvedPostModStatus = p.moderation_status || moderation_status || 'APPROVED';
+          var resolvedPostModCat = p.moderation_category || moderation_category || 'SAFE';
+
+          try {
+            var aiStore = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
+            aiStore[p.id] = {
+              sentiment: resolvedPostSentiment,
+              sentiment_score: resolvedPostScore,
+              moderation_status: resolvedPostModStatus,
+              moderation_category: resolvedPostModCat,
+              ai_recommendation: ai_recommendation,
+              has_trigger_warning: has_trigger_warning,
+              trigger_warning_category: trigger_warning_category,
+              trigger_warning_label: trigger_warning_label,
+              photo_url: p.photo_url || photo_url
+            };
+            localStorage.setItem('safe_space_post_ai_meta', JSON.stringify(aiStore));
+          } catch (me) {}
+
           return Object.assign({}, p, {
             author_name: p.is_anonymous ? 'Anonymous' : SafeSpaceDB._displayName(p.profiles || currentUser),
             author_avatar: (p.profiles && p.profiles.avatar_url) ? p.profiles.avatar_url : (currentUser ? currentUser.avatar_url : null),
-            sentiment: p.sentiment || sentiment,
-            sentiment_score: p.sentiment_score !== undefined ? p.sentiment_score : sentiment_score,
-            moderation_status: p.moderation_status || moderation_status,
-            moderation_category: p.moderation_category || moderation_category,
+            sentiment: resolvedPostSentiment,
+            sentiment_score: resolvedPostScore,
+            moderation_status: resolvedPostModStatus,
+            moderation_category: resolvedPostModCat,
+            ai_recommendation: ai_recommendation,
+            has_trigger_warning: has_trigger_warning,
+            trigger_warning_category: trigger_warning_category,
+            trigger_warning_label: trigger_warning_label,
+            photo_url: p.photo_url || photo_url,
             likes: [],
             comments: [],
             saved_by: []
@@ -1233,12 +1366,16 @@ var SafeSpaceDB = {
         photo_url: photo_url,
         is_anonymous: is_anonymous,
         category: category,
-        sentiment: sentiment,
-        sentiment_score: sentiment_score,
-        moderation_status: moderation_status,
-        moderation_category: moderation_category,
+        sentiment: sentiment || 'NEUTRAL',
+        sentiment_score: sentiment_score !== undefined ? sentiment_score : 0.5,
+        moderation_status: moderation_status || 'APPROVED',
+        moderation_category: moderation_category || 'SAFE',
         moderation_confidence: moderation_confidence,
         moderation_reason: moderation_reason,
+        ai_recommendation: ai_recommendation,
+        has_trigger_warning: has_trigger_warning,
+        trigger_warning_category: trigger_warning_category,
+        trigger_warning_label: trigger_warning_label,
         likes: [],
         comments: [],
         saved_by: [],
@@ -1246,7 +1383,111 @@ var SafeSpaceDB = {
       };
       posts.unshift(newPost);
       localStorage.setItem('safe_space_posts', JSON.stringify(posts));
+
+      try {
+        var aiStoreDemo = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
+        aiStoreDemo[newPost.id] = {
+          sentiment: newPost.sentiment,
+          sentiment_score: newPost.sentiment_score,
+          moderation_status: newPost.moderation_status,
+          moderation_category: newPost.moderation_category,
+          ai_recommendation: newPost.ai_recommendation,
+          has_trigger_warning: newPost.has_trigger_warning,
+          trigger_warning_category: newPost.trigger_warning_category,
+          trigger_warning_label: newPost.trigger_warning_label
+        };
+        localStorage.setItem('safe_space_post_ai_meta', JSON.stringify(aiStoreDemo));
+      } catch (me) {}
+
       return newPost;
+    },
+
+    editPost: async function(postId, newContent) {
+      return this.updatePost(postId, { content: newContent });
+    },
+
+    updatePost: async function(postId, updates) {
+      updates = updates || {};
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) throw new Error('You must be logged in to edit a post.');
+
+      if (updates.content) {
+        updates.content = SafeSpaceDB.censorProfanity(updates.content);
+
+        // Re-evaluate automated moderation shield on edited content
+        if (typeof window !== 'undefined' && window.AIService) {
+          var modCheck = await window.AIService.moderate(updates.content);
+          if (!modCheck.allowed || modCheck.status === 'BLOCKED' || (modCheck.status === 'REVIEW' && modCheck.category !== 'SAFE')) {
+            throw new Error('Your edited post violates Safe Space guidelines. Please revise your content.');
+          }
+          updates.sentiment = modCheck.sentiment;
+          updates.sentiment_score = modCheck.sentiment_score;
+          updates.moderation_status = modCheck.status;
+          updates.moderation_category = modCheck.category;
+          updates.moderation_confidence = modCheck.confidence;
+          updates.moderation_reason = modCheck.reason;
+
+          // Regenerate AI supportive recommendation for edited post
+          var newRec = modCheck.support_recommendation;
+          if (!newRec && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender) {
+            newRec = window.SafeSpaceSupportRecommender.generate(updates.content, modCheck.sentiment, modCheck.category, modCheck.risk_level, modCheck.language);
+          }
+          updates.ai_recommendation = newRec;
+          updates.ai_recommendation_status = newRec ? 'generated' : 'omitted';
+
+          try {
+            var aiStore = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
+            aiStore[postId] = Object.assign({}, aiStore[postId] || {}, {
+              sentiment: updates.sentiment,
+              sentiment_score: updates.sentiment_score,
+              moderation_status: updates.moderation_status,
+              moderation_category: updates.moderation_category,
+              ai_recommendation: newRec
+            });
+            localStorage.setItem('safe_space_post_ai_meta', JSON.stringify(aiStore));
+          } catch (me) {}
+        }
+      }
+
+      updates.updated_at = new Date().toISOString();
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(postId)) {
+        try {
+          var client = _dbAdmin || _db;
+          var res = await client.from('posts').update(updates).eq('id', postId).eq('user_id', currentUser.id).select('*, profiles:user_id(id, username, avatar_url)').single();
+          if (!res.error && res.data) {
+            SafeSpaceDB._broadcastModerationSync(postId, 'updated');
+            return res.data;
+          }
+        } catch (e) {
+          console.warn('[SafeSpace] Supabase updatePost failed, updating local:', e.message);
+        }
+      }
+
+      var posts = JSON.parse(localStorage.getItem('safe_space_posts')) || [];
+      var idx = posts.findIndex(function(p) { return p.id === postId; });
+      if (idx !== -1) {
+        posts[idx] = Object.assign({}, posts[idx], updates);
+        localStorage.setItem('safe_space_posts', JSON.stringify(posts));
+
+        // Update sentiment record for local post
+        try {
+          if (SafeSpaceDB.sentiment && SafeSpaceDB.sentiment.recordSentiment && updates.content) {
+            SafeSpaceDB.sentiment.recordSentiment({
+              content_id: postId,
+              content_type: 'post',
+              user_id: currentUser.id,
+              text: updates.content,
+              sentiment: updates.sentiment || posts[idx].sentiment,
+              sentiment_score: updates.sentiment_score || posts[idx].sentiment_score,
+              confidence: updates.moderation_confidence || 0.90
+            }).catch(function() {});
+          }
+        } catch (se) {}
+        SafeSpaceDB._broadcastModerationSync(postId, 'updated');
+        return posts[idx];
+      }
+      return null;
     },
 
     _isUUID: function(str) {
@@ -1451,6 +1692,7 @@ var SafeSpaceDB = {
 
     addComment: async function(postId, content, options) {
       options = options || {};
+      content = SafeSpaceDB.censorProfanity(content || '');
       var currentUser = await SafeSpaceDB.auth.getCurrentUser();
       if (!currentUser) throw new Error('Log in to comment.');
 
@@ -1465,7 +1707,9 @@ var SafeSpaceDB = {
       // Authoritative Content Moderation Shield for Comments
       if (typeof window !== 'undefined' && window.AIService && content) {
         var modCheck = await window.AIService.moderate(content);
-        if (!modCheck.allowed || modCheck.status === 'BLOCKED' || (modCheck.status === 'REVIEW' && modCheck.category !== 'SAFE')) {
+        var isFlagged = !modCheck.allowed || modCheck.status === 'BLOCKED' || (modCheck.status === 'REVIEW' && modCheck.category !== 'SAFE');
+
+        if (isFlagged) {
           if (SafeSpaceDB.admin && SafeSpaceDB.admin.logModerationEvent) {
             SafeSpaceDB.admin.logModerationEvent({
               user_id: currentUser.id,
@@ -1475,13 +1719,16 @@ var SafeSpaceDB = {
               category: modCheck.category,
               severity: modCheck.severity,
               confidence: modCheck.confidence,
-              action: 'blocked',
+              action: options.is_user_confirmed ? 'user_confirmed_warning' : 'flagged',
               reason: modCheck.reason,
               detection_source: modCheck.detection_source || (modCheck.online ? 'ai' : 'fallback'),
               online: modCheck.online
             }).catch(function() {});
           }
-          throw new Error('Your comment may violate the Safe Space community guidelines. Please review and revise your message before posting.');
+
+          if (!options.is_user_confirmed) {
+            throw new Error('Your comment may violate the Safe Space community guidelines. Please review and revise your message before posting.');
+          }
         }
       }
 
@@ -1588,6 +1835,51 @@ var SafeSpaceDB = {
         }
       }
       return comment;
+    },
+
+    editComment: async function(commentId, newContent) {
+      return this.updateComment(commentId, newContent);
+    },
+
+    updateComment: async function(commentId, newContent) {
+      newContent = SafeSpaceDB.censorProfanity(newContent || '');
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) throw new Error('Log in to edit comment.');
+
+      if (typeof window !== 'undefined' && window.AIService && newContent) {
+        var modCheck = await window.AIService.moderate(newContent);
+        if (!modCheck.allowed || modCheck.status === 'BLOCKED' || (modCheck.status === 'REVIEW' && modCheck.category !== 'SAFE')) {
+          throw new Error('Your edited comment violates Safe Space guidelines. Please revise your message.');
+        }
+      }
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(commentId)) {
+        try {
+          var res = await _db.from('post_comments')
+            .update({ content: newContent })
+            .eq('id', commentId)
+            .eq('user_id', currentUser.id)
+            .select('*, profiles:user_id(username, first_name, last_name, avatar_url)')
+            .single();
+          if (!res.error && res.data) {
+            return res.data;
+          }
+        } catch (e) {
+          console.warn('[SafeSpace] Supabase updateComment failed, updating local:', e.message);
+        }
+      }
+
+      var posts = JSON.parse(localStorage.getItem('safe_space_posts')) || [];
+      for (var pi = 0; pi < posts.length; pi++) {
+        var cmts = posts[pi].comments || [];
+        var cIdx = cmts.findIndex(function(c) { return c.id === commentId; });
+        if (cIdx !== -1) {
+          cmts[cIdx].content = newContent;
+          localStorage.setItem('safe_space_posts', JSON.stringify(posts));
+          return cmts[cIdx];
+        }
+      }
+      return null;
     },
 
     toggleCommentReaction: async function(commentId, postId) {
@@ -1912,6 +2204,54 @@ var SafeSpaceDB = {
   // MESSAGING & CHAT SUPPORT (MODULE 3)
   // ==========================================
   messages: {
+    _mergeGroupsIntoConvs: async function(convosList, limit) {
+      limit = limit || 30;
+      var resList = [].concat(convosList || []);
+      try {
+        if (SafeSpaceDB.groups && SafeSpaceDB.groups.getGroups) {
+          var userGroups = await SafeSpaceDB.groups.getGroups();
+          for (var gi = 0; gi < userGroups.length; gi++) {
+            var grp = userGroups[gi];
+            if (!resList.some(function(c) { return c.id === grp.id || c.user_id === grp.id; })) {
+              resList.push({
+                id: grp.id,
+                user_id: grp.id,
+                conversation_id: grp.id,
+                is_group: true,
+                isGroup: true,
+                username: grp.title,
+                name: grp.title,
+                title: grp.title,
+                description: grp.description || '',
+                avatar_url: grp.avatar_url || '👥',
+                avatar_icon: grp.avatar_icon || grp.avatar_url || '👥',
+                members: grp.members || [],
+                member_count: (grp.members && grp.members.length) || grp.member_count || 1,
+                created_by: grp.created_by,
+                last_message: grp.last_message || 'Tap to chat with group',
+                last_message_at: grp.last_message_at || grp.updated_at || grp.created_at,
+                unread_count: 0,
+                is_online: true,
+                contact: {
+                  id: grp.id,
+                  username: grp.title,
+                  is_group: true,
+                  avatar_url: grp.avatar_url || '👥',
+                  avatar_icon: grp.avatar_icon || grp.avatar_url || '👥'
+                }
+              });
+            }
+          }
+        }
+      } catch (gErr) {
+        console.warn('[SafeSpace] Error merging groups in getConversations:', gErr);
+      }
+      resList.sort(function(a, b) {
+        return new Date(b.last_message_at || b.created_at || 0) - new Date(a.last_message_at || a.created_at || 0);
+      });
+      return resList.slice(0, limit);
+    },
+
     getConversations: async function(limit) {
       limit = limit || 20;
       var currentUser = await SafeSpaceDB.auth.getCurrentUser();
@@ -1948,7 +2288,7 @@ var SafeSpaceDB = {
                 user_id: otherUser.id,
                 username: dispName,
                 avatar_url: otherUser.avatar_url,
-                last_message: m.message,
+                last_message: SafeSpaceDB.censorProfanity(m.message),
                 last_message_at: m.created_at,
                 unread_count: isUnreadIncoming ? 1 : 0,
                 last_active: m.created_at,
@@ -1972,10 +2312,7 @@ var SafeSpaceDB = {
           for (var k in convosMap) {
             if (convosMap.hasOwnProperty(k)) convList.push(convosMap[k]);
           }
-          convList.sort(function(a, b) {
-            return new Date(b.last_message_at) - new Date(a.last_message_at);
-          });
-          return convList.slice(0, limit);
+          return await this._mergeGroupsIntoConvs(convList, limit);
         } catch (err) {
           console.warn('[SafeSpace] Supabase getConversations error:', err.message);
         }
@@ -2004,7 +2341,7 @@ var SafeSpaceDB = {
             user_id: otherId,
             username: dName,
             avatar_url: mem.avatar_url,
-            last_message: msg.message,
+            last_message: SafeSpaceDB.censorProfanity(msg.message),
             last_message_at: msg.created_at,
             unread_count: isUnreadLoc ? 1 : 0,
             last_active: mem.last_active,
@@ -2027,10 +2364,7 @@ var SafeSpaceDB = {
       for (var lk in convosMap) {
         if (convosMap.hasOwnProperty(lk)) localConvs.push(convosMap[lk]);
       }
-      localConvs.sort(function(a, b) {
-        return new Date(b.last_message_at) - new Date(a.last_message_at);
-      });
-      return localConvs.slice(0, limit);
+      return await this._mergeGroupsIntoConvs(localConvs, limit);
     },
 
     getMessages: function(otherUserId, options) {
@@ -2045,23 +2379,40 @@ var SafeSpaceDB = {
       var currentUser = await SafeSpaceDB.auth.getCurrentUser();
       if (!currentUser) return [];
 
+      var isGroup = false;
+      try {
+        if (SafeSpaceDB.groups && SafeSpaceDB.groups.isGroup) {
+          isGroup = await SafeSpaceDB.groups.isGroup(otherUserId);
+        }
+      } catch (e) {}
+
       var sbMessages = [];
-      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(otherUserId) && SafeSpaceDB.posts._isUUID(currentUser.id)) {
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(currentUser.id)) {
         try {
           var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || _db;
-          var query = client.from('messages')
-            .select('id, sender_id, receiver_id, message, is_deleted, deleted_for, reactions, created_at')
-            .or('and(sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + otherUserId + '),and(sender_id.eq.' + otherUserId + ',receiver_id.eq.' + currentUser.id + ')')
-            .order('created_at', { ascending: false })
-            .limit(limit);
-
-          if (before) {
-            query = query.lt('created_at', before);
+          var query = null;
+          if (isGroup) {
+            query = client.from('messages')
+              .select('id, conversation_id, sender_id, receiver_id, message, is_deleted, deleted_for, reactions, created_at, sender:sender_id(id, username, first_name, last_name, avatar_url)')
+              .or('conversation_id.eq.' + otherUserId + ',receiver_id.eq.' + otherUserId)
+              .order('created_at', { ascending: false })
+              .limit(limit);
+          } else if (SafeSpaceDB.posts._isUUID(otherUserId)) {
+            query = client.from('messages')
+              .select('id, sender_id, receiver_id, message, is_deleted, deleted_for, reactions, created_at, sender:sender_id(id, username, first_name, last_name, avatar_url)')
+              .or('and(sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + otherUserId + '),and(sender_id.eq.' + otherUserId + ',receiver_id.eq.' + currentUser.id + ')')
+              .order('created_at', { ascending: false })
+              .limit(limit);
           }
 
-          var res = await query;
-          if (!res.error && Array.isArray(res.data)) {
-            sbMessages = res.data;
+          if (query) {
+            if (before) {
+              query = query.lt('created_at', before);
+            }
+            var res = await query;
+            if (!res.error && Array.isArray(res.data)) {
+              sbMessages = res.data;
+            }
           }
         } catch (err) {
           console.warn('[SafeSpace] Supabase getMessagesWith warning:', err.message);
@@ -2069,10 +2420,17 @@ var SafeSpaceDB = {
       }
 
       var allLocal = JSON.parse(localStorage.getItem('safe_space_messages')) || [];
-      var filteredLocal = allLocal.filter(function(m) {
-        return (m.sender_id === currentUser.id && m.receiver_id === otherUserId) ||
-               (m.sender_id === otherUserId && m.receiver_id === currentUser.id);
-      });
+      var filteredLocal = [];
+      if (isGroup) {
+        filteredLocal = allLocal.filter(function(m) {
+          return m.conversation_id === otherUserId || m.receiver_id === otherUserId;
+        });
+      } else {
+        filteredLocal = allLocal.filter(function(m) {
+          return (m.sender_id === currentUser.id && m.receiver_id === otherUserId) ||
+                 (m.sender_id === otherUserId && m.receiver_id === currentUser.id);
+        });
+      }
       if (before) {
         var beforeTime = new Date(before).getTime();
         filteredLocal = filteredLocal.filter(function(m) { return new Date(m.created_at).getTime() < beforeTime; });
@@ -2134,7 +2492,39 @@ var SafeSpaceDB = {
         } catch (cle) {}
       }
 
-      return deduplicated.slice(-limit);
+      var membersCache = JSON.parse(localStorage.getItem('safe_space_members')) || [];
+      return deduplicated.slice(-limit).map(function(m) {
+        var sName = m.sender_name;
+        var sAvatar = m.sender_avatar;
+        var sUsername = m.sender_username;
+        if (!sName) {
+          if (m.sender_id === currentUser.id) {
+            sName = SafeSpaceDB._displayName(currentUser);
+            sAvatar = currentUser.avatar_url;
+            sUsername = currentUser.username;
+          } else if (m.sender && (m.sender.username || m.sender.first_name)) {
+            sName = SafeSpaceDB._displayName(m.sender);
+            sAvatar = m.sender.avatar_url;
+            sUsername = m.sender.username;
+          } else {
+            var foundMem = membersCache.find(function(u) { return u.id === m.sender_id; });
+            if (foundMem) {
+              sName = SafeSpaceDB._displayName(foundMem);
+              sAvatar = foundMem.avatar_url;
+              sUsername = foundMem.username;
+            } else {
+              sName = 'Member';
+              sUsername = 'member';
+            }
+          }
+        }
+        return Object.assign({}, m, {
+          message: SafeSpaceDB.censorProfanity(m.message),
+          sender_name: sName,
+          sender_avatar: sAvatar,
+          sender_username: sUsername
+        });
+      });
     },
 
     markAsRead: async function(otherUserId) {
@@ -2187,6 +2577,24 @@ var SafeSpaceDB = {
       });
       if (localMarked > 0) {
         localStorage.setItem('safe_space_messages', JSON.stringify(messages));
+
+      // Record sentiment in sentiment_analysis_logs for chat messages
+      try {
+        if (SafeSpaceDB.sentiment && SafeSpaceDB.sentiment.recordSentiment && text) {
+          var mSent = (typeof window !== 'undefined' && window.SafeSpaceSentiment)
+            ? window.SafeSpaceSentiment.analyze(text)
+            : { sentiment: 'Neutral', sentiment_score: 0.5, confidence: 0.85 };
+          SafeSpaceDB.sentiment.recordSentiment({
+            content_id: msgId,
+            content_type: 'message',
+            user_id: currentUser.id,
+            text: text,
+            sentiment: mSent.sentiment,
+            sentiment_score: mSent.sentiment_score,
+            confidence: mSent.confidence
+          }).catch(function() {});
+        }
+      } catch (se) {}
       }
 
       try {
@@ -2225,7 +2633,12 @@ var SafeSpaceDB = {
       }).length;
     },
 
-    sendMessage: async function(receiverId, text, customId) {
+    sendMessage: async function(receiverId, text, customId, mediaUrl) {
+      if (typeof customId === 'object' && customId !== null) {
+        mediaUrl = customId.media_url || customId.mediaUrl || mediaUrl;
+        customId = customId.customId || customId.id;
+      }
+      text = SafeSpaceDB.censorProfanity(text || '');
       var currentUser = await SafeSpaceDB.auth.getCurrentUser();
       if (!currentUser) throw new Error('Not authenticated');
 
@@ -2273,14 +2686,27 @@ var SafeSpaceDB = {
         });
       }
 
+      var isGroup = false;
+      try {
+        if (SafeSpaceDB.groups && SafeSpaceDB.groups.isGroup) {
+          isGroup = await SafeSpaceDB.groups.isGroup(receiverId);
+        }
+      } catch (e) {}
+
       var msgId = (customId && SafeSpaceDB.posts._isUUID(customId)) ? customId : _genUUID();
       var msg = {
         id: msgId,
+        conversation_id: isGroup ? receiverId : null,
         sender_id: currentUser.id,
         receiver_id: receiverId,
         message: text,
+        media_url: mediaUrl || null,
+        image_url: mediaUrl || null,
         is_read: false,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        sender_name: SafeSpaceDB._displayName(currentUser),
+        sender_avatar: currentUser.avatar_url,
+        sender_username: currentUser.username
       };
 
       // 1. Attempt Supabase insert
@@ -2290,21 +2716,22 @@ var SafeSpaceDB = {
           var senderValidUUID = SafeSpaceDB.posts._isUUID(currentUser.id);
           var receiverValidUUID = SafeSpaceDB.posts._isUUID(receiverId);
 
-          if (!senderValidUUID || !receiverValidUUID) {
-            console.warn('[SafeSpace] Message not sent to Supabase: sender or receiver ID is not a valid UUID.', {
-              sender_id: currentUser.id,
-              receiver_id: receiverId,
-              note: 'Both accounts must be registered users in Supabase profiles.'
-            });
-          } else {
+          if (senderValidUUID) {
             var insertPayload = {
               id: msgId,
               sender_id: currentUser.id,
-              receiver_id: receiverId,
               message: text
             };
+            if (mediaUrl) {
+              insertPayload.media_url = mediaUrl;
+            }
 
-            // Attempt insert into 'messages' table
+            if (isGroup) {
+              insertPayload.conversation_id = receiverId;
+            } else if (receiverValidUUID) {
+              insertPayload.receiver_id = receiverId;
+            }
+
             var sbRes = await client.from('messages').insert(insertPayload);
             if (sbRes.error) {
               console.warn('[SafeSpace] Supabase message insert error:', sbRes.error.message || sbRes.error);
@@ -2389,7 +2816,7 @@ var SafeSpaceDB = {
               { event: 'INSERT', schema: 'public', table: 'messages' },
               function(payload) {
                 var newMsg = payload.new;
-                if (newMsg && (newMsg.sender_id === otherUserId || newMsg.receiver_id === otherUserId)) {
+                if (newMsg && (newMsg.sender_id === otherUserId || newMsg.receiver_id === otherUserId || newMsg.conversation_id === otherUserId)) {
                   callback(newMsg);
                 }
               }
@@ -2399,7 +2826,7 @@ var SafeSpaceDB = {
               { event: 'UPDATE', schema: 'public', table: 'messages' },
               function(payload) {
                 var updatedMsg = payload.new;
-                if (updatedMsg && (updatedMsg.sender_id === otherUserId || updatedMsg.receiver_id === otherUserId)) {
+                if (updatedMsg && (updatedMsg.sender_id === otherUserId || updatedMsg.receiver_id === otherUserId || updatedMsg.conversation_id === otherUserId)) {
                   callback(updatedMsg);
                 }
               }
@@ -2430,8 +2857,17 @@ var SafeSpaceDB = {
               { event: 'INSERT', schema: 'public', table: 'messages' },
               function(payload) {
                 var newMsg = payload.new;
-                // Only notify for incoming messages addressed to this current user
-                if (newMsg && newMsg.receiver_id === currentUser.id) {
+                // Notify for incoming direct messages or group messages where user is a member
+                var isDirectForUser = newMsg && newMsg.receiver_id === currentUser.id;
+                var isGroupForUser = false;
+                if (newMsg && (newMsg.conversation_id || newMsg.receiver_id) && newMsg.sender_id !== currentUser.id) {
+                  var targetGid = newMsg.conversation_id || newMsg.receiver_id;
+                  var grps = JSON.parse(localStorage.getItem('safe_space_groups') || '[]');
+                  isGroupForUser = grps.some(function(g) {
+                    return g.id === targetGid && Array.isArray(g.members) && g.members.includes(currentUser.id);
+                  });
+                }
+                if (isDirectForUser || isGroupForUser) {
                   callback(newMsg);
                 }
               }
@@ -2544,6 +2980,46 @@ var SafeSpaceDB = {
       } catch (bce) {}
 
       return { id: messageId, mode: 'everyone' };
+    },
+
+    editMessage: async function(messageId, newText) {
+      return this.updateMessage(messageId, newText);
+    },
+
+    updateMessage: async function(messageId, newText) {
+      newText = SafeSpaceDB.censorProfanity(newText || '');
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(messageId)) {
+        try {
+          var client = _dbAdmin || _db;
+          var res = await client.from('messages')
+            .update({
+              message: newText,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', messageId)
+            .eq('sender_id', currentUser.id)
+            .select()
+            .single();
+          if (!res.error && res.data) {
+            return res.data;
+          }
+        } catch (e) {
+          console.warn('[SafeSpace] Supabase updateMessage failed, fallback local:', e.message);
+        }
+      }
+
+      var messages = JSON.parse(localStorage.getItem('safe_space_messages')) || [];
+      var msg = messages.find(function(m) { return m.id === messageId; });
+      if (msg) {
+        msg.message = newText;
+        msg.updated_at = new Date().toISOString();
+        localStorage.setItem('safe_space_messages', JSON.stringify(messages));
+        return msg;
+      }
+      return null;
     },
 
     clearConversation: async function(otherUserId) {
@@ -2712,7 +3188,7 @@ var SafeSpaceDB = {
         type: payload.type || 'announcement',
         post_id: (payload.post_id && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID(payload.post_id)) ? payload.post_id : null,
         comment_id: (payload.comment_id && SafeSpaceDB.posts && SafeSpaceDB.posts._isUUID(payload.comment_id)) ? payload.comment_id : null,
-        message: payload.message || 'New notification',
+        message: SafeSpaceDB.censorProfanity(payload.message || 'New notification'),
         is_read: false,
         created_at: new Date().toISOString()
       };
@@ -2794,7 +3270,7 @@ var SafeSpaceDB = {
               else if (n.type === 'account_suspended') msg = n.message || '🚫 Account Alert: Your account was suspended by administrators.';
               else msg = n.message || ('Notification from ' + actorName);
               return Object.assign({}, n, {
-                message: msg,
+                message: SafeSpaceDB.censorProfanity(msg),
                 actor_name: actorName,
                 actor_avatar: n.actor ? n.actor.avatar_url : null
               });
@@ -2806,7 +3282,11 @@ var SafeSpaceDB = {
       }
 
       var notifs = JSON.parse(localStorage.getItem('safe_space_notifications_' + currentUser.id)) || [];
-      return notifs;
+      return notifs.map(function(n) {
+        return Object.assign({}, n, {
+          message: SafeSpaceDB.censorProfanity(n.message)
+        });
+      });
     },
 
     markAsRead: async function(notifId) {
@@ -3472,15 +3952,21 @@ var SafeSpaceDB = {
           if (query) {
             q = q.or('username.ilike.%' + query + '%,first_name.ilike.%' + query + '%');
           }
-          var res = await q;
-          var list = res.data || [];
-          return list.map(function(m) {
-            return Object.assign({}, m, {
-              username: SafeSpaceDB._displayName(m),
-              display_name: SafeSpaceDB._displayName(m),
-              is_online: SafeSpaceDB.users.isOnline(m)
+          var timeoutP = new Promise(function(r) { setTimeout(function() { r({ data: null }); }, 6000); });
+          var res = await Promise.race([q, timeoutP]);
+          var list = res && res.data;
+          if (list && list.length > 0) {
+            try {
+              localStorage.setItem('safe_space_members', JSON.stringify(list));
+            } catch(e) {}
+            return list.map(function(m) {
+              return Object.assign({}, m, {
+                username: SafeSpaceDB._displayName(m),
+                display_name: SafeSpaceDB._displayName(m),
+                is_online: SafeSpaceDB.users.isOnline(m)
+              });
             });
-          });
+          }
         } catch (err) {
           console.warn('[SafeSpace] Supabase getMembers error:', err.message);
         }
@@ -3775,6 +4261,352 @@ var SafeSpaceDB = {
                  (f.requester_id === targetUserId && f.receiver_id === currentUser.id));
       });
       localStorage.setItem('safe_space_friendships', JSON.stringify(friendships));
+      return true;
+    }
+  },
+
+  // ==========================================
+  // GROUP CHAT MODULE (Gatherings & Study Groups)
+  // ==========================================
+  groups: {
+    createGroup: async function(options) {
+      options = options || {};
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      var title = (options.title || '').trim();
+      if (!title) {
+        title = 'Safe Space Group';
+      }
+
+      var memberIds = Array.isArray(options.memberIds) ? options.memberIds.slice() : [];
+      if (!memberIds.includes(currentUser.id)) {
+        memberIds.push(currentUser.id);
+      }
+
+      function _genUUID() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+
+      var groupId = _genUUID();
+      var now = new Date().toISOString();
+      var avatarIcon = options.avatarUrl || options.avatarIcon || '👥';
+      var greetingText = '✨ ' + (currentUser.first_name || currentUser.username) + ' created the group "' + title + '". Welcome everyone to gather and chat!';
+
+      var newGroup = {
+        id: groupId,
+        title: title,
+        name: title,
+        description: options.description || '',
+        is_group: true,
+        isGroup: true,
+        avatar_url: avatarIcon,
+        avatar_icon: avatarIcon,
+        created_by: currentUser.id,
+        created_at: now,
+        updated_at: now,
+        members: memberIds,
+        member_count: memberIds.length,
+        last_message: greetingText,
+        last_message_at: now
+      };
+
+      // 1. Immediately persist group locally for instant zero-latency UI
+      var localGroups = JSON.parse(localStorage.getItem('safe_space_groups')) || [];
+      localGroups = localGroups.filter(function(g) { return g.id !== groupId; });
+      localGroups.unshift(newGroup);
+      localStorage.setItem('safe_space_groups', JSON.stringify(localGroups));
+
+      // 2. Immediately store system greeting message in local messages
+      try {
+        var greetingMsg = {
+          id: 'sys-msg-' + groupId,
+          conversation_id: groupId,
+          receiver_id: groupId,
+          sender_id: currentUser.id,
+          sender_name: currentUser.first_name || currentUser.username,
+          message: greetingText,
+          created_at: now,
+          is_read: true,
+          is_system: true
+        };
+        var localMsgs = SafeSpaceDB.messages._getLocalMessages();
+        localMsgs.push(greetingMsg);
+        SafeSpaceDB.messages._saveLocalMessages(localMsgs);
+      } catch (e) {}
+
+      // 3. Broadcast group created event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('safespace:group_created', { detail: newGroup }));
+        localStorage.setItem('safe_space_last_group_created', JSON.stringify({ group: newGroup, timestamp: Date.now() }));
+      }
+
+      // 4. Background cloud sync to Supabase without blocking UI
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(currentUser.id)) {
+        (async function() {
+          try {
+            var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || _db;
+            var convRes = await client.from('conversations').insert({
+              id: groupId,
+              title: title,
+              description: options.description || '',
+              is_group: true,
+              avatar_url: avatarIcon,
+              created_by: currentUser.id
+            }).select().single();
+
+            if (!convRes.error && convRes.data) {
+              var memberRows = memberIds.filter(function(mid) {
+                return SafeSpaceDB.posts._isUUID(mid);
+              }).map(function(mid) {
+                return {
+                  conversation_id: groupId,
+                  user_id: mid,
+                  role: mid === currentUser.id ? 'admin' : 'member'
+                };
+              });
+
+              if (memberRows.length > 0) {
+                await client.from('conversation_members').insert(memberRows);
+              }
+
+              // Also persist system message to cloud
+              await client.from('messages').insert({
+                conversation_id: groupId,
+                sender_id: currentUser.id,
+                receiver_id: groupId,
+                message: greetingText
+              });
+            }
+          } catch (supaErr) {
+            console.warn('[SafeSpace] Supabase createGroup fallback:', supaErr.message || supaErr);
+          }
+        })();
+      }
+
+      return newGroup;
+    },
+
+    getGroups: async function() {
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) return [];
+
+      var groupsMap = {};
+
+      // 1. Fetch from Supabase if active
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(currentUser.id)) {
+        try {
+          var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || _db;
+          var memRes = await client.from('conversation_members')
+            .select('conversation_id, role, conversation:conversation_id(id, title, description, is_group, avatar_url, created_by, created_at, updated_at)')
+            .eq('user_id', currentUser.id);
+
+          if (memRes.data && Array.isArray(memRes.data)) {
+            for (var i = 0; i < memRes.data.length; i++) {
+              var row = memRes.data[i];
+              if (row.conversation && row.conversation.is_group) {
+                var c = row.conversation;
+                groupsMap[c.id] = {
+                  id: c.id,
+                  title: c.title,
+                  name: c.title,
+                  description: c.description || '',
+                  is_group: true,
+                  isGroup: true,
+                  avatar_url: c.avatar_url || '👥',
+                  avatar_icon: c.avatar_url || '👥',
+                  created_by: c.created_by,
+                  created_at: c.created_at,
+                  updated_at: c.updated_at,
+                  role: row.role,
+                  members: [currentUser.id]
+                };
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('[SafeSpace] Supabase getGroups error:', err.message || err);
+        }
+      }
+
+      // 2. Merge from localStorage
+      var localGroups = JSON.parse(localStorage.getItem('safe_space_groups')) || [];
+      for (var j = 0; j < localGroups.length; j++) {
+        var lg = localGroups[j];
+        if (lg && lg.id) {
+          var isMember = Array.isArray(lg.members) && lg.members.includes(currentUser.id);
+          if (isMember || !lg.members || lg.created_by === currentUser.id) {
+            if (!groupsMap[lg.id]) {
+              groupsMap[lg.id] = lg;
+            } else {
+              groupsMap[lg.id] = Object.assign({}, lg, groupsMap[lg.id]);
+            }
+          }
+        }
+      }
+
+      var list = Object.values(groupsMap);
+      list.sort(function(a, b) {
+        return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+      });
+      return list;
+    },
+
+    getGroup: async function(groupId) {
+      if (!groupId) return null;
+      var localGroups = JSON.parse(localStorage.getItem('safe_space_groups')) || [];
+      var foundLocal = localGroups.find(function(g) { return g.id === groupId; });
+      if (foundLocal) return foundLocal;
+      var groups = await this.getGroups();
+      return groups.find(function(g) { return g.id === groupId; }) || null;
+    },
+
+    isGroup: async function(id) {
+      if (!id) return false;
+      var localGroups = JSON.parse(localStorage.getItem('safe_space_groups')) || [];
+      if (localGroups.some(function(g) { return g.id === id; })) return true;
+      if (typeof id === 'string' && (id.startsWith('grp-') || id.startsWith('group-'))) return true;
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(id)) {
+        try {
+          var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || _db;
+          var { data } = await client.from('conversations').select('id, is_group').eq('id', id).maybeSingle();
+          if (data && data.is_group) return true;
+        } catch (e) {}
+      }
+      return false;
+    },
+
+    updateGroup: async function(groupId, updates) {
+      if (!groupId || !updates) throw new Error('Invalid update parameters');
+      var now = new Date().toISOString();
+
+      var localGroups = JSON.parse(localStorage.getItem('safe_space_groups')) || [];
+      var updatedGroup = null;
+
+      for (var i = 0; i < localGroups.length; i++) {
+        if (localGroups[i].id === groupId) {
+          if (updates.title && updates.title.trim()) {
+            localGroups[i].title = updates.title.trim();
+            localGroups[i].name = updates.title.trim();
+          }
+          if (updates.description !== undefined) {
+            localGroups[i].description = (updates.description || '').trim();
+          }
+          if (updates.avatar_url !== undefined) {
+            localGroups[i].avatar_url = updates.avatar_url;
+          }
+          if (updates.avatar_icon !== undefined) {
+            localGroups[i].avatar_icon = updates.avatar_icon;
+          }
+          localGroups[i].updated_at = now;
+          updatedGroup = localGroups[i];
+          break;
+        }
+      }
+
+      if (!updatedGroup) {
+        updatedGroup = Object.assign({ id: groupId, updated_at: now }, updates);
+        localGroups.unshift(updatedGroup);
+      }
+
+      localStorage.setItem('safe_space_groups', JSON.stringify(localGroups));
+
+      // Broadcast update event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('safespace:group_updated', { detail: updatedGroup }));
+      }
+
+      // Background cloud sync to Supabase conversations table
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(groupId)) {
+        (async function() {
+          try {
+            var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || _db;
+            var supaUpdates = { updated_at: now };
+            if (updates.title && updates.title.trim()) supaUpdates.title = updates.title.trim();
+            if (updates.description !== undefined) supaUpdates.description = updates.description.trim();
+            if (updates.avatar_url !== undefined) supaUpdates.avatar_url = updates.avatar_url;
+            await client.from('conversations').update(supaUpdates).eq('id', groupId);
+          } catch (e) {
+            console.warn('[SafeSpace] Cloud updateGroup sync error:', e);
+          }
+        })();
+      }
+
+      return updatedGroup;
+    },
+
+    addMembers: async function(groupId, newMemberIds) {
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      newMemberIds = Array.isArray(newMemberIds) ? newMemberIds : [newMemberIds];
+
+      var localGroups = JSON.parse(localStorage.getItem('safe_space_groups')) || [];
+      var found = null;
+      for (var i = 0; i < localGroups.length; i++) {
+        if (localGroups[i].id === groupId) {
+          var currentSet = new Set(localGroups[i].members || []);
+          newMemberIds.forEach(function(mid) { currentSet.add(mid); });
+          localGroups[i].members = Array.from(currentSet);
+          localGroups[i].member_count = localGroups[i].members.length;
+          localGroups[i].updated_at = new Date().toISOString();
+          found = localGroups[i];
+          break;
+        }
+      }
+      localStorage.setItem('safe_space_groups', JSON.stringify(localGroups));
+
+      if (SafeSpaceDB.isSupabaseActive()) {
+        try {
+          var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || _db;
+          var rows = newMemberIds.filter(function(mid) { return SafeSpaceDB.posts._isUUID(mid); }).map(function(mid) {
+            return { conversation_id: groupId, user_id: mid, role: 'member' };
+          });
+          if (rows.length > 0) {
+            await client.from('conversation_members').upsert(rows);
+          }
+        } catch (e) {}
+      }
+
+      // Add system announcement
+      try {
+        await SafeSpaceDB.messages.sendMessage(groupId, '👋 New member(s) joined the group.');
+      } catch (e) {}
+
+      return found;
+    },
+
+    leaveGroup: async function(groupId) {
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) return false;
+
+      var localGroups = JSON.parse(localStorage.getItem('safe_space_groups')) || [];
+      for (var i = 0; i < localGroups.length; i++) {
+        if (localGroups[i].id === groupId) {
+          if (Array.isArray(localGroups[i].members)) {
+            localGroups[i].members = localGroups[i].members.filter(function(m) { return m !== currentUser.id; });
+            localGroups[i].member_count = localGroups[i].members.length;
+          }
+          break;
+        }
+      }
+      localStorage.setItem('safe_space_groups', JSON.stringify(localGroups));
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(currentUser.id)) {
+        try {
+          var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || _db;
+          await client.from('conversation_members').delete().match({ conversation_id: groupId, user_id: currentUser.id });
+        } catch (e) {}
+      }
+
+      try {
+        await SafeSpaceDB.messages.sendMessage(groupId, '🚪 ' + (currentUser.first_name || currentUser.username) + ' left the group.');
+      } catch (e) {}
+
       return true;
     }
   },
@@ -5360,24 +6192,559 @@ var SafeSpaceDB = {
   },
 
   // ==========================================
-  // STORAGE & IMAGE UPLOADS
+  // CHAT NICKNAMES
   // ==========================================
-  storage: {
-    uploadImage: async function(file, bucket) {
-      bucket = bucket || 'post-photos';
-      if (SafeSpaceDB.isSupabaseActive()) {
-        var fileExt = file.name ? file.name.split('.').pop() : 'jpg';
-        var fileName = Date.now() + '_' + Math.random().toString(36).substring(2) + '.' + fileExt;
-        var upRes = await _db.storage.from(bucket).upload(fileName, file);
-        if (upRes.error) throw upRes.error;
-        var pubRes = _db.storage.from(bucket).getPublicUrl(fileName);
-        return pubRes.data ? pubRes.data.publicUrl : null;
+  nicknames: {
+    getNicknameSync: function(otherUserId, conversationId) {
+      if (!otherUserId) return null;
+      try {
+        var user = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        if (!user) return null;
+        if (conversationId) {
+          // Group chat nickname: strictly isolated to this group conversation
+          var grpKey = 'safe_space_nicknames_' + user.id + '_grp_' + conversationId;
+          var grpLocal = JSON.parse(localStorage.getItem(grpKey) || '{}');
+          if (grpLocal && grpLocal[otherUserId]) return grpLocal[otherUserId];
+          // Do NOT fall back to private direct nickname! Keep it strictly separate!
+          return null;
+        } else {
+          // Direct 1-on-1 private conversation nickname
+          var directKey = 'safe_space_nicknames_' + user.id + '_direct';
+          var directLocal = JSON.parse(localStorage.getItem(directKey) || '{}');
+          if (directLocal && directLocal[otherUserId]) return directLocal[otherUserId];
+          var legacyKey = 'safe_space_nicknames_' + user.id;
+          var legacyLocal = JSON.parse(localStorage.getItem(legacyKey) || '{}');
+          return legacyLocal[otherUserId] || null;
+        }
+      } catch (e) {
+        return null;
+      }
+    },
+
+    getNickname: async function(otherUserId, conversationId) {
+      if (!otherUserId) return null;
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) return null;
+
+      // 1. Check local storage cache first
+      var localVal = this.getNicknameSync(otherUserId, conversationId);
+      if (localVal) return localVal;
+
+      // 2. Fetch from Supabase with timeout race
+      if (SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive()) {
+        try {
+          var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || (typeof _db !== 'undefined' && _db);
+          if (client && SafeSpaceDB.posts._isUUID(currentUser.id) && SafeSpaceDB.posts._isUUID(otherUserId)) {
+            var timeoutP = new Promise(function(r) { setTimeout(function() { r({ data: null }); }, 1200); });
+            var query = client.from('chat_nicknames')
+              .select('nickname')
+              .eq('user_id', currentUser.id)
+              .eq('other_user_id', otherUserId);
+            
+            if (conversationId) {
+              query = query.eq('conversation_id', conversationId);
+            } else {
+              query = query.is('conversation_id', null);
+            }
+
+            var res = await Promise.race([query.maybeSingle(), timeoutP]);
+            if (res && res.data && res.data.nickname) {
+              var nick = res.data.nickname;
+              try {
+                if (conversationId) {
+                  var grpKey = 'safe_space_nicknames_' + currentUser.id + '_grp_' + conversationId;
+                  var grpStore = JSON.parse(localStorage.getItem(grpKey) || '{}');
+                  grpStore[otherUserId] = nick;
+                  localStorage.setItem(grpKey, JSON.stringify(grpStore));
+                } else {
+                  var directKey = 'safe_space_nicknames_' + currentUser.id + '_direct';
+                  var directStore = JSON.parse(localStorage.getItem(directKey) || '{}');
+                  directStore[otherUserId] = nick;
+                  localStorage.setItem(directKey, JSON.stringify(directStore));
+                }
+              } catch (e) {}
+              return nick;
+            }
+          }
+        } catch (err) {
+          console.warn('[SafeSpace] Supabase getNickname error:', err);
+        }
+      }
+      return null;
+    },
+
+    getAllNicknames: async function(conversationId) {
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) return {};
+      var key = conversationId 
+        ? ('safe_space_nicknames_' + currentUser.id + '_grp_' + conversationId)
+        : ('safe_space_nicknames_' + currentUser.id + '_direct');
+      try {
+        return JSON.parse(localStorage.getItem(key) || '{}');
+      } catch (e) {
+        return {};
+      }
+    },
+
+    setNickname: async function(otherUserId, nickname, conversationId) {
+      if (!otherUserId) throw new Error('Invalid target user');
+      var currentUser = await SafeSpaceDB.auth.getCurrentUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      var clean = (nickname || '').trim();
+
+      if (conversationId) {
+        // Update group-specific local store
+        var grpKey = 'safe_space_nicknames_' + currentUser.id + '_grp_' + conversationId;
+        try {
+          var grpLocal = JSON.parse(localStorage.getItem(grpKey) || '{}');
+          if (clean) {
+            grpLocal[otherUserId] = clean;
+          } else {
+            delete grpLocal[otherUserId];
+          }
+          localStorage.setItem(grpKey, JSON.stringify(grpLocal));
+        } catch (e) {}
+      } else {
+        // Update direct conversation local store
+        var directKey = 'safe_space_nicknames_' + currentUser.id + '_direct';
+        var legacyKey = 'safe_space_nicknames_' + currentUser.id;
+        try {
+          var directLocal = JSON.parse(localStorage.getItem(directKey) || '{}');
+          var legacyLocal = JSON.parse(localStorage.getItem(legacyKey) || '{}');
+          if (clean) {
+            directLocal[otherUserId] = clean;
+            legacyLocal[otherUserId] = clean;
+          } else {
+            delete directLocal[otherUserId];
+            delete legacyLocal[otherUserId];
+          }
+          localStorage.setItem(directKey, JSON.stringify(directLocal));
+          localStorage.setItem(legacyKey, JSON.stringify(legacyLocal));
+        } catch (e) {}
       }
 
-      return new Promise(function(resolve, reject) {
+      // Supabase synchronization
+      if (SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive()) {
+        (async function() {
+          try {
+            var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || (typeof _db !== 'undefined' && _db);
+            if (client && SafeSpaceDB.posts._isUUID(currentUser.id) && SafeSpaceDB.posts._isUUID(otherUserId)) {
+              var convParam = conversationId || null;
+              if (clean) {
+                await client.from('chat_nicknames').upsert({
+                  user_id: currentUser.id,
+                  other_user_id: otherUserId,
+                  conversation_id: convParam,
+                  nickname: clean,
+                  updated_at: new Date().toISOString()
+                });
+              } else {
+                var delQuery = client.from('chat_nicknames').delete()
+                  .eq('user_id', currentUser.id)
+                  .eq('other_user_id', otherUserId);
+                if (convParam) {
+                  delQuery = delQuery.eq('conversation_id', convParam);
+                } else {
+                  delQuery = delQuery.is('conversation_id', null);
+                }
+                await delQuery;
+              }
+            }
+          } catch (sbErr) {
+            console.warn('[SafeSpace] Supabase setNickname sync error:', sbErr);
+          }
+        })();
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('safespace:nickname_updated', {
+          detail: { otherUserId: otherUserId, nickname: clean, conversationId: conversationId || null }
+        }));
+      }
+
+      return clean;
+    }
+  },
+  // ==========================================
+  // STORAGE & IMAGE UPLOADS
+  // ==========================================
+
+
+  // ==========================================
+  // SENTIMENT ANALYSIS & EMOTIONAL WELLNESS
+  // Three-Tier Classification: Positive, Neutral, Negative
+  // Automatic Classification for Posts, Comments, Replies, Messages
+  // ==========================================
+
+  sentiment: {
+    standardizeSentiment: function(val, text) {
+      if (!val && text && typeof window !== 'undefined' && window.SafeSpaceSentiment) {
+        return window.SafeSpaceSentiment.analyze(text).sentiment;
+      }
+      var s = String(val || '').toLowerCase();
+      if (s.indexOf('pos') !== -1) return 'Positive';
+      if (s.indexOf('neg') !== -1) return 'Negative';
+      if (s.indexOf('neu') !== -1) return 'Neutral';
+      if (text && typeof window !== 'undefined' && window.SafeSpaceSentiment) {
+        return window.SafeSpaceSentiment.analyze(text).sentiment;
+      }
+      return 'Neutral';
+    },
+
+    recordSentiment: async function(options) {
+      if (!options || !options.content_id) return null;
+      var contentId = String(options.content_id);
+      var contentType = String(options.content_type || 'post').toLowerCase();
+      var text = options.text || options.content || '';
+      var sent = SafeSpaceDB.sentiment.standardizeSentiment(options.sentiment, text);
+      var score = (typeof options.sentiment_score === 'number') ? options.sentiment_score : (sent === 'Positive' ? 0.85 : (sent === 'Negative' ? 0.20 : 0.50));
+      var conf = (typeof options.confidence === 'number') ? options.confidence : 0.90;
+      var userId = options.user_id || null;
+      var now = new Date().toISOString();
+
+      var record = {
+        id: options.id || ('sent_' + contentId),
+        content_id: contentId,
+        content_type: contentType,
+        user_id: userId,
+        text_content: text.substring(0, 500),
+        sentiment: sent,
+        sentiment_score: score,
+        confidence: conf,
+        method: options.method || 'ai_contextual',
+        created_at: options.created_at || now,
+        updated_at: now
+      };
+
+      // 1. LocalStorage synchronization (zero-latency offline support)
+      try {
+        var logs = JSON.parse(localStorage.getItem('safe_space_sentiment_logs') || '[]');
+        var foundIdx = logs.findIndex(function(l) {
+          return l.content_id === contentId && l.content_type === contentType;
+        });
+        if (foundIdx !== -1) {
+          record.created_at = logs[foundIdx].created_at || record.created_at;
+          record.id = logs[foundIdx].id || record.id;
+          logs[foundIdx] = Object.assign({}, logs[foundIdx], record);
+        } else {
+          logs.unshift(record);
+        }
+        localStorage.setItem('safe_space_sentiment_logs', JSON.stringify(logs));
+      } catch (le) {
+        console.warn('[SafeSpace] localStorage recordSentiment error:', le);
+      }
+
+      // 2. Supabase Cloud synchronization (if available and valid UUID content_id)
+      if (SafeSpaceDB.isSupabaseActive()) {
+        try {
+          var client = _dbAdmin || _db;
+          var dbPayload = {
+            content_id: contentId,
+            content_type: contentType,
+            user_id: userId,
+            text_content: text.substring(0, 500),
+            sentiment: sent,
+            sentiment_score: score,
+            confidence: conf,
+            method: record.method,
+            updated_at: now
+          };
+          var res = await client.from('sentiment_analysis_logs').upsert(dbPayload, {
+            onConflict: 'content_id,content_type'
+          }).select().single();
+          if (!res.error && res.data) {
+            return res.data;
+          }
+        } catch (se) {}
+      }
+
+      return record;
+    },
+
+    getSentimentStats: async function(filters) {
+      filters = filters || {};
+      var filterType = (filters.contentType || filters.content_type || 'all').toLowerCase();
+      var filterRange = (filters.dateRange || filters.date_range || 'all').toLowerCase();
+
+      var rawLogs = [];
+      var supabaseSucceeded = false;
+      if (SafeSpaceDB.isSupabaseActive()) {
+        try {
+          var client = _dbAdmin || _db;
+          var query = client.from('sentiment_analysis_logs').select('*');
+          var dbRes = await query.order('created_at', { ascending: false });
+          if (!dbRes.error && Array.isArray(dbRes.data) && dbRes.data.length > 0) {
+            rawLogs = dbRes.data;
+            supabaseSucceeded = true;
+          }
+        } catch (e) {}
+      }
+
+      if (!supabaseSucceeded || rawLogs.length === 0) {
+        try {
+          rawLogs = JSON.parse(localStorage.getItem('safe_space_sentiment_logs') || '[]');
+        } catch (e) {
+          rawLogs = [];
+        }
+      }
+
+      // Auto-backfill sentiment records from existing posts if missing
+      try {
+        var posts = JSON.parse(localStorage.getItem('safe_space_posts') || '[]');
+        if (Array.isArray(posts) && posts.length > 0) {
+          var logMap = {};
+          rawLogs.forEach(function(l) { logMap[l.content_id + '|' + l.content_type] = true; });
+          var newLogsAdded = false;
+
+          posts.forEach(function(p) {
+            var key = p.id + '|post';
+            if (!logMap[key] && p.content) {
+              var sRes = (typeof window !== 'undefined' && window.SafeSpaceSentiment)
+                ? window.SafeSpaceSentiment.analyze(p.content)
+                : { sentiment: (p.sentiment || 'Neutral'), sentiment_score: p.sentiment_score || 0.5, confidence: 0.85 };
+              var backfillRec = {
+                id: 'sent_' + p.id,
+                content_id: String(p.id),
+                content_type: 'post',
+                user_id: p.user_id || null,
+                text_content: (p.content || '').substring(0, 500),
+                sentiment: SafeSpaceDB.sentiment.standardizeSentiment(p.sentiment || sRes.sentiment, p.content),
+                sentiment_score: p.sentiment_score !== undefined ? p.sentiment_score : sRes.sentiment_score,
+                confidence: sRes.confidence || 0.90,
+                method: 'ai_contextual',
+                created_at: p.created_at || new Date().toISOString(),
+                updated_at: p.updated_at || p.created_at || new Date().toISOString()
+              };
+              rawLogs.push(backfillRec);
+              newLogsAdded = true;
+            }
+          });
+
+          if (newLogsAdded) {
+            try { localStorage.setItem('safe_space_sentiment_logs', JSON.stringify(rawLogs)); } catch (se) {}
+          }
+        }
+      } catch (pe) {}
+
+      var now = Date.now();
+      var filtered = rawLogs.filter(function(item) {
+        if (!item || !item.sentiment) return false;
+
+        if (filterType !== 'all') {
+          var cType = (item.content_type || '').toLowerCase();
+          if (filterType === 'post' && cType !== 'post') return false;
+          if ((filterType === 'comment' || filterType === 'comments') && cType !== 'comment' && cType !== 'reply') return false;
+          if ((filterType === 'message' || filterType === 'chat') && cType !== 'message' && cType !== 'chat') return false;
+        }
+
+        if (filterRange !== 'all') {
+          var itemTime = new Date(item.created_at || item.updated_at || now).getTime();
+          var diffHours = (now - itemTime) / (1000 * 60 * 60);
+          if (filterRange === 'today' && diffHours > 24) return false;
+          if (filterRange === '7d' && diffHours > (7 * 24)) return false;
+          if (filterRange === '30d' && diffHours > (30 * 24)) return false;
+        }
+
+        return true;
+      });
+
+      var pos = 0;
+      var neu = 0;
+      var neg = 0;
+
+      filtered.forEach(function(item) {
+        var s = SafeSpaceDB.sentiment.standardizeSentiment(item.sentiment, item.text_content);
+        if (s === 'Positive') pos++;
+        else if (s === 'Negative') neg++;
+        else neu++;
+      });
+
+      var total = pos + neu + neg;
+      var posPct = 0;
+      var negPct = 0;
+      var neuPct = 0;
+
+      if (total > 0) {
+        posPct = Math.round((pos / total) * 100);
+        negPct = Math.round((neg / total) * 100);
+        neuPct = 100 - posPct - negPct;
+      }
+
+      var daysMap = {};
+      var dayLabels = [];
+      for (var d = 6; d >= 0; d--) {
+        var dayDate = new Date(now - (d * 86400000));
+        var dayKey = dayDate.toISOString().split('T')[0];
+        var dayLabel = dayDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+        dayLabels.push({ key: dayKey, label: dayLabel });
+        daysMap[dayKey] = { date: dayKey, label: dayLabel, pos: 0, neu: 0, neg: 0, total: 0 };
+      }
+
+      filtered.forEach(function(item) {
+        var itemDateStr = (item.created_at || new Date().toISOString()).split('T')[0];
+        if (daysMap[itemDateStr]) {
+          var s = SafeSpaceDB.sentiment.standardizeSentiment(item.sentiment, item.text_content);
+          if (s === 'Positive') daysMap[itemDateStr].pos++;
+          else if (s === 'Negative') daysMap[itemDateStr].neg++;
+          else daysMap[itemDateStr].neu++;
+          daysMap[itemDateStr].total++;
+        }
+      });
+
+      var timeline = dayLabels.map(function(dl) {
+        return daysMap[dl.key];
+      });
+
+      return {
+        total: total,
+        positive: pos,
+        neutral: neu,
+        negative: neg,
+        positive_pct: posPct,
+        neutral_pct: neuPct,
+        negative_pct: negPct,
+        timeline: timeline,
+        records: filtered
+      };
+    }
+  },
+
+  storage: {
+    /**
+     * Client-side responsive image compression
+     * Resizes large mobile/desktop photos down to max 1280px and quality 0.82
+     * Yields lightweight (~80KB - 200KB) JPEG blob and dataUrl for instant loading
+     */
+    compressImage: function(file, maxDim, quality) {
+      maxDim = maxDim || 1280;
+      quality = (typeof quality === 'number') ? quality : 0.82;
+
+      return new Promise(function(resolve) {
+        if (!file) return resolve({ dataUrl: null, blob: null });
+
+        if (typeof file === 'string') {
+          return resolve({ dataUrl: file, blob: null });
+        }
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var originalDataUrl = e.target.result;
+          var mime = (file && file.type) ? file.type : 'image/jpeg';
+          if (!mime.startsWith('image/') || mime === 'image/gif' || mime === 'image/svg+xml') {
+            return resolve({ dataUrl: originalDataUrl, blob: file });
+          }
+
+          var img = new Image();
+          img.onload = function() {
+            try {
+              var w = img.width || 1;
+              var h = img.height || 1;
+              if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                  h = Math.round((h * maxDim) / w);
+                  w = maxDim;
+                } else {
+                  w = Math.round((w * maxDim) / h);
+                  h = maxDim;
+                }
+              }
+
+              var canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              var ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+
+              var compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+              if (canvas.toBlob) {
+                canvas.toBlob(function(blob) {
+                  resolve({
+                    dataUrl: compressedDataUrl,
+                    blob: blob || file
+                  });
+                }, 'image/jpeg', quality);
+              } else {
+                resolve({ dataUrl: compressedDataUrl, blob: file });
+              }
+            } catch (canvasErr) {
+              resolve({ dataUrl: originalDataUrl, blob: file });
+            }
+          };
+          img.onerror = function() {
+            resolve({ dataUrl: originalDataUrl, blob: file });
+          };
+          img.src = originalDataUrl;
+        };
+        reader.onerror = function() {
+          resolve({ dataUrl: null, blob: file });
+        };
+        reader.readAsDataURL(file);
+      });
+    },
+
+    /**
+     * Resilient photo uploader
+     * Attempts Supabase cloud storage across buckets (post-photos, avatars).
+     * If cloud storage is unavailable, misconfigured, or throws network/Failed to fetch,
+     * seamlessly falls back to the compressed base64 Data URL so the post ALWAYS succeeds
+     * and displays the picture in the community feed.
+     */
+    uploadImage: async function(file, bucket) {
+      bucket = bucket || 'post-photos';
+      if (!file) return null;
+
+      if (typeof file === 'string') return file;
+
+      // 1. Generate client-side optimized photo first
+      var optimized = await this.compressImage(file, 1280, 0.82);
+      var uploadBlob = optimized.blob || file;
+      var fallbackDataUrl = optimized.dataUrl;
+
+      // 2. Attempt Supabase cloud storage upload if client is active
+      if (SafeSpaceDB.isSupabaseActive() && typeof _db !== 'undefined' && _db && _db.storage) {
+        var bucketsToTry = [bucket];
+        if (bucket !== 'avatars') bucketsToTry.push('avatars');
+
+        for (var i = 0; i < bucketsToTry.length; i++) {
+          var targetBucket = bucketsToTry[i];
+          try {
+            var fileExt = 'jpg';
+            if (file.name && file.name.includes('.')) {
+              fileExt = file.name.split('.').pop().toLowerCase();
+            }
+            var fileName = Date.now() + '_' + Math.random().toString(36).substring(2, 9) + '.' + fileExt;
+
+            var upRes = await _db.storage.from(targetBucket).upload(fileName, uploadBlob, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: 'image/jpeg'
+            });
+
+            if (upRes && !upRes.error) {
+              var pubRes = _db.storage.from(targetBucket).getPublicUrl(fileName);
+              if (pubRes && pubRes.data && pubRes.data.publicUrl) {
+                return pubRes.data.publicUrl;
+              }
+            } else if (upRes && upRes.error) {
+              console.warn('[Storage] Upload to ' + targetBucket + ' warning:', upRes.error.message || upRes.error);
+            }
+          } catch (storageErr) {
+            console.warn('[Storage] Bucket ' + targetBucket + ' fetch exception caught:', storageErr.message || storageErr);
+          }
+        }
+      }
+
+      // 3. Fallback to optimized Data URL — completely eliminates "Failed to fetch"
+      if (fallbackDataUrl) {
+        return fallbackDataUrl;
+      }
+
+      // 4. Raw file reader fallback
+      return new Promise(function(resolve) {
         var reader = new FileReader();
         reader.onload = function() { resolve(reader.result); };
-        reader.onerror = reject;
+        reader.onerror = function() { resolve(null); };
         reader.readAsDataURL(file);
       });
     }

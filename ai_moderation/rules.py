@@ -16,6 +16,7 @@ CATEGORY_THREAT = "THREAT"
 CATEGORY_VIOLENCE = "VIOLENCE"
 CATEGORY_SEXUAL_HARASSMENT = "SEXUAL_HARASSMENT"
 CATEGORY_SEXUAL_CONTENT = "SEXUAL_CONTENT"
+CATEGORY_NUDITY = "NUDITY"
 CATEGORY_SELF_HARM = "SELF_HARM"
 CATEGORY_ENCOURAGEMENT_OF_SELF_HARM = "ENCOURAGEMENT_OF_SELF_HARM"
 CATEGORY_DANGEROUS_BEHAVIOR = "DANGEROUS_BEHAVIOR"
@@ -82,6 +83,24 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "reason": "Sexual violence threat or explicit sexual harassment."
         },
         {
+            "id": "crit_nudity_solicitation_en",
+            "category": CATEGORY_NUDITY,
+            "severity": SEVERITY_CRITICAL,
+            "action": ACTION_BLOCK,
+            "pattern": r"\b(i\s*(wanna|want\s*to)\s*(have\s*)?sex(\s*with\s*(you|u))?|sex\s*with\s*(you|u)|wanna\s*sex|let'?s\s*(have\s*)?sex)\b",
+            "confidence": 0.98,
+            "reason": "Explicit sexual solicitation or proposition identified as nudity."
+        },
+        {
+            "id": "crit_nudity_single_words_en",
+            "category": CATEGORY_NUDITY,
+            "severity": SEVERITY_CRITICAL,
+            "action": ACTION_BLOCK,
+            "pattern": r"\b(nudity|nude|nudes|naked|sex|porn|porno|pornography|pornographic|nsfw|striptease|topless|bottomless|orgasm|erotic|erotica|masturbat(?:e|ion|ing)|dick|penis|vagina|pussy|clitoris|boobs|boob|boobies|tits|tit|dildo)\b",
+            "confidence": 0.96,
+            "reason": "Nudity or sexually explicit content detected."
+        },
+        {
             "id": "crit_slurs_en",
             "category": CATEGORY_HATE,
             "severity": SEVERITY_CRITICAL,
@@ -129,6 +148,15 @@ RULES_CONFIG: Dict[str, List[Dict[str, Any]]] = {
             "pattern": r"\b(kakantutin\s*(kita|kayo|ka)|kantutin\s*(kita|kayo|ka)|chupain\s*(mo|ako)|tsupain\s*(mo|ako)|bastusin\s*(kita|kayo)|hahawakan\s*ko\s*(ang\s*)?(puke|puki|tite|suso|pwet)\s*mo|gagahasain\s*(kita|ka)|hahalayin\s*(kita|ka))\b",
             "confidence": 0.97,
             "reason": "Explicit sexual harassment in Filipino."
+        },
+        {
+            "id": "fil_nudity_single_words",
+            "category": CATEGORY_NUDITY,
+            "severity": SEVERITY_CRITICAL,
+            "action": ACTION_BLOCK,
+            "pattern": r"\b(hubad|nakahubad|bold|kantot|kantutan|jakol|magjakol|tite|puke|puki|kiki|burat|bayag|pepe|iyot|iyutan|pokpok)\b",
+            "confidence": 0.96,
+            "reason": "Nudity or sexually explicit terminology in Filipino."
         },
         {
             "id": "fil_sexual_content",

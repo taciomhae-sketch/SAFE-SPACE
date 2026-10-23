@@ -139,6 +139,24 @@ CREATE TABLE IF NOT EXISTS public.message_reactions (
     UNIQUE(message_id, user_id)
 );
 
+-- 2.5B CHAT NICKNAMES
+CREATE TABLE IF NOT EXISTS public.chat_nicknames (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    other_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    conversation_id TEXT NULL,
+    nickname TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, other_user_id, conversation_id)
+);
+ALTER TABLE public.chat_nicknames ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own chat nicknames" ON public.chat_nicknames;
+CREATE POLICY "Users can manage their own chat nicknames"
+    ON public.chat_nicknames FOR ALL
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
 -- 2.6 POSTS (Community Feed)
 CREATE TABLE IF NOT EXISTS public.posts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -164,10 +182,18 @@ CREATE TABLE IF NOT EXISTS public.posts (
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS deleted_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS deletion_reason TEXT NULL;
-ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS sentiment TEXT;
-ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS sentiment_score FLOAT;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS sentiment TEXT DEFAULT 'NEUTRAL';
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS sentiment_score FLOAT DEFAULT 0.50;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS moderation_status TEXT DEFAULT 'APPROVED';
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS moderation_category TEXT DEFAULT 'SAFE';
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS moderation_confidence FLOAT DEFAULT 0.95;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS moderation_reason TEXT DEFAULT 'Approved';
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS ai_recommendation JSONB DEFAULT NULL;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS ai_recommendation_status TEXT DEFAULT 'generated';
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS is_user_confirmed BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS has_trigger_warning BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS trigger_warning_category TEXT DEFAULT NULL;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS trigger_warning_label TEXT DEFAULT NULL;
 
 -- 2.7 POST LIKES
 CREATE TABLE IF NOT EXISTS public.post_likes (
@@ -624,3 +650,66 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ban_reason TEXT;
 UPDATE public.profiles
 SET role = 'admin', is_admin = true
 WHERE id = '60d80c30-97e8-44cf-90e2-3a3c02b9975a' OR (email = 'taciomhae@gmail.com' AND username = 'lableyy');
+
+
+-- =============================================================
+-- SAFE SPACE: SENTIMENT ANALYSIS AND CONTENT CLASSIFICATION SCHEMA
+-- Three-Tier Classification: Positive, Neutral, Negative
+-- Supports Posts, Comments, Replies, and Chat Messages
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS public.sentiment_analysis_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content_id TEXT NOT NULL,
+    content_type TEXT NOT NULL CHECK (content_type IN ('post', 'comment', 'reply', 'message', 'chat')),
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    text_content TEXT,
+    sentiment TEXT NOT NULL CHECK (sentiment IN ('Positive', 'Neutral', 'Negative')),
+    sentiment_score NUMERIC(5, 4) DEFAULT 0.5000,
+    confidence NUMERIC(5, 4) DEFAULT 0.8500,
+    method TEXT DEFAULT 'ai_contextual',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_content_sentiment UNIQUE (content_id, content_type)
+);
+
+-- Enable RLS
+ALTER TABLE public.sentiment_analysis_logs ENABLE ROW LEVEL SECURITY;
+
+-- Idempotent Policies
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'sentiment_analysis_logs' AND policyname = 'Allow authenticated read of sentiment analytics'
+    ) THEN
+        CREATE POLICY "Allow authenticated read of sentiment analytics"
+            ON public.sentiment_analysis_logs FOR SELECT
+            TO authenticated
+            USING (true);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'sentiment_analysis_logs' AND policyname = 'Allow authenticated insert of sentiment analysis'
+    ) THEN
+        CREATE POLICY "Allow authenticated insert of sentiment analysis"
+            ON public.sentiment_analysis_logs FOR INSERT
+            TO authenticated
+            WITH CHECK (true);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'sentiment_analysis_logs' AND policyname = 'Allow authenticated update of sentiment analysis'
+    ) THEN
+        CREATE POLICY "Allow authenticated update of sentiment analysis"
+            ON public.sentiment_analysis_logs FOR UPDATE
+            TO authenticated
+            USING (true);
+    END IF;
+END $$;
+
+-- Indexes for high-performance dashboard analytics
+CREATE INDEX IF NOT EXISTS idx_sentiment_logs_content ON public.sentiment_analysis_logs(content_type, sentiment, created_at);
+CREATE INDEX IF NOT EXISTS idx_sentiment_logs_user ON public.sentiment_analysis_logs(user_id);

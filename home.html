@@ -469,30 +469,71 @@
     </div>
   </div>
 
-  <!-- AI Safety Alert Modal for Flagged Content -->
-  <div class="ai-warning-modal-overlay" id="aiWarningModal">
+  <!-- AI Safety Pre-Posting Screening Warning Modal -->
+  <div class="ai-warning-modal-overlay" id="aiWarningModal" role="dialog" aria-modal="true" aria-labelledby="aiWarningTitle">
     <div class="ai-warning-card">
-      <div class="ai-warning-icon-wrap" style="background:#FEF2F2; color:#EF4444;">
+      <div class="ai-warning-icon-wrap" id="aiWarningIcon" style="background:#FEF2F2; color:#EF4444;">
         <i class="fas fa-triangle-exclamation"></i>
       </div>
-      <div class="ai-warning-title">Harmful Content Warning</div>
-      <div class="ai-warning-question-banner" id="aiWarningQuestion" style="font-size:13px; font-weight:800; color:#B91C1C; background:#FEE2E2; border-radius:12px; padding:10px 14px; margin:10px 0 12px; border:1px solid #FCA5A5; line-height:1.45; text-align:center;">
-        Harmful content warning, are you going to continue posting it?
-      </div>
-      <div class="ai-warning-category-pill" id="aiWarningCategory">FLAGGED CONTENT</div>
+      <div class="ai-warning-title" id="aiWarningTitle">Trigger Warning — Sensitive Content Detected</div>
+      <div class="ai-warning-category-pill" id="aiWarningCategory">SENSITIVE CONTENT</div>
       <div class="ai-warning-desc" id="aiWarningReason">
-        Your post was flagged for containing potentially harmful or inappropriate language.
+        Your post may contain sensitive or emotionally distressing content related to topics such as self-harm, violence, abuse, or other difficult experiences. Please review your content before sharing it with the community. You may edit your post, cancel the submission, or continue if the content complies with our community guidelines.
       </div>
+
+      <!-- Urgent 24/7 Crisis Hotline Box (Shown for self-harm / suicide concerns) -->
+      <div class="ai-warning-crisis-card" id="aiWarningCrisisBox" style="display:none;">
+        <div class="ai-crisis-title"><i class="fas fa-phone-volume"></i> 24/7 Crisis Support Hotlines</div>
+        <div class="ai-crisis-desc">You deserve support and do not have to face difficult moments alone:</div>
+        <div class="ai-crisis-numbers">
+          <a href="tel:1553" class="ai-crisis-chip"><i class="fas fa-phone"></i> NCMH Hotline: 1553</a>
+          <a href="tel:09178998727" class="ai-crisis-chip"><i class="fas fa-mobile-screen"></i> 0917-899-USAP (8727)</a>
+          <a href="tel:911" class="ai-crisis-chip emergency"><i class="fas fa-truck-medical"></i> Emergency: 911</a>
+        </div>
+      </div>
+
       <div class="ai-warning-guidance" id="aiWarningGuidance">
-        Safe Space is an empathetic, supportive platform. Please edit your message to ensure respect, empathy, and psychological safety for all community members.
+        Safe Space promotes psychological safety, emotional well-being, and mutual respect for all students.
       </div>
-      <div class="ai-warning-actions" style="display:flex; gap:10px;">
-        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn" style="flex:1;">
-          <i class="fas fa-pen"></i> Edit Post
+
+      <!-- Action Buttons (Responsive Layout) -->
+      <div class="ai-warning-actions" id="aiWarningActions">
+        <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn">
+          <i class="fas fa-pen"></i> <span id="aiCloseWarningLabel">Review / Edit Post</span>
         </button>
-        <button type="button" class="ai-btn-continue" id="aiProceedWarningBtn" style="flex:1; background:#EF4444; color:#FFFFFF; border:none; padding:12px 14px; border-radius:12px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:background 0.2s;">
-          <i class="fas fa-paper-plane"></i> Continue Posting
+        <button type="button" class="ai-btn-resources" id="aiResourcesWarningBtn" style="display:none;" onclick="window.open('resources.html', '_blank')">
+          <i class="fas fa-hand-holding-heart"></i> <span>View Support Resources</span>
         </button>
+        <button type="button" class="ai-btn-guidelines" id="aiGuidelinesWarningBtn" style="display:none;" onclick="openCommunityGuidelinesModal()">
+          <i class="fas fa-book-bookmark"></i> <span>View Community Guidelines</span>
+        </button>
+        <button type="button" class="ai-btn-cancel" id="aiCancelWarningBtn">
+          <i class="fas fa-times"></i> <span>Cancel Posting</span>
+        </button>
+        <button type="button" class="ai-btn-continue" id="aiProceedWarningBtn" style="display:none;">
+          <i class="fas fa-paper-plane"></i> <span>Continue Posting</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Community Guidelines Modal -->
+  <div class="modal-overlay" id="communityGuidelinesModal" style="display:none; z-index:10001;">
+    <div class="modal-card" style="max-width:520px; padding:24px; border-radius:20px; background:#fff;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:18px; font-weight:800; color:var(--text-dark, #1A1A2E); margin:0; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-shield-halved" style="color:var(--primary, #6C4FD1);"></i> Safe Space Community Guidelines
+        </h3>
+        <button type="button" class="modal-close" onclick="closeCommunityGuidelinesModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted);">&times;</button>
+      </div>
+      <div style="font-size:13px; line-height:1.6; color:var(--text-mid, #4B5563); max-height:60vh; overflow-y:auto; padding-right:8px;">
+        <p style="margin-bottom:10px;"><strong>1. Empathy &amp; Mutual Respect:</strong> Treat every student with dignity. Personal insults, harassment, and targeted attacks are strictly prohibited.</p>
+        <p style="margin-bottom:10px;"><strong>2. Absolute Safety First:</strong> Content encouraging self-harm, suicide, or physical violence is not permitted on this platform. Immediate safety guidance and hotlines are provided.</p>
+        <p style="margin-bottom:10px;"><strong>3. Safe Emotional Expression:</strong> Expressing sadness, anxiety, burnout, or academic distress is always welcomed and supported. Personal struggles will never be penalized.</p>
+        <p style="margin-bottom:10px;"><strong>4. Constructive Peer Support:</strong> We encourage uplifting comments, compassionate listening, and healthy coping suggestions.</p>
+      </div>
+      <div style="margin-top:20px; text-align:right;">
+        <button type="button" class="btn-primary" onclick="closeCommunityGuidelinesModal()" style="padding:10px 22px; border-radius:12px; font-weight:700; cursor:pointer;">I Understand</button>
       </div>
     </div>
   </div>
@@ -761,7 +802,9 @@
         if (requestId !== currentFeedRequestId) return;
         console.error(`[SafeSpace] Feed query error for "${category}":`, err);
 
-        if (!currentFeed || currentFeed.length === 0) {
+        const container = document.getElementById('feedContainer');
+        const hasVisiblePosts = container && container.querySelector('.post-card');
+        if (!hasVisiblePosts) {
           renderFeedError(category);
         } else {
           showToast('Could not refresh feed. Displaying existing posts.', 'info');
@@ -1001,135 +1044,234 @@
         return;
       }
 
+      let aiMetaStore = {};
+      try {
+        aiMetaStore = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
+      } catch (e) {
+        aiMetaStore = {};
+      }
+
       container.innerHTML = posts.map(post => {
-        const isAnon = Boolean(post.is_anonymous);
-        const authorDisplay = isAnon ? 'Anonymous' : formatDisplayName(post.author_name, 'Member');
+        try {
+          if (!post) return '';
+          const isAnon = Boolean(post.is_anonymous);
+          const authorDisplay = isAnon ? 'Anonymous' : formatDisplayName(post.author_name, 'Member');
 
-        // Check if post belongs to current user
-        const isMyPost = Boolean(currentUser && (
-          (post.user_id && post.user_id === currentUser.id) ||
-          post.is_mine === true ||
-          (post.author_id && post.author_id === currentUser.id) ||
-          (!post.user_id && post.author_name && (post.author_name === currentUser.username || post.author_name === currentUser.first_name))
-        ));
+          // Check if post belongs to current user
+          const isMyPost = Boolean(currentUser && (
+            (post.user_id && post.user_id === currentUser.id) ||
+            post.is_mine === true ||
+            (post.author_id && post.author_id === currentUser.id) ||
+            (!post.user_id && post.author_name && (post.author_name === currentUser.username || post.author_name === currentUser.first_name))
+          ));
 
-        // Resolve chosen avatar (photo or cute avatar):
-        // 1. If it's my post and currentUser has a chosen avatar, always show currentUser's chosen avatar/photo
-        // 2. Otherwise use post.author_avatar or post.profiles.avatar_url
-        // 3. Fallback for demo/legacy posts without explicit user_id
-        let resolvedAvatar = null;
-        if (isMyPost && currentUser && (currentUser.avatar_url || currentUser.avatar_value)) {
-          resolvedAvatar = currentUser.avatar_url || currentUser.avatar_value;
-        } else {
-          resolvedAvatar = post.author_avatar || (post.profiles && post.profiles.avatar_url) || null;
-        }
-
-        if (!resolvedAvatar && currentUser && (currentUser.avatar_url || currentUser.avatar_value)) {
-          if (isMyPost || !post.user_id) {
+          // Resolve chosen avatar (photo or cute avatar):
+          // 1. If it's my post and currentUser has a chosen avatar, always show currentUser's chosen avatar/photo
+          // 2. Otherwise use post.author_avatar or post.profiles.avatar_url
+          // 3. Fallback for demo/legacy posts without explicit user_id
+          let resolvedAvatar = null;
+          if (isMyPost && currentUser && (currentUser.avatar_url || currentUser.avatar_value)) {
             resolvedAvatar = currentUser.avatar_url || currentUser.avatar_value;
+          } else {
+            resolvedAvatar = post.author_avatar || (post.profiles && post.profiles.avatar_url) || null;
           }
-        }
 
-        const avatarHtml = window.SafeSpaceAvatars
-          ? window.SafeSpaceAvatars.renderHtml(resolvedAvatar, { alt: authorDisplay })
-          : (resolvedAvatar
-              ? `<img src="${escapeHTML(resolvedAvatar)}" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" />`
-              : `<img src="assets/avatars/default-avatar.svg" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`);
+          if (!resolvedAvatar && currentUser && (currentUser.avatar_url || currentUser.avatar_value)) {
+            if (isMyPost || !post.user_id) {
+              resolvedAvatar = currentUser.avatar_url || currentUser.avatar_value;
+            }
+          }
 
-        const moodMap = typeof MOOD_MAP !== 'undefined' ? MOOD_MAP : (window.MOOD_MAP || {});
-        const moodMeta = post.mood && moodMap[post.mood] ? moodMap[post.mood] : null;
-        const moodHtml = moodMeta
-          ? `<span class="post-mood-tag">· ${moodMeta.emoji} ${moodMeta.label}</span>`
-          : '';
+          const avatarHtml = window.SafeSpaceAvatars
+            ? window.SafeSpaceAvatars.renderHtml(resolvedAvatar, { alt: authorDisplay })
+            : (resolvedAvatar
+                ? `<img src="${escapeHTML(resolvedAvatar)}" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='assets/avatars/default-avatar.svg';" />`
+                : `<img src="assets/avatars/default-avatar.svg" alt="${escapeHTML(authorDisplay)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`);
 
-        const rawCat = (post.category || 'general').toLowerCase();
-        const catLabel = (rawCat === 'story' || rawCat === 'stories') ? 'STORY' : rawCat.toUpperCase();
-        const catClass = (rawCat === 'story' || rawCat === 'stories') ? 'story' : rawCat;
-        const isLiked = Array.isArray(post.likes) && currentUser && post.likes.includes(currentUser.id);
-        const likeCount = Array.isArray(post.likes) ? post.likes.length : 0;
-        const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
-        const isSaved = Array.isArray(post.saved_by) && currentUser && post.saved_by.includes(currentUser.id);
+          const moodMap = typeof MOOD_MAP !== 'undefined' ? MOOD_MAP : (window.MOOD_MAP || {});
+          const moodMeta = post.mood && moodMap[post.mood] ? moodMap[post.mood] : null;
+          const moodHtml = moodMeta
+            ? `<span class="post-mood-tag">· ${moodMeta.emoji} ${moodMeta.label}</span>`
+            : '';
 
-        let likesSummaryText = '';
-        if (likeCount === 1) {
-          likesSummaryText = isLiked ? 'You reacted to this' : '1 reaction';
-        } else if (likeCount > 1) {
-          likesSummaryText = isLiked
-            ? (likeCount === 2 ? 'You and 1 other reacted' : `You and ${likeCount - 1} others reacted`)
-            : `${likeCount} reactions`;
-        }
+          const rawCat = (post.category || 'general').toLowerCase();
+          const catLabel = (rawCat === 'story' || rawCat === 'stories') ? 'STORY' : rawCat.toUpperCase();
+          const catClass = (rawCat === 'story' || rawCat === 'stories') ? 'story' : rawCat;
+          const isLiked = Array.isArray(post.likes) && currentUser && post.likes.includes(currentUser.id);
+          const likeCount = Array.isArray(post.likes) ? post.likes.length : 0;
+          const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
+          const isSaved = Array.isArray(post.saved_by) && currentUser && post.saved_by.includes(currentUser.id);
 
-        const aiBadgeHtml = window.AIService ? AIService.renderSentimentBadge(post.sentiment, post.sentiment_score) : '';
-        const aiVerifiedHtml = (post.moderation_status === 'APPROVED' || post.moderation_category === 'SAFE')
-          ? '<span class="ai-verified-tag" title="Verified Safe by Safe Space AI"><i class="fas fa-shield-halved"></i> Safe</span>'
-          : '';
+          let likesSummaryText = '';
+          if (likeCount === 1) {
+            likesSummaryText = isLiked ? 'You reacted to this' : '1 reaction';
+          } else if (likeCount > 1) {
+            likesSummaryText = isLiked
+              ? (likeCount === 2 ? 'You and 1 other reacted' : `You and ${likeCount - 1} others reacted`)
+              : `${likeCount} reactions`;
+          }
 
-        const isClickable = !isAnon;
-        const avatarHtmlTag = isClickable
-          ? `<div class="post-avatar is-clickable" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${avatarHtml}</div>`
-          : `<div class="post-avatar is-anonymous" title="Anonymous Member">${avatarHtml}</div>`;
-        const authorHtmlTag = isClickable
-          ? `<div class="post-author is-clickable" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${escapeHTML(authorDisplay)}</div>`
-          : `<div class="post-author is-anonymous" title="Anonymous Member">${escapeHTML(authorDisplay)}</div>`;
+          const currentSentiment = post.sentiment || 'NEUTRAL';
+          const currentScore = (typeof post.sentiment_score === 'number') ? post.sentiment_score : 0.5;
+          const aiBadgeHtml = window.AIService ? AIService.renderSentimentBadge(currentSentiment, currentScore) : '';
+          const isSafeApproved = !post.moderation_status || post.moderation_status === 'APPROVED' || post.moderation_category === 'SAFE';
+          const aiVerifiedHtml = isSafeApproved
+            ? '<span class="ai-verified-tag" title="Verified Safe by Safe Space AI"><i class="fas fa-shield-halved"></i> Safe</span>'
+            : '';
 
-        return `
-          <article class="post-card" id="post-${post.id}">
-            <div class="post-header">
-              ${avatarHtmlTag}
-              <div class="post-meta">
-                ${authorHtmlTag}
-                <div class="post-time-mood">
-                  <span>${formatRelativeTime(post.created_at)}</span>
-                  <span class="post-category-tag ${escapeHTML(catClass)}">${escapeHTML(catLabel)}</span>
-                  ${moodHtml}
-                  ${aiBadgeHtml}
-                  ${aiVerifiedHtml}
+          const isClickable = !isAnon;
+          const avatarHtmlTag = isClickable
+            ? `<div class="post-avatar is-clickable" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${avatarHtml}</div>`
+            : `<div class="post-avatar is-anonymous" title="Anonymous Member">${avatarHtml}</div>`;
+          const authorHtmlTag = isClickable
+            ? `<div class="post-author is-clickable" onclick="handleAuthorClick(event, '${post.id}')" role="button" tabindex="0" title="View Profile">${escapeHTML(authorDisplay)}</div>`
+            : `<div class="post-author is-anonymous" title="Anonymous Member">${escapeHTML(authorDisplay)}</div>`;
+
+          let rec = post.ai_recommendation;
+          if (typeof rec === 'string' && (rec.startsWith('{') || rec.startsWith('"'))) {
+            try { rec = JSON.parse(rec); } catch (e) {}
+          }
+          if (!rec && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender && post.content) {
+            rec = window.SafeSpaceSupportRecommender.generate(post.content, currentSentiment, post.moderation_category || 'SAFE');
+          }
+
+          let supportRecHtml = '';
+          if (rec && rec.message) {
+            const resBtn = rec.show_resources_button ? `
+              <a href="resources.html" class="ai-support-rec-resource-btn" title="View Verified Support Resources">
+                <i class="fas fa-hand-holding-heart"></i> View Support Resources
+              </a>
+            ` : '';
+
+            supportRecHtml = `
+              <section class="ai-support-recommendation-card" aria-label="Suggested Support from Safe Space AI">
+                <div class="ai-support-rec-header">
+                  <div class="ai-support-rec-title">
+                    <span class="ai-support-rec-spark"><i class="fas fa-sparkles"></i></span>
+                    <span class="ai-support-rec-title-text">Suggested Support from Safe Space AI</span>
+                  </div>
+                  <span class="ai-support-rec-badge"><i class="fas fa-robot"></i> AI Generated</span>
                 </div>
-              </div>
-              <button class="post-menu-btn" onclick="togglePostMenu('${post.id}')" aria-label="Options">
-                <i class="fas fa-ellipsis-vertical"></i>
-              </button>
-            </div>
+                <div class="ai-support-rec-body">
+                  <p class="ai-support-rec-message">${escapeHTML(rec.message)}</p>
+                </div>
+                <div class="ai-support-rec-footer">
+                  <span class="ai-support-rec-disclaimer">
+                    <i class="fas fa-shield-heart"></i> ${escapeHTML(rec.disclaimer || 'Suggested Support from Safe Space AI · Practical student coping recommendation.')}
+                  </span>
+                  ${resBtn}
+                </div>
+              </section>
+            `;
+          }
 
-            <div class="post-content">${escapeHTML(post.content)}</div>
+          const pMeta = (aiMetaStore && post.id && aiMetaStore[post.id]) ? aiMetaStore[post.id] : {};
+          const isPostSensitive = Boolean(
+            post.has_trigger_warning === true ||
+            pMeta.has_trigger_warning === true ||
+            (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(String(post.moderation_category).toUpperCase())) ||
+            (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW')
+          );
 
-            ${post.photo_url ? `
-              <div class="post-image">
-                <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />
-              </div>
-            ` : ''}
+          let twBadgeLabel = post.trigger_warning_label || pMeta.trigger_warning_label || 'Sensitive Content';
+          const rawTwCat = String(post.trigger_warning_category || pMeta.trigger_warning_category || post.moderation_category || '').toUpperCase();
+          if (rawTwCat.includes('NUDITY') || rawTwCat.includes('SEXUAL')) twBadgeLabel = 'Nudity / Explicit Content';
+          else if (rawTwCat.includes('SELF_HARM')) twBadgeLabel = 'Self-Harm / Crisis Concern';
+          else if (rawTwCat.includes('THREAT') || rawTwCat.includes('VIOLEN')) twBadgeLabel = 'Violence or Threatening Content';
+          else if (rawTwCat.includes('BULLY') || rawTwCat.includes('HARASS')) twBadgeLabel = 'Bullying or Harassment';
+          else if (rawTwCat.includes('TRAUMA') || rawTwCat.includes('ABUSE')) twBadgeLabel = 'Trauma or Abuse';
+          else if (rawTwCat.includes('DISTRESS') || rawTwCat.includes('ALARM')) twBadgeLabel = 'Distressing Emotional Content';
 
-            ${likeCount > 0 ? `
-              <div class="post-reactions-bar" id="reactions-bar-${post.id}" onclick="openLikesModal('${post.id}', event)" title="See who reacted to this post" role="button" tabindex="0">
-                <i class="fas fa-heart"></i>
-                <span id="reactions-bar-text-${post.id}">${escapeHTML(likesSummaryText)}</span>
+          let postBodyHtml = '';
+          if (isPostSensitive) {
+            postBodyHtml = `
+              <div class="post-trigger-warning-card" id="tw-card-${post.id}">
+                <div class="tw-card-header">
+                  <span class="tw-badge"><i class="fas fa-triangle-exclamation"></i> Trigger Warning: ${escapeHTML(twBadgeLabel)}</span>
+                  <button type="button" class="tw-view-toggle-btn" id="tw-btn-${post.id}" onclick="toggleSensitivePostContent('${post.id}')" aria-label="Choose whether to view sensitive content">
+                    <i class="fas fa-eye"></i> <span>View Content</span>
+                  </button>
+                </div>
+                <p class="tw-card-desc">This post discusses a potentially distressing topic. Choose whether to view the content.</p>
               </div>
-            ` : `
-              <div class="post-reactions-bar" id="reactions-bar-${post.id}" style="display:none;" onclick="openLikesModal('${post.id}', event)" title="See who reacted to this post" role="button" tabindex="0">
-                <i class="fas fa-heart"></i>
-                <span id="reactions-bar-text-${post.id}"></span>
+              <div class="sensitive-content-collapse is-concealed" id="sensitive-wrap-${post.id}">
+                <div class="post-content">${escapeHTML(post.content || '')}</div>
+                ${post.photo_url ? `
+                  <div class="post-image">
+                    <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />
+                  </div>
+                ` : ''}
               </div>
-            `}
+            `;
+          } else {
+            postBodyHtml = `
+              <div class="post-content">${escapeHTML(post.content || '')}</div>
+              ${post.photo_url ? `
+                <div class="post-image">
+                  <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />
+                </div>
+              ` : ''}
+            `;
+          }
 
-            <div class="post-actions">
-              <div class="post-action-like-group ${isLiked ? 'liked' : ''}" id="like-group-${post.id}">
-                <button type="button" class="post-action-like-btn" onclick="handleLike('${post.id}', event)" aria-label="${isLiked ? 'Unlike post' : 'Like post'}" title="${isLiked ? 'Unlike' : 'Like'}">
-                  <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+          return `
+            <article class="post-card" id="post-${post.id}">
+              <div class="post-header">
+                ${avatarHtmlTag}
+                <div class="post-meta">
+                  ${authorHtmlTag}
+                  <div class="post-time-mood">
+                    <span>${formatRelativeTime(post.created_at)}</span>
+                    <span class="post-category-tag ${escapeHTML(catClass)}">${escapeHTML(catLabel)}</span>
+                    ${moodHtml}
+                    ${aiBadgeHtml}
+                    ${aiVerifiedHtml}
+                  </div>
+                </div>
+                <button class="post-menu-btn" onclick="togglePostMenu('${post.id}')" aria-label="Options">
+                  <i class="fas fa-ellipsis-vertical"></i>
                 </button>
-                <button type="button" class="post-like-count-btn ${likeCount > 0 ? 'has-likes' : ''}" id="like-count-btn-${post.id}" onclick="openLikesModal('${post.id}', event)" aria-label="See who liked this post" title="See who reacted (${likeCount})">
-                  <span id="like-count-${post.id}">${likeCount}</span>
+              </div>
+
+              ${postBodyHtml}
+
+              ${supportRecHtml}
+
+              ${likeCount > 0 ? `
+                <div class="post-reactions-bar" id="reactions-bar-${post.id}" onclick="openLikesModal('${post.id}', event)" title="See who reacted to this post" role="button" tabindex="0">
+                  <i class="fas fa-heart"></i>
+                  <span id="reactions-bar-text-${post.id}">${escapeHTML(likesSummaryText)}</span>
+                </div>
+              ` : `
+                <div class="post-reactions-bar" id="reactions-bar-${post.id}" style="display:none;" onclick="openLikesModal('${post.id}', event)" title="See who reacted to this post" role="button" tabindex="0">
+                  <i class="fas fa-heart"></i>
+                  <span id="reactions-bar-text-${post.id}"></span>
+                </div>
+              `}
+
+              <div class="post-actions">
+                <div class="post-action-like-group ${isLiked ? 'liked' : ''}" id="like-group-${post.id}">
+                  <button type="button" class="post-action-like-btn" onclick="handleLike('${post.id}', event)" aria-label="${isLiked ? 'Unlike post' : 'Like post'}" title="${isLiked ? 'Unlike' : 'Like'}">
+                    <i class="${isLiked ? 'fas' : 'fa-regular'} fa-heart"></i>
+                  </button>
+                  <button type="button" class="post-like-count-btn ${likeCount > 0 ? 'has-likes' : ''}" id="like-count-btn-${post.id}" onclick="openLikesModal('${post.id}', event)" aria-label="See who liked this post" title="See who reacted (${likeCount})">
+                    <span id="like-count-${post.id}">${likeCount}</span>
+                  </button>
+                </div>
+                <button class="post-action-btn" onclick="openComments('${post.id}')" aria-label="Comments">
+                  <i class="fa-regular fa-comment"></i>
+                  <span id="comment-count-${post.id}">${commentCount}</span>
+                </button>
+                <button class="post-action-btn post-save-btn ${isSaved ? 'saved' : ''}" id="save-btn-${post.id}" onclick="handleSave('${post.id}')" aria-label="Bookmark post" title="${isSaved ? 'Remove from Saved Posts' : 'Save post'}">
+                  <i class="${isSaved ? 'fas' : 'fa-regular'} fa-bookmark" id="save-icon-${post.id}"></i>
                 </button>
               </div>
-              <button class="post-action-btn" onclick="openComments('${post.id}')" aria-label="Comments">
-                <i class="fa-regular fa-comment"></i>
-                <span id="comment-count-${post.id}">${commentCount}</span>
-              </button>
-              <button class="post-action-btn post-save-btn ${isSaved ? 'saved' : ''}" id="save-btn-${post.id}" onclick="handleSave('${post.id}')" aria-label="Bookmark post" title="${isSaved ? 'Remove from Saved Posts' : 'Save post'}">
-                <i class="${isSaved ? 'fas' : 'fa-regular'} fa-bookmark" id="save-icon-${post.id}"></i>
-              </button>
-            </div>
-          </article>
-        `;
+            </article>
+          `;
+        } catch (itemErr) {
+          console.error('[SafeSpace] Error rendering post item:', post ? post.id : null, itemErr);
+          return '';
+        }
       }).join('');
     }
 
@@ -1381,6 +1523,7 @@
         postState.photoFile = file;
         const reader = new FileReader();
         reader.onload = (evt) => {
+          postState.photoDataUrl = evt.target.result;
           photoPreviewImg.src = evt.target.result;
           photoPreviewBox.style.display = 'block';
         };
@@ -1389,6 +1532,7 @@
 
       removePhotoBtn.addEventListener('click', () => {
         postState.photoFile = null;
+        postState.photoDataUrl = null;
         photoInput.value = '';
         photoPreviewBox.style.display = 'none';
         photoPreviewImg.src = '';
@@ -1423,13 +1567,26 @@
 
         try {
           let photoUrl = null;
-          if (postState.photoFile) {
-            photoUrl = await SafeSpaceDB.storage.uploadImage(postState.photoFile, 'post-photos');
+          if (postState.photoFile || postState.photoDataUrl) {
+            try {
+              photoUrl = await SafeSpaceDB.storage.uploadImage(postState.photoFile || postState.photoDataUrl, 'post-photos');
+            } catch (imgErr) {
+              console.warn('[PostPhoto] uploadImage exception, falling back to data URL:', imgErr);
+              photoUrl = postState.photoDataUrl || null;
+            }
+            if (!photoUrl && postState.photoDataUrl) {
+              photoUrl = postState.photoDataUrl;
+            }
           }
 
           var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || aiResult.status === 'REVIEW' || (aiResult.category && aiResult.category !== 'SAFE');
 
-          // ── Save Post with AI Metadata ──
+          const cfg = aiResult.warning_config || {};
+          const hasTriggerWarning = Boolean(isFlagged || cfg.has_trigger_warning);
+          const twCategory = cfg.trigger_warning_category || aiResult.category || (isFlagged ? 'SENSITIVE' : null);
+          const twLabel = cfg.trigger_warning_label || (isFlagged ? 'Sensitive Content' : null);
+
+          // ── Save Post with AI Metadata & Trigger Warning ──
           const newPost = await SafeSpaceDB.posts.createPost({
             content,
             mood: postState.selectedMood,
@@ -1441,8 +1598,36 @@
             moderation_status: isFlagged ? 'REVIEW' : (aiResult.status || 'APPROVED'),
             moderation_category: aiResult.category || (isFlagged ? 'HARASSMENT' : 'SAFE'),
             moderation_confidence: aiResult.confidence || 0.95,
-            moderation_reason: aiResult.reason || (isFlagged ? 'Flagged by safety filter; confirmed by user' : 'Approved')
+            moderation_reason: aiResult.reason || (isFlagged ? 'Flagged by safety filter; confirmed by user' : 'Approved'),
+            ai_recommendation: aiResult.support_recommendation,
+            is_user_confirmed: isFlagged,
+            has_trigger_warning: hasTriggerWarning,
+            trigger_warning_category: twCategory,
+            trigger_warning_label: twLabel
           });
+
+          // Cache AI metadata locally so it survives refreshes immediately
+          try {
+            const aiStore = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
+            aiStore[newPost.id] = {
+              sentiment: newPost.sentiment || aiResult.sentiment || 'NEUTRAL',
+              sentiment_score: newPost.sentiment_score !== undefined ? newPost.sentiment_score : (aiResult.sentiment_score || 0.5),
+              moderation_status: newPost.moderation_status || (isFlagged ? 'REVIEW' : 'APPROVED'),
+              moderation_category: newPost.moderation_category || (isFlagged ? 'HARASSMENT' : 'SAFE'),
+              ai_recommendation: newPost.ai_recommendation || aiResult.support_recommendation,
+              has_trigger_warning: hasTriggerWarning,
+              trigger_warning_category: twCategory,
+              trigger_warning_label: twLabel
+            };
+            localStorage.setItem('safe_space_post_ai_meta', JSON.stringify(aiStore));
+
+            const metrics = JSON.parse(localStorage.getItem('safe_space_ai_metrics') || '{}');
+            metrics.posts_analyzed = (metrics.posts_analyzed || 0) + 1;
+            if (aiResult.support_recommendation) {
+              metrics.recommendations_generated = (metrics.recommendations_generated || 0) + 1;
+            }
+            localStorage.setItem('safe_space_ai_metrics', JSON.stringify(metrics));
+          } catch (e) {}
 
           // Invalidate / update category caches reactive to new post
           const rawCat = (newPost.category || 'general').toLowerCase();
@@ -1455,10 +1640,9 @@
             feedCache[targetCat].posts.unshift(newPost);
           }
 
-          if (activeCategory === 'all' || activeCategory === targetCat) {
-            currentFeed.unshift(newPost);
-            renderFeed();
-          }
+          // Guarantee post appears on the visible community feed
+          currentFeed.unshift(newPost);
+          renderFeed();
 
           // Reset modal
           postTextarea.value = '';
@@ -1494,9 +1678,9 @@
 
       // Submit post with AI Moderation & Sentiment Analysis
       submitBtn.addEventListener('click', async () => {
-        const content = postTextarea.value.trim();
-        if (!content && !postState.photoFile) {
-          showToast('Please enter your thoughts before posting', 'warning');
+        let content = postTextarea.value.trim();
+        if (!content && !postState.photoFile && !postState.photoDataUrl) {
+          showToast('Please enter your thoughts or choose a photo before posting', 'warning');
           return;
         }
 
@@ -1514,6 +1698,9 @@
             sentiment_score: 0.5
           };
 
+          // Pre-censor profanity using asterisks rule
+          content = SafeSpaceDB.censorProfanity(content);
+
           if (window.AIService && content) {
             aiResult = await AIService.moderate(content);
           }
@@ -1525,19 +1712,7 @@
             submitBtn.disabled = false;
             submitBtn.textContent = 'Post';
 
-            // Send notification first as requested
-            try {
-              const currentUser = await SafeSpaceDB.auth.getCurrentUser();
-              if (currentUser && SafeSpaceDB.notifications) {
-                await SafeSpaceDB.notifications.createNotification({
-                  user_id: currentUser.id,
-                  type: 'warning',
-                  message: 'Harmful content warning, are you going to continue posting it?'
-                });
-              }
-            } catch (ne) {}
-
-            showToast('Harmful content warning, are you going to continue posting it?', 'error');
+            showToast('Safety check: Please review your post before sharing.', 'warning');
 
             showAiWarningModal(aiResult, 'post', function() {
               executePostPublish(content, aiResult);
@@ -1548,8 +1723,8 @@
           // Safe post: publish directly
           await executePostPublish(content, aiResult);
         } catch (err) {
-          console.error(err);
-          showToast('Failed to moderate or share post. Try again.', 'error');
+          console.error('[PostSubmission] Error:', err);
+          showToast(err.message || 'Failed to moderate or share post. Try again.', 'error');
           submitBtn.disabled = false;
           submitBtn.textContent = 'Post';
         }
@@ -1593,45 +1768,147 @@
       });
     }
 
+    // Community Guidelines modal helpers
+    function openCommunityGuidelinesModal() {
+      const gModal = document.getElementById('communityGuidelinesModal');
+      if (gModal) gModal.style.display = 'flex';
+    }
+    function closeCommunityGuidelinesModal() {
+      const gModal = document.getElementById('communityGuidelinesModal');
+      if (gModal) gModal.style.display = 'none';
+    }
+    window.openCommunityGuidelinesModal = openCommunityGuidelinesModal;
+    window.closeCommunityGuidelinesModal = closeCommunityGuidelinesModal;
+
+    // Trigger Warning Sensitive Content Toggle in Feed
+    function toggleSensitivePostContent(postId) {
+      const wrap = document.getElementById(`sensitive-wrap-${postId}`);
+      const btn = document.getElementById(`tw-btn-${postId}`);
+      if (!wrap) return;
+      const isConcealed = wrap.classList.toggle('is-concealed');
+      if (btn) {
+        if (isConcealed) {
+          btn.innerHTML = '<i class="fas fa-eye"></i> <span>View Content</span>';
+        } else {
+          btn.innerHTML = '<i class="fas fa-eye-slash"></i> <span>Hide Content</span>';
+        }
+      }
+    }
+    window.toggleSensitivePostContent = toggleSensitivePostContent;
+
     // AI Warning Modal Helper
     function showAiWarningModal(aiResult, source, onProceed) {
       activeWarningSource = source || 'post';
       window._pendingWarningCallback = (typeof onProceed === 'function') ? onProceed : null;
       const modal = document.getElementById('aiWarningModal');
+      const titleEl = document.getElementById('aiWarningTitle');
       const catEl = document.getElementById('aiWarningCategory');
       const reasonEl = document.getElementById('aiWarningReason');
-      const questionEl = document.getElementById('aiWarningQuestion');
-      const closeWarnBtn = document.getElementById('aiCloseWarningBtn');
+      const iconWrap = document.getElementById('aiWarningIcon');
+      const crisisBox = document.getElementById('aiWarningCrisisBox');
+      const closeWarnLabel = document.getElementById('aiCloseWarningLabel');
+      const resourcesBtn = document.getElementById('aiResourcesWarningBtn');
+      const guidelinesBtn = document.getElementById('aiGuidelinesWarningBtn');
+      const cancelWarnBtn = document.getElementById('aiCancelWarningBtn');
       const proceedWarnBtn = document.getElementById('aiProceedWarningBtn');
       if (!modal) return;
 
-      const categoryName = (aiResult.category || 'HARASSMENT').replace(/_/g, ' ').toUpperCase();
+      const cfg = aiResult.warning_config || (window.AIService && typeof window.AIService.getWarningConfig === 'function'
+        ? window.AIService.getWarningConfig(aiResult.category, aiResult.severity, aiResult.status, aiResult.reason)
+        : null);
+
+      const categoryName = (aiResult.category || (cfg && cfg.category) || 'HARASSMENT').replace(/_/g, ' ').toUpperCase();
       const confidencePct = aiResult.confidence ? Math.round(aiResult.confidence * 100) : 85;
-      if (catEl) catEl.textContent = `FLAGGED: ${categoryName} (${confidencePct}% CONFIDENCE)`;
-      
-      if (questionEl) {
-        questionEl.textContent = activeWarningSource === 'comment'
-          ? 'Harmful content warning, are you going to continue posting this comment?'
-          : 'Harmful content warning, are you going to continue posting it?';
+
+      if (catEl) catEl.textContent = `CATEGORY: ${categoryName} (${confidencePct}% CONFIDENCE)`;
+
+      // Dynamic Title based on category
+      if (titleEl) {
+        if (cfg && cfg.title) {
+          titleEl.textContent = activeWarningSource === 'comment'
+            ? cfg.title.replace(/Post/g, 'Comment')
+            : cfg.title;
+        } else {
+          titleEl.textContent = 'Please Review Your ' + (activeWarningSource === 'comment' ? 'Comment' : 'Post');
+        }
       }
 
-      let guidance = 'Your message contains language flagged by our community safety filter. Please review and revise before posting.';
-      if (aiResult.reason) {
-        guidance = aiResult.reason;
+      // Dynamic Icon & Accent Colors
+      if (iconWrap) {
+        if (categoryName.includes('SELF HARM') || categoryName.includes('DISTRESS')) {
+          iconWrap.style.background = '#EFF6FF';
+          iconWrap.style.color = '#3B82F6';
+          iconWrap.innerHTML = '<i class="fas fa-hand-holding-heart"></i>';
+        } else if (categoryName.includes('THREAT') || categoryName.includes('VIOLENCE')) {
+          iconWrap.style.background = '#FEF2F2';
+          iconWrap.style.color = '#EF4444';
+          iconWrap.innerHTML = '<i class="fas fa-shield-halved"></i>';
+        } else if (categoryName.includes('NUDITY') || categoryName.includes('SEXUAL')) {
+          iconWrap.style.background = '#FFF1F2';
+          iconWrap.style.color = '#E11D48';
+          iconWrap.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        } else {
+          iconWrap.style.background = '#FFFBEB';
+          iconWrap.style.color = '#D97706';
+          iconWrap.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+        }
       }
 
-      if (reasonEl) {
-        reasonEl.textContent = guidance;
+      // Dynamic Message from Warning Configuration
+      let displayMessage = (cfg && cfg.message) ? cfg.message : (aiResult.reason || 'Your submission requires review before publishing.');
+      if (activeWarningSource === 'comment') {
+        displayMessage = displayMessage.replace(/\bpost\b/gi, 'comment').replace(/\bposting\b/gi, 'commenting');
       }
-      if (closeWarnBtn) {
-        closeWarnBtn.innerHTML = activeWarningSource === 'comment' ? '<i class="fas fa-pen"></i> Edit Comment' : '<i class="fas fa-pen"></i> Edit Post';
+      if (reasonEl) reasonEl.textContent = displayMessage;
+
+      // Crisis Hotline Box (Visible for self-harm or imminent distress)
+      if (crisisBox) {
+        crisisBox.style.display = (cfg && (cfg.is_imminent_danger || cfg.show_support_resources)) ? 'block' : 'none';
       }
+
+      // Primary Edit/Review Button
+      if (closeWarnLabel) {
+        let label = (cfg && cfg.primary_button_label) || 'Edit Post';
+        if (activeWarningSource === 'comment') label = label.replace(/Post/g, 'Comment');
+        closeWarnLabel.textContent = label;
+      }
+
+      // Support Resources Button
+      if (resourcesBtn) {
+        resourcesBtn.style.display = (cfg && cfg.show_support_resources) ? 'inline-flex' : 'none';
+      }
+
+      // Community Guidelines Button
+      if (guidelinesBtn) {
+        guidelinesBtn.style.display = (cfg && cfg.show_guidelines_button) ? 'inline-flex' : 'none';
+      }
+
+      // Cancel Posting Button
+      if (cancelWarnBtn) {
+        cancelWarnBtn.innerHTML = '<i class="fas fa-times"></i> <span>Cancel ' + (activeWarningSource === 'comment' ? 'Comment' : 'Posting') + '</span>';
+      }
+
+      // Continue Button (Strictly suppressed if can_continue is false, e.g. threats or critical self-harm)
       if (proceedWarnBtn) {
-        proceedWarnBtn.style.display = window._pendingWarningCallback ? 'inline-flex' : 'none';
-        proceedWarnBtn.innerHTML = activeWarningSource === 'comment' ? '<i class="fas fa-arrow-right"></i> Continue Posting' : '<i class="fas fa-arrow-right"></i> Continue Posting';
+        const canContinue = cfg ? cfg.can_continue : (aiResult.allowed !== false && aiResult.status !== 'BLOCKED');
+        if (canContinue && window._pendingWarningCallback) {
+          proceedWarnBtn.style.display = 'inline-flex';
+          proceedWarnBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Continue ' + (activeWarningSource === 'comment' ? 'Commenting' : 'Posting') + '</span>';
+        } else {
+          proceedWarnBtn.style.display = 'none';
+        }
       }
 
       modal.classList.add('open');
+
+      // Record safety warning in local metrics
+      try {
+        const metrics = JSON.parse(localStorage.getItem('safe_space_ai_metrics') || '{}');
+        metrics.warnings_displayed = (metrics.warnings_displayed || 0) + 1;
+        metrics.by_category = metrics.by_category || {};
+        metrics.by_category[categoryName] = (metrics.by_category[categoryName] || 0) + 1;
+        localStorage.setItem('safe_space_ai_metrics', JSON.stringify(metrics));
+      } catch (e) {}
     }
 
     // Warning Modal Action Handlers
@@ -1644,11 +1921,63 @@
           window._pendingWarningCallback = null;
           if (activeWarningSource === 'comment') {
             const commentInput = document.getElementById('newCommentInput');
-            if (commentInput) commentInput.focus();
+            const sendBtn = document.getElementById('sendCommentBtn');
+            if (commentInput) {
+              commentInput.disabled = false;
+              commentInput.readOnly = false;
+              commentInput.focus();
+              const val = commentInput.value || '';
+              if (commentInput.setSelectionRange) {
+                commentInput.setSelectionRange(val.length, val.length);
+              }
+            }
+            if (sendBtn) sendBtn.disabled = false;
           } else {
+            const createModal = document.getElementById('createPostModal');
+            if (createModal) createModal.classList.add('open');
             const textarea = document.getElementById('postContentInput');
-            if (textarea) textarea.focus();
+            const submitBtn = document.getElementById('submitPostBtn');
+            if (textarea) {
+              textarea.disabled = false;
+              textarea.readOnly = false;
+              textarea.focus();
+              const val = textarea.value || '';
+              if (textarea.setSelectionRange) {
+                textarea.setSelectionRange(val.length, val.length);
+              }
+            }
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Post';
+            }
           }
+        });
+      }
+
+      const cancelWarnBtn = document.getElementById('aiCancelWarningBtn');
+      if (cancelWarnBtn) {
+        cancelWarnBtn.addEventListener('click', () => {
+          const modal = document.getElementById('aiWarningModal');
+          if (modal) modal.classList.remove('open');
+          window._pendingWarningCallback = null;
+
+          if (activeWarningSource === 'comment') {
+            const commentInput = document.getElementById('newCommentInput');
+            if (commentInput) commentInput.value = '';
+            showToast('Comment submission cancelled.', 'info');
+          } else {
+            const createModal = document.getElementById('createPostModal');
+            if (createModal) createModal.classList.remove('open');
+            const textarea = document.getElementById('postContentInput');
+            if (textarea) textarea.value = '';
+            showToast('Post submission cancelled.', 'info');
+          }
+
+          try {
+            const metrics = JSON.parse(localStorage.getItem('safe_space_ai_metrics') || '{}');
+            metrics.posts_revised_or_canceled = (metrics.posts_revised_or_canceled || 0) + 1;
+            localStorage.setItem('safe_space_ai_metrics', JSON.stringify(metrics));
+          } catch (e) {}
         });
       }
 
@@ -1781,13 +2110,16 @@
         }
       });
 
-      async function executeCommentPublish(content) {
+      async function executeCommentPublish(content, isConfirmed) {
         sendBtn.disabled = true;
         try {
           const replyOpts = activeReplyTarget ? {
             parent_id: activeReplyTarget.commentId,
-            reply_to: activeReplyTarget.username
-          } : {};
+            reply_to: activeReplyTarget.username,
+            is_user_confirmed: Boolean(isConfirmed)
+          } : {
+            is_user_confirmed: Boolean(isConfirmed)
+          };
 
           const comment = await SafeSpaceDB.posts.addComment(activeCommentPostId, content, replyOpts);
           input.value = '';
@@ -1806,17 +2138,21 @@
             if (!Array.isArray(p.comments)) p.comments = [];
             if (!p.comments.some(c => c.id === comment.id)) p.comments.push(comment);
           });
-          showToast('Comment posted! 💬', 'success');
+          showToast(isConfirmed ? 'Comment posted (Under review) 💬' : 'Comment posted! 💬', 'success');
         } catch (err) {
-          showToast('Could not post comment', 'error');
+          console.error('[AddComment] Error:', err);
+          showToast(err.message || 'Could not post comment', 'error');
         } finally {
           sendBtn.disabled = false;
         }
       }
 
       sendBtn.addEventListener('click', async () => {
-        const content = input.value.trim();
+        let content = input.value.trim();
         if (!content || !activeCommentPostId) return;
+
+        // Pre-censor profanity using asterisks rule
+        content = SafeSpaceDB.censorProfanity(content);
 
         sendBtn.disabled = true;
         try {
@@ -1843,7 +2179,7 @@
               showToast('Harmful content warning, are you going to continue posting it?', 'error');
 
               showAiWarningModal(aiCheck, 'comment', function() {
-                executeCommentPublish(content);
+                executeCommentPublish(content, true);
               });
               return;
             }

@@ -624,6 +624,43 @@
         display: block !important;
       }
     }
+  
+    /* Active Today Card & Badge Styles */
+    .metric-card.active-today-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      position: relative;
+    }
+    .metric-card.active-today-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.16);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+    .active-today-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #15803D;
+      background: #DCFCE7;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid #BBF7D0;
+    }
+    .active-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+      animation: activeDotPulse 2s infinite ease-in-out;
+      display: inline-block;
+    }
+    @keyframes activeDotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.25); }
+    }
+
   </style>
 </head>
 <body>
@@ -850,12 +887,17 @@
               </div>
             </div>
 
-            <div class="metric-card">
+            <div class="metric-card active-today-card" onclick="openActiveUsersModal()" style="cursor:pointer;" title="Click to see members active today">
               <div class="metric-icon-wrap" style="background:rgba(34, 197, 94, 0.12); color:#22C55E;">
                 <i class="fas fa-bolt"></i>
               </div>
-              <div class="metric-info">
-                <h3 id="statActiveUsers">0</h3>
+              <div class="metric-info" style="width:100%;">
+                <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                  <h3 id="statActiveUsers" style="margin:0;">0</h3>
+                  <span class="active-today-badge">
+                    <span class="active-dot"></span> View
+                  </span>
+                </div>
                 <span>Active Today</span>
               </div>
             </div>
@@ -864,21 +906,81 @@
           <!-- Overview Split Grid: Sentiment & Live Incidents -->
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px;">
             <!-- Campus Sentiment Analytics Panel -->
-            <div class="admin-panel" style="margin-bottom:0;">
-              <div class="panel-header">
-                <h4 class="panel-title"><i class="fas fa-heart-pulse" style="color:var(--primary);"></i> Campus Sentiment Analytics</h4>
-                <span style="font-size:11px; font-weight:700; color:var(--text-muted);">AI RoBERTa Engine</span>
+            <div class="admin-panel" style="margin-bottom:0;" id="campusSentimentPanel">
+              <div class="panel-header" style="flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                <div>
+                  <h4 class="panel-title"><i class="fas fa-heart-pulse" style="color:var(--primary);"></i> Campus Sentiment &amp; Content Analytics</h4>
+                  <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0 0;">
+                    AI-powered three-tier emotional classification (Positive, Neutral, Negative) across student interactions.
+                  </p>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="ai-status-pill online" style="font-size:11px; padding:3px 10px;">
+                    <i class="fas fa-microchip"></i> Multilingual AI RoBERTa
+                  </span>
+                </div>
               </div>
-              <p style="font-size:12px; color:var(--text-muted); margin:0 0 16px 0;">
-                Real-time emotional wellness distribution extracted from student posts across campus.
-              </p>
 
-              <!-- Sentiment Bars -->
-              <div style="display:flex; flex-direction:column; gap:12px;" id="sentimentBarsContainer">
+              <!-- Filter Toolbar -->
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:10px 14px; background:var(--bg-hover); border-radius:12px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
+                    <i class="fas fa-filter"></i> Filters:
+                  </span>
+                  <!-- Content Type Filter -->
+                  <select id="sentimentFilterType" class="admin-select" style="font-size:11px; padding:4px 10px; border-radius:8px; background:var(--bg-card); border:1px solid var(--border); color:var(--text-dark);" onchange="renderSentimentBreakdown()">
+                    <option value="all">All Content Types</option>
+                    <option value="post">Posts Only</option>
+                    <option value="comment">Comments &amp; Replies</option>
+                    <option value="message">Chat Messages</option>
+                  </select>
+                  <!-- Date Range Filter -->
+                  <select id="sentimentFilterRange" class="admin-select" style="font-size:11px; padding:4px 10px; border-radius:8px; background:var(--bg-card); border:1px solid var(--border); color:var(--text-dark);" onchange="renderSentimentBreakdown()">
+                    <option value="all">All Time</option>
+                    <option value="today">Today (24h)</option>
+                    <option value="7d" selected>Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                  </select>
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); font-weight:600;">
+                  Analyzed Items: <strong id="sentimentTotalCount" style="color:var(--text-dark);">0</strong>
+                </div>
+              </div>
+
+              <!-- Summary Metric Cards (4 Columns) -->
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:10px; margin-bottom:18px;">
+                <!-- Total Card -->
+                <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:10px 12px; text-align:center;">
+                  <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Analyzed</div>
+                  <div id="sentimentCardTotal" style="font-size:18px; font-weight:800; color:var(--primary); margin:2px 0;">0</div>
+                  <div style="font-size:10px; color:var(--text-muted);">100% analyzed</div>
+                </div>
+                <!-- Positive Card -->
+                <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:12px; padding:10px 12px; text-align:center;">
+                  <div style="font-size:10px; font-weight:700; color:#15803D; text-transform:uppercase;"><i class="fas fa-face-smile"></i> Positive</div>
+                  <div id="sentimentCardPosCount" style="font-size:18px; font-weight:800; color:#16A34A; margin:2px 0;">0</div>
+                  <div id="sentimentCardPosPct" style="font-size:10px; font-weight:700; color:#15803D;">0%</div>
+                </div>
+                <!-- Neutral Card -->
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:10px 12px; text-align:center;">
+                  <div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase;"><i class="fas fa-face-meh"></i> Neutral</div>
+                  <div id="sentimentCardNeuCount" style="font-size:18px; font-weight:800; color:#64748B; margin:2px 0;">0</div>
+                  <div id="sentimentCardNeuPct" style="font-size:10px; font-weight:700; color:#475569;">0%</div>
+                </div>
+                <!-- Negative Card -->
+                <div style="background:#FFF7ED; border:1px solid #FFEDD5; border-radius:12px; padding:10px 12px; text-align:center;">
+                  <div style="font-size:10px; font-weight:700; color:#C2410C; text-transform:uppercase;"><i class="fas fa-hand-holding-heart"></i> Negative</div>
+                  <div id="sentimentCardNegCount" style="font-size:18px; font-weight:800; color:#EA580C; margin:2px 0;">0</div>
+                  <div id="sentimentCardNegPct" style="font-size:10px; font-weight:700; color:#C2410C;">0%</div>
+                </div>
+              </div>
+
+              <!-- Sentiment Bars Breakdown -->
+              <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;" id="sentimentBarsContainer">
                 <div>
                   <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
-                    <span style="color:#16A34A;"><i class="fas fa-face-smile"></i> Positive &amp; Encouraging</span>
-                    <span id="sentimentPosPct">0%</span>
+                    <span style="color:#16A34A;"><i class="fas fa-face-smile"></i> Positive (Joy, Gratitude, Hope)</span>
+                    <span id="sentimentPosPct">0% (0)</span>
                   </div>
                   <div style="background:#E2E8F0; height:8px; border-radius:4px; overflow:hidden;">
                     <div id="sentimentPosBar" style="background:#22C55E; width:0%; height:100%; transition:width 0.5s;"></div>
@@ -887,8 +989,8 @@
 
                 <div>
                   <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
-                    <span style="color:#64748B;"><i class="fas fa-face-meh"></i> Neutral / Informational</span>
-                    <span id="sentimentNeuPct">0%</span>
+                    <span style="color:#64748B;"><i class="fas fa-face-meh"></i> Neutral (Factual, Questions, Announcements)</span>
+                    <span id="sentimentNeuPct">0% (0)</span>
                   </div>
                   <div style="background:#E2E8F0; height:8px; border-radius:4px; overflow:hidden;">
                     <div id="sentimentNeuBar" style="background:#94A3B8; width:0%; height:100%; transition:width 0.5s;"></div>
@@ -897,8 +999,8 @@
 
                 <div>
                   <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
-                    <span style="color:#EA580C;"><i class="fas fa-hand-holding-heart"></i> Seeking Support / Academic Stress</span>
-                    <span id="sentimentNegPct">0%</span>
+                    <span style="color:#EA580C;"><i class="fas fa-hand-holding-heart"></i> Negative (Stress, Sadness, Overwhelm)</span>
+                    <span id="sentimentNegPct">0% (0)</span>
                   </div>
                   <div style="background:#E2E8F0; height:8px; border-radius:4px; overflow:hidden;">
                     <div id="sentimentNegBar" style="background:#F97316; width:0%; height:100%; transition:width 0.5s;"></div>
@@ -906,9 +1008,28 @@
                 </div>
               </div>
 
-              <div style="margin-top:20px; padding:12px; background:var(--bg-hover); border-radius:12px; font-size:11px; color:var(--text-mid); display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-circle-info" style="color:var(--primary);"></i>
-                <span>Posts expressing severe distress or self-harm keywords are automatically escalated to Guidance Counselors.</span>
+              <!-- Sentiment Distribution Over Time Chart -->
+              <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+                    <i class="fas fa-chart-column"></i> Sentiment Distribution Over Time
+                  </span>
+                  <div style="display:flex; gap:10px; font-size:10px;">
+                    <span style="color:#16A34A; font-weight:600;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:#22C55E; margin-right:3px;"></span>Positive</span>
+                    <span style="color:#64748B; font-weight:600;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:#94A3B8; margin-right:3px;"></span>Neutral</span>
+                    <span style="color:#EA580C; font-weight:600;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:#F97316; margin-right:3px;"></span>Negative</span>
+                  </div>
+                </div>
+
+                <!-- Interactive SVG / CSS Timeline Chart Container -->
+                <div id="sentimentTimelineContainer" style="background:var(--bg-hover); border-radius:10px; padding:12px 14px; min-height:100px; display:flex; align-items:flex-end; justify-content:space-between; gap:8px;">
+                  <!-- Dynamically populated by renderSentimentBreakdown -->
+                </div>
+              </div>
+
+              <div style="margin-top:14px; padding:10px 12px; background:var(--bg-hover); border-radius:10px; font-size:11px; color:var(--text-mid); display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-shield-halved" style="color:var(--primary);"></i>
+                <span>Privacy &amp; Safety: Sentiment classifies content emotional tone only, not user personality. Distressed students receive peer and counselor support rather than penalties.</span>
               </div>
             </div>
 
@@ -971,6 +1092,7 @@
               <button type="button" class="filter-pill" data-user-filter="student">Students</button>
               <button type="button" class="filter-pill" data-user-filter="counselor">Counselors</button>
               <button type="button" class="filter-pill" data-user-filter="admin">Administrators</button>
+              <button type="button" class="filter-pill" data-user-filter="active" style="display:inline-flex; align-items:center; gap:5px;"><span class="active-dot"></span> Active Today</button>
               <button type="button" class="filter-pill" data-user-filter="deactivated">Suspended / Inactive</button>
             </div>
 
@@ -1206,72 +1328,140 @@
             </div>
           </div>
 
-          <!-- AI Configuration Grid: Sensitivity Sliders & Custom Keywords -->
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px;">
-            <!-- Sensitivity Sliders & Safety Policies -->
-            <div class="admin-panel" style="margin-bottom:0;">
-              <div class="panel-header">
-                <h4 class="panel-title"><i class="fas fa-sliders" style="color:var(--primary);"></i> Moderation Policies &amp; Sensitivity</h4>
-              </div>
 
-              <!-- Toxicity Threshold Slider -->
-              <div class="ai-control-box">
-                <div class="ai-control-header">
-                  <strong style="font-size:13px; color:var(--text-dark);">Toxicity Flagging Threshold</strong>
-                  <span id="toxicityThresholdLabel" style="font-size:12px; font-weight:800; color:var(--primary);">70%</span>
-                </div>
-                <p style="font-size:11px; color:var(--text-muted); margin:0 0 10px 0;">Content scoring above this confidence is queued for human counselor review.</p>
-                <div class="ai-slider-wrap">
-                  <span style="font-size:11px; color:var(--text-muted);">Strict (50%)</span>
-                  <input type="range" class="ai-slider" id="toxicitySlider" min="50" max="95" value="70" oninput="document.getElementById('toxicityThresholdLabel').textContent = this.value + '%'" />
-                  <span style="font-size:11px; color:var(--text-muted);">Permissive (95%)</span>
-                </div>
-              </div>
 
-              <!-- Severe Self-Harm Auto-Escalation Toggle -->
-              <div class="ai-control-box" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                <div>
-                  <strong style="font-size:13px; color:var(--text-dark);">Severe Crisis Auto-Escalation</strong>
-                  <p style="font-size:11px; color:var(--text-muted); margin:2px 0 0 0;">Instantly alert guidance counselors when self-harm intent is detected.</p>
-                </div>
-                <input type="checkbox" id="crisisAutoEscalateCheck" checked style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;" />
+          <!-- Aggregated AI Automated Moderation & Supportive Recommendations Analytics (Section 8) -->
+          <div class="admin-panel" id="aiAggregatedMetricsPanel">
+            <div class="panel-header" style="flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+              <div>
+                <h4 class="panel-title"><i class="fas fa-chart-line" style="color:var(--primary);"></i> AI Safety Screening &amp; Support Recommendations Analytics</h4>
+                <span style="font-size:12px; color:var(--text-muted);">
+                  Aggregated statistics on pre-posting screenings, safety warnings, counselor reviews, and AI-generated supportive responses.
+                </span>
               </div>
-
-              <!-- Immediate Block on Violent Threats Toggle -->
-              <div class="ai-control-box" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                <div>
-                  <strong style="font-size:13px; color:var(--text-dark);">Auto-Block Extreme Violations</strong>
-                  <p style="font-size:11px; color:var(--text-muted); margin:2px 0 0 0;">Automatically hide posts with severe hate speech or direct threats before public viewing.</p>
-                </div>
-                <input type="checkbox" id="extremeAutoBlockCheck" checked style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;" />
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; font-weight:700; color:var(--primary); background:rgba(108,79,209,0.08); padding:4px 10px; border-radius:999px;">
+                  <i class="fas fa-shield-halved"></i> Authorized Governance View
+                </span>
               </div>
-
-              <button type="button" class="admin-btn admin-btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="saveAiSettings()">
-                <i class="fas fa-floppy-disk"></i> Save AI Policy Settings
-              </button>
             </div>
 
-            <!-- Banned Keywords & Trigger Phrases Manager -->
-            <div class="admin-panel" style="margin-bottom:0;">
-              <div class="panel-header">
-                <h4 class="panel-title"><i class="fas fa-ban" style="color:#EF4444;"></i> Banned Words &amp; Slang Filter</h4>
-                <span style="font-size:11px; font-weight:700; color:var(--text-muted);" id="keywordCountLabel">0 keywords</span>
-              </div>
-              <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px 0;">
-                Custom keywords for English, Tagalog, and Filipino dialect harassment patterns.
-              </p>
-
-              <!-- Add Keyword Row -->
-              <div style="display:flex; gap:8px; margin-bottom:14px;">
-                <input type="text" id="newKeywordInput" placeholder="Add word (e.g. gago, boboka)..." class="admin-form-control" style="flex:1; height:36px;" />
-                <button type="button" class="admin-btn admin-btn-primary" style="height:36px; padding:0 14px;" onclick="addNewKeyword()">
-                  <i class="fas fa-plus"></i> Add
-                </button>
+            <!-- 5 KPI Summary Counters Grid -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:18px;">
+              <div style="background:#FBF9FF; border:1px solid var(--border); border-radius:12px; padding:14px;">
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Posts Analyzed</div>
+                <div style="font-size:24px; font-weight:800; color:var(--text-dark); margin-top:4px;" id="aiMetricPostsAnalyzed">0</div>
+                <div style="font-size:11px; color:var(--primary); margin-top:2px;"><i class="fas fa-bolt"></i> 100% Pre-Screened</div>
               </div>
 
-              <!-- Keywords Container -->
-              <div id="keywordsListContainer" style="max-height:220px; overflow-y:auto; padding:6px; background:#FAF9FD; border-radius:12px; border:1px solid var(--border);">
-                <!-- Populated via JS -->
+              <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:12px; padding:14px;">
+                <div style="font-size:11px; font-weight:700; color:#B45309; text-transform:uppercase;">Safety Warnings Displayed</div>
+                <div style="font-size:24px; font-weight:800; color:#92400E; margin-top:4px;" id="aiMetricWarningsDisplayed">0</div>
+                <div style="font-size:11px; color:#B45309; margin-top:2px;"><i class="fas fa-triangle-exclamation"></i> Pre-Posting Guidance</div>
+              </div>
+
+              <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:12px; padding:14px;">
+                <div style="font-size:11px; font-weight:700; color:#DC2626; text-transform:uppercase;">Posts Revised / Blocked</div>
+                <div style="font-size:24px; font-weight:800; color:#991B1B; margin-top:4px;" id="aiMetricPostsBlocked">0</div>
+                <div style="font-size:11px; color:#DC2626; margin-top:2px;"><i class="fas fa-ban"></i> Harmful Content Filtered</div>
+              </div>
+
+              <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:14px;">
+                <div style="font-size:11px; font-weight:700; color:#1D4ED8; text-transform:uppercase;">Requiring Review</div>
+                <div style="font-size:24px; font-weight:800; color:#1E40AF; margin-top:4px;" id="aiMetricPostsReview">0</div>
+                <div style="font-size:11px; color:#1D4ED8; margin-top:2px;"><i class="fas fa-user-clock"></i> Counselor Review Queue</div>
+              </div>
+
+              <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:12px; padding:14px;">
+                <div style="font-size:11px; font-weight:700; color:#15803D; text-transform:uppercase;">AI Support Recommendations</div>
+                <div style="font-size:24px; font-weight:800; color:#166534; margin-top:4px;" id="aiMetricRecsGenerated">0</div>
+                <div style="font-size:11px; color:#15803D; margin-top:2px;"><i class="fas fa-sparkles"></i> Compassionate AI Responses</div>
+              </div>
+            </div>
+
+            <!-- Two-Column Distributions: Sentiment Breakdown & Safety Category Breakdown -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:18px;">
+              <!-- Sentiment Distribution Card -->
+              <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:14px; padding:16px;">
+                <div style="font-size:13px; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="fas fa-heart-pulse" style="color:var(--primary); margin-right:6px;"></i> Sentiment Distribution</span>
+                  <span style="font-size:11px; color:var(--text-muted);">Three-Tier Emotional Tone</span>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">
+                      <span style="font-weight:700; color:#16A34A;"><i class="fas fa-smile"></i> Positive</span>
+                      <strong id="aiSentimentPosText">0 (0%)</strong>
+                    </div>
+                    <div style="height:8px; background:#F1F5F9; border-radius:999px; overflow:hidden;">
+                      <div id="aiSentimentPosBar" style="height:100%; width:0%; background:#22C55E; transition:width 0.4s ease;"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">
+                      <span style="font-weight:700; color:#475569;"><i class="fas fa-meh"></i> Neutral</span>
+                      <strong id="aiSentimentNeuText">0 (0%)</strong>
+                    </div>
+                    <div style="height:8px; background:#F1F5F9; border-radius:999px; overflow:hidden;">
+                      <div id="aiSentimentNeuBar" style="height:100%; width:0%; background:#94A3B8; transition:width 0.4s ease;"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">
+                      <span style="font-weight:700; color:#2563EB;"><i class="fas fa-hand-holding-heart"></i> Negative / Seeking Support</span>
+                      <strong id="aiSentimentNegText">0 (0%)</strong>
+                    </div>
+                    <div style="height:8px; background:#F1F5F9; border-radius:999px; overflow:hidden;">
+                      <div id="aiSentimentNegBar" style="height:100%; width:0%; background:#3B82F6; transition:width 0.4s ease;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top:14px; padding:10px; background:#F8FAFC; border-radius:8px; font-size:11px; color:var(--text-muted); line-height:1.45;">
+                  <i class="fas fa-info-circle" style="color:var(--primary);"></i> <strong>Notice:</strong> Negative sentiment alone does not mean content is harmful. Emotional struggles, sadness, and exam stress are safe, valid expressions and receive supportive AI coping recommendations.
+                </div>
+              </div>
+
+              <!-- Safety Categories Distribution Card -->
+              <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:14px; padding:16px;">
+                <div style="font-size:13px; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="fas fa-shield-halved" style="color:var(--primary); margin-right:6px;"></i> Detected Safety Categories</span>
+                  <span style="font-size:11px; color:var(--text-muted);">Safety Screening Results</span>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#F0FDF4; border-radius:8px; font-size:12px;">
+                    <span style="font-weight:700; color:#15803D;"><i class="fas fa-check-circle" style="margin-right:6px;"></i> Safe &amp; Permitted</span>
+                    <strong id="aiCatSafeCount" style="color:#15803D;">0</strong>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#EFF6FF; border-radius:8px; font-size:12px;">
+                    <span style="font-weight:700; color:#1D4ED8;"><i class="fas fa-life-ring" style="margin-right:6px;"></i> Self-Harm / Crisis Concern</span>
+                    <strong id="aiCatSelfHarmCount" style="color:#1D4ED8;">0</strong>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#FFFBEB; border-radius:8px; font-size:12px;">
+                    <span style="font-weight:700; color:#B45309;"><i class="fas fa-user-xmark" style="margin-right:6px;"></i> Bullying &amp; Harassment</span>
+                    <strong id="aiCatBullyingCount" style="color:#B45309;">0</strong>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#FEF2F2; border-radius:8px; font-size:12px;">
+                    <span style="font-weight:700; color:#DC2626;"><i class="fas fa-triangle-exclamation" style="margin-right:6px;"></i> Threat &amp; Violence</span>
+                    <strong id="aiCatThreatCount" style="color:#DC2626;">0</strong>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#FAF5FF; border-radius:8px; font-size:12px;">
+                    <span style="font-weight:700; color:#7E22CE;"><i class="fas fa-shield-heart" style="margin-right:6px;"></i> Distressing / Sensitive Content</span>
+                    <strong id="aiCatDistressCount" style="color:#7E22CE;">0</strong>
+                  </div>
+                </div>
+
+                <div style="margin-top:10px; font-size:11px; color:var(--text-muted); text-align:right;">
+                  <i class="fas fa-lock"></i> Sensitive moderation records strictly restricted to authorized staff.
+                </div>
               </div>
             </div>
           </div>
@@ -1281,19 +1471,23 @@
             <div class="panel-header">
               <div>
                 <h4 class="panel-title"><i class="fas fa-flask" style="color:var(--primary);"></i> Live AI Testing Sandbox (Thesis Defense Simulator)</h4>
-                <span style="font-size:12px; color:var(--text-muted);">Test how the AI models classify student text before it reaches the feed</span>
+                <span style="font-size:12px; color:var(--text-muted);">Test how the AI models classify student text before it reaches the feed and generate supportive recommendations</span>
               </div>
             </div>
 
             <div style="margin-bottom:12px;">
               <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
                 <span style="font-size:11px; font-weight:700; color:var(--text-muted); align-self:center;">Try Presets:</span>
-                <button type="button" class="filter-pill" onclick="loadSandboxSample('positive')">Empathetic Praise</button>
-                <button type="button" class="filter-pill" onclick="loadSandboxSample('stress')">Academic Burnout</button>
-                <button type="button" class="filter-pill" onclick="loadSandboxSample('insult')">Tagalog Slur (Gago)</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('fail_exam')">Failed Exam (Ex. A)</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('deadlines')">Academic Stress (Ex. B)</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('lonely')">Loneliness (Ex. C)</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('goal')">Goal Achieved (Ex. D)</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('presentation')">Presentation (Ex. E)</button>
                 <button type="button" class="filter-pill" onclick="loadSandboxSample('crisis')">Self-Harm Concern</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('insult')">Bullying Language</button>
+                <button type="button" class="filter-pill" onclick="loadSandboxSample('threat')">Threatening Speech</button>
               </div>
-              <textarea id="aiSandboxInput" class="admin-form-control" style="height:80px;" placeholder="Type any text to analyze with Safe Space AI..."></textarea>
+              <textarea id="aiSandboxInput" class="admin-form-control" style="height:80px;" placeholder="Type any student text to analyze with Safe Space AI..."></textarea>
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -1324,13 +1518,37 @@
                   <div id="sandboxSentimentText" style="font-size:14px; font-weight:800; color:var(--primary); margin-top:2px;">POSITIVE</div>
                 </div>
                 <div style="background:#fff; padding:12px; border-radius:10px; border:1px solid var(--border);">
-                  <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Automated Action</div>
+                  <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Automated Moderation Action</div>
                   <div id="sandboxActionText" style="font-size:13px; font-weight:700; color:var(--text-dark); margin-top:2px;">Publish to Community Feed</div>
                 </div>
               </div>
 
-              <div style="font-size:12px; color:var(--text-mid);" id="sandboxReasonText">
+              <div style="font-size:12px; color:var(--text-mid); margin-bottom:12px;" id="sandboxReasonText">
                 Safety analysis verified: Content is empathetic and safe for peer community support.
+              </div>
+
+              <!-- AI Supportive Recommendation Preview in Sandbox -->
+              <div id="sandboxSupportRecWrap" style="margin-top:12px; display:none;">
+                <div class="ai-support-recommendation-card" style="margin:0;">
+                  <div class="ai-support-rec-header">
+                    <div class="ai-support-rec-title">
+                      <span class="ai-support-rec-spark"><i class="fas fa-sparkles"></i></span>
+                      <span class="ai-support-rec-title-text">Suggested Support from Safe Space AI</span>
+                    </div>
+                    <span class="ai-support-rec-badge"><i class="fas fa-robot"></i> AI Generated</span>
+                  </div>
+                  <div class="ai-support-rec-body">
+                    <p class="ai-support-rec-message" id="sandboxSupportRecMessage"></p>
+                  </div>
+                  <div class="ai-support-rec-footer">
+                    <span class="ai-support-rec-disclaimer" id="sandboxSupportRecDisclaimer">
+                      <i class="fas fa-shield-heart"></i> Suggested Support from Safe Space AI · Practical student coping recommendation.
+                    </span>
+                    <span id="sandboxSupportRecResourceBtn" style="display:none;" class="ai-support-rec-resource-btn">
+                      <i class="fas fa-hand-holding-heart"></i> Verified Crisis Resources
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1701,6 +1919,69 @@
 
       <div class="admin-modal-body" id="postReviewModalBody" style="overflow-y:auto; flex:1; padding:20px;">
         <!-- Dynamic content filled by openPostReviewModal(postId) -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       MODAL: ACTIVE TODAY MEMBERS
+       ========================================== -->
+  <div class="admin-modal-overlay" id="activeUsersModal" onclick="if(event.target===this) closeActiveUsersModal()">
+    <div class="admin-modal-card" style="max-width: 660px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <!-- Modal Header -->
+      <div class="admin-modal-header" style="background: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%); border-bottom: 1px solid #DCFCE7; padding: 18px 24px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h3 style="margin:0; font-size:17px; font-weight:800; color:#14532D; display:flex; align-items:center; gap:8px;">
+              <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:#DCFCE7; color:#15803D; font-size:14px;">
+                <i class="fas fa-bolt"></i>
+              </span>
+              Members Active Today
+            </h3>
+            <span id="activeModalCountBadge" class="active-today-badge" style="font-size:11px;">0 Active</span>
+          </div>
+          <p style="margin:4px 0 0 0; font-size:12px; color:#475569;">
+            Platform members and students who signed in, posted, or engaged within the last 24 hours.
+          </p>
+        </div>
+        <button type="button" class="admin-btn admin-btn-outline" style="padding:6px 10px; border-radius:10px;" onclick="closeActiveUsersModal()" title="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div style="padding: 12px 24px; background: #F8FAFC; border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="position: relative; flex: 1; min-width: 200px;">
+          <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px;"></i>
+          <input type="text" id="activeUserSearchInput" class="admin-form-control" placeholder="Search active member by name or handle..." style="padding-left: 32px; font-size: 12px; height: 36px; border-radius: 10px;" oninput="filterActiveUsersModal()">
+        </div>
+        <div style="display: flex; gap: 6px;" id="activeUserRoleFilters">
+          <button type="button" class="filter-pill active" data-active-role="all" onclick="setActiveRoleFilter('all')" style="font-size: 11px; padding: 4px 10px;">All</button>
+          <button type="button" class="filter-pill" data-active-role="student" onclick="setActiveRoleFilter('student')" style="font-size: 11px; padding: 4px 10px;">Students</button>
+          <button type="button" class="filter-pill" data-active-role="counselor" onclick="setActiveRoleFilter('counselor')" style="font-size: 11px; padding: 4px 10px;">Counselors</button>
+          <button type="button" class="filter-pill" data-active-role="admin" onclick="setActiveRoleFilter('admin')" style="font-size: 11px; padding: 4px 10px;">Admins</button>
+        </div>
+      </div>
+
+      <!-- Modal Body / Active Users List -->
+      <div class="admin-modal-body" id="activeUsersListContainer" style="overflow-y: auto; padding: 16px 24px; flex: 1; max-height: 50vh;">
+        <!-- Populated dynamically by renderActiveUsersModalList() -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="admin-modal-footer" style="padding: 12px 24px; background: #FAF9FE; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 11px; color: var(--text-muted);">
+          <i class="fas fa-circle-check" style="color: #22C55E;"></i> Activity verified through authentic user sessions &amp; interactions
+        </span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="admin-btn admin-btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="closeActiveUsersModal()">
+            Close
+          </button>
+          <button type="button" class="admin-btn admin-btn-primary" style="font-size: 12px; padding: 6px 14px; background: var(--primary);" onclick="goToUsersTabWithActiveFilter()">
+            <i class="fas fa-users-gear"></i> Manage in Users &amp; Roles
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2247,6 +2528,8 @@
       } else if (tabName === 'overview') {
         renderSentimentBreakdown();
         renderOverviewReports();
+      } else if (tabName === 'ai-governance') {
+        renderAiGovernanceMetrics();
       }
 
       const sidebar = document.getElementById('adminSidebar');
@@ -2268,6 +2551,7 @@
               cachedPosts = parsed;
               renderPostsList();
               renderSentimentBreakdown();
+              renderAiGovernanceMetrics();
             }
           }
         }
@@ -2312,7 +2596,10 @@
           const fEl = document.getElementById('statFlaggedContent');
           if (fEl) fEl.textContent = stats.flaggedPosts || 0;
           const aEl = document.getElementById('statActiveUsers');
-          if (aEl) aEl.textContent = stats.activeUsersToday || 1;
+          if (aEl) {
+            const listCount = getActiveUsersList().length;
+            aEl.textContent = Math.max(stats.activeUsersToday || 0, listCount, 1);
+          }
 
           const repBadge = document.getElementById('navReportsBadge');
           if (repBadge) {
@@ -2333,12 +2620,14 @@
           try { localStorage.setItem('safe_space_admin_cached_posts', JSON.stringify(posts)); } catch(e) {}
           renderPostsList();
           renderSentimentBreakdown();
+          renderAiGovernanceMetrics();
         } else if (SafeSpaceDB.community && SafeSpaceDB.community.getPosts) {
           return SafeSpaceDB.community.getPosts().then(fb => {
             if (Array.isArray(fb) && fb.length > 0) {
               cachedPosts = fb;
               renderPostsList();
               renderSentimentBreakdown();
+              renderAiGovernanceMetrics();
             }
           });
         }
@@ -2351,6 +2640,7 @@
               cachedPosts = fb;
               renderPostsList();
               renderSentimentBreakdown();
+              renderAiGovernanceMetrics();
             }
           } catch(e) {}
         }
@@ -2403,32 +2693,249 @@
     // ========================================================
     // OVERVIEW: SENTIMENT & REPORTS
     // ========================================================
-    function renderSentimentBreakdown() {
-      const total = cachedPosts.length;
-      if (total === 0) {
-        document.getElementById('sentimentPosPct').textContent = '50%';
-        document.getElementById('sentimentPosBar').style.width = '50%';
-        document.getElementById('sentimentNeuPct').textContent = '35%';
-        document.getElementById('sentimentNeuBar').style.width = '35%';
-        document.getElementById('sentimentNegPct').textContent = '15%';
-        document.getElementById('sentimentNegBar').style.width = '15%';
-        return;
+    async function renderSentimentBreakdown() {
+      try {
+        const typeSelect = document.getElementById('sentimentFilterType');
+        const rangeSelect = document.getElementById('sentimentFilterRange');
+        const contentType = typeSelect ? typeSelect.value : 'all';
+        const dateRange = rangeSelect ? rangeSelect.value : '7d';
+
+        let stats = null;
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.sentiment && SafeSpaceDB.sentiment.getSentimentStats) {
+          stats = await SafeSpaceDB.sentiment.getSentimentStats({ contentType, dateRange });
+        }
+
+        if (!stats) {
+          const total = cachedPosts.length;
+          const pos = cachedPosts.filter(p => (p.sentiment || '').toUpperCase() === 'POSITIVE').length;
+          const neg = cachedPosts.filter(p => (p.sentiment || '').toUpperCase() === 'NEGATIVE').length;
+          const neu = total - pos - neg;
+          const posPct = total > 0 ? Math.round((pos / total) * 100) : 0;
+          const negPct = total > 0 ? Math.round((neg / total) * 100) : 0;
+          const neuPct = total > 0 ? (100 - posPct - negPct) : 0;
+          stats = {
+            total: total,
+            positive: pos,
+            neutral: neu,
+            negative: neg,
+            positive_pct: posPct,
+            neutral_pct: neuPct,
+            negative_pct: negPct,
+            timeline: []
+          };
+        }
+
+        const total = stats.total;
+        const pos = stats.positive;
+        const neu = stats.neutral;
+        const neg = stats.negative;
+        const posPct = stats.positive_pct;
+        const neuPct = stats.neutral_pct;
+        const negPct = stats.negative_pct;
+
+        const totalEl = document.getElementById('sentimentTotalCount');
+        if (totalEl) totalEl.textContent = total;
+        const cardTotalEl = document.getElementById('sentimentCardTotal');
+        if (cardTotalEl) cardTotalEl.textContent = total;
+
+        const cardPosCount = document.getElementById('sentimentCardPosCount');
+        if (cardPosCount) cardPosCount.textContent = pos;
+        const cardPosPct = document.getElementById('sentimentCardPosPct');
+        if (cardPosPct) cardPosPct.textContent = `${posPct}%`;
+
+        const cardNeuCount = document.getElementById('sentimentCardNeuCount');
+        if (cardNeuCount) cardNeuCount.textContent = neu;
+        const cardNeuPct = document.getElementById('sentimentCardNeuPct');
+        if (cardNeuPct) cardNeuPct.textContent = `${neuPct}%`;
+
+        const cardNegCount = document.getElementById('sentimentCardNegCount');
+        if (cardNegCount) cardNegCount.textContent = neg;
+        const cardNegPct = document.getElementById('sentimentCardNegPct');
+        if (cardNegPct) cardNegPct.textContent = `${negPct}%`;
+
+        const posPctEl = document.getElementById('sentimentPosPct');
+        if (posPctEl) posPctEl.textContent = `${posPct}% (${pos})`;
+        const posBar = document.getElementById('sentimentPosBar');
+        if (posBar) posBar.style.width = `${posPct}%`;
+
+        const neuPctEl = document.getElementById('sentimentNeuPct');
+        if (neuPctEl) neuPctEl.textContent = `${neuPct}% (${neu})`;
+        const neuBar = document.getElementById('sentimentNeuBar');
+        if (neuBar) neuBar.style.width = `${neuPct}%`;
+
+        const negPctEl = document.getElementById('sentimentNegPct');
+        if (negPctEl) negPctEl.textContent = `${negPct}% (${neg})`;
+        const negBar = document.getElementById('sentimentNegBar');
+        if (negBar) negBar.style.width = `${negPct}%`;
+
+        const timelineContainer = document.getElementById('sentimentTimelineContainer');
+        if (timelineContainer) {
+          const days = stats.timeline && stats.timeline.length > 0 ? stats.timeline : [];
+          if (days.length === 0) {
+            timelineContainer.innerHTML = '<div style="text-align:center; width:100%; font-size:11px; color:var(--text-muted); padding:16px 0;">No chronological sentiment records for this filter range.</div>';
+          } else {
+            let maxDaily = 1;
+            days.forEach(d => { if (d.total > maxDaily) maxDaily = d.total; });
+
+            timelineContainer.innerHTML = days.map(day => {
+              const heightPos = Math.round((day.pos / maxDaily) * 55);
+              const heightNeu = Math.round((day.neu / maxDaily) * 55);
+              const heightNeg = Math.round((day.neg / maxDaily) * 55);
+
+              return `
+                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:32px;" title="${escapeHTML(day.label)}: ${day.pos} Pos, ${day.neu} Neu, ${day.neg} Neg (Total: ${day.total})">
+                  <div style="display:flex; align-items:flex-end; gap:2px; height:60px; width:100%; justify-content:center;">
+                    <div style="background:#22C55E; width:6px; height:${Math.max(day.pos > 0 ? 4 : 0, heightPos)}px; border-radius:2px 2px 0 0;" title="Positive: ${day.pos}"></div>
+                    <div style="background:#94A3B8; width:6px; height:${Math.max(day.neu > 0 ? 4 : 0, heightNeu)}px; border-radius:2px 2px 0 0;" title="Neutral: ${day.neu}"></div>
+                    <div style="background:#F97316; width:6px; height:${Math.max(day.neg > 0 ? 4 : 0, heightNeg)}px; border-radius:2px 2px 0 0;" title="Negative: ${day.neg}"></div>
+                  </div>
+                  <div style="font-size:9px; font-weight:700; color:var(--text-muted); white-space:nowrap;">${escapeHTML(day.label.split(',')[0])}</div>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+      } catch (err) {
+        console.error('[SafeSpace] renderSentimentBreakdown error:', err);
       }
+    }
 
-      const pos = cachedPosts.filter(p => (p.sentiment || '').toUpperCase() === 'POSITIVE').length;
-      const neg = cachedPosts.filter(p => (p.sentiment || '').toUpperCase() === 'NEGATIVE').length;
-      const neu = total - pos - neg;
+    // ========================================================
+    // AI GOVERNANCE: AGGREGATED METRICS & SENTIMENT DISTRIBUTION
+    // ========================================================
+    async function renderAiGovernanceMetrics() {
+      try {
+        let metrics = null;
+        try {
+          const response = await fetch('api/admin_api.php?action=ai_metrics');
+          if (response.ok) {
+            const json = await response.json();
+            if (json && json.success && json.data) {
+              metrics = json.data;
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[Admin] ai_metrics API request notice, using local cache:', apiErr);
+        }
 
-      const posPct = Math.round((pos / total) * 100);
-      const negPct = Math.round((neg / total) * 100);
-      const neuPct = 100 - posPct - negPct;
+        // Local cache calculation fallback
+        if (!metrics) {
+          const posts = Array.isArray(cachedPosts) ? cachedPosts : [];
+          const totalPosts = posts.length;
+          let warnings = 0;
+          let blocked = 0;
+          let review = 0;
+          let recs = 0;
+          const sentCounts = { POSITIVE: 0, NEUTRAL: 0, NEGATIVE: 0 };
+          const catCounts = {
+            SAFE: 0,
+            SELF_HARM: 0,
+            BULLYING_HARASSMENT: 0,
+            THREAT_VIOLENCE: 0,
+            DISTRESS_SENSITIVE: 0,
+            OTHER: 0
+          };
 
-      document.getElementById('sentimentPosPct').textContent = `${posPct}% (${pos})`;
-      document.getElementById('sentimentPosBar').style.width = `${posPct}%`;
-      document.getElementById('sentimentNeuPct').textContent = `${neuPct}% (${neu})`;
-      document.getElementById('sentimentNeuBar').style.width = `${neuPct}%`;
-      document.getElementById('sentimentNegPct').textContent = `${negPct}% (${neg})`;
-      document.getElementById('sentimentNegBar').style.width = `${negPct}%`;
+          posts.forEach(p => {
+            const sent = (p.sentiment || 'NEUTRAL').toUpperCase();
+            if (sentCounts[sent] !== undefined) sentCounts[sent]++;
+            else sentCounts['NEUTRAL']++;
+
+            const cat = (p.moderation_category || p.category || 'SAFE').toUpperCase();
+            if (cat === 'SAFE') {
+              catCounts['SAFE']++;
+            } else if (cat.indexOf('SELF_HARM') !== -1 || cat.indexOf('CRISIS') !== -1) {
+              catCounts['SELF_HARM']++;
+            } else if (cat.indexOf('BULLY') !== -1 || cat.indexOf('HARASS') !== -1 || cat.indexOf('HATE') !== -1) {
+              catCounts['BULLYING_HARASSMENT']++;
+            } else if (cat.indexOf('THREAT') !== -1 || cat.indexOf('VIOLEN') !== -1) {
+              catCounts['THREAT_VIOLENCE']++;
+            } else if (cat.indexOf('DISTRESS') !== -1 || cat.indexOf('SENSITIVE') !== -1 || cat.indexOf('ALARM') !== -1) {
+              catCounts['DISTRESS_SENSITIVE']++;
+            } else {
+              catCounts['OTHER']++;
+            }
+
+            const st = (p.moderation_status || p.status || 'APPROVED').toUpperCase();
+            if (p.is_user_confirmed || st === 'REVIEW' || st === 'BLOCKED' || cat !== 'SAFE') {
+              warnings++;
+            }
+            if (st === 'BLOCKED' || p.deleted_at) {
+              blocked++;
+            }
+            if (st === 'REVIEW') {
+              review++;
+            }
+            if (p.ai_recommendation) {
+              recs++;
+            }
+          });
+
+          metrics = {
+            posts_analyzed: totalPosts,
+            safety_warnings_displayed: warnings,
+            posts_revised_or_blocked: blocked,
+            posts_requiring_review: review,
+            recommendations_generated: recs,
+            sentiment_distribution: sentCounts,
+            category_distribution: catCounts
+          };
+        }
+
+        // 1. KPI Counters
+        const elAnalyzed = document.getElementById('aiMetricPostsAnalyzed');
+        if (elAnalyzed) elAnalyzed.textContent = metrics.posts_analyzed || 0;
+
+        const elWarnings = document.getElementById('aiMetricWarningsDisplayed');
+        if (elWarnings) elWarnings.textContent = metrics.safety_warnings_displayed || 0;
+
+        const elBlocked = document.getElementById('aiMetricPostsBlocked');
+        if (elBlocked) elBlocked.textContent = metrics.posts_revised_or_blocked || 0;
+
+        const elReview = document.getElementById('aiMetricPostsReview');
+        if (elReview) elReview.textContent = metrics.posts_requiring_review || 0;
+
+        const elRecs = document.getElementById('aiMetricRecsGenerated');
+        if (elRecs) elRecs.textContent = metrics.recommendations_generated || 0;
+
+        // 2. Sentiment Breakdown Bars
+        const s = metrics.sentiment_distribution || { POSITIVE: 0, NEUTRAL: 0, NEGATIVE: 0 };
+        const sTotal = (s.POSITIVE || 0) + (s.NEUTRAL || 0) + (s.NEGATIVE || 0);
+        const posPct = sTotal > 0 ? Math.round(((s.POSITIVE || 0) / sTotal) * 100) : 0;
+        const neuPct = sTotal > 0 ? Math.round(((s.NEUTRAL || 0) / sTotal) * 100) : 0;
+        const negPct = sTotal > 0 ? Math.max(0, 100 - posPct - neuPct) : 0;
+
+        const posText = document.getElementById('aiSentimentPosText');
+        if (posText) posText.textContent = `${s.POSITIVE || 0} (${posPct}%)`;
+        const posBar = document.getElementById('aiSentimentPosBar');
+        if (posBar) posBar.style.width = `${posPct}%`;
+
+        const neuText = document.getElementById('aiSentimentNeuText');
+        if (neuText) neuText.textContent = `${s.NEUTRAL || 0} (${neuPct}%)`;
+        const neuBar = document.getElementById('aiSentimentNeuBar');
+        if (neuBar) neuBar.style.width = `${neuPct}%`;
+
+        const negText = document.getElementById('aiSentimentNegText');
+        if (negText) negText.textContent = `${s.NEGATIVE || 0} (${negPct}%)`;
+        const negBar = document.getElementById('aiSentimentNegBar');
+        if (negBar) negBar.style.width = `${negPct}%`;
+
+        // 3. Safety Categories Distribution
+        const c = metrics.category_distribution || {};
+        const safeEl = document.getElementById('aiCatSafeCount');
+        if (safeEl) safeEl.textContent = c.SAFE || 0;
+        const shEl = document.getElementById('aiCatSelfHarmCount');
+        if (shEl) shEl.textContent = c.SELF_HARM || 0;
+        const bullyEl = document.getElementById('aiCatBullyingCount');
+        if (bullyEl) bullyEl.textContent = c.BULLYING_HARASSMENT || 0;
+        const threatEl = document.getElementById('aiCatThreatCount');
+        if (threatEl) threatEl.textContent = c.THREAT_VIOLENCE || 0;
+        const distEl = document.getElementById('aiCatDistressCount');
+        if (distEl) distEl.textContent = c.DISTRESS_SENSITIVE || 0;
+
+      } catch (err) {
+        console.warn('[Admin] renderAiGovernanceMetrics error:', err);
+      }
     }
 
     function renderOverviewReports() {
@@ -2460,6 +2967,210 @@
     // ========================================================
     // TAB 2: USER MANAGEMENT
     // ========================================================
+
+    // ========================================================
+    // ACTIVE TODAY MEMBERS MODAL & FILTERING LOGIC
+    // ========================================================
+    let activeRoleFilter = 'all';
+
+    function isUserActiveToday(u) {
+      if (!u) return false;
+      if (u.is_online === true) return true;
+      const now = Date.now();
+      if (u.last_active) {
+        const diff = now - new Date(u.last_active).getTime();
+        if (diff >= 0 && diff < 86400000) return true;
+      }
+      if (u.updated_at) {
+        const diff = now - new Date(u.updated_at).getTime();
+        if (diff >= 0 && diff < 86400000) return true;
+      }
+      // Check if user posted or was recorded in sentiment logs recently
+      if (Array.isArray(cachedPosts)) {
+        const hasRecent = cachedPosts.some(p => String(p.user_id) === String(u.id) && (now - new Date(p.created_at || p.updated_at).getTime() < 86400000));
+        if (hasRecent) return true;
+      }
+      return false;
+    }
+
+    function getActiveUsersList() {
+      let users = cachedUsers || [];
+      if (!Array.isArray(users) || users.length === 0) {
+        try {
+          const mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+          if (Array.isArray(mems) && mems.length > 0) users = mems;
+        } catch (e) {}
+      }
+      // Guarantee current active user is counted
+      if (currentUser && !users.some(u => u.id === currentUser.id)) {
+        users = [currentUser, ...users];
+      }
+      return users.filter(u => isUserActiveToday(u));
+    }
+
+    function openActiveUsersModal() {
+      const modal = document.getElementById('activeUsersModal');
+      if (!modal) return;
+      activeRoleFilter = 'all';
+      const searchInput = document.getElementById('activeUserSearchInput');
+      if (searchInput) searchInput.value = '';
+
+      document.querySelectorAll('#activeUserRoleFilters .filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-active-role') === 'all');
+      });
+
+      renderActiveUsersModalList();
+      modal.classList.add('open');
+    }
+
+    function closeActiveUsersModal() {
+      const modal = document.getElementById('activeUsersModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function setActiveRoleFilter(role) {
+      activeRoleFilter = role;
+      document.querySelectorAll('#activeUserRoleFilters .filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-active-role') === role);
+      });
+      renderActiveUsersModalList();
+    }
+
+    function filterActiveUsersModal() {
+      renderActiveUsersModalList();
+    }
+
+    function renderActiveUsersModalList() {
+      const container = document.getElementById('activeUsersListContainer');
+      if (!container) return;
+      const searchVal = (document.getElementById('activeUserSearchInput')?.value || '').trim().toLowerCase();
+
+      let activeUsers = getActiveUsersList();
+
+      // Role filter
+      if (activeRoleFilter !== 'all') {
+        activeUsers = activeUsers.filter(u => (u.role || (u.is_admin ? 'admin' : 'student')).toLowerCase() === activeRoleFilter.toLowerCase());
+      }
+
+      // Search query
+      if (searchVal) {
+        activeUsers = activeUsers.filter(u => {
+          const name = [u.first_name, u.last_name].filter(Boolean).join(' ').toLowerCase();
+          const uname = (u.username || '').toLowerCase();
+          const email = (u.email || '').toLowerCase();
+          return name.includes(searchVal) || uname.includes(searchVal) || email.includes(searchVal);
+        });
+      }
+
+      const badge = document.getElementById('activeModalCountBadge');
+      if (badge) {
+        badge.textContent = `${activeUsers.length} Active`;
+      }
+
+      if (activeUsers.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:36px 16px; color:var(--text-muted);">
+            <div style="width:48px; height:48px; border-radius:50%; background:#F1F5F9; color:#94A3B8; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; font-size:20px;">
+              <i class="fas fa-user-clock"></i>
+            </div>
+            <div style="font-weight:700; color:var(--text-dark); margin-bottom:4px;">No Members Found</div>
+            <div style="font-size:12px;">No active members match your filter or search criteria.</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${activeUsers.map(u => {
+            const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || 'Safe Space Member';
+            const role = u.role || (u.is_admin ? 'admin' : 'student');
+            let roleColor = '#6C4FD1';
+            let roleBg = '#F3E8FF';
+            if (role === 'admin') { roleColor = '#DC2626'; roleBg = '#FEE2E2'; }
+            else if (role === 'counselor') { roleColor = '#2563EB'; roleBg = '#DBEAFE'; }
+
+            const isOnline = Boolean(u.is_online);
+            let timeText = 'Online Now';
+            if (!isOnline && u.last_active) {
+              const diffMin = Math.round((Date.now() - new Date(u.last_active).getTime()) / 60000);
+              if (diffMin < 60) timeText = `Active ${Math.max(1, diffMin)}m ago`;
+              else {
+                const diffHr = Math.round(diffMin / 60);
+                timeText = `Active ${diffHr}h ago`;
+              }
+            } else if (!isOnline) {
+              timeText = 'Active Today';
+            }
+
+            return `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; transition:all 0.2s ease;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div style="position:relative; width:40px; height:40px; border-radius:50%; background:#F3E8FF; display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--primary); overflow:hidden; flex-shrink:0;">
+                    ${u.avatar_url ? `<img src="${escapeHTML(u.avatar_url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src=''; this.parentElement.innerHTML='<i class=\'fas fa-user\'></i>';">` : '<i class="fas fa-user"></i>'}
+                    <span style="position:absolute; bottom:1px; right:1px; width:10px; height:10px; border-radius:50%; background:${isOnline ? '#22C55E' : '#10B981'}; border:2px solid #fff;"></span>
+                  </div>
+                  <div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                      <strong style="font-size:13px; color:var(--text-dark);">${escapeHTML(name)}</strong>
+                      <span style="font-size:10px; font-weight:700; color:${roleColor}; background:${roleBg}; padding:1px 6px; border-radius:6px; text-transform:uppercase;">
+                        ${escapeHTML(role)}
+                      </span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+                      <span>@${escapeHTML(u.username || 'user')}</span>
+                      ${u.email ? `<span>&bull; ${escapeHTML(u.email)}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="font-size:11px; font-weight:600; color:#15803D; background:#DCFCE7; padding:3px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+                    <span class="active-dot" style="width:5px; height:5px;"></span>
+                    ${escapeHTML(timeText)}
+                  </span>
+                  <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 10px; font-size:11px; border-radius:8px;" onclick="inspectUserFromModal('${escapeHTML(u.id)}')">
+                    Inspect
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function goToUsersTabWithActiveFilter() {
+      closeActiveUsersModal();
+      switchAdminTab('users');
+      activeUserFilter = 'active';
+      document.querySelectorAll('#userFilterRow .filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-user-filter') === 'active');
+      });
+      renderUsersTable();
+    }
+
+    function inspectUserFromModal(userId) {
+      closeActiveUsersModal();
+      switchAdminTab('users');
+      const searchInput = document.getElementById('userSearchInput');
+      const u = (cachedUsers || []).find(x => x.id === userId);
+      if (searchInput && u) {
+        searchInput.value = u.username || u.email || '';
+      }
+      activeUserFilter = 'all';
+      document.querySelectorAll('#userFilterRow .filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-user-filter') === 'all');
+      });
+      renderUsersTable();
+    }
+
+    window.openActiveUsersModal = openActiveUsersModal;
+    window.closeActiveUsersModal = closeActiveUsersModal;
+    window.setActiveRoleFilter = setActiveRoleFilter;
+    window.filterActiveUsersModal = filterActiveUsersModal;
+    window.goToUsersTabWithActiveFilter = goToUsersTabWithActiveFilter;
+    window.inspectUserFromModal = inspectUserFromModal;
+
     function renderUsersTable() {
       const tbody = document.getElementById('usersTableBody');
       const query = (document.getElementById('userSearchInput').value || '').trim().toLowerCase();
@@ -2468,6 +3179,8 @@
       if (activeUserFilter !== 'all') {
         if (activeUserFilter === 'deactivated') {
           users = users.filter(u => u.is_deactivated === true);
+        } else if (activeUserFilter === 'active' || activeUserFilter === 'active_today') {
+          users = users.filter(u => isUserActiveToday(u));
         } else {
           users = users.filter(u => (u.role || 'student').toLowerCase() === activeUserFilter.toLowerCase());
         }
@@ -3949,7 +4662,9 @@
 
     function renderKeywordsList() {
       const container = document.getElementById('keywordsListContainer');
-      document.getElementById('keywordCountLabel').textContent = `${bannedKeywords.length} keywords`;
+      const countLabel = document.getElementById('keywordCountLabel');
+      if (!container || !countLabel) return;
+      countLabel.textContent = `${bannedKeywords.length} keywords`;
 
       container.innerHTML = bannedKeywords.map(kw => `
         <span class="ai-keyword-tag">
@@ -3980,9 +4695,14 @@
     }
 
     function saveAiSettings() {
-      const toxicity = document.getElementById('toxicitySlider').value;
-      const autoEscalate = document.getElementById('crisisAutoEscalateCheck').checked;
-      const autoBlock = document.getElementById('extremeAutoBlockCheck').checked;
+      const toxEl = document.getElementById('toxicitySlider');
+      const escEl = document.getElementById('crisisAutoEscalateCheck');
+      const blkEl = document.getElementById('extremeAutoBlockCheck');
+      if (!toxEl && !escEl && !blkEl) return;
+
+      const toxicity = toxEl ? toxEl.value : 70;
+      const autoEscalate = escEl ? escEl.checked : true;
+      const autoBlock = blkEl ? blkEl.checked : true;
 
       localStorage.setItem('safe_space_ai_settings', JSON.stringify({
         toxicityThreshold: toxicity,
@@ -3997,14 +4717,22 @@
     // AI Sandbox Simulator
     function loadSandboxSample(type) {
       const textarea = document.getElementById('aiSandboxInput');
-      if (type === 'positive') {
-        textarea.value = "Great job everyone on the presentation today! Proud of our class teamwork.";
-      } else if (type === 'stress') {
-        textarea.value = "I am feeling so overwhelmed with exams and finals, I haven't slept in two days and feel hopeless.";
-      } else if (type === 'insult') {
-        textarea.value = "Napakatanga mo talaga gago boboka ka pa!";
+      if (type === 'fail_exam') {
+        textarea.value = "I'm disappointed because I failed my exam even though I studied hard.";
+      } else if (type === 'deadlines' || type === 'stress') {
+        textarea.value = "I'm so stressed because I have several deadlines this week.";
+      } else if (type === 'lonely') {
+        textarea.value = "I feel like nobody understands me.";
+      } else if (type === 'goal' || type === 'positive') {
+        textarea.value = "I finally achieved my goal after months of hard work!";
+      } else if (type === 'presentation') {
+        textarea.value = "Our group presentation is scheduled for Friday.";
       } else if (type === 'crisis') {
         textarea.value = "I don't want to wake up anymore. Everything hurts and I want to end it all.";
+      } else if (type === 'insult') {
+        textarea.value = "Napakatanga mo talaga gago boboka ka pa!";
+      } else if (type === 'threat') {
+        textarea.value = "I will hurt anyone who gets in my way tomorrow at school.";
       }
     }
 
@@ -4058,6 +4786,27 @@
         if (status === 'REVIEW') action = 'Send to Guidance Counselor Queue for Review (Warn/Review)';
         if (status === 'BLOCKED') action = 'Block Submission Immediately & Log Safety Alert';
         document.getElementById('sandboxActionText').textContent = action;
+
+        // Render Suggested Support from Safe Space AI preview in Sandbox
+        const recWrap = document.getElementById('sandboxSupportRecWrap');
+        if (recWrap) {
+          const rec = res.support_recommendation || (window.SafeSpaceSupportRecommender && window.SafeSpaceSupportRecommender.generate(text, sentiment, category, res.risk_level, res.language));
+          if (rec && rec.message) {
+            recWrap.style.display = 'block';
+            const msgEl = document.getElementById('sandboxSupportRecMessage');
+            if (msgEl) msgEl.textContent = rec.message;
+            const discEl = document.getElementById('sandboxSupportRecDisclaimer');
+            if (discEl) {
+              discEl.innerHTML = `<i class="fas fa-shield-heart"></i> ${rec.disclaimer || 'Suggested Support from Safe Space AI · Practical student coping recommendation.'}`;
+            }
+            const resBtn = document.getElementById('sandboxSupportRecResourceBtn');
+            if (resBtn) {
+              resBtn.style.display = rec.show_resources_button ? 'inline-flex' : 'none';
+            }
+          } else {
+            recWrap.style.display = 'none';
+          }
+        }
 
         showToast(`AI Analysis Complete: ${status}`, 'success');
       } catch (err) {

@@ -100,6 +100,81 @@
       font-size: 11px;
       color: var(--text-muted, #6b7280);
     }
+
+    /* Checklist Filter Pills & Member Badges */
+    .checklist-filter-pills {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .checklist-filter-pill {
+      background: var(--card-bg, #ffffff);
+      border: 1px solid var(--border, #e5e7eb);
+      color: var(--text-mid, #4b5563);
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .checklist-filter-pill:hover {
+      border-color: var(--primary, #6c4fd1);
+      color: var(--primary, #6c4fd1);
+    }
+    .checklist-filter-pill.active {
+      background: linear-gradient(135deg, var(--primary, #6c4fd1) 0%, #7c3aed 100%);
+      color: #ffffff !important;
+      border-color: transparent;
+      box-shadow: 0 2px 6px rgba(108, 79, 209, 0.25);
+    }
+    .checklist-filter-pill.active i {
+      color: #ffffff !important;
+    }
+    .checklist-filter-pill .pill-badge {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.06);
+    }
+    .checklist-filter-pill.active .pill-badge {
+      background: rgba(255,255,255,0.25);
+      color: #ffffff;
+    }
+    .member-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1.5px 6px;
+      border-radius: 6px;
+      letter-spacing: 0.2px;
+      vertical-align: middle;
+      margin-left: 5px;
+    }
+    .member-tag-badge.friend {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .member-tag-badge.chat {
+      background: #eef2ff;
+      color: #4f46e5;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+    .group-member-check-item {
+      position: relative;
+      user-select: none;
+    }
+    .group-member-check-item.selected {
+      background: rgba(108, 79, 209, 0.08) !important;
+      border-left: 3px solid var(--primary, #6c4fd1);
+    }
   </style>
 </head>
 <body>
@@ -177,15 +252,34 @@
         <!-- Inbox / Contacts Column -->
         <div class="chat-inbox-pane">
           <!-- Page Header -->
-          <header class="page-header" style="height: auto; padding: 16px 20px 12px; align-items: flex-start;">
+          <header class="page-header" style="height: auto; padding: 16px 20px 12px; align-items: center; justify-content: space-between;">
             <div class="chat-header-info">
               <h1>Chats</h1>
-              <p>Connect with people in your Safe Space</p>
+              <p>Connect with peers and groups in your Safe Space</p>
             </div>
-            <button class="add-person-btn" id="openAddPersonBtn" aria-label="Find People">
-              <i class="fas fa-user-plus"></i>
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn-create-group-header" id="openCreateGroupBtn" title="Create Group Chat">
+                <i class="fas fa-users"></i>
+                <span>New Group</span>
+              </button>
+              <button class="add-person-btn" id="openAddPersonBtn" aria-label="Find People" title="Find People">
+                <i class="fas fa-user-plus"></i>
+              </button>
+            </div>
           </header>
+
+          <!-- Chat Filter Tabs -->
+          <div class="chat-filter-tabs" id="chatFilterTabs">
+            <button type="button" class="chat-filter-tab active" data-filter="all">
+              All <span class="tab-badge" id="tabCountAll">0</span>
+            </button>
+            <button type="button" class="chat-filter-tab" data-filter="direct">
+              Direct <span class="tab-badge" id="tabCountDirect">0</span>
+            </button>
+            <button type="button" class="chat-filter-tab" data-filter="groups">
+              <i class="fas fa-users" style="font-size:11px;"></i> Groups <span class="tab-badge" id="tabCountGroups">0</span>
+            </button>
+          </div>
 
           <!-- Search Bar -->
           <div class="search-bar" style="margin-top: 4px;">
@@ -264,6 +358,10 @@
                 <div class="thread-username" id="threadUsername">User</div>
                 <div class="thread-status" id="threadStatus">Offline</div>
               </div>
+
+              <button class="header-btn" id="threadGroupInfoBtn" style="color: var(--primary); display: none; margin-right: 4px;" aria-label="Group Details" title="Group Details & Members">
+                <i class="fas fa-users-gear"></i>
+              </button>
               <button class="header-btn" id="threadMenuBtn" style="color: var(--text-muted);" aria-label="Conversation Settings" title="Settings & Options">
                 <i class="fas fa-ellipsis-vertical"></i>
               </button>
@@ -282,13 +380,28 @@
 
             <!-- Message Input Bar -->
             <div class="thread-input-bar">
-              <input
-                type="text"
-                class="thread-input"
-                id="chatMessageInput"
-                placeholder="Type a safe message..."
-                autocomplete="off"
-              />
+              <button type="button" class="btn-chat-attach" id="chatAttachPhotoBtn" title="Send a photo from your files" aria-label="Send a photo">
+                <i class="fas fa-image"></i>
+              </button>
+              <input type="file" id="chatPhotoFileInput" accept="image/*" style="display:none;" />
+              <div class="thread-input-field-wrap">
+                <div class="chat-photo-preview-tray" id="chatPhotoPreviewTray" style="display:none;">
+                  <div class="chat-photo-thumb-wrap">
+                    <img id="chatPhotoPreviewImg" src="" alt="Attached preview" />
+                    <button type="button" class="btn-remove-photo-tray" id="removePhotoPreviewBtn" title="Remove photo">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <span class="chat-photo-hint">Photo attached (add a message or press send)</span>
+                </div>
+                <input
+                  type="text"
+                  class="thread-input"
+                  id="chatMessageInput"
+                  placeholder="Type a safe message..."
+                  autocomplete="off"
+                />
+              </div>
               <button class="thread-send" id="sendMessageBtn" aria-label="Send Message">
                 <i class="fas fa-paper-plane"></i>
               </button>
@@ -297,6 +410,201 @@
         </div>
       </div>
     </div>
+
+
+  <!-- Edit Nickname Modal (Supports All Members in 1-on-1 and Group Chats) -->
+  <div class="modal-overlay" id="editNicknameModal">
+    <div class="modal-sheet" style="max-width: 480px; width: 92%; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-user-pen" style="color:var(--primary);"></i>
+          <span id="nicknameModalTitle">Edit Nicknames</span>
+        </div>
+        <button type="button" class="modal-close" id="closeNicknameModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1;">
+        <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px;" id="nicknameModalSubtitle">
+          Customize how members appear in your chats. Only you will see these nicknames.
+        </p>
+        <div class="nicknames-members-list" id="nicknamesMembersList" style="display:flex; flex-direction:column; gap:10px;">
+          <!-- Dynamically populated with all members of the conversation -->
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); flex-shrink:0;">
+        <button type="button" class="btn-save" id="doneNicknameModalBtn" style="border-radius:var(--radius-full); padding: 8px 24px;">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Image Viewer Modal -->
+  <div class="image-viewer-overlay" id="imageViewerOverlay">
+    <button type="button" class="btn-close-image-viewer" id="closeImageViewerBtn" aria-label="Close photo">
+      <i class="fas fa-times"></i>
+    </button>
+    <img src="" alt="Full view" class="image-viewer-img" id="imageViewerImg" />
+  </div>
+
+  <!-- Create Group Chat Modal -->
+  <div class="modal-overlay" id="createGroupModal">
+    <div class="modal-sheet create-group-sheet" style="max-width: 480px; width: 92%;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 10px;">
+          <div class="create-group-icon-wrap"><i class="fas fa-users"></i></div>
+          <div>
+            <h3 style="margin:0; font-size:16px; font-weight:800; color:var(--text-dark);">Create Group Chat</h3>
+            <p style="margin:2px 0 0; font-size:12px; color:var(--text-muted);">Gather peers for study, support, or discussion</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="closeCreateGroupBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px; max-height: 70vh; overflow-y: auto;">
+        <!-- Group Name -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <label class="form-label" for="groupTitleInput" style="margin:0; font-weight:700; font-size:13px;">Group Name <span style="font-weight:400; font-size:11.5px; color:var(--text-muted);">(Optional - auto-named if empty)</span></label>
+            <span id="groupTitleCounter" style="font-size:11px; color:var(--text-muted);">0/35</span>
+          </div>
+          <input type="text" id="groupTitleInput" class="form-control" placeholder="e.g. Study Buddies (or leave empty to auto-name from members)" maxlength="35" style="height:42px; border-radius:10px; width:100%; padding:0 12px; font-size:13.5px;" />
+        </div>
+
+        <!-- Group Topic / Purpose -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="groupTopicInput" style="margin-bottom:5px; font-weight:700; font-size:13px; display:block;">Topic or Purpose (Optional)</label>
+          <input type="text" id="groupTopicInput" class="form-control" placeholder="What is this group gathering about?" maxlength="100" style="height:42px; border-radius:10px; width:100%; padding:0 12px; font-size:13.5px;" />
+        </div>
+
+        <!-- Group Icon Picker -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="margin-bottom:8px; font-weight:700; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+            <span>Group Picture</span>
+            <span style="font-weight:400; font-size:11.5px; color:var(--text-muted);">Choose photo from files or select emoji</span>
+          </label>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; background:rgba(108, 79, 209, 0.05); padding:10px 14px; border-radius:12px; border:1px solid rgba(108, 79, 209, 0.15);">
+            <div id="createGroupAvatarPreview" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; overflow:hidden; box-shadow:0 3px 8px rgba(108, 79, 209, 0.25); cursor:pointer;" title="Click to choose a photo from files">
+              <span id="createGroupIconDisplay">👥</span>
+            </div>
+            <div style="flex:1;">
+              <button type="button" class="btn-upload-group-photo-pill" id="uploadGroupPhotoBtn">
+                <i class="fas fa-camera"></i> Choose Photo from Files
+              </button>
+              <input type="file" id="createGroupFileInput" accept="image/*" style="display:none;" />
+              <div id="createGroupPhotoName" style="font-size:11px; color:var(--text-muted); margin-top:4px;">No custom file chosen (or pick an emoji below)</div>
+            </div>
+          </div>
+          <label class="form-label" style="margin-bottom:6px; font-weight:600; font-size:12px; color:var(--text-muted); display:block;">Or Choose an Icon Emoji</label>
+          <div class="group-icon-selector" id="groupIconSelector">
+            <button type="button" class="group-icon-btn active" data-icon="👥">👥</button>
+            <button type="button" class="group-icon-btn" data-icon="🌸">🌸</button>
+            <button type="button" class="group-icon-btn" data-icon="📚">📚</button>
+            <button type="button" class="group-icon-btn" data-icon="☕">☕</button>
+            <button type="button" class="group-icon-btn" data-icon="💡">💡</button>
+            <button type="button" class="group-icon-btn" data-icon="🎨">🎨</button>
+            <button type="button" class="group-icon-btn" data-icon="🕊️">🕊️</button>
+            <button type="button" class="group-icon-btn" data-icon="🌿">🌿</button>
+            <button type="button" class="group-icon-btn" data-icon="✨">✨</button>
+            <button type="button" class="group-icon-btn" data-icon="🎮">🎮</button>
+          </div>
+        </div>
+
+        <!-- Member Selection Checklist -->
+        <div class="form-group" style="margin-bottom: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin: 0; font-weight:700; font-size:13px;">Add Members <strong style="color:#ef4444;">*</strong></label>
+            <span class="member-count-pill" id="selectedMemberCountBadge">0 selected</span>
+          </div>
+
+          <!-- Quick Filter Tabs (All / Friends / Recent Chats) -->
+          <div class="checklist-filter-pills" id="createGroupFilterPills">
+            <button type="button" class="checklist-filter-pill active" data-filter="all">All <span class="pill-badge" id="pillCountAll">0</span></button>
+            <button type="button" class="checklist-filter-pill" data-filter="friends"><i class="fas fa-heart" style="font-size:10px; color:#10b981;"></i> Friends <span class="pill-badge" id="pillCountFriends">0</span></button>
+            <button type="button" class="checklist-filter-pill" data-filter="chats"><i class="fas fa-comment-dots" style="font-size:10px; color:#6366f1;"></i> Recent Chats <span class="pill-badge" id="pillCountChats">0</span></button>
+          </div>
+
+          <div class="search-bar" style="margin-bottom: 8px; height: 38px;">
+            <i class="fas fa-search" style="font-size:12px;"></i>
+            <input type="text" id="memberSearchInput" class="search-input" placeholder="Search friends & peers by name..." style="font-size:12.5px;" />
+          </div>
+          <div class="group-member-checklist" id="groupMemberChecklist" style="max-height: 230px; overflow-y: auto;">
+            <div style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">Loading friends & peers...</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--border);">
+        <button type="button" class="btn-cancel" id="cancelCreateGroupBtn">Cancel</button>
+        <button type="button" class="btn-create-group-submit" id="submitCreateGroupBtn" disabled>
+          <i class="fas fa-users"></i> Create Group
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group Details & Members Info Modal -->
+  <div class="modal-overlay" id="groupInfoModal">
+    <div class="modal-sheet" style="max-width: 440px; width: 92%;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-users-gear" style="color:var(--primary);"></i>
+          <span>Group Info</span>
+        </div>
+        <button type="button" class="modal-close" id="closeGroupInfoBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="groupInfoBody" style="padding: 18px 20px; max-height: 70vh; overflow-y: auto;">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; border-top: 1px solid var(--border);">
+        <button type="button" class="btn-cancel danger" id="leaveGroupBtn" style="color:#ef4444; border-color:#fca5a5;">
+          <i class="fas fa-arrow-right-from-bracket"></i> Leave Group
+        </button>
+        <button type="button" class="btn-save" id="openAddMoreMembersBtn" style="border-radius:var(--radius-full);">
+          <i class="fas fa-user-plus"></i> Add Members
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Members to Existing Group Modal -->
+  <div class="modal-overlay" id="addMembersModal">
+    <div class="modal-sheet" style="max-width: 460px; width: 92%;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <div class="create-group-icon-wrap" style="background:var(--primary-light, #ede9fe); color:var(--primary); width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <div>
+            <h3 style="margin:0; font-size:15px; font-weight:800; color:var(--text-dark);" id="addMembersModalTitle">Add Members</h3>
+            <p style="margin:2px 0 0; font-size:11.5px; color:var(--text-muted);">Invite friends and peers into this conversation</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="closeAddMembersModalBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px; max-height: 68vh; overflow-y: auto;">
+        <!-- Filter Tabs -->
+        <div class="checklist-filter-pills" id="addMembersFilterPills">
+          <button type="button" class="checklist-filter-pill active" data-filter="all">All</button>
+          <button type="button" class="checklist-filter-pill" data-filter="friends"><i class="fas fa-heart" style="font-size:10px; color:#10b981;"></i> Friends</button>
+          <button type="button" class="checklist-filter-pill" data-filter="chats"><i class="fas fa-comment-dots" style="font-size:10px; color:#6366f1;"></i> Recent Chats</button>
+        </div>
+        <div class="search-bar" style="margin-bottom: 8px; height: 38px;">
+          <i class="fas fa-search" style="font-size:12px;"></i>
+          <input type="text" id="addMembersSearchInput" class="search-input" placeholder="Search friends & contacts..." style="font-size:12.5px;" />
+        </div>
+        <div class="group-member-checklist" id="addMembersChecklist" style="max-height: 240px; overflow-y: auto;">
+          <div style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 20px; display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border);">
+        <span class="member-count-pill" id="addMembersCountBadge">0 selected</span>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-cancel" id="cancelAddMembersModalBtn">Cancel</button>
+          <button type="button" class="btn-create-group-submit" id="submitAddMembersBtn" disabled style="padding: 8px 18px; font-size:13px;">
+            <i class="fas fa-user-plus"></i> Add to Group
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
@@ -421,6 +729,10 @@
         </button>
       </div>
       <div class="post-menu-list">
+        <button class="post-menu-item" id="menuEditNicknameBtn">
+          <i class="fa-solid fa-user-pen" style="color:var(--primary);"></i>
+          <span>Edit Nickname</span>
+        </button>
         <button class="post-menu-item" id="menuReportUserBtn">
           <i class="fa-regular fa-flag" style="color:var(--primary);"></i>
           <span>Report User</span>
@@ -545,8 +857,18 @@
     let threadOldestMessageTime = null;
     let hasMoreOlderMessages = false;
     let isLoadingOlderMessages = false;
+    let currentChatFilter = 'all';
+    let selectedGroupIcon = '👥';
+    let selectedGroupPhotoData = null;
+    let selectedGroupMembers = new Set();
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // Wire up UI controllers immediately
+      setupSearch();
+      setupThread();
+      setupChatFilters();
+      setupGroupChatUI();
+
       try {
         currentUser = await requireAuth();
         if (!currentUser) {
@@ -554,8 +876,6 @@
           return;
         }
 
-        setupSearch();
-        setupThread();
         setupInboxSubscription();
         
         // Load initial chat data without blocking page transition
@@ -602,6 +922,14 @@
       window.addEventListener('safespace:new_message', (e) => {
         if (e.detail) {
           handleIncomingGlobalMessage(e.detail);
+        }
+      });
+      window.addEventListener('safespace:group_created', () => {
+        refreshChatData();
+      });
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'safe_space_last_group_created') {
+          refreshChatData();
         }
       });
       window.addEventListener('safespace:message_deleted', (e) => {
@@ -698,10 +1026,34 @@
       });
     }
 
+    function setupChatFilters() {
+      const tabs = document.querySelectorAll('.chat-filter-tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentChatFilter = tab.dataset.filter || 'all';
+          renderRecentConversations();
+        });
+      });
+    }
+
     function renderRecentConversations() {
       const container = document.getElementById('recentConversationsContainer');
       const countEl = document.getElementById('recentCount');
-      countEl.textContent = conversations.length + 1; // +1 for AI bot
+
+      const directConvs = conversations.filter(c => !c.is_group);
+      const groupConvs = conversations.filter(c => c.is_group);
+
+      const tabAll = document.getElementById('tabCountAll');
+      const tabDirect = document.getElementById('tabCountDirect');
+      const tabGroups = document.getElementById('tabCountGroups');
+
+      if (tabAll) tabAll.textContent = conversations.length + 1;
+      if (tabDirect) tabDirect.textContent = directConvs.length + 1;
+      if (tabGroups) tabGroups.textContent = groupConvs.length;
+
+      countEl.textContent = currentChatFilter === 'groups' ? groupConvs.length : (currentChatFilter === 'direct' ? directConvs.length + 1 : conversations.length + 1);
 
       // Check for recent AI chat message
       let aiPreview = 'Talk about school, stress, motivation & more';
@@ -710,13 +1062,12 @@
         if (history && history.length > 0) {
           const last = history[history.length - 1];
           if (last && last.message) {
-            aiPreview = (last.sender_id === 'safe-space-ai-bot' ? 'Assistant: ' : 'You: ') + last.message.replace(/\*\*|📖|💜/g, '').replace(/<[^>]+>/g, '').trim().substring(0, 48) + '...';
+            aiPreview = (last.sender_id === 'safe-space-ai-bot' ? 'Assistant: ' : 'You: ') + last.message.replace(/\*\*|📖|💬/g, '').replace(/<[^>]+>/g, '').trim().substring(0, 48) + '...';
           }
         }
       } catch (e) {}
 
-      // Always include AI Student Assistant
-      const aiAssistantCard = `
+      const aiAssistantCard = (currentChatFilter === 'groups') ? '' : `
         <div class="conversation-item" onclick="handleOpenAiAssistant()" style="background:rgba(108, 79, 209, 0.05); border-left:3px solid var(--primary); margin-bottom:8px;">
           <div class="avatar-wrapper">
             <div class="conversation-avatar" style="background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; border-radius:50%; width:100%; height:100%;">
@@ -737,7 +1088,30 @@
         </div>
       `;
 
-      if (conversations.length === 0) {
+      let displayList = conversations;
+      if (currentChatFilter === 'direct') {
+        displayList = directConvs;
+      } else if (currentChatFilter === 'groups') {
+        displayList = groupConvs;
+      }
+
+      if (displayList.length === 0) {
+        if (currentChatFilter === 'groups') {
+          container.innerHTML = `
+            <div class="empty-state" style="padding:28px 16px; text-align:center;">
+              <div style="width:52px; height:52px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:inline-flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:10px;">
+                <i class="fas fa-users"></i>
+              </div>
+              <h3 style="font-size:15px; margin:0 0 6px 0; font-weight:700;">No Group Chats Yet</h3>
+              <p style="font-size:13px; color:var(--text-muted); max-width:280px; margin:0 auto 14px;">Gather your friends or classmates to study, share thoughts, or talk together.</p>
+              <button type="button" class="btn-create-group-submit" onclick="document.getElementById('openCreateGroupBtn').click()" style="margin:0 auto; padding:8px 16px; font-size:12.5px;">
+                <i class="fas fa-plus"></i> Create First Group
+              </button>
+            </div>
+          `;
+          return;
+        }
+
         container.innerHTML = aiAssistantCard + `
           <div class="empty-state" style="padding:24px 16px;">
             <i class="fa-regular fa-comment-dots" style="font-size: 42px;"></i>
@@ -748,34 +1122,68 @@
         return;
       }
 
-      container.innerHTML = aiAssistantCard + conversations.map(c => {
-        const uid = c.user_id || (c.contact && c.contact.id);
-        const uname = c.username || (c.contact && c.contact.username) || 'User';
-        const uavatar = c.avatar_url || (c.contact && c.contact.avatar_url);
-        const lastMsg = c.last_message || (c.lastMessage) || 'Tap to chat';
+      container.innerHTML = aiAssistantCard + displayList.map(c => {
+        const uid = c.id || c.user_id || (c.contact && c.contact.id);
+        let uname = c.title || c.username || (c.contact && c.contact.username) || 'User';
+        const isGroup = Boolean(c.is_group || c.isGroup);
+        if (!isGroup && currentUser) {
+          try {
+            const localNicks = JSON.parse(localStorage.getItem('safe_space_nicknames_' + currentUser.id) || '{}');
+            if (localNicks[uid]) {
+              uname = localNicks[uid];
+            }
+          } catch(e) {}
+        }
+        const rawLastMsg = c.last_message || c.lastMessage || (isGroup ? 'Tap to chat with group' : 'Tap to chat');
+        const lastMsg = (window.SafeSpaceDB && typeof SafeSpaceDB.censorProfanity === 'function')
+          ? SafeSpaceDB.censorProfanity(rawLastMsg)
+          : (window.SafeSpaceCensor ? window.SafeSpaceCensor.censor(rawLastMsg) : rawLastMsg);
         const lastTime = c.last_message_at || c.lastMessageTime;
         let unread = c.unread_count || 0;
         if (activeChatUser && (uid === activeChatUser.id)) {
           unread = 0;
         }
-        const isOnline = (c.is_online !== undefined)
-          ? c.is_online
-          : (c.contact && c.contact.is_online !== undefined ? c.contact.is_online : SafeSpaceDB.users.isOnline(c));
 
-        const avatarInnerHtml = window.SafeSpaceAvatars
-          ? window.SafeSpaceAvatars.renderHtml(c.contact || c, { alt: uname, className: 'user-avatar' })
-          : (uavatar
-              ? `<img src="${escapeHTML(uavatar)}" class="user-avatar" alt="${escapeHTML(uname)}" loading="lazy" />`
-              : `<div class="conversation-avatar"><i class="fas fa-user"></i></div>`);
+        let avatarHtml = '';
+        if (isGroup) {
+          const isPhoto = c.avatar_url && (c.avatar_url.startsWith('data:image') || c.avatar_url.startsWith('http') || c.avatar_url.includes('/'));
+          const avatarInner = isPhoto
+            ? `<img src="${escapeHTML(c.avatar_url)}" alt="${escapeHTML(uname)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
+            : `<span>${escapeHTML(c.avatar_icon || c.avatar_url || '👥')}</span>`;
+
+          avatarHtml = `
+            <div class="conversation-avatar ${isPhoto ? '' : 'group-avatar-wrapper'}" style="${isPhoto ? 'border-radius:50%;overflow:hidden;' : ''}">
+              ${avatarInner}
+            </div>
+            <span class="group-members-badge">${c.member_count || (c.members && c.members.length) || 1}</span>
+          `;
+        } else {
+          const isOnline = (c.is_online !== undefined)
+            ? c.is_online
+            : (c.contact && c.contact.is_online !== undefined ? c.contact.is_online : SafeSpaceDB.users.isOnline(c));
+
+          const inner = window.SafeSpaceAvatars
+            ? window.SafeSpaceAvatars.renderHtml(c.contact || c, { alt: uname, className: 'user-avatar' })
+            : (c.avatar_url
+                ? `<img src="${escapeHTML(c.avatar_url)}" class="user-avatar" alt="${escapeHTML(uname)}" loading="lazy" />`
+                : `<div class="conversation-avatar"><i class="fas fa-user"></i></div>`);
+
+          avatarHtml = `
+            ${inner}
+            ${isOnline ? '<span class="online-status"></span>' : ''}
+          `;
+        }
 
         return `
           <div class="conversation-item" id="convo-item-${uid}" onclick="handleOpenChatById('${uid}')">
             <div class="avatar-wrapper">
-              ${avatarInnerHtml}
-              ${isOnline ? '<span class="online-status"></span>' : ''}
+              ${avatarHtml}
             </div>
             <div class="conversation-info">
-              <div class="conversation-name">${escapeHTML(uname)}</div>
+              <div class="conversation-name" style="display:flex; align-items:center; gap:4px;">
+                <span>${escapeHTML(uname)}</span>
+                ${isGroup ? '<span class="group-chat-pill"><i class="fas fa-users"></i> GROUP</span>' : ''}
+              </div>
               <div class="conversation-preview" id="convo-preview-${uid}">${escapeHTML(lastMsg)}</div>
             </div>
             <div class="conversation-meta">
@@ -833,6 +1241,38 @@
       if (targetId === 'safe-space-ai-bot') {
         handleOpenAiAssistant();
         return;
+      }
+
+      // Check if target is a group chat
+      try {
+        if (SafeSpaceDB.groups && SafeSpaceDB.groups.isGroup) {
+          const isGrp = await SafeSpaceDB.groups.isGroup(targetId);
+          if (isGrp) {
+            const grp = await SafeSpaceDB.groups.getGroup(targetId);
+            if (grp) {
+              const groupUserObj = Object.assign({}, grp, {
+                id: grp.id,
+                username: grp.title,
+                title: grp.title,
+                name: grp.title,
+                description: grp.description || '',
+                is_group: true,
+                isGroup: true,
+                avatar_icon: grp.avatar_icon || grp.avatar_url || '👥',
+                members: grp.members || [],
+                member_count: (grp.members && grp.members.length) || grp.member_count || 1,
+                created_by: grp.created_by,
+                is_online: true
+              });
+              await openThread(groupUserObj);
+              const msgInput = document.getElementById('chatMessageInput');
+              if (msgInput) setTimeout(() => msgInput.focus(), 150);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[Chat] Error checking group target:', err);
       }
 
       let resolvedUser = null;
@@ -967,17 +1407,82 @@
     }
     window.handleOpenChatById = handleOpenChatById;
 
+    let currentAttachedPhotoDataUrl = null;
+
+    function clearAttachedPhotoPreview() {
+      currentAttachedPhotoDataUrl = null;
+      const tray = document.getElementById('chatPhotoPreviewTray');
+      const img = document.getElementById('chatPhotoPreviewImg');
+      const fileInput = document.getElementById('chatPhotoFileInput');
+      if (tray) tray.style.display = 'none';
+      if (img) img.src = '';
+      if (fileInput) fileInput.value = '';
+    }
+
     function setupThread() {
       const overlay = document.getElementById('chatThreadOverlay');
       const closeBtn = document.getElementById('closeThreadBtn');
       const sendBtn = document.getElementById('sendMessageBtn');
       const input = document.getElementById('chatMessageInput');
+      const attachPhotoBtn = document.getElementById('chatAttachPhotoBtn');
+      const chatPhotoInput = document.getElementById('chatPhotoFileInput');
+      const removePhotoBtn = document.getElementById('removePhotoPreviewBtn');
+      const nickEditBtn = document.getElementById('threadNicknameEditBtn');
+
+      if (attachPhotoBtn && chatPhotoInput) {
+        attachPhotoBtn.addEventListener('click', () => {
+          chatPhotoInput.click();
+        });
+
+        chatPhotoInput.addEventListener('change', async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          try {
+            showToast('Attaching photo...', 'info');
+            const dataUrl = await processImageFile(file, 800, 800);
+            currentAttachedPhotoDataUrl = dataUrl;
+            const tray = document.getElementById('chatPhotoPreviewTray');
+            const img = document.getElementById('chatPhotoPreviewImg');
+            if (img) img.src = dataUrl;
+            if (tray) tray.style.display = 'flex';
+            input.focus();
+            showToast('Photo attached! Press send or add a caption.', 'success');
+          } catch(err) {
+            console.error('[Chat] Photo attachment error:', err);
+            showToast('Could not load photo', 'error');
+          }
+        });
+      }
+
+      if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', clearAttachedPhotoPreview);
+      }
+
+      if (nickEditBtn) {
+        nickEditBtn.addEventListener('click', () => {
+          if (activeChatUser && (activeChatUser.is_group || activeChatUser.isGroup)) {
+            openGroupInfoModal(activeChatUser.id);
+          } else if (activeChatUser && !activeChatUser.isAi) {
+            openEditNicknamesModal(activeChatUser);
+          }
+        });
+      }
+
+      const userTitleEl = document.getElementById('threadUsername');
+      if (userTitleEl) {
+        userTitleEl.addEventListener('click', () => {
+          if (activeChatUser && !activeChatUser.isAi) {
+            openEditNicknamesModal(activeChatUser);
+          }
+        });
+      }
 
       closeBtn.addEventListener('click', () => {
         if (messageUnsubscribe) {
           messageUnsubscribe();
           messageUnsubscribe = null;
         }
+        clearAttachedPhotoPreview();
         overlay.classList.remove('open');
         const placeholder = document.getElementById('chatDesktopPlaceholder');
         if (placeholder) placeholder.style.display = '';
@@ -986,13 +1491,29 @@
       let isSending = false;
       sendBtn.addEventListener('click', async () => {
         if (isSending) return;
-        const text = input.value.trim();
-        if (!text || !activeChatUser) return;
+        let text = input.value.trim();
+        const photoToSend = currentAttachedPhotoDataUrl;
+        if ((!text && !photoToSend) || !activeChatUser) return;
+
+        // Apply partial profanity censorship using asterisks
+        if (text && window.SafeSpaceCensor) {
+          text = window.SafeSpaceCensor.censor(text);
+        } else if (text && typeof window.censorProfanity === 'function') {
+          text = window.censorProfanity(text);
+        }
 
         async function executeSendMessage(msgText) {
+          if (msgText && window.SafeSpaceCensor) {
+            msgText = window.SafeSpaceCensor.censor(msgText);
+          } else if (msgText && typeof window.censorProfanity === 'function') {
+            msgText = window.censorProfanity(msgText);
+          }
           isSending = true;
           sendBtn.disabled = true;
           input.value = '';
+
+          const photo = currentAttachedPhotoDataUrl;
+          clearAttachedPhotoPreview();
 
           const tempMsgId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
             ? crypto.randomUUID()
@@ -1000,7 +1521,9 @@
 
           const userMsg = {
             id: tempMsgId,
-            message: msgText,
+            message: msgText || '',
+            media_url: photo,
+            image_url: photo,
             sender_id: currentUser ? currentUser.id : 'me',
             created_at: new Date().toISOString(),
             is_deleted: false,
@@ -1017,7 +1540,7 @@
           }
 
           try {
-            const sent = await SafeSpaceDB.messages.sendMessage(activeChatUser.id, msgText, tempMsgId);
+            const sent = await SafeSpaceDB.messages.sendMessage(activeChatUser.id, msgText || '', tempMsgId, photo);
             if (sent && sent.id) {
               const el = document.getElementById(`msg-wrap-${tempMsgId}`);
               if (el && el.id !== `msg-wrap-${sent.id}`) {
@@ -1265,6 +1788,333 @@
       return clean || fallback || 'Member';
     }
 
+
+    // Edit Nickname Modal Handlers (Displays all chat members for direct and group conversations)
+    async function openEditNicknamesModal(targetConversation) {
+      const target = targetConversation || activeChatUser;
+      if (!target || target.isAi) {
+        showToast('Nicknames cannot be set for the AI Assistant', 'info');
+        return;
+      }
+
+      const modal = document.getElementById('editNicknameModal');
+      const listEl = document.getElementById('nicknamesMembersList');
+      const titleEl = document.getElementById('nicknameModalTitle');
+      const subtitleEl = document.getElementById('nicknameModalSubtitle');
+      const closeBtn = document.getElementById('closeNicknameModalBtn');
+      const doneBtn = document.getElementById('doneNicknameModalBtn');
+
+      if (!modal || !listEl) return;
+
+      const isGroup = Boolean(target.is_group || target.isGroup);
+      const convTitle = target.title || target.name || target.username || 'Conversation';
+
+      if (titleEl) {
+        titleEl.textContent = isGroup ? 'Edit Member Nicknames' : 'Edit Nicknames';
+      }
+      if (subtitleEl) {
+        subtitleEl.textContent = isGroup
+          ? `Customize how members of "${escapeHTML(convTitle)}" appear to you. Only you will see these nicknames.`
+          : 'Customize how participants in this chat appear to you. Only you will see these nicknames.';
+      }
+
+      listEl.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+          <i class="fas fa-spinner fa-spin" style="margin-right: 6px; color: var(--primary);"></i>
+          Loading conversation members...
+        </div>
+      `;
+
+      modal.classList.add('open');
+
+      const closeModal = () => modal.classList.remove('open');
+      if (closeBtn) closeBtn.onclick = closeModal;
+      if (doneBtn) doneBtn.onclick = closeModal;
+      modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+      // Resolve members dynamically from conversation (Instant local resolution + safe fallback)
+      let members = [];
+      try {
+        // Fast local pool first
+        let communityPool = (Array.isArray(allMembers) && allMembers.length > 0)
+          ? allMembers
+          : (JSON.parse(localStorage.getItem('safe_space_members') || '[]'));
+
+        if (isGroup) {
+          let groupData = target;
+          if ((!groupData.members || groupData.members.length === 0) && SafeSpaceDB.groups) {
+            try {
+              const fresh = await Promise.race([
+                SafeSpaceDB.groups.getGroup(target.id),
+                new Promise(r => setTimeout(() => r(null), 800))
+              ]);
+              if (fresh) groupData = fresh;
+            } catch(e) {}
+          }
+          const rawIds = Array.isArray(groupData.members) ? groupData.members : [];
+          const allIds = [...new Set([...rawIds, groupData.created_by, currentUser ? currentUser.id : null].filter(Boolean))];
+
+          // If communityPool is empty, attempt fast fetch
+          if (communityPool.length === 0 && SafeSpaceDB.community) {
+            try {
+              const fetched = await SafeSpaceDB.community.getMembers();
+              if (Array.isArray(fetched) && fetched.length > 0) communityPool = fetched;
+            } catch(e) {}
+          }
+
+          members = allIds.map(mid => {
+            if (currentUser && mid === currentUser.id) return currentUser;
+            const found = communityPool.find(m => m.id === mid);
+            if (found) return found;
+            return { id: mid, username: 'Member' };
+          });
+        } else {
+          // Direct 1-on-1 chat: display both participants
+          members = [target];
+          if (currentUser && currentUser.id !== target.id) {
+            members.push(currentUser);
+          }
+        }
+      } catch (err) {
+        console.error('[Chat] Failed to load members for nickname modal:', err);
+        members = [target];
+        if (currentUser && currentUser.id !== target.id) members.push(currentUser);
+      }
+
+      if (!members || members.length === 0) {
+        listEl.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
+            No members found for this conversation.
+          </div>
+        `;
+        return;
+      }
+
+      // Render members list
+      listEl.innerHTML = '';
+      members.forEach(member => {
+        const isYou = currentUser && member.id === currentUser.id;
+        const originalName = member.username || member.name || member.first_name || 'Member';
+        const formattedOrig = formatDisplayName(originalName);
+        const cleanUsername = (member.username || 'user').toLowerCase().replace(/\s+/g, '');
+
+        let customNick = (SafeSpaceDB.nicknames && SafeSpaceDB.nicknames.getNicknameSync)
+          ? SafeSpaceDB.nicknames.getNicknameSync(member.id)
+          : (member.activeNickname || null);
+
+        const row = document.createElement('div');
+        row.className = 'nickname-member-row';
+        row.id = `nick-row-${member.id}`;
+
+        const renderRowHtml = (currentNick) => {
+          const avatarHtml = window.SafeSpaceAvatars
+            ? window.SafeSpaceAvatars.renderHtml(member, {
+                alt: formattedOrig,
+                className: 'nickname-avatar-img',
+                style: 'width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;'
+              })
+            : `<div style="width:100%;height:100%;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:700;">${escapeHTML(formattedOrig.charAt(0).toUpperCase())}</div>`;
+
+          return `
+            <div class="nickname-member-display-view">
+              <div class="nickname-member-info">
+                <div class="nickname-member-avatar">
+                  ${avatarHtml}
+                </div>
+                <div class="nickname-member-text">
+                  <div class="nickname-member-nick" id="nick-name-display-${member.id}">
+                    ${currentNick ? `<span>${escapeHTML(currentNick)}</span>` : `<span>${escapeHTML(formattedOrig)}</span>`}
+                    ${isYou ? '<span style="font-size:10.5px; padding:1px 7px; border-radius:10px; background:var(--primary-light); color:var(--primary); font-weight:700;">You</span>' : ''}
+                  </div>
+                  <div class="nickname-member-orig" id="nick-orig-display-${member.id}">
+                    ${currentNick
+                      ? `<span>Original: <strong>${escapeHTML(formattedOrig)}</strong> (@${escapeHTML(cleanUsername)})</span>`
+                      : `<span style="opacity:0.75;">@${escapeHTML(cleanUsername)}  No custom nickname set</span>`}
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn-edit-nick-pill" id="btn-edit-trigger-${member.id}" title="Edit nickname">
+                <i class="fas fa-pen"></i> Edit
+              </button>
+            </div>
+
+            <div class="nickname-member-edit-form" id="nick-form-${member.id}">
+              <div class="nickname-input-group">
+                <input type="text" class="nickname-edit-input" id="nick-input-${member.id}" maxlength="30" value="${escapeHTML(currentNick || formattedOrig)}" placeholder="Enter custom nickname..." />
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                <span class="nickname-char-count" id="nick-count-${member.id}">${(currentNick || formattedOrig).length}/30</span>
+                <div class="nickname-action-btns">
+                  ${currentNick ? `<button type="button" class="btn-nick-action btn-nick-reset" id="btn-reset-${member.id}"><i class="fas fa-rotate-left"></i> Reset</button>` : ''}
+                  <button type="button" class="btn-nick-action btn-nick-cancel" id="btn-cancel-${member.id}">Cancel</button>
+                  <button type="button" class="btn-nick-action btn-nick-save" id="btn-save-${member.id}"><i class="fas fa-check"></i> Save</button>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        const attachRowHandlers = () => {
+          row.innerHTML = renderRowHtml(customNick);
+
+          const editBtn = row.querySelector(`#btn-edit-trigger-${member.id}`);
+          const cancelBtn = row.querySelector(`#btn-cancel-${member.id}`);
+          const saveBtn = row.querySelector(`#btn-save-${member.id}`);
+          const resetBtn = row.querySelector(`#btn-reset-${member.id}`);
+          const inputEl = row.querySelector(`#nick-input-${member.id}`);
+          const countEl = row.querySelector(`#nick-count-${member.id}`);
+
+          if (editBtn) {
+            editBtn.onclick = () => {
+              // Close any other editing rows
+              document.querySelectorAll('.nickname-member-row.is-editing').forEach(r => {
+                if (r !== row) r.classList.remove('is-editing');
+              });
+              row.classList.add('is-editing');
+              if (inputEl) {
+                inputEl.value = customNick || formattedOrig;
+                if (countEl) countEl.textContent = `${inputEl.value.length}/30`;
+                setTimeout(() => {
+                  inputEl.focus();
+                  inputEl.select();
+                }, 50);
+              }
+            };
+          }
+
+          if (inputEl && countEl) {
+            inputEl.oninput = () => {
+              countEl.textContent = `${inputEl.value.length}/30`;
+            };
+            inputEl.onkeydown = (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (saveBtn) saveBtn.click();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                if (cancelBtn) cancelBtn.click();
+              }
+            };
+          }
+
+          if (cancelBtn) {
+            cancelBtn.onclick = () => {
+              row.classList.remove('is-editing');
+              if (inputEl) inputEl.value = customNick || formattedOrig;
+            };
+          }
+
+          if (resetBtn) {
+            resetBtn.onclick = async () => {
+              try {
+                resetBtn.disabled = true;
+                resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                await SafeSpaceDB.nicknames.setNickname(member.id, '');
+                customNick = null;
+                member.activeNickname = null;
+
+                // Live interface updates:
+                // 1. Direct chat header
+                if (activeChatUser && activeChatUser.id === member.id && !activeChatUser.is_group && !activeChatUser.isGroup) {
+                  document.getElementById('threadUsername').textContent = formattedOrig;
+                }
+                // 2. Group sender tags in current thread
+                document.querySelectorAll(`.group-sender-name[data-sender-id="${member.id}"]`).forEach(el => {
+                  el.textContent = formattedOrig;
+                });
+                // 3. Conversation cards
+                if (typeof renderConversationsList === 'function' && Array.isArray(allConversations)) {
+                  allConversations.forEach(c => {
+                    if (c.user && c.user.id === member.id) c.user.activeNickname = null;
+                  });
+                  renderConversationsList();
+                }
+
+                showToast(`Nickname reset to ${formattedOrig}`, 'success');
+                attachRowHandlers();
+              } catch (err) {
+                console.error('[Chat] Failed to reset nickname:', err);
+                showToast('Failed to reset nickname', 'error');
+              }
+            };
+          }
+
+          if (saveBtn) {
+            saveBtn.onclick = async () => {
+              const val = inputEl ? inputEl.value.trim() : '';
+              if (!val) {
+                showToast('Nickname cannot be empty. Click Reset to restore original name.', 'warning');
+                return;
+              }
+              if (val.length > 30) {
+                showToast('Nickname cannot exceed 30 characters', 'warning');
+                return;
+              }
+
+              try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                await SafeSpaceDB.nicknames.setNickname(member.id, val);
+                customNick = val;
+                member.activeNickname = val;
+
+                // Live interface updates:
+                // 1. Direct chat header
+                if (activeChatUser && activeChatUser.id === member.id && !activeChatUser.is_group && !activeChatUser.isGroup) {
+                  document.getElementById('threadUsername').innerHTML = `<span>${escapeHTML(val)}</span> <span style="font-size:11.5px; font-weight:400; color:var(--text-muted); margin-left:4px;" title="Original username">(@${escapeHTML(cleanUsername)})</span>`;
+                }
+                // 2. Group sender tags in current thread
+                document.querySelectorAll(`.group-sender-name[data-sender-id="${member.id}"]`).forEach(el => {
+                  el.textContent = val;
+                });
+                // 3. Conversation cards in inbox
+                if (typeof renderConversationsList === 'function' && Array.isArray(allConversations)) {
+                  allConversations.forEach(c => {
+                    if (c.user && c.user.id === member.id) c.user.activeNickname = val;
+                  });
+                  renderConversationsList();
+                }
+
+                showToast(`Nickname updated to "${val}"!`, 'success');
+                attachRowHandlers();
+              } catch (err) {
+                console.error('[Chat] Failed to save nickname:', err);
+                showToast('Could not save nickname', 'error');
+                if (saveBtn) {
+                  saveBtn.disabled = false;
+                  saveBtn.innerHTML = '<i class="fas fa-check"></i> Save';
+                }
+              }
+            };
+          }
+        };
+
+        attachRowHandlers();
+        listEl.appendChild(row);
+      });
+    }
+
+    // Aliases for seamless calling
+    window.openEditNicknamesModal = openEditNicknamesModal;
+    window.openEditNicknameModal = openEditNicknamesModal;
+
+    // Fullscreen Image Lightbox
+    function openImageViewer(url) {
+      if (!url) return;
+      const overlay = document.getElementById('imageViewerOverlay');
+      const img = document.getElementById('imageViewerImg');
+      const closeBtn = document.getElementById('closeImageViewerBtn');
+      if (!overlay || !img) return;
+
+      img.src = url;
+      overlay.classList.add('open');
+
+      const closeViewer = () => overlay.classList.remove('open');
+      if (closeBtn) closeBtn.onclick = closeViewer;
+      overlay.onclick = (e) => { if (e.target === overlay) closeViewer(); };
+    }
+    window.openImageViewer = openImageViewer;
+
     function setupAiPreferencesModal() {
       const menuBtn = document.getElementById('threadMenuBtn');
       const modal = document.getElementById('aiPreferencesModalOverlay');
@@ -1378,6 +2228,21 @@
       if (reportModal) {
         reportModal.addEventListener('click', (e) => {
           if (e.target === reportModal) reportModal.classList.remove('open');
+        });
+      }
+
+      const editNickMenuBtn = document.getElementById('menuEditNicknameBtn');
+      if (editNickMenuBtn) {
+        editNickMenuBtn.addEventListener('click', () => {
+          optionsModal.classList.remove('open');
+          if (activeChatUser && (activeChatUser.is_group || activeChatUser.isGroup)) {
+            // In group chat: open Group Info modal where members and nickname editing are in ONE frame!
+            openGroupInfoModal(activeChatUser.id);
+          } else if (activeChatUser && !activeChatUser.isAi) {
+            openEditNicknamesModal(activeChatUser);
+          } else if (activeChatUser && activeChatUser.isAi) {
+            showToast('Nicknames cannot be set for the AI Assistant', 'info');
+          }
         });
       }
 
@@ -1584,11 +2449,12 @@
       modal.classList.add('open');
     }
 
+    window.openThread = openThread;
     async function openThread(member) {
       if (!member) return;
 
       // If member.id is not a valid UUID, resolve UUID from Supabase profiles
-      if (!member.isAi && member.id !== 'safe-space-ai-bot' && typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.posts && !SafeSpaceDB.posts._isUUID(member.id) && SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive()) {
+      if (!member.isAi && !member.is_group && !member.isGroup && member.id !== 'safe-space-ai-bot' && typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.posts && !SafeSpaceDB.posts._isUUID(member.id) && SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive()) {
         try {
           const client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || (typeof _db !== 'undefined' && _db);
           if (client) {
@@ -1607,20 +2473,89 @@
 
       activeChatUser = member;
       const overlay = document.getElementById('chatThreadOverlay');
-      document.getElementById('threadUsername').textContent = formatDisplayName(member.username || member.first_name || 'User');
+      const groupInfoBtn = document.getElementById('threadGroupInfoBtn');
+
+      const nickEditBtn = document.getElementById('threadNicknameEditBtn');
+      const groupEditBtn = document.getElementById('threadGroupEditBtn');
+
+      if (member.is_group || member.isGroup) {
+        if (nickEditBtn) {
+          nickEditBtn.style.display = 'inline-flex';
+          nickEditBtn.title = 'Edit member nicknames';
+        }
+        document.getElementById('threadUsername').textContent = member.title || member.name || member.username || 'Group Chat';
+        if (groupInfoBtn) groupInfoBtn.style.display = 'inline-flex';
+        const avatarContainer = document.getElementById('threadAvatar');
+        const isCustomPhoto = member.avatar_url && (member.avatar_url.startsWith('data:image') || member.avatar_url.startsWith('http') || member.avatar_url.includes('/'));
+        if (isCustomPhoto) {
+          avatarContainer.innerHTML = `<img src="${escapeHTML(member.avatar_url)}" alt="Group" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`;
+        } else {
+          avatarContainer.innerHTML = `<div class="group-avatar-wrapper" style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;"><span>${escapeHTML(member.avatar_icon || member.avatar_url || '👥')}</span></div>`;
+        }
+        if (groupEditBtn) groupEditBtn.style.display = 'inline-flex';
+        const statusDot = document.getElementById('threadOnlineStatus');
+        if (statusDot) statusDot.style.display = 'none';
+        const statusEl = document.getElementById('threadStatus');
+        const memCount = member.member_count || (member.members && member.members.length) || 1;
+        statusEl.innerHTML = `<span style="color:var(--primary); font-weight:700; cursor:pointer;" onclick="openGroupInfoModal('${member.id}')"><i class="fas fa-users" style="margin-right:4px;"></i>${memCount} members • Tap for info</span>`;
+        const offlineBanner = document.getElementById('aiOfflineBanner');
+        if (offlineBanner) offlineBanner.style.display = 'none';
+      } else {
+        if (groupInfoBtn) groupInfoBtn.style.display = 'none';
+        if (groupEditBtn) groupEditBtn.style.display = 'none';
+
+        if (member.isAi) {
+          if (nickEditBtn) nickEditBtn.style.display = 'none';
+          document.getElementById('threadUsername').textContent = 'Safe Space AI Assistant';
+        } else {
+          if (nickEditBtn) nickEditBtn.style.display = 'inline-flex';
+          const origName = formatDisplayName(member.username || member.first_name || 'User');
+          
+          // Instant synchronous check from localStorage cache
+          let localNick = null;
+          try {
+            const lKey = 'safe_space_nicknames_' + (currentUser ? currentUser.id : '');
+            const lStore = JSON.parse(localStorage.getItem(lKey) || '{}');
+            localNick = lStore[member.id] || null;
+          } catch(e) {}
+
+          if (localNick) {
+            member.activeNickname = localNick;
+            document.getElementById('threadUsername').innerHTML = `<span>${escapeHTML(localNick)}</span> <span style="font-size:11.5px; font-weight:400; color:var(--text-muted); margin-left:4px;" title="Original username">(@${escapeHTML((member.username || 'user').toLowerCase().replace(/\s+/g, ''))})</span>`;
+          } else {
+            member.activeNickname = null;
+            document.getElementById('threadUsername').textContent = origName;
+          }
+
+          // Asynchronously query database in background to update if changed
+          (async () => {
+            try {
+              if (SafeSpaceDB.nicknames) {
+                const cloudNick = await SafeSpaceDB.nicknames.getNickname(member.id);
+                if (cloudNick && cloudNick !== localNick && activeChatUser && activeChatUser.id === member.id) {
+                  member.activeNickname = cloudNick;
+                  document.getElementById('threadUsername').innerHTML = `<span>${escapeHTML(cloudNick)}</span> <span style="font-size:11.5px; font-weight:400; color:var(--text-muted); margin-left:4px;" title="Original username">(@${escapeHTML((member.username || 'user').toLowerCase().replace(/\s+/g, ''))})</span>`;
+                }
+              }
+            } catch(e) {}
+          })();
+        }
+      }
 
       const isOnline = (member.isAi || member.id === 'safe-space-ai-bot')
         ? true
         : ((member.is_online !== undefined) ? member.is_online : SafeSpaceDB.users.isOnline(member));
 
-      const avatarContainer = document.getElementById('threadAvatar');
-      avatarContainer.innerHTML = member.isAi
-        ? `<div style="width:100%;height:100%;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="fas fa-robot"></i></div>`
-        : (window.SafeSpaceAvatars
-            ? window.SafeSpaceAvatars.renderHtml(member, { alt: member.username || 'User', className: 'user-avatar' })
-            : (member.avatar_url
-                ? `<img src="${escapeHTML(member.avatar_url)}" alt="" class="user-avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`
-                : `<i class="fas fa-user"></i>`));
+      if (!(member.is_group || member.isGroup)) {
+        const avatarContainer = document.getElementById('threadAvatar');
+        avatarContainer.innerHTML = member.isAi
+          ? `<div style="width:100%;height:100%;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="fas fa-robot"></i></div>`
+          : (window.SafeSpaceAvatars
+              ? window.SafeSpaceAvatars.renderHtml(member, { alt: member.username || 'User', className: 'user-avatar' })
+              : (member.avatar_url
+                  ? `<img src="${escapeHTML(member.avatar_url)}" alt="" class="user-avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`
+                  : `<i class="fas fa-user"></i>`));
+      }
 
       const statusDot = document.getElementById('threadOnlineStatus');
       if (statusDot) {
@@ -1630,7 +2565,9 @@
       const statusEl = document.getElementById('threadStatus');
       const offlineBanner = document.getElementById('aiOfflineBanner');
 
-      if (member.isAi) {
+      if (member.is_group || member.isGroup) {
+        // Group status is already rendered
+      } else if (member.isAi) {
         statusEl.innerHTML = '<span style="color:#22c55e;">●</span> Online • AI Assistant';
         offlineBanner.style.display = 'flex';
 
@@ -1832,6 +2769,23 @@
         }
       }
 
+      // Check system announcement message for groups
+      const msgText = String(msg.message || '');
+      const isSystem = msg.is_system || (msgText.startsWith('✨') || msgText.startsWith('🎉') || msgText.startsWith('👋') || msgText.startsWith('🚪'));
+      if (isSystem) {
+        const sysDiv = document.createElement('div');
+        sysDiv.className = 'system-message-bubble';
+        sysDiv.id = `msg-wrap-${msg.id}`;
+        sysDiv.innerHTML = `<span>${escapeHTML(msgText)}</span>`;
+        if (prepend && container.firstChild) {
+          container.insertBefore(sysDiv, container.firstChild);
+        } else {
+          container.appendChild(sysDiv);
+          scrollThreadToBottom();
+        }
+        return;
+      }
+
       const isDeleted = Boolean(msg.is_deleted);
       const isBot = msg.sender_id === 'safe-space-ai-bot';
 
@@ -1885,9 +2839,39 @@
         </div>
       `;
 
+      let groupSenderHeaderHtml = '';
+      if (!isSent && activeChatUser && (activeChatUser.is_group || activeChatUser.isGroup)) {
+        const groupId = activeChatUser.id;
+        const senderNick = (SafeSpaceDB.nicknames && msg.sender_id) ? SafeSpaceDB.nicknames.getNicknameSync(msg.sender_id, groupId) : null;
+        const senderName = senderNick || msg.sender_name || 'Member';
+        const senderAvatar = msg.sender_avatar || 'assets/avatars/default.png';
+        const avatarHtml = `<img src="${escapeHTML(senderAvatar)}" alt="" onerror="this.src='assets/avatars/default.png';" />`;
+        groupSenderHeaderHtml = `
+          <div class="group-msg-sender-tag">
+            <span class="group-sender-avatar">${avatarHtml}</span>
+            <span class="group-sender-name" data-sender-id="${escapeHTML(msg.sender_id || '')}">${escapeHTML(senderName)}</span>
+          </div>
+        `;
+      }
+
+      const photoUrl = msg.media_url || msg.image_url;
+      const mediaHtml = (!isDeleted && photoUrl)
+        ? `<div class="message-photo-container" onclick="openImageViewer('${escapeHTML(photoUrl)}')">
+             <img src="${escapeHTML(photoUrl)}" alt="Photo" class="message-photo-img" />
+           </div>`
+        : '';
+
+      const textBodyHtml = isDeleted
+        ? `<div><i class="fas fa-ban" style="margin-right:5px;"></i>This message was deleted.</div>`
+        : `
+          ${mediaHtml}
+          ${msg.message ? (isBot && window.AIChatbot ? AIChatbot.formatBotMessage(msg.message) : `<div>${escapeHTML(msg.message)}</div>`) : ''}
+        `;
+
       wrapper.innerHTML = `
+        ${groupSenderHeaderHtml}
         <div class="message-bubble ${isSent ? 'sent' : 'received'} ${isDeleted ? 'deleted' : ''}" id="bubble-${msg.id}">
-          ${isDeleted ? `<div><i class="fas fa-ban" style="margin-right:5px;"></i>This message was deleted.</div>` : (isBot && window.AIChatbot ? AIChatbot.formatBotMessage(msg.message) : `<div>${escapeHTML(msg.message)}</div>`)}
+          ${textBodyHtml}
           <div class="message-time ${isSent ? '' : 'received-time'}">${formatRelativeTime(msg.created_at)}</div>
         </div>
         ${actionHtml}
@@ -2110,6 +3094,1074 @@
 
     window.addEventListener('online', () => updateAiConnectionStatus(true));
     window.addEventListener('offline', () => updateAiConnectionStatus(false));
+
+    // ==========================================
+    // GROUP CHAT CREATION & DETAILS CONTROLLER
+    // ==========================================
+    function processImageFile(file, maxWidth = 300, maxHeight = 300) {
+      return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) {
+          return reject(new Error('Please select an image file'));
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = Math.round((width * maxHeight) / height);
+                height = maxHeight;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function setupGroupChatUI() {
+      const openModalBtn = document.getElementById('openCreateGroupBtn');
+      const modal = document.getElementById('createGroupModal');
+      const closeBtn = document.getElementById('closeCreateGroupBtn');
+      const cancelBtn = document.getElementById('cancelCreateGroupBtn');
+      const submitBtn = document.getElementById('submitCreateGroupBtn');
+      const titleInput = document.getElementById('groupTitleInput');
+      const topicInput = document.getElementById('groupTopicInput');
+      const titleCounter = document.getElementById('groupTitleCounter');
+      const checklistContainer = document.getElementById('groupMemberChecklist');
+      const memberSearchInput = document.getElementById('memberSearchInput');
+      const countBadge = document.getElementById('selectedMemberCountBadge');
+      const threadGroupInfoBtn = document.getElementById('threadGroupInfoBtn');
+
+      if (!openModalBtn || !modal) return;
+
+      const uploadPhotoBtn = document.getElementById('uploadGroupPhotoBtn');
+      const createFileInput = document.getElementById('createGroupFileInput');
+      const avatarPreview = document.getElementById('createGroupAvatarPreview');
+      const iconDisplay = document.getElementById('createGroupIconDisplay');
+      const photoNameDisplay = document.getElementById('createGroupPhotoName');
+
+      if (uploadPhotoBtn && createFileInput) {
+        uploadPhotoBtn.addEventListener('click', () => createFileInput.click());
+        if (avatarPreview) avatarPreview.addEventListener('click', () => createFileInput.click());
+
+        createFileInput.addEventListener('change', async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          try {
+            selectedGroupPhotoData = await processImageFile(file, 280, 280);
+            if (avatarPreview) {
+              avatarPreview.innerHTML = `<img src="${selectedGroupPhotoData}" alt="Group" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`;
+            }
+            if (photoNameDisplay) photoNameDisplay.textContent = `Photo: ${file.name}`;
+            document.querySelectorAll('.group-icon-btn').forEach(b => b.classList.remove('active'));
+          } catch(err) {
+            showToast(err.message || 'Could not load photo', 'error');
+          }
+        });
+      }
+
+      openModalBtn.addEventListener('click', async () => {
+        modal.classList.add('open');
+        titleInput.value = '';
+        topicInput.value = '';
+        titleCounter.textContent = '0/35';
+        selectedGroupMembers.clear();
+        selectedGroupIcon = '👥';
+        selectedGroupPhotoData = null;
+        if (avatarPreview) {
+          avatarPreview.innerHTML = '<span id="createGroupIconDisplay">👥</span>';
+        }
+        if (photoNameDisplay) photoNameDisplay.textContent = 'No custom file chosen (or pick an emoji)';
+        document.querySelectorAll('.group-icon-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.icon === '👥');
+        });
+        updateGroupModalState();
+        await loadChecklistMembers();
+        setTimeout(() => titleInput.focus(), 120);
+      });
+
+      function closeModal() {
+        modal.classList.remove('open');
+      }
+
+      closeBtn.addEventListener('click', closeModal);
+      cancelBtn.addEventListener('click', closeModal);
+
+      // Icon Selector
+      document.querySelectorAll('.group-icon-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.group-icon-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedGroupIcon = btn.dataset.icon || '👥';
+          selectedGroupPhotoData = null;
+          const avPrev = document.getElementById('createGroupAvatarPreview');
+          if (avPrev) avPrev.innerHTML = `<span>${selectedGroupIcon}</span>`;
+          const phName = document.getElementById('createGroupPhotoName');
+          if (phName) phName.textContent = `Emoji icon: ${selectedGroupIcon}`;
+        });
+      });
+
+      // Title input listener
+      titleInput.addEventListener('input', () => {
+        titleCounter.textContent = `${titleInput.value.length}/35`;
+        updateGroupModalState();
+      });
+
+      function updateGroupModalState() {
+        const hasMembers = selectedGroupMembers.size > 0;
+        countBadge.textContent = `${selectedGroupMembers.size} selected`;
+        submitBtn.disabled = !hasMembers;
+      }
+
+      let cachedChecklistPeers = [];
+      let currentChecklistFilter = 'all';
+
+      // Quick filter pills for Create Group
+      document.querySelectorAll('#createGroupFilterPills .checklist-filter-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#createGroupFilterPills .checklist-filter-pill').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentChecklistFilter = btn.dataset.filter || 'all';
+          renderChecklistItems();
+        });
+      });
+
+      // Member search filter in checklist
+      memberSearchInput.addEventListener('input', () => {
+        renderChecklistItems();
+      });
+
+      function renderChecklistItems() {
+        const q = (memberSearchInput.value || '').toLowerCase().trim();
+        const filtered = cachedChecklistPeers.filter(p => {
+          if (currentChecklistFilter === 'friends' && !p.is_friend) return false;
+          if (currentChecklistFilter === 'chats' && !p.is_recent_chat) return false;
+          if (q) {
+            const name = (p.username || '').toLowerCase();
+            const handle = ('@' + (p.username || '').toLowerCase().replace(/\s+/g, '')).toLowerCase();
+            const tag = (p.is_friend ? 'friend' : '') + ' ' + (p.is_recent_chat ? 'chat recent' : '');
+            return name.includes(q) || handle.includes(q) || tag.includes(q);
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          if (q) {
+            checklistContainer.innerHTML = `<div style="padding:22px 16px;text-align:center;color:var(--text-muted);font-size:12.5px;">No matching friends or peers found for "<strong>${escapeHTML(q)}</strong>"</div>`;
+          } else if (currentChecklistFilter === 'friends') {
+            checklistContainer.innerHTML = '<div style="padding:22px 16px;text-align:center;color:var(--text-muted);font-size:12.5px;"><i class="fas fa-heart" style="font-size:20px;color:#10b981;margin-bottom:6px;display:block;"></i>No friends added yet.<br><span style="font-size:11.5px;">Switch to <strong>All</strong> or visit Community to connect!</span></div>';
+          } else if (currentChecklistFilter === 'chats') {
+            checklistContainer.innerHTML = '<div style="padding:22px 16px;text-align:center;color:var(--text-muted);font-size:12.5px;"><i class="fas fa-comment-dots" style="font-size:20px;color:#6366f1;margin-bottom:6px;display:block;"></i>No recent direct chat contacts found.</div>';
+          } else {
+            checklistContainer.innerHTML = '<div style="padding:22px 16px;text-align:center;color:var(--text-muted);font-size:12.5px;"><i class="fas fa-users" style="font-size:22px;color:var(--primary);margin-bottom:6px;display:block;"></i>No peers found.<br><span style="font-size:11.5px;">Visit the Community page to meet safe peers!</span></div>';
+          }
+          return;
+        }
+
+        checklistContainer.innerHTML = filtered.map(m => {
+          const isChecked = selectedGroupMembers.has(m.id);
+          const isSelectedClass = isChecked ? 'selected' : '';
+          const avatarHtml = window.SafeSpaceAvatars
+            ? window.SafeSpaceAvatars.renderHtml(m, { 
+                alt: m.username, 
+                className: 'group-member-check-avatar',
+                style: 'width:36px; height:36px; min-width:36px; min-height:36px; max-width:36px; max-height:36px; border-radius:50%; object-fit:cover; display:block;'
+              })
+            : (m.avatar_url ? `<img src="${escapeHTML(m.avatar_url)}" class="group-member-check-avatar" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : `<div class="group-member-check-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="fas fa-user"></i></div>`);
+
+          let badgeHtml = '';
+          if (m.is_friend) {
+            badgeHtml += '<span class="member-tag-badge friend"><i class="fas fa-heart"></i> Friend</span>';
+          }
+          if (m.is_recent_chat) {
+            badgeHtml += '<span class="member-tag-badge chat"><i class="fas fa-comment-dots"></i> Chat</span>';
+          }
+
+          return `
+            <label class="group-member-check-item ${isSelectedClass}" data-id="${m.id}">
+              <div class="group-member-check-info">
+                <div class="group-member-avatar-box" style="position:relative;">
+                  ${avatarHtml}
+                  ${m.is_online ? '<span style="position:absolute; bottom:0; right:0; width:9px; height:9px; background:#10b981; border:2px solid #fff; border-radius:50%;"></span>' : ''}
+                </div>
+                <div>
+                  <div class="group-member-check-name" style="display:flex; align-items:center; flex-wrap:wrap;">
+                    <span>${escapeHTML(m.username || 'Member')}</span>
+                    ${badgeHtml}
+                  </div>
+                  <div class="group-member-check-handle">@${escapeHTML((m.username || 'user').toLowerCase().replace(/\s+/g, ''))}</div>
+                </div>
+              </div>
+              <input type="checkbox" class="group-member-checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} />
+            </label>
+          `;
+        }).join('');
+
+        // Wire row and checkbox events
+        checklistContainer.querySelectorAll('.group-member-check-item').forEach(label => {
+          const cb = label.querySelector('.group-member-checkbox');
+          label.addEventListener('click', (e) => {
+            if (e.target !== cb) {
+              e.preventDefault();
+              cb.checked = !cb.checked;
+            }
+            const id = cb.value;
+            if (cb.checked) {
+              selectedGroupMembers.add(id);
+              label.classList.add('selected');
+            } else {
+              selectedGroupMembers.delete(id);
+              label.classList.remove('selected');
+            }
+            updateGroupModalState();
+          });
+        });
+      }
+
+      async function loadChecklistMembers() {
+        checklistContainer.innerHTML = '<div style="padding:18px;text-align:center;color:var(--text-muted);font-size:12.5px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px; color:var(--primary);"></i> Loading your friends and peers...</div>';
+        try {
+          const currentUserId = currentUser ? currentUser.id : null;
+
+          // 1. Fetch Friendships
+          let friendships = [];
+          try {
+            if (SafeSpaceDB.community && SafeSpaceDB.community.getFriendships) {
+              friendships = await SafeSpaceDB.community.getFriendships();
+            }
+          } catch (e) {
+            console.warn('[GroupChat] getFriendships:', e);
+          }
+
+          // 2. Direct Chat Conversations from memory
+          const directChatConvs = (conversations || []).filter(c => 
+            !c.is_group && !c.isGroup &&
+            c.user_id !== 'safe-space-ai-bot' &&
+            (!c.contact || c.contact.id !== 'safe-space-ai-bot')
+          );
+
+          // 3. Fetch Community Members
+          let commMembers = [];
+          try {
+            if (SafeSpaceDB.community && SafeSpaceDB.community.getMembers) {
+              commMembers = await SafeSpaceDB.community.getMembers();
+            }
+          } catch (e) {
+            console.warn('[GroupChat] getMembers:', e);
+          }
+          if ((!commMembers || commMembers.length === 0) && Array.isArray(allMembers) && allMembers.length > 0) {
+            commMembers = allMembers;
+          }
+
+          // 4. Build unified peer map
+          const eligibleMap = new Map();
+
+          function registerPeer(id, userObj, flags) {
+            if (!id || id === currentUserId || id === 'safe-space-ai-bot') return;
+            const existing = eligibleMap.get(id);
+            const username = (userObj && (userObj.username || userObj.display_name || userObj.name || (userObj.first_name ? userObj.first_name + (userObj.last_name ? ' ' + userObj.last_name : '') : ''))) || (existing && existing.username) || 'Peer';
+            const avatar_url = (userObj && userObj.avatar_url) || (existing && existing.avatar_url) || null;
+            const is_online = (userObj && userObj.is_online !== undefined) ? !!userObj.is_online : (existing ? existing.is_online : false);
+
+            eligibleMap.set(id, {
+              id: id,
+              username: username,
+              avatar_url: avatar_url,
+              is_online: is_online,
+              is_friend: (existing && existing.is_friend) || !!flags.is_friend,
+              is_recent_chat: (existing && existing.is_recent_chat) || !!flags.is_recent_chat
+            });
+          }
+
+          // A. Accepted Friends
+          (friendships || []).forEach(f => {
+            if (f.status === 'accepted') {
+              const friendObj = (f.requester_id === currentUserId) ? f.receiver : f.requester;
+              const friendId = (f.requester_id === currentUserId) ? f.receiver_id : f.requester_id;
+              registerPeer(friendId, friendObj, { is_friend: true });
+            }
+          });
+
+          // B. Direct Chat Contacts (jore, karil, etc.)
+          directChatConvs.forEach(c => {
+            const contactId = c.user_id || (c.contact && c.contact.id);
+            const contactObj = c.contact || { id: contactId, username: c.username, avatar_url: c.avatar_url, is_online: c.is_online };
+            registerPeer(contactId, contactObj, { is_recent_chat: true });
+          });
+
+          // C. Community Members
+          (commMembers || []).forEach(m => {
+            registerPeer(m.id, m, {});
+          });
+
+          cachedChecklistPeers = Array.from(eligibleMap.values());
+          // Sort: Friends first, then Recent Chats, then alphabetical
+          cachedChecklistPeers.sort((a, b) => {
+            if (a.is_friend && !b.is_friend) return -1;
+            if (!a.is_friend && b.is_friend) return 1;
+            if (a.is_recent_chat && !b.is_recent_chat) return -1;
+            if (!a.is_recent_chat && b.is_recent_chat) return 1;
+            return (a.username || '').localeCompare(b.username || '');
+          });
+
+          // Update Filter Pill Counts
+          const friendsCount = cachedChecklistPeers.filter(p => p.is_friend).length;
+          const chatsCount = cachedChecklistPeers.filter(p => p.is_recent_chat).length;
+          const pillAll = document.getElementById('pillCountAll');
+          const pillFriends = document.getElementById('pillCountFriends');
+          const pillChats = document.getElementById('pillCountChats');
+          if (pillAll) pillAll.textContent = cachedChecklistPeers.length;
+          if (pillFriends) pillFriends.textContent = friendsCount;
+          if (pillChats) pillChats.textContent = chatsCount;
+
+          renderChecklistItems();
+        } catch (err) {
+          console.error('[GroupChat] loadChecklistMembers error:', err);
+          checklistContainer.innerHTML = '<div style="padding:16px;color:#ef4444;font-size:12px;text-align:center;">Failed to load members. Please try again.</div>';
+        }
+      }
+
+      // Submit group creation
+      submitBtn.addEventListener('click', async () => {
+        let title = titleInput.value.trim();
+        const description = topicInput.value.trim();
+        const memberIds = Array.from(selectedGroupMembers);
+
+        if (memberIds.length === 0) {
+          showToast('Please select at least 1 member to create a group', 'info');
+          return;
+        }
+
+        // If user didn't enter a custom title, auto-generate from selected members' names
+        if (!title) {
+          const names = [];
+          memberIds.forEach(id => {
+            const row = checklistContainer.querySelector(`.group-member-check-item[data-id="${id}"]`);
+            const nameEl = row ? row.querySelector('.group-member-check-name') : null;
+            if (nameEl && nameEl.textContent) names.push(nameEl.textContent.trim());
+          });
+
+          if (names.length === 1) {
+            title = `${names[0]} & You`;
+          } else if (names.length === 2) {
+            title = `${names[0]} and ${names[1]}`;
+          } else if (names.length > 2) {
+            title = `${names[0]}, ${names[1]} & ${names.length - 2} more`;
+          } else {
+            title = 'Safe Space Study Circle';
+          }
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+        try {
+          const newGroup = await SafeSpaceDB.groups.createGroup({
+            title: title,
+            description: description,
+            avatarIcon: selectedGroupPhotoData ? '📷' : selectedGroupIcon,
+            avatarUrl: selectedGroupPhotoData || selectedGroupIcon,
+            memberIds: memberIds
+          });
+
+          closeModal();
+          showToast(`👥 Group "${title}" created successfully!`, 'success');
+
+          // Open the group thread directly with zero delay!
+          await handleOpenDirectChat(newGroup.id);
+
+          // Refresh inbox in background
+          refreshChatData().catch(e => console.warn('[Chat] Background refresh error:', e));
+        } catch (err) {
+          console.error('[GroupChat] Error creating group:', err);
+          showToast(err.message || 'Could not create group', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-users"></i> Create Group';
+        }
+      });
+
+      // Thread header group info button & direct edit button
+      const threadGroupEditBtn = document.getElementById('threadGroupEditBtn');
+      const triggerGroupSettings = () => {
+        if (activeChatUser && (activeChatUser.is_group || activeChatUser.isGroup)) {
+          openGroupInfoModal(activeChatUser.id);
+        }
+      };
+      if (threadGroupInfoBtn) threadGroupInfoBtn.addEventListener('click', triggerGroupSettings);
+      if (threadGroupEditBtn) threadGroupEditBtn.addEventListener('click', triggerGroupSettings);
+
+      const threadUserEl = document.getElementById('threadUsername');
+      if (threadUserEl) {
+        threadUserEl.addEventListener('click', () => {
+          if (activeChatUser && (activeChatUser.is_group || activeChatUser.isGroup)) {
+            openGroupInfoModal(activeChatUser.id);
+          }
+        });
+      }
+
+      // Close group info modal
+      const closeGroupInfoBtn = document.getElementById('closeGroupInfoBtn');
+      if (closeGroupInfoBtn) {
+        closeGroupInfoBtn.addEventListener('click', () => {
+          document.getElementById('groupInfoModal')?.classList.remove('open');
+        });
+      }
+    }
+
+    // Group Details & Members Modal
+    async function openGroupInfoModal(groupId) {
+      const modal = document.getElementById('groupInfoModal');
+      const body = document.getElementById('groupInfoBody');
+      if (!modal || !body) return;
+
+      modal.classList.add('open');
+
+      try {
+        const group = await SafeSpaceDB.groups.getGroup(groupId);
+        if (!group) {
+          body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-danger);">Group not found</div>';
+          return;
+        }
+
+        const isPhoto = group.avatar_url && (group.avatar_url.startsWith('data:image') || group.avatar_url.startsWith('http') || group.avatar_url.includes('/'));
+        const photoOrEmoji = isPhoto
+          ? `<img src="${escapeHTML(group.avatar_url)}" alt="Group" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`
+          : `<span>${escapeHTML(group.avatar_icon || group.avatar_url || '👥')}</span>`;
+
+        const initialMemberCount = (group.members || []).length;
+
+        body.innerHTML = `
+          <div class="group-info-hero">
+            <div class="group-avatar-edit-container" id="groupDetailAvatarWrap" title="Click to choose a photo from your files">
+              <div class="group-info-avatar-large" id="groupDetailAvatarDisplay">
+                ${photoOrEmoji}
+              </div>
+              <div class="group-avatar-edit-badge" title="Upload new photo from your files">
+                <i class="fas fa-camera"></i>
+              </div>
+              <input type="file" id="editGroupFileInput" accept="image/*" style="display:none;" />
+            </div>
+
+            <div style="margin-bottom:8px;">
+              <button type="button" class="btn-upload-group-photo-pill" id="triggerEditPhotoBtn">
+                <i class="fas fa-image"></i> Change Picture from Files
+              </button>
+            </div>
+
+            <div class="group-name-edit-wrap">
+              <input type="text" id="editGroupTitleInput" class="group-name-edit-input" value="${escapeHTML(group.title || group.name || '')}" maxlength="35" placeholder="Enter group name..." />
+              <button type="button" class="btn-save-group-name" id="saveGroupNameBtn" title="Save group name">
+                <i class="fas fa-check"></i> Save
+              </button>
+            </div>
+
+            <p class="group-info-desc" id="groupDescDisplay">${escapeHTML(group.description || 'Safe Space student gathering & conversation.')}</p>
+            <div style="margin-top:6px; font-size:11.5px; color:var(--text-muted);">
+              Created ${formatRelativeTime(group.created_at)}
+            </div>
+          </div>
+          <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:700; font-size:13px; color:var(--text-dark);" id="groupMemberCountHeader">Members (${initialMemberCount})</span>
+          </div>
+          <div class="group-members-list-box" id="groupMembersListContainer">
+            <div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">
+              <i class="fas fa-spinner fa-spin"></i> Loading members...
+            </div>
+          </div>
+        `;
+
+        // Wire Edit Picture from Files
+        const avatarWrap = document.getElementById('groupDetailAvatarWrap');
+        const triggerPhotoBtn = document.getElementById('triggerEditPhotoBtn');
+        const fileInput = document.getElementById('editGroupFileInput');
+        const avatarDisplay = document.getElementById('groupDetailAvatarDisplay');
+
+        const openFilePicker = () => { if (fileInput) fileInput.click(); };
+        if (avatarWrap) avatarWrap.addEventListener('click', openFilePicker);
+        if (triggerPhotoBtn) triggerPhotoBtn.addEventListener('click', openFilePicker);
+
+        if (fileInput) {
+          fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+              showToast('Processing photo...', 'info');
+              const dataUrl = await processImageFile(file, 300, 300);
+              await SafeSpaceDB.groups.updateGroup(group.id, {
+                avatar_url: dataUrl,
+                avatar_icon: '📷'
+              });
+              group.avatar_url = dataUrl;
+              group.avatar_icon = '📷';
+
+              if (avatarDisplay) {
+                avatarDisplay.innerHTML = `<img src="${dataUrl}" alt="Group" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`;
+              }
+
+              // Update active chat thread avatar if currently viewing this group
+              if (activeChatUser && activeChatUser.id === group.id) {
+                activeChatUser.avatar_url = dataUrl;
+                activeChatUser.avatar_icon = '📷';
+                const thAv = document.getElementById('threadAvatar');
+                if (thAv) thAv.innerHTML = `<img src="${dataUrl}" alt="Group" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`;
+              }
+
+              // Refresh inbox cards
+              await refreshChatData();
+              showToast('✨ Group picture updated from files!', 'success');
+            } catch (err) {
+              console.error('[GroupChat] Photo update error:', err);
+              showToast(err.message || 'Could not update photo', 'error');
+            }
+          });
+        }
+
+        // Wire Edit Group Name
+        const editTitleInput = document.getElementById('editGroupTitleInput');
+        const saveNameBtn = document.getElementById('saveGroupNameBtn');
+
+        const saveNewName = async () => {
+          if (!editTitleInput) return;
+          const newName = editTitleInput.value.trim();
+          if (!newName) {
+            showToast('Group name cannot be empty', 'error');
+            return;
+          }
+          if (newName === group.title) {
+            showToast('Group name is already "' + newName + '"', 'info');
+            return;
+          }
+
+          if (saveNameBtn) {
+            saveNameBtn.disabled = true;
+            saveNameBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+          }
+
+          try {
+            await SafeSpaceDB.groups.updateGroup(group.id, { title: newName });
+            group.title = newName;
+            group.name = newName;
+
+            // Update thread username if currently viewing this group
+            if (activeChatUser && activeChatUser.id === group.id) {
+              activeChatUser.title = newName;
+              activeChatUser.username = newName;
+              activeChatUser.name = newName;
+              const thUser = document.getElementById('threadUsername');
+              if (thUser) thUser.textContent = newName;
+            }
+
+            // Refresh inbox cards
+            await refreshChatData();
+            showToast(`✨ Group name updated to "${newName}"!`, 'success');
+          } catch(err) {
+            console.error('[GroupChat] Name update error:', err);
+            showToast(err.message || 'Could not update group name', 'error');
+          } finally {
+            if (saveNameBtn) {
+              saveNameBtn.disabled = false;
+              saveNameBtn.innerHTML = '<i class="fas fa-check"></i> Save';
+            }
+          }
+        };
+
+        if (saveNameBtn) saveNameBtn.addEventListener('click', saveNewName);
+        if (editTitleInput) {
+          editTitleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              saveNewName();
+            }
+          });
+        }
+
+        // Wire Leave Group
+        const leaveBtn = document.getElementById('leaveGroupBtn');
+        if (leaveBtn) {
+          leaveBtn.onclick = async () => {
+            if (!confirm(`Are you sure you want to leave "${group.title}"?`)) return;
+            try {
+              leaveBtn.disabled = true;
+              leaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Leaving...';
+              await SafeSpaceDB.groups.leaveGroup(group.id);
+              modal.classList.remove('open');
+              showToast('You left the group.', 'info');
+              document.getElementById('closeThreadBtn')?.click();
+              await refreshChatData();
+            } catch(err) {
+              alert(err.message || 'Could not leave group');
+              leaveBtn.disabled = false;
+              leaveBtn.innerHTML = '<i class="fas fa-arrow-right-from-bracket"></i> Leave Group';
+            }
+          };
+        }
+
+        // Wire Add More Members
+        const addMoreBtn = document.getElementById('openAddMoreMembersBtn');
+        if (addMoreBtn) {
+          addMoreBtn.onclick = async () => {
+            modal.classList.remove('open');
+            await promptAddMoreMembers(group);
+          };
+        }
+
+        // Asynchronously populate member list so UI responds instantly
+        (async () => {
+          try {
+            let allMem = (Array.isArray(allMembers) && allMembers.length > 0)
+              ? allMembers
+              : (JSON.parse(localStorage.getItem('safe_space_members') || '[]'));
+            if (allMem.length === 0 && SafeSpaceDB.community) {
+              try {
+                const fetched = await SafeSpaceDB.community.getMembers();
+                if (Array.isArray(fetched) && fetched.length > 0) allMem = fetched;
+              } catch(e) {}
+            }
+            const memberProfiles = (group.members || []).map(mid => {
+              if (currentUser && mid === currentUser.id) return currentUser;
+              return (allMem || []).find(m => m.id === mid) || { id: mid, username: 'Member' };
+            });
+
+            const countHeader = document.getElementById('groupMemberCountHeader');
+            if (countHeader) countHeader.textContent = `Members (${memberProfiles.length})`;
+
+            const listContainer = document.getElementById('groupMembersListContainer');
+            if (listContainer) {
+              listContainer.innerHTML = '';
+              memberProfiles.forEach(m => {
+                const isCreator = m.id === group.created_by;
+                const isYou = currentUser && m.id === currentUser.id;
+                const origUsername = m.username || m.name || m.first_name || 'Member';
+                const cleanUsername = (m.username || 'user').toLowerCase().replace(/\s+/g, '');
+
+                // Retrieve group-specific nickname (isolated from private chats)
+                let customGroupNick = (SafeSpaceDB.nicknames && SafeSpaceDB.nicknames.getNicknameSync)
+                  ? SafeSpaceDB.nicknames.getNicknameSync(m.id, group.id)
+                  : null;
+
+                const avatarHtml = window.SafeSpaceAvatars
+                  ? window.SafeSpaceAvatars.renderHtml(m, { 
+                      alt: origUsername, 
+                      className: 'group-member-check-avatar',
+                      style: 'width:36px; height:36px; min-width:36px; min-height:36px; max-width:36px; max-height:36px; border-radius:50%; object-fit:cover; display:block;'
+                    })
+                  : `<div class="group-member-check-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="fas fa-user"></i></div>`;
+
+                const row = document.createElement('div');
+                row.className = 'group-member-item-row';
+                row.id = `gm-row-${m.id}`;
+
+                const renderGroupMemberRow = (activeNick) => {
+                  const displayTitle = activeNick || origUsername;
+                  return `
+                    <div class="group-member-main-bar">
+                      <div class="group-member-check-info" style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+                        <div class="group-member-avatar-box">
+                          ${avatarHtml}
+                        </div>
+                        <div style="min-width:0; flex:1;">
+                          <div class="group-member-check-name" id="gm-name-display-${m.id}" style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                            <span style="font-weight:700;">${escapeHTML(displayTitle)}</span>
+                            ${isYou ? '<span style="font-size:10.5px; padding:1px 7px; border-radius:10px; background:var(--primary-light); color:var(--primary); font-weight:700;">(You)</span>' : ''}
+                          </div>
+                          <div class="group-member-check-handle" id="gm-handle-display-${m.id}">
+                            ${activeNick 
+                              ? `<span>Original: <strong>${escapeHTML(origUsername)}</strong> (@${escapeHTML(cleanUsername)})</span>` 
+                              : `@${escapeHTML(cleanUsername)}`}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="group-member-actions">
+                        <button type="button" class="btn-edit-nick-pill" id="gm-edit-btn-${m.id}" title="Edit nickname in this group">
+                          <i class="fas fa-pen"></i> Edit
+                        </button>
+                        <span class="group-role-badge ${isCreator ? 'admin-badge' : 'member-badge'}">${isCreator ? 'ADMIN' : 'MEMBER'}</span>
+                      </div>
+                    </div>
+
+                    <div class="nickname-member-edit-form" id="gm-form-${m.id}">
+                      <div class="nickname-input-group">
+                        <input type="text" class="nickname-edit-input" id="gm-input-${m.id}" maxlength="30" value="${escapeHTML(activeNick || origUsername)}" placeholder="Enter nickname in this group..." />
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                        <span class="nickname-char-count" id="gm-count-${m.id}">${(activeNick || origUsername).length}/30</span>
+                        <div class="nickname-action-btns">
+                          ${activeNick ? `<button type="button" class="btn-nick-action btn-nick-reset" id="gm-reset-btn-${m.id}"><i class="fas fa-rotate-left"></i> Reset</button>` : ''}
+                          <button type="button" class="btn-nick-action btn-nick-cancel" id="gm-cancel-btn-${m.id}">Cancel</button>
+                          <button type="button" class="btn-nick-action btn-nick-save" id="gm-save-btn-${m.id}"><i class="fas fa-check"></i> Save</button>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                };
+
+                const attachGroupRowHandlers = () => {
+                  row.innerHTML = renderGroupMemberRow(customGroupNick);
+
+                  const editBtn = row.querySelector(`#gm-edit-btn-${m.id}`);
+                  const cancelBtn = row.querySelector(`#gm-cancel-btn-${m.id}`);
+                  const saveBtn = row.querySelector(`#gm-save-btn-${m.id}`);
+                  const resetBtn = row.querySelector(`#gm-reset-btn-${m.id}`);
+                  const inputEl = row.querySelector(`#gm-input-${m.id}`);
+                  const countEl = row.querySelector(`#gm-count-${m.id}`);
+
+                  if (editBtn) {
+                    editBtn.onclick = () => {
+                      listContainer.querySelectorAll('.group-member-item-row.is-editing').forEach(r => {
+                        if (r !== row) r.classList.remove('is-editing');
+                      });
+                      row.classList.add('is-editing');
+                      if (inputEl) {
+                        inputEl.value = customGroupNick || origUsername;
+                        if (countEl) countEl.textContent = `${inputEl.value.length}/30`;
+                        setTimeout(() => {
+                          inputEl.focus();
+                          inputEl.select();
+                        }, 50);
+                      }
+                    };
+                  }
+
+                  if (inputEl && countEl) {
+                    inputEl.oninput = () => {
+                      countEl.textContent = `${inputEl.value.length}/30`;
+                    };
+                    inputEl.onkeydown = (e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (saveBtn) saveBtn.click();
+                      } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        if (cancelBtn) cancelBtn.click();
+                      }
+                    };
+                  }
+
+                  if (cancelBtn) {
+                    cancelBtn.onclick = () => {
+                      row.classList.remove('is-editing');
+                      if (inputEl) inputEl.value = customGroupNick || origUsername;
+                    };
+                  }
+
+                  if (resetBtn) {
+                    resetBtn.onclick = async () => {
+                      try {
+                        resetBtn.disabled = true;
+                        resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        await SafeSpaceDB.nicknames.setNickname(m.id, '', group.id);
+                        customGroupNick = null;
+
+                        // Live update in this group thread
+                        document.querySelectorAll(`.group-sender-name[data-sender-id="${m.id}"]`).forEach(el => {
+                          el.textContent = origUsername;
+                        });
+
+                        showToast(`Nickname reset to ${origUsername}`, 'success');
+                        attachGroupRowHandlers();
+                      } catch (err) {
+                        console.error('[GroupChat] Reset nickname error:', err);
+                        showToast('Could not reset nickname', 'error');
+                      }
+                    };
+                  }
+
+                  if (saveBtn) {
+                    saveBtn.onclick = async () => {
+                      const val = inputEl ? inputEl.value.trim() : '';
+                      if (!val) {
+                        showToast('Nickname cannot be empty. Click Reset to restore username.', 'warning');
+                        return;
+                      }
+                      if (val.length > 30) {
+                        showToast('Nickname cannot exceed 30 characters', 'warning');
+                        return;
+                      }
+
+                      try {
+                        saveBtn.disabled = true;
+                        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        await SafeSpaceDB.nicknames.setNickname(m.id, val, group.id);
+                        customGroupNick = val;
+
+                        // Live update in this group thread
+                        document.querySelectorAll(`.group-sender-name[data-sender-id="${m.id}"]`).forEach(el => {
+                          el.textContent = val;
+                        });
+
+                        showToast(`✨ Nickname updated to "${val}" in this group!`, 'success');
+                        attachGroupRowHandlers();
+                      } catch (err) {
+                        console.error('[GroupChat] Save nickname error:', err);
+                        showToast('Could not save nickname', 'error');
+                        if (saveBtn) {
+                          saveBtn.disabled = false;
+                          saveBtn.innerHTML = '<i class="fas fa-check"></i> Save';
+                        }
+                      }
+                    };
+                  }
+                };
+
+                attachGroupRowHandlers();
+                listContainer.appendChild(row);
+              });
+            }
+          } catch(err) {
+            console.warn('[GroupChat] Error loading member profiles:', err);
+          }
+        })();
+
+      } catch (err) {
+        body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-danger);">Error loading details</div>';
+      }
+    }
+
+        window.openGroupInfoModal = openGroupInfoModal;
+
+    async function promptAddMoreMembers(group) {
+      openAddMembersModal(group);
+    }
+
+    async function openAddMembersModal(group) {
+      const modal = document.getElementById('addMembersModal');
+      const titleEl = document.getElementById('addMembersModalTitle');
+      const checklistContainer = document.getElementById('addMembersChecklist');
+      const searchInput = document.getElementById('addMembersSearchInput');
+      const countBadge = document.getElementById('addMembersCountBadge');
+      const submitBtn = document.getElementById('submitAddMembersBtn');
+      const cancelBtn = document.getElementById('cancelAddMembersModalBtn');
+      const closeBtn = document.getElementById('closeAddMembersModalBtn');
+
+      if (!modal || !checklistContainer) return;
+
+      if (titleEl) titleEl.textContent = `Add Members to "${group.title}"`;
+      modal.classList.add('open');
+      if (searchInput) searchInput.value = '';
+
+      const selectedIds = new Set();
+      let nonMemberPeers = [];
+      let currentFilter = 'all';
+
+      const updateAddModalState = () => {
+        if (countBadge) countBadge.textContent = `${selectedIds.size} selected`;
+        if (submitBtn) submitBtn.disabled = selectedIds.size === 0;
+      };
+      updateAddModalState();
+
+      const closeModal = () => modal.classList.remove('open');
+      if (closeBtn) closeBtn.onclick = closeModal;
+      if (cancelBtn) cancelBtn.onclick = closeModal;
+
+      // Filter tabs in Add Members modal
+      document.querySelectorAll('#addMembersFilterPills .checklist-filter-pill').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('#addMembersFilterPills .checklist-filter-pill').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilter = btn.dataset.filter || 'all';
+          renderAddItems();
+        };
+      });
+
+      if (searchInput) {
+        searchInput.oninput = () => renderAddItems();
+      }
+
+      function renderAddItems() {
+        const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        const filtered = nonMemberPeers.filter(p => {
+          if (currentFilter === 'friends' && !p.is_friend) return false;
+          if (currentFilter === 'chats' && !p.is_recent_chat) return false;
+          if (q) {
+            const name = (p.username || '').toLowerCase();
+            const handle = ('@' + (p.username || '').toLowerCase().replace(/\s+/g, '')).toLowerCase();
+            const tag = (p.is_friend ? 'friend' : '') + ' ' + (p.is_recent_chat ? 'chat recent' : '');
+            return name.includes(q) || handle.includes(q) || tag.includes(q);
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          if (q) {
+            checklistContainer.innerHTML = `<div style="padding:22px 16px;text-align:center;color:var(--text-muted);font-size:12.5px;">No matches for "<strong>${escapeHTML(q)}</strong>"</div>`;
+          } else {
+            checklistContainer.innerHTML = '<div style="padding:22px 16px;text-align:center;color:var(--text-muted);font-size:12.5px;">All your friends and contacts are already in this group!</div>';
+          }
+          return;
+        }
+
+        checklistContainer.innerHTML = filtered.map(m => {
+          const isChecked = selectedIds.has(m.id);
+          const isSelectedClass = isChecked ? 'selected' : '';
+          const avatarHtml = window.SafeSpaceAvatars
+            ? window.SafeSpaceAvatars.renderHtml(m, { 
+                alt: m.username, 
+                className: 'group-member-check-avatar',
+                style: 'width:36px; height:36px; min-width:36px; min-height:36px; max-width:36px; max-height:36px; border-radius:50%; object-fit:cover; display:block;'
+              })
+            : (m.avatar_url ? `<img src="${escapeHTML(m.avatar_url)}" class="group-member-check-avatar" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : `<div class="group-member-check-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="fas fa-user"></i></div>`);
+
+          let badgeHtml = '';
+          if (m.is_friend) badgeHtml += '<span class="member-tag-badge friend"><i class="fas fa-heart"></i> Friend</span>';
+          if (m.is_recent_chat) badgeHtml += '<span class="member-tag-badge chat"><i class="fas fa-comment-dots"></i> Chat</span>';
+
+          return `
+            <label class="group-member-check-item ${isSelectedClass}" data-id="${m.id}">
+              <div class="group-member-check-info">
+                <div class="group-member-avatar-box" style="position:relative;">
+                  ${avatarHtml}
+                  ${m.is_online ? '<span style="position:absolute; bottom:0; right:0; width:9px; height:9px; background:#10b981; border:2px solid #fff; border-radius:50%;"></span>' : ''}
+                </div>
+                <div>
+                  <div class="group-member-check-name" style="display:flex; align-items:center; flex-wrap:wrap;">
+                    <span>${escapeHTML(m.username || 'Member')}</span>
+                    ${badgeHtml}
+                  </div>
+                  <div class="group-member-check-handle">@${escapeHTML((m.username || 'user').toLowerCase().replace(/\s+/g, ''))}</div>
+                </div>
+              </div>
+              <input type="checkbox" class="group-member-checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} />
+            </label>
+          `;
+        }).join('');
+
+        checklistContainer.querySelectorAll('.group-member-check-item').forEach(label => {
+          const cb = label.querySelector('.group-member-checkbox');
+          label.addEventListener('click', (e) => {
+            if (e.target !== cb) {
+              e.preventDefault();
+              cb.checked = !cb.checked;
+            }
+            const id = cb.value;
+            if (cb.checked) {
+              selectedIds.add(id);
+              label.classList.add('selected');
+            } else {
+              selectedIds.delete(id);
+              label.classList.remove('selected');
+            }
+            updateAddModalState();
+          });
+        });
+      }
+
+      checklistContainer.innerHTML = '<div style="padding:18px;text-align:center;color:var(--text-muted);font-size:12.5px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px; color:var(--primary);"></i> Loading eligible friends & peers...</div>';
+
+      try {
+        const currentUserId = currentUser ? currentUser.id : null;
+        const currentGroupMembers = new Set(group.members || []);
+
+        let friendships = [];
+        try {
+          if (SafeSpaceDB.community && SafeSpaceDB.community.getFriendships) {
+            friendships = await SafeSpaceDB.community.getFriendships();
+          }
+        } catch(e) {}
+
+        const directChatConvs = (conversations || []).filter(c => 
+          !c.is_group && !c.isGroup &&
+          c.user_id !== 'safe-space-ai-bot' &&
+          (!c.contact || c.contact.id !== 'safe-space-ai-bot')
+        );
+
+        let commMembers = [];
+        try {
+          if (SafeSpaceDB.community && SafeSpaceDB.community.getMembers) {
+            commMembers = await SafeSpaceDB.community.getMembers();
+          }
+        } catch(e) {}
+        if ((!commMembers || commMembers.length === 0) && Array.isArray(allMembers)) commMembers = allMembers;
+
+        const eligibleMap = new Map();
+        function registerPeer(id, userObj, flags) {
+          if (!id || id === currentUserId || id === 'safe-space-ai-bot' || currentGroupMembers.has(id)) return;
+          const existing = eligibleMap.get(id);
+          const username = (userObj && (userObj.username || userObj.display_name || userObj.name || (userObj.first_name ? userObj.first_name + (userObj.last_name ? ' ' + userObj.last_name : '') : ''))) || (existing && existing.username) || 'Peer';
+          const avatar_url = (userObj && userObj.avatar_url) || (existing && existing.avatar_url) || null;
+          const is_online = (userObj && userObj.is_online !== undefined) ? !!userObj.is_online : (existing ? existing.is_online : false);
+
+          eligibleMap.set(id, {
+            id: id,
+            username: username,
+            avatar_url: avatar_url,
+            is_online: is_online,
+            is_friend: (existing && existing.is_friend) || !!flags.is_friend,
+            is_recent_chat: (existing && existing.is_recent_chat) || !!flags.is_recent_chat
+          });
+        }
+
+        (friendships || []).forEach(f => {
+          if (f.status === 'accepted') {
+            const friendObj = (f.requester_id === currentUserId) ? f.receiver : f.requester;
+            const friendId = (f.requester_id === currentUserId) ? f.receiver_id : f.requester_id;
+            registerPeer(friendId, friendObj, { is_friend: true });
+          }
+        });
+
+        directChatConvs.forEach(c => {
+          const contactId = c.user_id || (c.contact && c.contact.id);
+          const contactObj = c.contact || { id: contactId, username: c.username, avatar_url: c.avatar_url, is_online: c.is_online };
+          registerPeer(contactId, contactObj, { is_recent_chat: true });
+        });
+
+        (commMembers || []).forEach(m => registerPeer(m.id, m, {}));
+
+        nonMemberPeers = Array.from(eligibleMap.values());
+        nonMemberPeers.sort((a, b) => {
+          if (a.is_friend && !b.is_friend) return -1;
+          if (!a.is_friend && b.is_friend) return 1;
+          if (a.is_recent_chat && !b.is_recent_chat) return -1;
+          if (!a.is_recent_chat && b.is_recent_chat) return 1;
+          return (a.username || '').localeCompare(b.username || '');
+        });
+
+        renderAddItems();
+      } catch (err) {
+        checklistContainer.innerHTML = '<div style="padding:16px;color:#ef4444;font-size:12px;text-align:center;">Could not load peers</div>';
+      }
+
+      if (submitBtn) {
+        submitBtn.onclick = async () => {
+          const addIds = Array.from(selectedIds);
+          if (addIds.length === 0) return;
+
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+          try {
+            await SafeSpaceDB.groups.addMembers(group.id, addIds);
+            closeModal();
+            showToast(`✨ Added ${addIds.length} member(s) to "${group.title}"!`, 'success');
+            await refreshChatData();
+            if (activeChatUser && activeChatUser.id === group.id) {
+              await handleOpenDirectChat(group.id);
+            }
+          } catch(err) {
+            showToast(err.message || 'Could not add members', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add to Group';
+          }
+        };
+      }
+    }
+
   </script>
 </body>
 </html>

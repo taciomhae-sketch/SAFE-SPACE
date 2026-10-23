@@ -32,6 +32,9 @@ from config import (
 )
 from moderation import moderate
 from sentiment import analyze_sentiment
+from censor import censor_profanity, contains_profanity, get_profanities_found
+from support_recommender import generate_support_recommendation
+from typing import Optional
 
 
 # ── FastAPI Application Instance ──────────────────────────────
@@ -67,6 +70,14 @@ class TextRequest(BaseModel):
                 f"Text exceeds maximum allowed length of {MAX_TEXT_LENGTH} characters."
             )
         return v.strip()
+
+
+class SupportRequest(BaseModel):
+    text: str
+    sentiment: Optional[str] = "Neutral"
+    category: Optional[str] = "SAFE"
+    risk_level: Optional[str] = "low"
+    language: Optional[str] = "english"
 
 
 # ── Helper: Safe Error Response ───────────────────────────────
@@ -148,12 +159,22 @@ async def moderate_endpoint(request: TextRequest):
     # Run sentiment analysis
     sent_result = analyze_sentiment(text)
 
+    # Generate supportive recommendation
+    support_rec = generate_support_recommendation(
+        text=text,
+        sentiment=sent_result["sentiment"],
+        category=mod_result["category"],
+        risk_level=mod_result.get("risk_level", "low"),
+        language=mod_result.get("language", "english")
+    )
+
     return {
         "success": True,
         # — Moderation fields —
         "allowed":             mod_result["allowed"],
         "status":              mod_result["status"],
         "action":              mod_result["action"],
+        "risk_level":          mod_result.get("risk_level", "low"),
         "language":            mod_result["language"],
         "language_confidence": mod_result["language_confidence"],
         "category":            mod_result["category"],
@@ -166,15 +187,38 @@ async def moderate_endpoint(request: TextRequest):
         "obfuscation_types":   mod_result.get("obfuscation_types", []),
         "is_academic_stress":  mod_result.get("is_academic_stress", False),
         "is_targeted":         mod_result.get("is_targeted", False),
+        "original_text":       mod_result.get("original_text", text),
+        "censored_text":       mod_result.get("censored_text", text),
+        "has_profanity":       mod_result.get("has_profanity", False),
         # — Sentiment fields —
         "sentiment":           sent_result["sentiment"],
         "sentiment_score":     sent_result["sentiment_score"],
+        # — AI Support Recommendation —
+        "support_recommendation": support_rec,
         # — Meta —
         "text_length": len(text),
         "note": (
             "AI results are advisory only. "
             "Final decisions require human review by authorized personnel."
         )
+    }
+
+
+# ── POST /censor — Partial Profanity Censorship Only ─────────
+@app.post("/censor", summary="Partial Profanity Censorship")
+async def censor_endpoint(request: TextRequest):
+    """
+    Automatically replaces middle letters of prohibited profanity words
+    with asterisks while preserving first and last letters.
+    """
+    text = request.text
+    censored = censor_profanity(text)
+    return {
+        "success": True,
+        "original_text": text,
+        "censored_text": censored,
+        "has_profanity": (censored != text),
+        "profanities_found": get_profanities_found(text)
     }
 
 
@@ -211,6 +255,7 @@ async def moderation_only_endpoint(request: TextRequest):
         "allowed":             mod_result["allowed"],
         "status":              mod_result["status"],
         "action":              mod_result["action"],
+        "risk_level":          mod_result.get("risk_level", "low"),
         "language":            mod_result["language"],
         "language_confidence": mod_result["language_confidence"],
         "category":            mod_result["category"],
@@ -223,6 +268,29 @@ async def moderation_only_endpoint(request: TextRequest):
         "obfuscation_types":   mod_result.get("obfuscation_types", []),
         "is_academic_stress":  mod_result.get("is_academic_stress", False),
         "is_targeted":         mod_result.get("is_targeted", False),
+        "original_text":       mod_result.get("original_text", text),
+        "censored_text":       mod_result.get("censored_text", text),
+        "has_profanity":       mod_result.get("has_profanity", False),
+    }
+
+
+# ── POST /recommend-support — AI Supportive Comment Recommendation ───
+@app.post("/recommend-support", summary="Supportive Comment Recommendation")
+async def recommend_support_endpoint(request: SupportRequest):
+    """
+    Generate an empathetic, relevant, and constructive support recommendation
+    tailored to the student's post.
+    """
+    rec = generate_support_recommendation(
+        text=request.text,
+        sentiment=request.sentiment or "Neutral",
+        category=request.category or "SAFE",
+        risk_level=request.risk_level or "low",
+        language=request.language or "english"
+    )
+    return {
+        "success": True,
+        "recommendation": rec
     }
 
 

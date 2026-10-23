@@ -10,11 +10,12 @@ from typing import Dict, Any, List, Optional
 from language_detector import LanguageDetector
 from normalizer import TextNormalizer
 from context_analyzer import ContextAnalyzer
+from censor import censor_profanity, contains_profanity
 from rules import (
     RULES_CONFIG,
     CATEGORY_SAFE, CATEGORY_PROFANITY, CATEGORY_HARASSMENT,
     CATEGORY_BULLYING, CATEGORY_HATE, CATEGORY_THREAT,
-    CATEGORY_VIOLENCE, CATEGORY_SEXUAL_HARASSMENT, CATEGORY_SEXUAL_CONTENT,
+    CATEGORY_VIOLENCE, CATEGORY_SEXUAL_HARASSMENT, CATEGORY_SEXUAL_CONTENT, CATEGORY_NUDITY,
     CATEGORY_SELF_HARM, CATEGORY_ENCOURAGEMENT_OF_SELF_HARM,
     CATEGORY_DANGEROUS_BEHAVIOR, CATEGORY_DISCRIMINATION, CATEGORY_SPAM,
     SEVERITY_NONE, SEVERITY_LOW, SEVERITY_MEDIUM, SEVERITY_HIGH, SEVERITY_CRITICAL,
@@ -62,6 +63,7 @@ CLASSIFIER_LABELS = [
     "discriminatory or hateful speech",
     "threatening or violent language",
     "self-harm or suicide encouragement",
+    "nudity or sexually explicit content",
     "sexually explicit or sexual harassment content",
     "spam or repetitive nonsense"
 ]
@@ -73,6 +75,7 @@ LABEL_TO_CATEGORY = {
     "discriminatory or hateful speech":                CATEGORY_HATE,
     "threatening or violent language":                 CATEGORY_THREAT,
     "self-harm or suicide encouragement":              CATEGORY_SELF_HARM,
+    "nudity or sexually explicit content":              CATEGORY_NUDITY,
     "sexually explicit or sexual harassment content":  CATEGORY_SEXUAL_HARASSMENT,
     "spam or repetitive nonsense":                     CATEGORY_SPAM
 }
@@ -156,7 +159,7 @@ def _ai_classify(text: str) -> Optional[Dict[str, Any]]:
             }
 
         category = LABEL_TO_CATEGORY.get(top_label, CATEGORY_SAFE)
-        severity = SEVERITY_CRITICAL if category in [CATEGORY_THREAT, CATEGORY_SELF_HARM, CATEGORY_SEXUAL_HARASSMENT] else SEVERITY_HIGH
+        severity = SEVERITY_CRITICAL if category in [CATEGORY_THREAT, CATEGORY_SELF_HARM, CATEGORY_SEXUAL_HARASSMENT, CATEGORY_NUDITY] else SEVERITY_HIGH
         action = ACTION_BLOCK if severity == SEVERITY_CRITICAL else ACTION_REVIEW
 
         return {
@@ -172,16 +175,30 @@ def _ai_classify(text: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def get_risk_level(category: str, severity: str, status: str) -> str:
+    cat = (category or "").upper()
+    sev = (severity or "").lower()
+    stat = (status or "").upper()
+    if cat in [CATEGORY_SELF_HARM, CATEGORY_ENCOURAGEMENT_OF_SELF_HARM]:
+        return "urgent"
+    if stat == STATUS_BLOCKED or sev == SEVERITY_CRITICAL or cat in [CATEGORY_THREAT, CATEGORY_VIOLENCE, CATEGORY_SEXUAL_HARASSMENT, CATEGORY_NUDITY]:
+        return "high"
+    if stat == STATUS_REVIEW or sev in [SEVERITY_HIGH, SEVERITY_MEDIUM] or cat in [CATEGORY_HARASSMENT, CATEGORY_BULLYING, CATEGORY_HATE]:
+        return "moderate"
+    return "low"
+
+
 def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Comprehensive Multilingual Moderation Pipeline:
     1. Language Detection (English, Filipino, Taglish)
     2. Text Normalization (Unicode NFKC, Repeated Chars, Spacing, Leetspeak, Phonetics)
-    3. Obfuscation Detection
-    4. Context Analysis (Targeting, Academic Stress vs Self-Harm, Benign Collisions, Educational/Reporting)
-    5. Rule Evaluation (Multilingual & Code-switching)
-    6. AI Neural Classification
-    7. Final Decision Synthesis (Allow / Warn / Review / Block)
+    3. Partial Profanity Censorship (Asterisk masking: first and last letters preserved)
+    4. Obfuscation Detection
+    5. Context Analysis (Targeting, Academic Stress vs Self-Harm, Benign Collisions, Educational/Reporting)
+    6. Rule Evaluation (Multilingual & Code-switching)
+    7. AI Neural Classification
+    8. Final Decision Synthesis (Allow / Warn / Review / Block)
     """
     if not text or not text.strip():
         return {
@@ -189,6 +206,7 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "allowed": True,
             "status": STATUS_APPROVED,
             "action": ACTION_ALLOW,
+            "risk_level": "low",
             "language": "english",
             "language_confidence": 1.0,
             "category": CATEGORY_SAFE,
@@ -200,10 +218,15 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "has_obfuscation": False,
             "obfuscation_types": [],
             "is_academic_stress": False,
-            "is_targeted": False
+            "is_targeted": False,
+            "original_text": text or "",
+            "censored_text": text or "",
+            "has_profanity": False
         }
 
     original_text = text.strip()
+    censored_text = censor_profanity(original_text)
+    has_profanity = (censored_text != original_text)
 
     # Step 1: Normalization & Obfuscation Detection
     norm = TextNormalizer.normalize(original_text)
@@ -236,11 +259,13 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
         conf = matched_rule["confidence"]
         reason = matched_rule["reason"]
 
-        # Context calibration: If mild profanity and NOT targeted at a user, allow it
-        if cat == CATEGORY_PROFANITY and sev == SEVERITY_LOW and not is_targeted:
+        # Profanity handling: Automatically censor with asterisks while preserving first and last letters.
+        # When profanity is censored and not targeted harassment or threat, approve with censored text.
+        if cat == CATEGORY_PROFANITY:
             sev = SEVERITY_LOW
             act = ACTION_ALLOW
             status = STATUS_APPROVED
+            reason = f"Prohibited profanity automatically censored with asterisks: {censored_text}"
         elif sev == SEVERITY_CRITICAL:
             status = STATUS_BLOCKED
             act = ACTION_BLOCK
@@ -268,13 +293,18 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "detection_source": "fallback"
         }
 
+        # Safeguard: Do not classify self-directed academic frustration/failure as harassment
+        if (is_academic_stress or not is_targeted) and cat in [CATEGORY_HARASSMENT, CATEGORY_BULLYING] and not is_targeted:
+            rule_decision = None
+
         # If critical or high/medium rule matched, enforce immediately without allowing whitelist bypass
-        if not rule_decision["allowed"]:
+        if rule_decision and not rule_decision["allowed"]:
             return {
                 "success": True,
                 "allowed": False,
                 "status": rule_decision["status"],
                 "action": rule_decision["action"],
+                "risk_level": get_risk_level(rule_decision["category"], rule_decision["severity"], rule_decision["status"]),
                 "language": detected_lang,
                 "language_confidence": lang_conf,
                 "category": rule_decision["category"],
@@ -286,7 +316,10 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
                 "has_obfuscation": has_obf,
                 "obfuscation_types": obf_types,
                 "is_academic_stress": False,
-                "is_targeted": is_targeted
+                "is_targeted": is_targeted,
+                "original_text": original_text,
+                "censored_text": censored_text,
+                "has_profanity": has_profanity
             }
 
     # 4A. Benign Whitelist Shortcut (e.g., "my phone died", "healthy diet", "puto bumbong")
@@ -307,7 +340,10 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "has_obfuscation": has_obf,
             "obfuscation_types": obf_types,
             "is_academic_stress": False,
-            "is_targeted": is_targeted
+            "is_targeted": is_targeted,
+            "original_text": original_text,
+            "censored_text": censored_text,
+            "has_profanity": has_profanity
         }
 
     # 4B. Academic / Student Stress Shortcut (Empathetic sharing)
@@ -328,7 +364,10 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "has_obfuscation": has_obf,
             "obfuscation_types": obf_types,
             "is_academic_stress": True,
-            "is_targeted": is_targeted
+            "is_targeted": is_targeted,
+            "original_text": original_text,
+            "censored_text": censored_text,
+            "has_profanity": has_profanity
         }
 
     # 4C. Educational Discussion or Quoting / Reporting
@@ -349,7 +388,10 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "has_obfuscation": has_obf,
             "obfuscation_types": obf_types,
             "is_academic_stress": False,
-            "is_targeted": is_targeted
+            "is_targeted": is_targeted,
+            "original_text": original_text,
+            "censored_text": censored_text,
+            "has_profanity": has_profanity
         }
 
     # Step 6: AI Neural Classification
@@ -370,32 +412,40 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
         if rule_rank >= ai_rank:
             final_decision = rule_decision
         else:
+            is_profanity_allowed = (ai_decision["category"] == CATEGORY_PROFANITY and not is_targeted)
+            is_allowed = (ai_decision["category"] == CATEGORY_SAFE) or is_profanity_allowed
+            status = STATUS_BLOCKED if ai_decision["severity"] == SEVERITY_CRITICAL else (STATUS_APPROVED if is_allowed else STATUS_REVIEW)
+            action = ACTION_ALLOW if is_allowed else ai_decision["action"]
+            reason = f"Prohibited profanity automatically censored with asterisks: {censored_text}" if is_profanity_allowed else ai_decision["reason"]
             final_decision = {
                 "category": ai_decision["category"],
                 "categories": [ai_decision["category"]],
-                "severity": ai_decision["severity"],
-                "action": ai_decision["action"],
-                "status": STATUS_BLOCKED if ai_decision["severity"] == SEVERITY_CRITICAL else (STATUS_APPROVED if ai_decision["category"] == CATEGORY_SAFE else STATUS_REVIEW),
-                "allowed": ai_decision["category"] == CATEGORY_SAFE,
+                "severity": SEVERITY_LOW if is_profanity_allowed else ai_decision["severity"],
+                "action": action,
+                "status": status,
+                "allowed": is_allowed,
                 "confidence": ai_decision["confidence"],
-                "reason": ai_decision["reason"],
+                "reason": reason,
                 "detection_source": "ai_and_fallback"
             }
         final_decision["detection_source"] = "ai_and_fallback"
 
     elif ai_decision:
         detection_source = "ai"
-        is_safe = (ai_decision["category"] == CATEGORY_SAFE)
+        is_profanity_allowed = (ai_decision["category"] == CATEGORY_PROFANITY and not is_targeted)
+        is_safe = (ai_decision["category"] == CATEGORY_SAFE) or is_profanity_allowed
         status = STATUS_APPROVED if is_safe else (STATUS_BLOCKED if ai_decision["severity"] == SEVERITY_CRITICAL else STATUS_REVIEW)
+        action = ACTION_ALLOW if is_safe else ai_decision["action"]
+        reason = f"Prohibited profanity automatically censored with asterisks: {censored_text}" if is_profanity_allowed else ai_decision["reason"]
         final_decision = {
             "category": ai_decision["category"],
             "categories": [ai_decision["category"]],
-            "severity": ai_decision["severity"],
-            "action": ai_decision["action"],
+            "severity": SEVERITY_LOW if is_profanity_allowed else ai_decision["severity"],
+            "action": action,
             "status": status,
             "allowed": is_safe,
             "confidence": ai_decision["confidence"],
-            "reason": ai_decision["reason"],
+            "reason": reason,
             "detection_source": "ai"
         }
 
@@ -422,6 +472,7 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
         "allowed": final_decision["allowed"],
         "status": final_decision["status"],
         "action": final_decision["action"],
+        "risk_level": get_risk_level(final_decision["category"], final_decision["severity"], final_decision["status"]),
         "language": detected_lang,
         "language_confidence": lang_conf,
         "category": final_decision["category"],
@@ -432,6 +483,9 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
         "detection_source": final_decision["detection_source"],
         "has_obfuscation": has_obf,
         "obfuscation_types": obf_types,
-        "is_academic_stress": False,
-        "is_targeted": is_targeted
+        "is_academic_stress": final_decision.get("is_academic_stress", False),
+        "is_targeted": is_targeted,
+        "original_text": original_text,
+        "censored_text": censored_text,
+        "has_profanity": has_profanity
     }
