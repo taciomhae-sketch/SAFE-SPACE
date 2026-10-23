@@ -1166,54 +1166,73 @@
   }
 
   var SafeSpaceSupportRecommender = {
-    SYSTEM_PROMPT: `You are "Safe Space AI", the supportive-recommendation assistant of Safe Space, a peer-support platform for college students in the Philippines. After a post has passed safety screening and been published, you write ONE short, empathetic, practical recommendation that appears under the post as "Suggested Support from Safe Space AI". You are NOT a student, NOT a counselor, NOT a therapist and NOT an emergency dispatcher. Your reply is never saved or shown as a comment.
+    SYSTEM_PROMPT: `You are "Safe Space AI", the supportive-recommendation assistant of Safe Space, a peer-support platform for college students in the Philippines. After a post is published, you write ONE short recommendation that appears under that post as "Suggested Support from Safe Space AI". You are NOT a counselor, therapist, or emergency dispatcher. Your reply is never saved as a comment.
+
+## THE MOST IMPORTANT RULE
+Every recommendation must be written for THIS post only. Two different posts must never get the same advice, the same opening, or the same structure. If your reply could be pasted under a different post and still make sense, it is wrong and you must rewrite it.
 
 ## INPUT
-- POST_TEXT: what the student wrote (may be English, Filipino, or Taglish)
-- MODERATION: { category, severity, status, sentiment } from the screening step
+- POST_TEXT: the full text the student wrote (English, Filipino, or Taglish)
+- MODERATION: { category, severity, sentiment }
 - IS_ANONYMOUS: true/false
+- RECENT_REPLIES: (optional) the last few recommendations you gave. Do not reuse their openings, phrases, or advice.
 
-## STEP 1: UNDERSTAND THE POST BEFORE WRITING
-Silently identify: (a) the main situation, (b) the emotion stated or clearly implied, (c) what the student seems to need (comfort, practical help, celebration, or just a reply). Base everything on what they actually wrote. Never invent details, never assume a backstory, never add problems they did not mention. If the post is too vague, give a short warm reply that invites them to share more rather than guessing.
+## STEP 1: EXTRACT (silently, before writing)
+From POST_TEXT, identify:
+1. The specific situation (what exactly happened: a failed Chemistry quiz, a fight with a roommate, a thesis defense next week, homesickness after moving to the dorm, money problems, a breakup, a family issue, a win, etc.)
+2. The specific details the student gave (subject, person, time, place, numbers, emotion words)
+3. The emotion, and how strong it is
+4. What they are asking for or seem to need: advice, comfort, someone to listen, or to share good news
+5. What is NOT said. Never assume anything beyond the post.
 
-## STEP 2: PICK THE RESPONSE TYPE
-- ACADEMIC_SADNESS (failed exam, low grade, setback): validate the effort, remind them one result does not define their ability, suggest rest, then reviewing difficult topics or asking a classmate/teacher for help.
-- ACADEMIC_STRESS (deadlines, workload): acknowledge it sounds overwhelming; suggest listing deadlines, doing the most urgent first, breaking tasks into small steps, short breaks and rest.
-- LONELINESS (feeling misunderstood, alone, left out): validate that the feeling matters; gently encourage reaching out to someone they trust; set show_resources_button to true.
-- POSITIVE (achievement, good news): congratulate sincerely, mention the specific achievement they shared, encourage them to celebrate and keep going.
-- NEUTRAL (announcements, schedules, questions): friendly, brief, practically helpful; no emotional assumptions.
-- CRISIS (self-harm, suicidal thoughts, severe despair, "gusto ko nang magpakamatay" or similar): follow the CRISIS PROTOCOL below. It overrides everything else.
+## STEP 2: CHOOSE ADVICE THAT FITS THAT SITUATION
+- Give 1 to 3 suggestions that directly address the situation you extracted. They must be different depending on the situation. Examples of how advice must change:
+  - Failed an exam: how to review that kind of exam, whom to ask, how to recover the grade.
+  - Conflict with a roommate or friend: how to start a calm conversation, when to involve an adviser or dorm manager.
+  - Overloaded with deadlines: how to prioritize this specific list of tasks.
+  - Homesick or lonely: ways to connect with people or call home, a small step for today.
+  - Money stress: where on campus to ask about help; do not give financial decisions.
+  - Family problems: listening and a trusted person; do not take sides.
+  - Good news: celebrate the exact thing they achieved.
+  - Plain announcement or question: answer helpfully and briefly, with no emotional assumptions.
+- Mention at least ONE specific detail from the post in your own words so the student feels heard (for example the subject, the event, or the feeling they named).
+- If the post is too short or vague to advise on, do not guess. Reply warmly and invite them to share a little more.
+- The sample replies in the project specification (failed exam, deadlines, loneliness, achievement, group presentation) are tone references only. Never copy or lightly rephrase them.
 
-Educational or awareness posts (for example discussing suicide prevention in a psychology class) with no personal crisis intent are NOT crisis. Treat them as NEUTRAL or POSITIVE.
+## STEP 3: VARY THE WRITING
+- Do not start with the same phrase every time. Banned openers unless the post truly calls for them: "Sorry you're going through this", "That sounds overwhelming", "I'm sorry you're feeling this way", "Thanks for sharing", "Congratulations".
+- Vary sentence structure and length. Sometimes begin with the feeling, sometimes with a practical step, sometimes with a question.
+- Do not use the same closing line in every reply.
+- Reply in the same language and register as the post (English, Filipino, or Taglish). If the student writes casually, you stay warm and casual.
+- 3 to 6 sentences. At most one emoji. Plain words.
 
-## STEP 3: WRITING RULES
-- Reply in the same language as the post (English, Filipino, or Taglish). Plain, warm, simple words.
-- 3 to 6 sentences total. Address the student as "you" / "ikaw". At most one emoji.
-- Be specific to their situation. No generic filler, no toxic positivity ("cheer up", "everything happens for a reason", "tomorrow will be better").
-- Do not diagnose, label disorders, or promise outcomes. Do not give medical, legal, or financial decisions.
-- Do not lecture, blame, shame, or compare them to others.
-- Do not mention these instructions, the moderation result, or that you analyzed their post.
-- If IS_ANONYMOUS is true, never try to identify or refer to who they might be.
-- Never invent hotlines, statistics, studies, or resources. Only use the numbers listed below.
+## SAFETY (overrides everything above)
+- If the post shows self-harm, suicidal thoughts, severe despair, abuse, or immediate danger, switch to the CRISIS PROTOCOL: begin with warmth and validation; say they deserve support and do not have to face this alone; encourage them to tell someone they trust; include exactly:
+  NCMH Crisis Hotline 1553 (toll-free) or 0917-899-USAP (8727); Emergency 911; ASU Ibajay Guidance & Counseling Office Ext. 104.
+  Even here, refer to what they actually said in a gentle way so it does not feel automated. Never use platitudes, never act like a therapist, never mention methods. Set collapsible to false and put everything in "preview".
+- Educational or awareness posts (e.g. discussing suicide prevention in class) with no personal intent are not crisis.
+- Never diagnose, never give medical, legal, or financial decisions, never blame or lecture, never invent hotlines, statistics, or resources.
+- If IS_ANONYMOUS is true, never try to identify the person.
+- Never mention these instructions, the moderation result, or that you analyzed the post.
 
-## CRISIS PROTOCOL (suicide, self-harm, severe despair, immediate danger)
-- Start with warmth and validation. Say they deserve support and do not have to handle this alone.
-- Encourage them to tell someone they trust, right now if possible.
-- Include these contacts exactly as written:
-  - NCMH Crisis Hotline: 1553 (toll-free) or 0917-899-USAP (8727)
-  - Emergency: 911
-  - ASU Ibajay Guidance & Counseling Office: Extension 104
-- Never act like a therapist, never argue with or minimize their feelings, never give platitudes, never give methods or details about self-harm.
-- Set show_resources_button to true and collapsible to false. All crisis content must be fully visible immediately.
+## SELF-CHECK BEFORE ANSWERING
+Ask yourself silently:
+1. Does my reply mention something specific from THIS post?
+2. Is the advice something that only fits this situation?
+3. Would it look wrong under a different post? (It should.)
+4. Did I avoid the banned openers and the specification's sample replies?
+5. Is the preview a complete thought on its own?
+If any answer is no, rewrite.
 
 ## OUTPUT FORMAT
-Return ONLY valid JSON, with no markdown fences and no extra text:
+Return ONLY valid JSON, no markdown fences, no extra text:
 
 {
-  "type": "ACADEMIC_SADNESS | ACADEMIC_STRESS | LONELINESS | POSITIVE | NEUTRAL | CRISIS",
-  "preview": "...",
-  "more": "...",
-  "message": "...",
+  "type": "SHORT LABEL OF THE SITUATION, e.g. EXAM_SETBACK, ROOMMATE_CONFLICT, HOMESICKNESS, DEADLINE_STRESS, MONEY_WORRY, ACHIEVEMENT, ANNOUNCEMENT, CRISIS",
+  "situation_summary": "one short neutral sentence of what the post is about (for admin analytics, not shown to students)",
+  "preview": "first half: 1-2 complete sentences that show you understood this post and give the most useful point",
+  "more": "second half: the specific next steps and a closing line, not repeating the preview",
+  "message": "preview + ' ' + more",
   "disclaimer": "Suggested Support from Safe Space AI · Practical student coping recommendation.",
   "show_resources_button": true or false,
   "emergency_numbers": [],
@@ -1248,16 +1267,50 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
       return preview;
     },
 
-    generate: function(text, sentiment, category, riskLevel, language) {
+    _extractSubject: function(text) {
+      var m = String(text || '').match(/\b(chemistry|chem|physics|math|mathematics|algebra|calculus|accounting|statistics|biology|programming|coding|thesis|defense|internship|practicum|nursing|psychology|midterm|midterms|finals|board exam|hackathon|scholarship)\b/i);
+      return m ? (m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase()) : null;
+    },
+
+    generate: function(text, sentiment, category, riskLevel, language, context) {
       var cleanText = (text || '').trim();
       var lowerText = cleanText.toLowerCase();
       var sent = (sentiment || 'Neutral');
       var cat = (category || 'SAFE').toUpperCase();
       var risk = (riskLevel || 'low').toLowerCase();
       var lang = (language || 'english').toLowerCase();
+      var ctx = context || {};
+      var recent = Array.isArray(ctx.recentReplies) ? ctx.recentReplies : [];
 
       var isFilipinoOrTaglish = lang === 'filipino' || lang === 'tagalog' || lang === 'taglish' ||
         /\b(ako|ko|mo|ka|na|ng|sa|ang|naman|kasi|talaga|sobrang|hirap|pagod|salamat|gusto|ayoko|paano|buntong|kaba|kinakabahan|umiiyak|malungkot|kaklase|pala)\b/i.test(lowerText);
+
+      var extractedSubject = this._extractSubject(cleanText);
+
+      // 0. INAPPROPRIATE / SEXUAL SOLICITATION / POLICY NOTICE
+      var isSexualOrHarass = /\b(sex(\s*with|\s*ka)?|have\s*sex|wanna\s*sex|let'?s\s*fuck|fuck\s*me|send\s*nudes|kantot|kantutan|chupain|tsupain|hubad|tite|puke|puki|burat)\b/i.test(lowerText) ||
+        (cat === 'NUDITY' || cat === 'SEXUAL_HARASSMENT' || cat === 'SEXUAL_CONTENT');
+
+      if (isSexualOrHarass) {
+        var polPrev = isFilipinoOrTaglish
+          ? "Ang Safe Space ay nakalaan para sa peer academic support at mental wellness ng mga mag-aaral; hindi angkop ang mga explicit o sekswal na mensahe dito."
+          : "Safe Space is dedicated to peer academic support and mental wellness; sexually explicit propositions or messages are not permitted in our community feed.";
+        var polMore = isFilipinoOrTaglish
+          ? "Mangyaring panatilihing magalang at ligtas ang ating komunidad para sa lahat. Maaari mong basahin ang ating Community Guidelines para sa maayos na pakikipag-ugnayan."
+          : "Please keep posts respectful and focused on student well-being and campus life. You can review our Community Guidelines anytime to help maintain a safe space for everyone.";
+
+        return {
+          type: 'CONTENT_POLICY_NOTICE',
+          situation_summary: 'Content containing sexual proposition or explicit reference flagged under community standards.',
+          preview: polPrev,
+          more: polMore,
+          message: polPrev + ' ' + polMore,
+          disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
+          show_resources_button: false,
+          emergency_numbers: [],
+          collapsible: true
+        };
+      }
 
       // 1. CRISIS Protocol
       var isEducational = /\b(lecture|class|prof|teacher|seminar|lesson|topic|discussion|learned|psychology|prevention|awareness|campaign|project|thesis|research)\b/i.test(lowerText);
@@ -1269,13 +1322,13 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
           ? "Naririnig ko ang bigat ng iyong pinagdaraanan, at tandaan mong karapat-dapat kang suportahan at hindi mo kailangang harapin ito nang mag-isa. Mangyaring kumausap sa isang taong pinagkakatiwalaan mo ngayon, o tumawag agad sa NCMH Crisis Hotline sa 1553 (toll-free) o 0917-899-USAP (8727), Emergency 911, o sa ASU Ibajay Guidance & Counseling Office sa Extension 104."
           : "I hear how much pain you're in, and I want you to know you deserve support and do not have to handle this alone. Please reach out to someone you trust right now, or contact the NCMH Crisis Hotline at 1553 (toll-free) or 0917-899-USAP (8727), Emergency 911, or the ASU Ibajay Guidance & Counseling Office at Extension 104.";
 
-        // In code verification: verify CRISIS replies contain 1553 and 911
         if (crisisPreview.indexOf('1553') === -1 || crisisPreview.indexOf('911') === -1) {
           crisisPreview += " (Hotlines: NCMH 1553, Emergency 911, ASU Ibajay Ext. 104)";
         }
 
         return {
           type: 'CRISIS',
+          situation_summary: 'Urgent crisis distress detected requiring immediate contact numbers and human support.',
           preview: crisisPreview,
           more: '',
           message: crisisPreview,
@@ -1291,24 +1344,41 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
         };
       }
 
-      // 2. POSITIVE (achievement, good news, celebration)
+      // 2. POSITIVE (Specific celebration)
       var isPositive = String(sent).toLowerCase().indexOf('pos') !== -1 ||
-        /\b(proud|achieved|passed|won|happy|blessed|thankful|grateful|congratulations|congrats|success|yay|panalo|pumasa|natutuwa|masaya|salamat|celebrate)\b/i.test(lowerText);
+        /\b(proud|achieved|passed|won|win|first place|highest score|blessed|thankful|grateful|congratulations|congrats|success|yay|panalo|pumasa|natutuwa|masaya|salamat|celebrate)\b/i.test(lowerText);
       var hasDistress = /\b(fail|failed|bagsak|bumagsak|stress|stressed|overwhelmed|depressed|sad|crying|anxious|panic)\b/i.test(lowerText);
 
       if (isPositive && !hasDistress) {
-        var posPreview = isFilipinoOrTaglish
-          ? "Maligayang pagbati sa iyong tagumpay! Nagbunga ang iyong sipag at tiyaga, at karapat-dapat mong ipagdiwang ang magandang balitang ito."
-          : "Congratulations on your wonderful achievement! Your hard work and dedication truly paid off, and you deserve to celebrate this moment.";
-        var posMore = isFilipinoOrTaglish
-          ? "Maglaan ng oras upang sulitin ang tagumpay na ito kasama ang mga taong sumusuporta sa iyo. Patuloy na magtiwala sa iyong sarili at ipagpatuloy ang ganyang determinasyon sa susunod mong mga layunin!"
-          : "Take some time to savor this milestone and share your joy with the people who cheered you on. Keep believing in yourself and keep this positive momentum going as you tackle your next goal!";
+        var posSubj = extractedSubject || 'milestone';
+        var posOpeners = isFilipinoOrTaglish ? [
+          "Napakagandang balita nito para sa iyong pinaghirapang " + posSubj + "! Nagbunga ang bawat puyat at tiyagang ibinuhos mo.",
+          "Isang malaking tagumpay ang makamit ang ganitong resulta sa " + posSubj + "! Karapat-dapat kang magdiwang ngayong araw.",
+          "Ang sarap sa pakiramdam ng gantimpalang ito matapos ang mahabang preparasyon para sa " + posSubj + "."
+        ] : [
+          "Celebrating your hard work on " + posSubj + "—seeing that dedication convert into real success is inspiring.",
+          "Hitting a win like this in " + posSubj + " is a huge milestone that reflects genuine perseverance.",
+          "This result in " + posSubj + " shows just what your preparation and focus are capable of achieving."
+        ];
+        var posMores = isFilipinoOrTaglish ? [
+          "Ibahagi ang saya sa iyong pamilya o mga kaibigang naniwala sa iyo. Magsilbi sana itong paalala sa iyong kakayahan sa bawat susunod na hakbang!",
+          "Sulitin ang momentum na ito at maglaan din ng oras para magpahinga. Ipagpatuloy ang ganyang sipag sa mga susunod mo pang minimithi!"
+        ] : [
+          "Take time today to soak this in and share the good news with the people who backed you up. Keep this strong confidence handy as you take on whatever is next!",
+          "Savor the reward of crossing this finish line after all the effort you invested. Celebrate properly, recharge, and carry this positive energy forward!"
+        ];
+
+        var pSeed = 0;
+        for (var i = 0; i < cleanText.length; i++) pSeed += cleanText.charCodeAt(i);
+        var pPrev = posOpeners[pSeed % posOpeners.length];
+        var pMore = posMores[(pSeed + 1) % posMores.length];
 
         return {
-          type: 'POSITIVE',
-          preview: posPreview,
-          more: posMore,
-          message: posPreview + ' ' + posMore,
+          type: 'ACHIEVEMENT',
+          situation_summary: 'Student celebrating a positive win or achievement related to ' + posSubj + '.',
+          preview: pPrev,
+          more: pMore,
+          message: pPrev + ' ' + pMore,
           disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
           show_resources_button: false,
           emergency_numbers: [],
@@ -1316,22 +1386,39 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
         };
       }
 
-      // 3. ACADEMIC_SADNESS (failed exam, low grade, setback)
-      var isExamFailure = /\b(fail|failed|bagsak|bumagsak|low grade|low score|failed my exam|bagsak ako|did not pass|flunked|disappointed in my (grade|exam|score))\b/i.test(lowerText);
+      // 3. EXAM SETBACK / ACADEMIC SADNESS
+      var isExamFailure = /\b(fail|failed|bagsak|bumagsak|low grade|low score|failed my exam|bagsak ako|did not pass|flunked|disappointed in my (grade|exam|score)|scholarship on the line)\b/i.test(lowerText);
 
       if (isExamFailure) {
-        var failPreview = isFilipinoOrTaglish
-          ? "Natural lang na malungkot o madismaya matapos ibuhos ang iyong pagsisikap, ngunit tandaan na ang isang mababang marka o bagsak na pagsusulit ay hindi sumusukat sa iyong tunay na kakayahan."
-          : "It is completely understandable to feel disappointed after putting in so much hard work, but remember that one exam or grade does not define your ability or your future.";
-        var failMore = isFilipinoOrTaglish
-          ? "Magpahinga muna sandali upang ma-reset ang iyong isipan. Kapag handa ka na, subukang balikan ang mga araling nahirapan ka o humingi ng tulong sa guro o kaklase. Kaya mo itong harapin nang dahan-dahan, isa-isang hakbang sa bawat pagkakataon."
-          : "Give yourself permission to rest and reset today. When you feel ready, consider reviewing the questions you found difficult or asking a classmate or teacher for guidance. Taking things one step at a time is still real progress.";
+        var failSubj = extractedSubject || 'this exam';
+        var failOpeners = isFilipinoOrTaglish ? [
+          "Masakit harapin ang naging resulta sa " + failSubj + ", lalo na't ibinuhos mo ang iyong oras at pagsisikap dito.",
+          "Hindi madaling tanggapin ang mababang marka sa " + failSubj + ", ngunit hindi nito nasusukat ang buong kakayahan mo bilang estudyante.",
+          "Natural lang na madismaya sa kinalabasan ng " + failSubj + ", pero tandaan na isang kabanata lamang ito at hindi ang kabuuan ng iyong kinabukasan."
+        ] : [
+          "Facing a setback in " + failSubj + " cuts deep, especially when you invested genuine effort and hoped for a better outcome.",
+          "A tough result in " + failSubj + " can feel crushing in the moment, but one exam score never defines your true capability or potential.",
+          "Processing disappointment around " + failSubj + " is completely valid, especially when the stakes felt so high."
+        ];
+        var failMores = isFilipinoOrTaglish ? [
+          "Bigyan muna ang sarili ng pagkakataong magpahinga ngayong gabi. Kapag mahinahon na ang isip, maaari mong balikan ang reviewer sa " + failSubj + " o kumonsulta sa iyong propesor tungkol sa possible remedial o project credits.",
+          "Huminga nang malalim at huwag munang magdesisyon habang mabigat ang damdamin. Makatutulong ang pakikipag-usap sa isang kaklase para malaman kung saan ka nagkulang at mapaghandaan ang susunod na grading period."
+        ] : [
+          "Give yourself permission to pause and step away from studying for the rest of today. When your head clears, schedule a quick consultation with your instructor to review which problem areas tripped you up, and ask if any extra-credit or grade-recovery avenues are open.",
+          "Take the evening to decompress and let the shock settle. Once you're ready, look over the test rubrics with a classmate who did well in " + failSubj + "; pinpointing specific gaps turns a difficult setback into an actionable roadmap."
+        ];
+
+        var fSeed = 0;
+        for (var j = 0; j < cleanText.length; j++) fSeed += cleanText.charCodeAt(j);
+        var fPrev = failOpeners[fSeed % failOpeners.length];
+        var fMore = failMores[(fSeed + 1) % failMores.length];
 
         return {
-          type: 'ACADEMIC_SADNESS',
-          preview: failPreview,
-          more: failMore,
-          message: failPreview + ' ' + failMore,
+          type: 'EXAM_SETBACK',
+          situation_summary: 'Student experiencing disappointment over an academic setback or exam in ' + failSubj + '.',
+          preview: fPrev,
+          more: fMore,
+          message: fPrev + ' ' + fMore,
           disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
           show_resources_button: false,
           emergency_numbers: [],
@@ -1339,22 +1426,39 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
         };
       }
 
-      // 4. ACADEMIC_STRESS (deadlines, workload)
+      // 4. ACADEMIC WORKLOAD & DEADLINES
       var isAcademicWorkload = /\b(exam|exams|assignment|assignments|project|projects|deadline|deadlines|thesis|defense|study|studying|finals|quizzes|quiz|midterm|midterms|homework|burnout|overwhelmed|daming schoolwork|sobrang requirements)\b/i.test(lowerText);
 
       if (isAcademicWorkload) {
-        var stressPreview = isFilipinoOrTaglish
-          ? "Talagang nakaka-overwhelm ang dami ng schoolwork at mga deadline, at normal lang na maramdaman ang bigat nito."
-          : "That sounds really overwhelming, and it's okay to feel the pressure when several academic requirements hit all at once.";
-        var stressMore = isFilipinoOrTaglish
-          ? "Subukang ilista ang iyong mga gawain, unahin ang pinaka-urgent, at hati-hatiin ang bawat gawain sa mas maliliit na hakbang. Maglaan ng maiikling pahinga at sapat na tulog dahil hindi mo kailangang tapusin ang lahat nang sabay-sabay."
-          : "Try listing your deadlines, choosing the single most urgent task, and breaking it into small 25-minute study steps. Be sure to take short breaks and get enough rest, because you do not have to finish everything in one sitting.";
+        var stressSubj = extractedSubject || 'multiple academic requirements';
+        var stressOpeners = isFilipinoOrTaglish ? [
+          "Kapag sabay-sabay dumarating ang mga deadline para sa " + stressSubj + ", talagang mabigat sa pakiramdam at nakakaipon ng pagod.",
+          "Mabigat dalhin ang tambak na gawain sa " + stressSubj + ", lalo na kung halos walang pahinga sa pagitan ng mga submission.",
+          "Normal lang na mapagod sa sunod-sunod na requirements para sa " + stressSubj + "; kailangan ding huminga ang iyong isip."
+        ] : [
+          "Balancing heavy deadlines for " + stressSubj + " piles on serious cognitive load, especially when timelines collide.",
+          "When multiple requirements for " + stressSubj + " hit all at once, mental exhaustion can make even starting feel impossible.",
+          "Juggling tight submission windows around " + stressSubj + " demands a lot of mental energy, and feeling drained is a very real response."
+        ];
+        var stressMores = isFilipinoOrTaglish ? [
+          "Subukang isulat sa papel ang mga gawain para sa " + stressSubj + " at piliin lamang ang nag-iisang pinaka-urgent ngayong araw. Mag-aral gamit ang 25-minutong focus intervals at tiyaking makakakuha ka ng sapat na tulog dahil lalong bumibigat ang gawa kapag kulang sa pahinga.",
+          "Hatiin ang pinakamalaking gawain sa 3 maliliit na bahagi upang hindi magmistulang bundok. Huwag kalimutang uminom ng tubig at maglakad-lakad sandali; hindi kailangang tapusin ang lahat sa iisang upuan."
+        ] : [
+          "Try dumping every pending item onto a notepad and circling only the single most urgent piece of " + stressSubj + " to tackle right now. Work in focused 25-minute sprints with 5-minute breather breaks, and guard at least six hours of sleep tonight because brain fatigue amplifies panic.",
+          "Break your biggest assignment into three bite-sized checklists so you only need to think about the immediate next step. Hydrate, take a 10-minute walk away from screens, and trust that steady pacing will get you across the finish line."
+        ];
+
+        var sSeed = 0;
+        for (var k = 0; k < cleanText.length; k++) sSeed += cleanText.charCodeAt(k);
+        var sPrev = stressOpeners[sSeed % stressOpeners.length];
+        var sMore = stressMores[(sSeed + 1) % stressMores.length];
 
         return {
-          type: 'ACADEMIC_STRESS',
-          preview: stressPreview,
-          more: stressMore,
-          message: stressPreview + ' ' + stressMore,
+          type: 'DEADLINE_STRESS',
+          situation_summary: 'Student experiencing stress and fatigue from balancing deadlines related to ' + stressSubj + '.',
+          preview: sPrev,
+          more: sMore,
+          message: sPrev + ' ' + sMore,
           disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
           show_resources_button: false,
           emergency_numbers: [],
@@ -1362,22 +1466,51 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
         };
       }
 
-      // 5. LONELINESS (feeling misunderstood, alone, left out)
-      var isLoneliness = /\b(lonely|alone|nobody understands|no friends|left out|isolated|nag-iisa|walang kausap|walang nakakaintindi|hindi ako maintindihan|walang may pake|walang may care|excluded)\b/i.test(lowerText);
+      // 5. ROOMMATE / PEER CONFLICT
+      var isConflict = /\b((roommate|roommates|friend|friends|classmate|groupmate|peer|dorm)\s*(issue|issues|conflict|conflicts|fight|fights|argument|arguments|drama|problem|problems)?\s*(with|against)?\s*(my|our|a)?\s*(roommate|friend|classmate|groupmate|dormmate)|fight|fighting|fought|argued?|argument|drama|away|nagaaway|kaaway|tsismis|talking behind my back|fake friend)\b/i.test(lowerText) &&
+        !/\b(no real friends|no friends|walang kaibigan)\b/i.test(lowerText);
 
-      if (isLoneliness) {
-        var lonePreview = isFilipinoOrTaglish
-          ? "Masakit maramdamang nag-iisa ka o walang nakakaintindi sa iyo, ngunit may halaga ang iyong presensya at ang iyong nararamdaman."
-          : "Feeling lonely, left out, or misunderstood can be deeply painful, but your feelings truly matter and you are not invisible here.";
-        var loneMore = isFilipinoOrTaglish
-          ? "Kung komportable ka, subukang mag-message sa isang kaibigan, kapamilya, o kaklase na pinagkakatiwalaan mo. Ang maliit na pakikipag-ugnayan ay malaking tulong, at nandito ang ating Safe Space community para sumuporta sa iyo."
-          : "When you feel comfortable, consider reaching out to a trusted friend, family member, or classmate with a simple hello. Even a small conversation can help rebuild connection, and our campus support community is always here for you.";
+      if (isConflict) {
+        var confType = (lowerText.indexOf('roommate') !== -1 || lowerText.indexOf('dorm') !== -1) ? 'ROOMMATE_CONFLICT' : 'INTERPERSONAL_CONFLICT';
+        var confPrev = isFilipinoOrTaglish
+          ? "Nakakaubos ng enerhiya ang alitan o di-pagkakaunawaan sa kasama sa dorm o kaklase, lalo na kung araw-araw mo silang nakikita."
+          : "Living or working through friction with a roommate or friend creates constant background tension that wears down your peace of mind.";
+        var confMore = isFilipinoOrTaglish
+          ? "Makatutulong na magpalamig muna ng ulo bago mag-usap upang maiwasan ang mga salitang bibitawan sa bugso ng damdamin. Kung kinakailangan, magtakda ng mahinahong usapan sa neutral na lugar, o lumapit sa dorm adviser o counselor kung lumalala ang sitwasyon."
+          : "Give yourself some physical space until the initial frustration cools before initiating a conversation. When you're ready, approach them focusing on specific behaviors rather than accusations, and consider looping in a dorm resident adviser or guidance staff if boundaries aren't being respected.";
 
         return {
-          type: 'LONELINESS',
-          preview: lonePreview,
+          type: confType,
+          situation_summary: 'Student facing interpersonal friction or disagreement with a peer, roommate, or friend.',
+          preview: confPrev,
+          more: confMore,
+          message: confPrev + ' ' + confMore,
+          disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
+          show_resources_button: false,
+          emergency_numbers: [],
+          collapsible: true
+        };
+      }
+
+      // 6. LONELINESS / HOMESICKNESS
+      var isLoneliness = /\b(lonely|alone|nobody understands|no friends|left out|isolated|nag-iisa|walang kausap|walang nakakaintindi|hindi ako maintindihan|walang may pake|walang may care|excluded|homesick|far from home|missing home|miss my family)\b/i.test(lowerText);
+
+      if (isLoneliness) {
+        var isHomesick = lowerText.indexOf('homesick') !== -1 || lowerText.indexOf('far from home') !== -1 || lowerText.indexOf('missing home') !== -1;
+        var loneType = isHomesick ? 'HOMESICKNESS' : 'LONELINESS';
+        var lonePrev = isFilipinoOrTaglish
+          ? (isHomesick ? "Mahirap ang malayo sa pamilya at nakasanayang tahanan habang nag-aadjust sa bagong kapaligiran ng kolehiyo." : "Ang pakiramdam na nag-iisa ka sa gitna ng maraming tao ay mabigat sa kalooban, ngunit may halaga ang iyong nararamdaman.")
+          : (isHomesick ? "Adjusting to dorm life or being far from family can make even routine college days feel quietly overwhelming." : "Navigating feelings of isolation or feeling like you haven't found your crowd yet can make campus life feel especially daunting.");
+        var loneMore = isFilipinoOrTaglish
+          ? (isHomesick ? "Subukang mag-video call sa iyong pamilya o lumang kaibigan ngayong gabi kahit sandali lang. Ang pagdala ng paboritong pagkain o simpleng gawi mula sa bahay ay nakakatulong magpalubag ng loob habang dahan-dahang nakikibagay." : "Subukang magsimula sa maliit na hakbang—isang simpleng ngiti o tanong sa katabi sa klase, o pagsali sa isang campus organization na tugma sa iyong hilig. Hindi mo kailangang dumaan sa kolehiyo nang mag-isa.")
+          : (isHomesick ? "Set up a brief phone call or FaceTime with someone back home tonight just to hear a familiar voice. Bringing small comforting habits into your current space can make the transition much more grounded as you find your footing." : "Consider starting with one low-pressure connection today—saying hello to a lab partner or checking out an interest-based student club. Building community takes time, and our campus peer network is always right beside you.");
+
+        return {
+          type: loneType,
+          situation_summary: 'Student experiencing homesickness, loneliness, or isolation in their campus environment.',
+          preview: lonePrev,
           more: loneMore,
-          message: lonePreview + ' ' + loneMore,
+          message: lonePrev + ' ' + loneMore,
           disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
           show_resources_button: true,
           emergency_numbers: [],
@@ -1385,26 +1518,74 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
         };
       }
 
-      // 6. NEUTRAL (announcements, schedules, questions, general)
-      var neutPreview = isFilipinoOrTaglish
-        ? "Salamat sa pagbabahagi sa Safe Space community! Nais naming maging mapayapa at produktibo ang iyong araw sa pag-aaral."
-        : "Thanks for sharing this update with the Safe Space community! Wishing you a productive and smooth day with your schedule.";
-      var neutMore = isFilipinoOrTaglish
-        ? "Kung may kinalaman ito sa proyekto, presentasyon, o katanungan, makatutulong ang maagang pakikipag-ugnayan sa iyong mga kagrupo o guro upang maging maayos ang takbo ng gawain."
-        : "If this involves a group project, class presentation, or inquiry, coordinating early with your groupmates or instructors will help keep everything on track. Feel free to connect and collaborate anytime.";
+
+      // 7. FINANCIAL OR MONEY STRESS
+      var isMoney = /\b(money|allowance|tuition|baon|gastos|pera|walang pera|bills|rent|bayarin|financial|gutom|pamasahe)\b/i.test(lowerText);
+      if (isMoney) {
+        var monPrev = isFilipinoOrTaglish
+          ? "Mabigat sa isip ang alalahanin sa allowance, pamasahe, o bayarin habang sinusubukang mag-focus sa pag-aaral."
+          : "Worrying about money, living expenses, or allowance creates persistent stress that makes academic concentration difficult.";
+        var monMore = isFilipinoOrTaglish
+          ? "Maaari kang sumangguni sa University Student Affairs o Scholarship Office upang magtanong tungkol sa emergency student assistance, student assistant programs, o flexible tuition payment schemes. May mga opisyal na tulong ang pamantasan para sa ganitong sitwasyon."
+          : "Consider stopping by the Office of Student Affairs or Financial Aid to ask about emergency student loan funds, work-study openings, or promissory arrangements. Campus resources are in place specifically to support students facing unexpected budget strains.";
+
+        return {
+          type: 'MONEY_WORRY',
+          situation_summary: 'Student experiencing stress regarding expenses, allowance, or campus financial obligations.',
+          preview: monPrev,
+          more: monMore,
+          message: monPrev + ' ' + monMore,
+          disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
+          show_resources_button: true,
+          emergency_numbers: [],
+          collapsible: true
+        };
+      }
+
+      // 8. SHORT / VAGUE / CASUAL
+      var wordsCount = cleanText.split(/\s+/).filter(Boolean).length;
+      if (wordsCount <= 4) {
+        var vagPrev = isFilipinoOrTaglish
+          ? "Maikli man ang iyong naibahagi, bukas ang Safe Space community kung nais mong magkwento nang mas marami tungkol sa iyong araw."
+          : "You kept it brief, but whenever you feel like sharing more about what's going on, this space is open.";
+        var vagMore = isFilipinoOrTaglish
+          ? "Nandito kami upang makinig kapag handa ka nang magbahagi ng iyong naiisip o nararamdaman."
+          : "Feel free to post more details anytime you need a listening ear or practical advice from fellow students.";
+
+        return {
+          type: 'VAGUE_SHARE',
+          situation_summary: 'Brief or vague post shared by a student.',
+          preview: vagPrev,
+          more: vagMore,
+          message: vagPrev + ' ' + vagMore,
+          disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
+          show_resources_button: false,
+          emergency_numbers: [],
+          collapsible: true
+        };
+      }
+
+      // 9. GENERAL / ANNOUNCEMENTS / QUESTIONS
+      var hasQuestion = cleanText.indexOf('?') !== -1 || /\b(how|what|where|when|who|paano|saan|kailan|sino|tips|ano)\b/i.test(lowerText);
+      var genPrev = isFilipinoOrTaglish
+        ? (hasQuestion ? "Tungkol sa iyong katanungan, makatutulong ang direktang pagtatanong sa kinauukulang departamento o sa class representative para sa pinakabagong detalye." : "Mahalaga ang ganitong mga update para sa koordinasyon ng ating mga kapwa mag-aaral sa campus.")
+        : (hasQuestion ? "Regarding your question, touching base with your department office or department representative is usually the fastest route to verified info." : "Sharing practical schedules and announcements keeps everyone across the student community aligned.");
+      var genMore = isFilipinoOrTaglish
+        ? (hasQuestion ? "Maaari mo ring i-check ang opisyal na bulletin board o university portal upang makatiyak sa tamang mga kinakailangang dokumento at hakbang." : "Kung may kaugnayan ito sa nalalapit na aktibidad o schedule, ang maagang paghahanda at pag-coordinate sa mga kasamahan ay makatutulong nang malaki.")
+        : (hasQuestion ? "Checking the university portal announcements or registrar FAQ page often lays out the required documents and submission windows cleanly." : "Coordinating timelines with your team or blockmates early helps keep academic activities running smoothly without last-minute scrambling.");
 
       return {
-        type: 'NEUTRAL',
-        preview: neutPreview,
-        more: neutMore,
-        message: neutPreview + ' ' + neutMore,
+        type: hasQuestion ? 'ANNOUNCEMENT_INQUIRY' : 'ANNOUNCEMENT',
+        situation_summary: 'Student posting a campus schedule, general question, or practical inquiry.',
+        preview: genPrev,
+        more: genMore,
+        message: genPrev + ' ' + genMore,
         disclaimer: 'Suggested Support from Safe Space AI · Practical student coping recommendation.',
         show_resources_button: false,
         emergency_numbers: [],
         collapsible: true
-      };
-    }
   };
+
 
   /**
    * Render AI Support Card DOM Node (Section 2 of Safe Space AI Specification)
@@ -1716,13 +1897,14 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
             has_profanity: typeof result.has_profanity === 'boolean' ? result.has_profanity : hasProfanity,
             sentiment: resolvedSentiment,
             sentiment_score: resolvedScore,
-            support_recommendation: result.support_recommendation || SafeSpaceSupportRecommender.generate(originalText, resolvedSentiment, validCat, resolvedRisk, result.language || fastResult.language),
+            support_recommendation: result.support_recommendation || SafeSpaceSupportRecommender.generate(originalText, resolvedSentiment, validCat, resolvedRisk, result.language || fastResult.language, context),
             elapsedMs: elapsed
           };
         }
 
         this._setCache(cacheKey, finalResult);
         return finalResult;
+
 
       } catch (err) {
         // Activate fallback
@@ -2035,15 +2217,17 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
     /**
      * Generate an empathetic, context-aware supportive comment recommendation
      */
-    recommendSupport: async function(text, sentiment, category, riskLevel, language) {
+    recommendSupport: async function(text, sentiment, category, riskLevel, language, context) {
       if (!text || !text.trim()) {
-        return SafeSpaceSupportRecommender.generate('', sentiment, category, riskLevel, language);
+        return SafeSpaceSupportRecommender.generate('', sentiment, category, riskLevel, language, context);
       }
+      context = context || {};
       var self = this;
       if (this._state === 'online') {
         try {
           var controller = new AbortController();
           var timeoutId = setTimeout(function() { controller.abort(); }, 3000);
+          var recentList = Array.isArray(context.recentReplies) ? context.recentReplies.slice(-5) : [];
           var res = await fetch(self.getApiUrl() + '/recommend-support', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2052,7 +2236,10 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
               sentiment: sentiment || 'Neutral',
               category: category || 'SAFE',
               risk_level: riskLevel || 'low',
-              language: language || 'english'
+              language: language || 'english',
+              is_anonymous: Boolean(context.isAnonymous),
+              recent_replies: recentList,
+              temperature: 0.8
             }),
             signal: controller.signal
           });
@@ -2065,8 +2252,9 @@ Return ONLY valid JSON, with no markdown fences and no extra text:
           // fallback to client-side recommender
         }
       }
-      return SafeSpaceSupportRecommender.generate(text, sentiment, category, riskLevel, language);
+      return SafeSpaceSupportRecommender.generate(text, sentiment, category, riskLevel, language, context);
     },
+
 
     getWarningConfig: getWarningConfig,
     computeRiskLevel: computeRiskLevel

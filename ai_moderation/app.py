@@ -81,6 +81,9 @@ class SupportRequest(BaseModel):
     category: Optional[str] = "SAFE"
     risk_level: Optional[str] = "low"
     language: Optional[str] = "english"
+    is_anonymous: Optional[bool] = False
+    recent_replies: Optional[List[str]] = []
+    temperature: Optional[float] = 0.8
 
 
 class KeywordRequest(BaseModel):
@@ -326,8 +329,12 @@ async def recommend_support_endpoint(request: SupportRequest):
         sentiment=request.sentiment or "Neutral",
         category=request.category or "SAFE",
         risk_level=request.risk_level or "low",
-        language=request.language or "english"
+        language=request.language or "english",
+        is_anonymous=request.is_anonymous or False,
+        recent_replies=request.recent_replies or [],
+        temperature=request.temperature or 0.8
     )
+
     return {
         "success": True,
         "recommendation": rec

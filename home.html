@@ -1074,6 +1074,7 @@
         aiMetaStore = {};
       }
 
+      const feedRecentReplies = [];
       container.innerHTML = posts.map(post => {
         try {
           if (!post) return '';
@@ -1155,8 +1156,22 @@
             try { rec = JSON.parse(rec); } catch (e) {}
           }
           if (!rec && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender && post.content) {
-            rec = window.SafeSpaceSupportRecommender.generate(post.content, currentSentiment, post.moderation_category || 'SAFE');
+            rec = window.SafeSpaceSupportRecommender.generate(
+              post.content,
+              currentSentiment,
+              post.moderation_category || 'SAFE',
+              (pMeta && pMeta.risk_level) || 'low',
+              (pMeta && pMeta.language) || 'english',
+              {
+                isAnonymous: isAnon,
+                recentReplies: feedRecentReplies.slice(-5)
+              }
+            );
           }
+          if (rec && (rec.preview || rec.message)) {
+            feedRecentReplies.push(rec.preview || rec.message);
+          }
+
 
           let supportRecHtml = '';
           if (rec && (rec.preview || rec.message)) {
@@ -1719,8 +1734,15 @@
           };
 
           if (window.AIService && originalText) {
-            aiResult = await AIService.moderate(originalText);
+            const lastReplies = (typeof feedRecentReplies !== 'undefined' && Array.isArray(feedRecentReplies))
+              ? feedRecentReplies.slice(-5)
+              : [];
+            aiResult = await AIService.moderate(originalText, {
+              isAnonymous: Boolean(postState.isAnonymous),
+              recentReplies: lastReplies
+            });
           }
+
 
           // Pre-censor profanity using asterisks rule for published content
           let censoredContent = SafeSpaceDB.censorProfanity(originalText);
