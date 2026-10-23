@@ -1159,28 +1159,56 @@
           }
 
           let supportRecHtml = '';
-          if (rec && rec.message) {
+          if (rec && (rec.message || rec.preview)) {
+            const rawMessage = rec.message || rec.preview || '';
+            const previewText = rec.preview || (window.SafeSpaceSupportRecommender ? window.SafeSpaceSupportRecommender.cleanPreview(rawMessage, 35) : rawMessage.slice(0, 150) + '...');
+            
+            // Format full message paragraphs cleanly
+            const fullParagraphs = rawMessage.split(/\r?\n+/).map(p => p.trim()).filter(Boolean);
+            const fullContentHtml = fullParagraphs.map(p => `<p class="ai-support-rec-paragraph">${escapeHTML(p)}</p>`).join('');
+
             const resBtn = rec.show_resources_button ? `
-              <a href="resources.html" class="ai-support-rec-resource-btn" title="View Verified Support Resources">
+              <a href="resources.html#support" class="ai-support-rec-resource-btn" title="View Verified Support Resources">
                 <i class="fas fa-hand-holding-heart"></i> View Support Resources
               </a>
             ` : '';
 
             supportRecHtml = `
-              <section class="ai-support-recommendation-card" aria-label="Suggested Support from Safe Space AI">
+              <section class="ai-support-recommendation-card" id="ai-rec-card-${post.id}" aria-label="Suggested Support from Safe Space AI">
                 <div class="ai-support-rec-header">
                   <div class="ai-support-rec-title">
                     <span class="ai-support-rec-spark"><i class="fas fa-sparkles"></i></span>
                     <span class="ai-support-rec-title-text">Suggested Support from Safe Space AI</span>
                   </div>
-                  <span class="ai-support-rec-badge"><i class="fas fa-robot"></i> AI Generated</span>
+                  <span class="ai-support-rec-badge"><i class="fas fa-robot"></i> AI GENERATED</span>
                 </div>
                 <div class="ai-support-rec-body">
-                  <p class="ai-support-rec-message">${escapeHTML(rec.message)}</p>
+                  <!-- Short Sneak Peek by default (~25-40 words) -->
+                  <div class="ai-support-rec-preview" id="ai-rec-preview-${post.id}">
+                    <p class="ai-support-rec-message preview-text">“${escapeHTML(previewText)}”</p>
+                  </div>
+
+                  <!-- Full Support Advice (Hidden until user clicks View More) -->
+                  <div class="ai-support-rec-full is-hidden" id="ai-rec-full-${post.id}" style="display:none;">
+                    <div class="ai-support-rec-full-header">
+                      <span class="ai-support-rec-full-title"><i class="fas fa-heart-pulse"></i> Full AI Support</span>
+                    </div>
+                    <div class="ai-support-rec-full-content">
+                      ${fullContentHtml}
+                    </div>
+                  </div>
                 </div>
+
+                <div class="ai-support-rec-actions">
+                  <button type="button" class="ai-support-rec-toggle-btn" id="ai-rec-btn-${post.id}" onclick="toggleAiSupportRec('${post.id}')" aria-expanded="false" aria-controls="ai-rec-full-${post.id}">
+                    <span class="ai-support-btn-text">View More</span>
+                    <i class="fas fa-chevron-down ai-support-btn-icon"></i>
+                  </button>
+                </div>
+
                 <div class="ai-support-rec-footer">
                   <span class="ai-support-rec-disclaimer">
-                    <i class="fas fa-shield-heart"></i> ${escapeHTML(rec.disclaimer || 'Suggested Support from Safe Space AI · Practical student coping recommendation.')}
+                    <i class="fas fa-shield-heart"></i> ${escapeHTML(rec.disclaimer || 'Suggested Support from Safe Space AI · Context-aware student support recommendation.')}
                   </span>
                   ${resBtn}
                 </div>
@@ -2891,6 +2919,34 @@
       window.location.href = `profile.html?user=${encodeURIComponent(targetId)}`;
     }
     window.handleAuthorClick = handleAuthorClick;
+  
+    // Interactive Sneak Peek / View More Toggle for Suggested Support from Safe Space AI
+    function toggleAiSupportRec(postId) {
+      const fullEl = document.getElementById(`ai-rec-full-${postId}`);
+      const previewEl = document.getElementById(`ai-rec-preview-${postId}`);
+      const btnEl = document.getElementById(`ai-rec-btn-${postId}`);
+      if (!fullEl || !btnEl) return;
+
+      const isExpanded = fullEl.style.display !== 'none' && !fullEl.classList.contains('is-hidden');
+      if (isExpanded) {
+        // Collapse back to sneak peek
+        fullEl.style.display = 'none';
+        fullEl.classList.add('is-hidden');
+        if (previewEl) previewEl.style.display = 'block';
+        btnEl.innerHTML = '<span class="ai-support-btn-text">View More</span> <i class="fas fa-chevron-down ai-support-btn-icon"></i>';
+        btnEl.setAttribute('aria-expanded', 'false');
+        btnEl.classList.remove('is-expanded');
+      } else {
+        // Expand to reveal full advice
+        fullEl.style.display = 'block';
+        fullEl.classList.remove('is-hidden');
+        if (previewEl) previewEl.style.display = 'none';
+        btnEl.innerHTML = '<span class="ai-support-btn-text">Show Less</span> <i class="fas fa-chevron-up ai-support-btn-icon"></i>';
+        btnEl.setAttribute('aria-expanded', 'true');
+        btnEl.classList.add('is-expanded');
+      }
+    }
+    window.toggleAiSupportRec = toggleAiSupportRec;
 
 </script>
 </body>
