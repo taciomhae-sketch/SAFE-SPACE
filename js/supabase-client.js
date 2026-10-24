@@ -1278,10 +1278,10 @@ var SafeSpaceDB = {
       if ((!ai_recommendation || (!ai_recommendation.preview && !ai_recommendation.message)) && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender) {
         ai_recommendation = window.SafeSpaceSupportRecommender.generate(
           content || '',
-          sentiment || 'NEUTRAL',
-          moderation_category || 'SAFE',
-          'low',
-          'english',
+          sentiment || (modCheck && modCheck.sentiment) || 'NEUTRAL',
+          moderation_category || (modCheck && modCheck.category) || 'SAFE',
+          (modCheck && modCheck.risk_level) || 'low',
+          (modCheck && modCheck.language) || 'english',
           {
             isAnonymous: is_anonymous,
             category: category,

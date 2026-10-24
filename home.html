@@ -538,6 +538,67 @@
     </div>
   </div>
 
+  <!-- Suggested Support from Safe Space AI Pop-Up Modal -->
+  <div class="modal-overlay" id="aiSupportModal" style="display:none; z-index:10005;" role="dialog" aria-modal="true" aria-labelledby="aiSupportModalTitle" onclick="if (event.target === this) closeAiSupportModal()">
+    <div class="modal-card" style="max-width:540px; width:92%; padding:22px; border-radius:20px; background:var(--card-bg, #fff); box-shadow:0 10px 40px rgba(108,79,209,0.18); border:1px solid var(--border, #E8E1FA);">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid var(--border, #EDE9FE); padding-bottom:12px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+            <span style="background:var(--primary, #6C4FD1); color:#fff; border-radius:999px; padding:3px 9px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+              <i class="fas fa-wand-magic-sparkles"></i> Safe Space AI
+            </span>
+            <span id="aiSupportModalTopicBadge" style="background:#EDE9FE; color:#6C4FD1; border-radius:999px; padding:3px 9px; font-size:11px; font-weight:700;">Support Recommendation</span>
+            <span id="aiSupportModalLangBadge" style="background:#F3F4F6; color:#4B5563; border-radius:999px; padding:3px 8px; font-size:10.5px; font-weight:600;">English</span>
+          </div>
+          <h3 id="aiSupportModalTitle" style="font-size:17px; font-weight:800; color:var(--text-dark, #1A1A2E); margin:0;">
+            Suggested Support from Safe Space AI
+          </h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeAiSupportModal()" aria-label="Close" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted, #9CA3AF); padding:2px 6px;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:0; max-height:65vh; overflow-y:auto;">
+        <!-- Core Preview Box -->
+        <div style="background:linear-gradient(135deg, #FAF8FF 0%, #F5F0FF 100%); border-left:4px solid #6C4FD1; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
+          <div style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#6C4FD1; letter-spacing:0.5px; margin-bottom:4px; display:flex; align-items:center; gap:5px;">
+            <i class="fas fa-comment-dots"></i> Core Guidance Preview
+          </div>
+          <p id="aiSupportModalPreviewText" style="font-size:13.5px; line-height:1.55; color:var(--text-dark, #2D3748); margin:0; font-style:italic;"></p>
+        </div>
+
+        <!-- Full Support Details -->
+        <div id="aiSupportModalFullContainer" style="display:none;">
+          <div style="font-size:12px; font-weight:800; text-transform:uppercase; color:#7C3AED; letter-spacing:0.4px; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-heart-pulse"></i> Comprehensive Support &amp; Next Steps
+          </div>
+          <div id="aiSupportModalFullText" style="font-size:13.5px; line-height:1.65; color:var(--text-dark, #374151); white-space:pre-line; margin-bottom:14px;"></div>
+        </div>
+
+        <!-- Emergency / Campus Contacts -->
+        <div id="aiSupportModalEmergencyBox" style="display:none; background:#FFF1F2; border:1px solid #FECDD3; border-radius:10px; padding:12px 14px; margin-top:12px;">
+          <div style="font-size:12px; font-weight:800; color:#BE123C; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-phone-volume"></i> Immediate Campus &amp; Crisis Contacts
+          </div>
+          <ul id="aiSupportModalEmergencyList" style="margin:0; padding-left:18px; font-size:12.5px; color:#9F1239; line-height:1.6;"></ul>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid var(--border, #EDE9FE); gap:10px;">
+        <span id="aiSupportModalDisclaimer" style="font-size:11px; color:#7a6fa8; line-height:1.3; flex:1;">
+          Suggested Support from Safe Space AI · Practical student coping recommendation.
+        </span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <a id="aiSupportModalResourceBtn" href="resources.html" class="btn" style="display:none; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:700; background:#EDE9FE; color:#6C4FD1; text-decoration:none;">
+            <i class="fas fa-hand-holding-heart"></i> Campus Resources
+          </a>
+          <button type="button" class="btn btn-secondary" onclick="closeAiSupportModal()" style="padding:8px 18px; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; background:#F3F4F6; color:#374151; border:none;">
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notifications Drawer Overlay -->
   <div class="notif-drawer-overlay" id="notifDrawerOverlay">
     <div class="notif-drawer">
@@ -1213,24 +1274,38 @@
           if (rec && (rec.preview || rec.message)) {
             feedRecentReplies.push(rec.preview || rec.message);
           }
+          if (post.id) {
+            window._aiSupportRecStore = window._aiSupportRecStore || {};
+            window._aiSupportRecStore[post.id] = rec;
+          }
 
           const previewText = rec.preview || rec.message || '';
           const disclaimerText = rec.disclaimer || 'Suggested Support from Safe Space AI · Practical student coping recommendation.';
-          const hasMore = rec.collapsible !== false && rec.more && rec.more.trim();
-          const moreText = hasMore ? rec.more.trim() : (rec.more || '');
+          const hasMore = rec.collapsible !== false && (rec.full_support || (rec.more && rec.more.trim()));
+          const moreText = hasMore ? (rec.more ? rec.more.trim() : rec.full_support) : '';
           const resBtnHtml = rec.show_resources_button ? `
             <a href="resources.html" class="ai-resources-btn">View Verified Support Resources</a>
           ` : '';
 
+          const topicBadgeHtml = rec.topic_label ? `<span style="font-size:10.5px; background:#EDE9FE; color:#6C4FD1; padding:2px 7px; border-radius:999px; font-weight:700;">${escapeHTML(rec.topic_label)}</span>` : '';
+
           const supportRecHtml = `
             <div class="ai-support" id="ai-support-${post.id}">
               <div class="ai-support-head">
-                <strong>Suggested Support from Safe Space AI</strong>
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <strong>Suggested Support from Safe Space AI</strong>
+                  ${topicBadgeHtml}
+                </div>
                 <span class="ai-badge"><i class="fas fa-wand-magic-sparkles"></i> AI Generated</span>
               </div>
               <p class="ai-support-text">${escapeHTML(previewText)}</p>
               <div class="ai-support-more" id="ai-support-more-${post.id}" ${hasMore ? 'hidden' : (moreText ? '' : 'hidden')}>${escapeHTML(moreText)}</div>
-              ${hasMore ? `<button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="toggleAiSupportViewMore('${post.id}')" aria-expanded="false">View more</button>` : ''}
+              ${hasMore ? `
+                <div style="display:flex; gap:10px; align-items:center; margin-top:6px;">
+                  <button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="openAiSupportModal('${post.id}')" aria-expanded="false" style="display:inline-flex; align-items:center; gap:5px; font-size:12.5px;">
+                    <i class="fas fa-circle-info"></i> View Full Support
+                  </button>
+                </div>` : ''}
               ${resBtnHtml}
               <div class="ai-support-foot">${escapeHTML(disclaimerText)}</div>
             </div>
@@ -2946,19 +3021,91 @@
     }
     window.handleAuthorClick = handleAuthorClick;
   
-    // Suggested Support from Safe Space AI: renderAiSupport DOM builder + View more toggle
+    // Suggested Support from Safe Space AI: renderAiSupport DOM builder + Pop-Up & View more toggle
+    window._aiSupportRecStore = window._aiSupportRecStore || {};
+
+    function openAiSupportModal(postId) {
+      const rec = window._aiSupportRecStore && window._aiSupportRecStore[postId];
+      const modal = document.getElementById('aiSupportModal');
+      if (!modal) return;
+
+      const topicBadge = document.getElementById('aiSupportModalTopicBadge');
+      const langBadge = document.getElementById('aiSupportModalLangBadge');
+      const previewEl = document.getElementById('aiSupportModalPreviewText');
+      const fullContainer = document.getElementById('aiSupportModalFullContainer');
+      const fullTextEl = document.getElementById('aiSupportModalFullText');
+      const emergencyBox = document.getElementById('aiSupportModalEmergencyBox');
+      const emergencyList = document.getElementById('aiSupportModalEmergencyList');
+      const resourceBtn = document.getElementById('aiSupportModalResourceBtn');
+      const disclaimerEl = document.getElementById('aiSupportModalDisclaimer');
+
+      if (rec) {
+        if (topicBadge) {
+          topicBadge.textContent = rec.topic_label || 'Support Recommendation';
+        }
+        if (langBadge) {
+          langBadge.textContent = rec.detected_language || 'English';
+        }
+        if (previewEl) {
+          previewEl.textContent = rec.preview || rec.message || '';
+        }
+        
+        const fullContent = rec.full_support || (rec.preview ? (rec.preview + (rec.more ? '\n\n' + rec.more : '')) : (rec.message || ''));
+        if (fullContainer && fullTextEl) {
+          fullTextEl.textContent = fullContent;
+          fullContainer.style.display = 'block';
+        }
+
+        if (emergencyBox && emergencyList) {
+          if (rec.emergency_numbers && rec.emergency_numbers.length > 0) {
+            emergencyList.innerHTML = rec.emergency_numbers.map(num => `<li>${escapeHTML(num)}</li>`).join('');
+            emergencyBox.style.display = 'block';
+          } else {
+            emergencyBox.style.display = 'none';
+          }
+        }
+
+        if (resourceBtn) {
+          resourceBtn.style.display = rec.show_resources_button ? 'inline-flex' : 'none';
+        }
+
+        if (disclaimerEl) {
+          disclaimerEl.textContent = rec.disclaimer || 'Suggested Support from Safe Space AI · Practical student coping recommendation.';
+        }
+      }
+
+      modal.style.display = 'flex';
+      modal.classList.add('open');
+    }
+    window.openAiSupportModal = openAiSupportModal;
+
+    function closeAiSupportModal() {
+      const modal = document.getElementById('aiSupportModal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('open');
+      }
+    }
+    window.closeAiSupportModal = closeAiSupportModal;
+
     function renderAiSupport(rec) {
       if (!rec) return null;
       const box = document.createElement('div');
       box.className = 'ai-support';
+      const topicHtml = rec.topic_label ? `<span style="font-size:10.5px; background:#EDE9FE; color:#6C4FD1; padding:2px 7px; border-radius:999px; font-weight:700;">${escapeHTML(rec.topic_label)}</span>` : '';
       box.innerHTML = `
         <div class="ai-support-head">
-          <strong>Suggested Support from Safe Space AI</strong>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <strong>Suggested Support from Safe Space AI</strong>
+            ${topicHtml}
+          </div>
           <span class="ai-badge"><i class="fas fa-wand-magic-sparkles"></i> AI Generated</span>
         </div>
         <p class="ai-support-text"></p>
         <div class="ai-support-more" hidden></div>
-        <button type="button" class="ai-view-more" hidden aria-expanded="false">View more</button>
+        <button type="button" class="ai-view-more" hidden aria-expanded="false" style="display:inline-flex; align-items:center; gap:5px; font-size:12.5px;">
+          <i class="fas fa-circle-info"></i> View Full Support
+        </button>
         <div class="ai-support-foot"></div>`;
 
       box.querySelector('.ai-support-text').textContent = rec.preview || rec.message || '';
@@ -2967,14 +3114,19 @@
       const more = box.querySelector('.ai-support-more');
       const btn = box.querySelector('.ai-view-more');
 
-      if (rec.collapsible !== false && rec.more && rec.more.trim()) {
-        more.textContent = rec.more;
+      if (rec.collapsible !== false && (rec.full_support || (rec.more && rec.more.trim()))) {
+        more.textContent = rec.full_support || rec.more;
         btn.hidden = false;
         btn.onclick = () => {
-          const opening = more.hidden;
-          more.hidden = !opening;
-          btn.textContent = opening ? 'View less' : 'View more';
-          btn.setAttribute('aria-expanded', String(opening));
+          if (rec.id && window._aiSupportRecStore) {
+            window._aiSupportRecStore[rec.id] = rec;
+            openAiSupportModal(rec.id);
+          } else {
+            const opening = more.hidden;
+            more.hidden = !opening;
+            btn.innerHTML = opening ? '<i class="fas fa-chevron-up"></i> Close Support' : '<i class="fas fa-circle-info"></i> View Full Support';
+            btn.setAttribute('aria-expanded', String(opening));
+          }
         };
       }
 
@@ -2992,11 +3144,15 @@
     function toggleAiSupportViewMore(postId) {
       const more = document.getElementById(`ai-support-more-${postId}`);
       const btn = document.getElementById(`ai-view-more-${postId}`);
-      if (!more || !btn) return;
-      const opening = more.hidden;
-      more.hidden = !opening;
-      btn.textContent = opening ? 'View less' : 'View more';
-      btn.setAttribute('aria-expanded', String(opening));
+      if (more) {
+        const opening = more.hidden;
+        more.hidden = !opening;
+        if (btn) {
+          btn.innerHTML = opening ? '<i class="fas fa-chevron-up"></i> Close Support' : '<i class="fas fa-circle-info"></i> View Full Support';
+          btn.setAttribute('aria-expanded', String(opening));
+        }
+      }
+      openAiSupportModal(postId);
     }
     window.toggleAiSupportViewMore = toggleAiSupportViewMore;
     window.toggleAiSupportRec = toggleAiSupportViewMore;
