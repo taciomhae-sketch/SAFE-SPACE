@@ -160,7 +160,7 @@ switch ($action) {
 
     // ── 3. USER MANAGEMENT (PROTECTED) ─────────────────────────────────
     case 'users':
-        $res = $client->request('GET', 'profiles?select=id,username,first_name,last_name,email,role,is_admin,is_deactivated,account_status,violation_count,created_at&order=created_at.desc');
+        $res = $client->request('GET', 'profiles?select=id,username,first_name,last_name,email,role,is_admin,student_id,approval_status,is_approved,is_deactivated,account_status,violation_count,created_at&order=created_at.desc');
         echo json_encode($res);
         break;
 
@@ -215,6 +215,56 @@ switch ($action) {
         $res = $client->request('PATCH', "profiles?id=eq.{$targetUserId}", [
             'role' => $newRole,
             'is_admin' => $isAdmin
+        ]);
+        echo json_encode($res);
+        break;
+
+    // ── 6. APPROVE STUDENT SIGN-UP (PROTECTED) ─────────────────────────
+    case 'approve_user':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+        $targetUserId = $input['user_id'] ?? '';
+        if (empty($targetUserId)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Missing user_id']);
+            exit;
+        }
+
+        $res = $client->request('PATCH', "profiles?id=eq.{$targetUserId}", [
+            'approval_status' => 'approved',
+            'is_approved' => true,
+            'approved_at' => date('c')
+        ]);
+        echo json_encode($res);
+        break;
+
+    // ── 7. REJECT STUDENT SIGN-UP (PROTECTED) ──────────────────────────
+    case 'reject_user':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+        $targetUserId = $input['user_id'] ?? '';
+        $reason = $input['reason'] ?? 'Registration details could not be verified.';
+        if (empty($targetUserId)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Missing user_id']);
+            exit;
+        }
+
+        $res = $client->request('PATCH', "profiles?id=eq.{$targetUserId}", [
+            'approval_status' => 'rejected',
+            'is_approved' => false,
+            'reject_reason' => $reason,
+            'rejected_at' => date('c')
         ]);
         echo json_encode($res);
         break;

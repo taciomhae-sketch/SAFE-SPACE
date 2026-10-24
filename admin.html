@@ -913,6 +913,47 @@
             </div>
           </div>
 
+          <!-- Pending Sign-up Approvals Section (Admin Portal Verification Banner) -->
+          <div class="admin-panel" id="overviewPendingApprovalsPanel" style="margin-bottom:20px; border-left: 4px solid #F59E0B; display:none;">
+            <div class="panel-header" style="flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+              <div>
+                <h4 class="panel-title" style="display:flex; align-items:center; gap:8px;">
+                  <span style="width:30px; height:30px; border-radius:50%; background:rgba(245, 158, 11, 0.15); color:#D97706; display:flex; align-items:center; justify-content:center; font-size:13px;">
+                    <i class="fas fa-user-clock"></i>
+                  </span>
+                  <span>Pending Student Sign-Up Approvals</span>
+                  <span class="badge-count" id="overviewPendingCountBadge" style="background:#FEF3C7; color:#D97706; padding:2px 8px; border-radius:10px; font-size:11px;">0</span>
+                </h4>
+                <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0 0;">
+                  These students have registered and are waiting for your verification of their Student ID before they can log in and receive their verification code in their Gmail.
+                </p>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button type="button" class="admin-btn admin-btn-outline" onclick="goToUsersTabWithPendingFilter()" style="font-size:11px; padding:5px 12px;">
+                  <i class="fas fa-users-gear"></i> View All in Users Tab
+                </button>
+              </div>
+            </div>
+
+            <div class="admin-table-wrap" style="margin-top:8px;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
+                    <th>Gmail / Email</th>
+                    <th>Status</th>
+                    <th>Signed Up</th>
+                    <th style="text-align:right;">Verification Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="overviewPendingTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Overview Split Grid: Sentiment & Live Incidents -->
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px;">
             <!-- Campus Sentiment Analytics Panel -->
@@ -3203,6 +3244,9 @@
       const paEl = document.getElementById('statPendingApprovals');
       if (paEl) paEl.textContent = count;
 
+      const ovCount = document.getElementById('overviewPendingCountBadge');
+      if (ovCount) ovCount.textContent = count;
+
       const pBadge = document.getElementById('pendingUsersCountBadge');
       if (pBadge) {
         pBadge.textContent = count;
@@ -3213,6 +3257,60 @@
       if (uNavBadge) {
         uNavBadge.textContent = count;
         uNavBadge.style.display = count > 0 ? 'inline-block' : 'none';
+      }
+
+      // Populate Overview Pending Approvals Banner
+      const ovPanel = document.getElementById('overviewPendingApprovalsPanel');
+      const ovTbody = document.getElementById('overviewPendingTableBody');
+      if (ovPanel && ovTbody) {
+        if (count > 0) {
+          ovPanel.style.display = 'block';
+          ovTbody.innerHTML = pendingUsers.map(u => {
+            const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || 'Safe Space Member';
+            return `
+              <tr id="overview-pending-row-${u.id}">
+                <td>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="admin-user-avatar" style="width:32px; height:32px; font-size:12px;">
+                      ${u.avatar_url ? `<img src="${u.avatar_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '<i class="fas fa-user"></i>'}
+                    </div>
+                    <div>
+                      <div style="font-weight:700; color:var(--text-dark); font-size:13px;">${escapeHTML(name)}</div>
+                      <div style="font-size:11px; color:var(--primary); font-weight:600;">@${escapeHTML(u.username || 'user')}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span style="display:inline-block; padding:3px 8px; border-radius:6px; background:var(--bg-hover, #F8F6FD); font-family:monospace; font-size:12px; font-weight:700; color:var(--text-dark); border:1px solid var(--border, #EFEFFA);">
+                    <i class="fas fa-id-badge" style="color:var(--primary); margin-right:4px;"></i>${escapeHTML(u.student_id || '—')}
+                  </span>
+                </td>
+                <td style="color:var(--text-mid); font-size:12px;">
+                  <i class="fab fa-google" style="color:#EA4335; margin-right:4px; font-size:11px;"></i>${escapeHTML(u.email || '—')}
+                </td>
+                <td>
+                  <span class="status-badge" style="background:#FEF3C7; color:#D97706; font-weight:800; font-size:11px;">
+                    <i class="fas fa-clock" style="margin-right:3px;"></i>Pending Verification
+                  </span>
+                </td>
+                <td style="font-size:11px; color:var(--text-muted);">${formatTime(u.created_at)}</td>
+                <td style="text-align:right;">
+                  <div style="display:inline-flex; gap:6px;">
+                    <button type="button" class="admin-btn admin-btn-success" style="padding:5px 12px; font-size:11px; font-weight:700;" onclick="handleApproveUser('${u.id}', '${escapeHTML(u.email || '')}', '${escapeHTML(u.student_id || '')}')" title="Approve Student Account & Issue 6-digit Verification Code to Gmail">
+                      <i class="fas fa-check"></i> Approve &amp; Send Code
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-danger" style="padding:5px 9px; font-size:11px;" onclick="handleRejectUser('${u.id}', '${escapeHTML(u.username || name)}')" title="Reject Account">
+                      <i class="fas fa-xmark"></i> Reject
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          ovPanel.style.display = 'none';
+          ovTbody.innerHTML = '';
+        }
       }
     }
 
