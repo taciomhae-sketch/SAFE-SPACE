@@ -9048,17 +9048,88 @@ body.dark-theme .support-badge-org {
 /* ============================================================
    Safe Space AI: Suggested Support Recommendation Component
    ============================================================ */
-.ai-support { background:#FAF8FF; border:1px solid #E8E1FA; border-radius:12px; padding:12px 14px; margin:10px 0; }
-.ai-support-head { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.85rem; }
-.ai-badge { background:#6C4FD1; color:#fff; border-radius:999px; padding:2px 8px; font-size:.7rem; }
-.ai-support-text, .ai-support-more { margin:8px 0 0; line-height:1.5; font-size:.9rem; }
-.ai-view-more { background:none; border:0; color:#6C4FD1; font-weight:600; cursor:pointer; padding:6px 0; }
-.ai-support-foot { font-size:.72rem; color:#7a6fa8; margin-top:6px; }
-.ai-resources-btn { display:inline-block; margin-top:8px; color:#6C4FD1; font-weight:600; font-size:.85rem; }
+.ai-support {
+  background: #FAF8FF;
+  border: 1px solid #E8E1FA;
+  border-radius: 9px;
+  padding: 6px 12px;
+  margin: 5px 0 7px 0;
+  box-sizing: border-box;
+}
+.ai-support-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+.ai-support-head strong {
+  font-size: 0.76rem;
+  color: #4C3299;
+  letter-spacing: 0.1px;
+}
+.ai-badge {
+  background: #6C4FD1;
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ai-support-text {
+  margin: 3px 0 2px 0;
+  line-height: 1.32;
+  font-size: 0.78rem;
+  color: #374151;
+}
+.ai-support-more {
+  margin: 3px 0 2px 0;
+  line-height: 1.35;
+  font-size: 0.78rem;
+  color: #374151;
+}
+.ai-view-more {
+  background: none;
+  border: 0;
+  color: #6C4FD1;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.2;
+}
+.ai-view-more:hover {
+  text-decoration: underline;
+}
+.ai-support-foot {
+  font-size: 0.65rem;
+  color: #8C82B8;
+  margin-top: 0;
+  line-height: 1.15;
+}
+.ai-resources-btn {
+  display: inline-block;
+  margin-top: 2px;
+  color: #6C4FD1;
+  font-weight: 700;
+  font-size: 0.74rem;
+}
 
 [data-theme="dark"] .ai-support {
   background: #1e1b2e;
   border-color: #3b2f63;
+}
+[data-theme="dark"] .ai-support-head strong {
+  color: #c4b5fd;
+}
+[data-theme="dark"] .ai-support-text,
+[data-theme="dark"] .ai-support-more {
+  color: #e5e7eb;
 }
 [data-theme="dark"] .ai-support-foot {
   color: #a499d3;

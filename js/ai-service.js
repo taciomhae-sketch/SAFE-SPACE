@@ -1414,7 +1414,7 @@ Return ONLY valid JSON, no markdown fences, no extra text:
       // ─────────────────────────────────────────────────────────────
       // TOPIC 3: HARMFUL BEHAVIOR, THREATS, OR HOSTILITY
       // ─────────────────────────────────────────────────────────────
-      var isHarmfulBehavior = /\b(i will punch|i will beat|i will hurt|gonna beat|let's attack|doxx|ipapa-bugbog|sasapakin|papatayin|resbakan|awayin natin|sugurin)\b/i.test(lowerText) ||
+      var isHarmfulBehavior = /\b(i will punch|i will beat|i will hurt|gonna beat|let's attack|doxx|ipapa-bugbog|sasapakin|papatayin|resbakan|awayin natin|sugurin|wish you weren't born|wish you were dead|wish they were dead)\b/i.test(lowerText) ||
         ((cat === 'THREAT' || cat === 'VIOLENCE' || cat === 'HARASSMENT') && !isBullyingVictim);
 
       if (isHarmfulBehavior) {
@@ -1778,7 +1778,7 @@ Return ONLY valid JSON, no markdown fences, no extra text:
       // ─────────────────────────────────────────────────────────────
       // TOPIC 13: SADNESS, EMOTIONAL EXHAUSTION & GRIEF
       // ─────────────────────────────────────────────────────────────
-      var isSadness = /\b(sad|crying|tears|depressed|heartbroken|empty|drained|grief|lost someone|feeling low|down in the dumps|malungkot|umiiyak|iiyak|pagod na pagod)\b/i.test(lowerText) ||
+      var isSadness = /\b(sad|crying|tears|depressed|heartbroken|empty|drained|grief|lost someone|feeling low|down in the dumps|malungkot|umiiyak|iiyak|pagod na pagod|wish.*(weren't|wasn't)\s*born)\b/i.test(lowerText) ||
         String(sent).toLowerCase().indexOf('neg') !== -1;
 
       if (isSadness) {
@@ -1901,15 +1901,21 @@ Return ONLY valid JSON, no markdown fences, no extra text:
     if (!rec) return null;
     var box = document.createElement('div');
     box.className = 'ai-support';
+    var topicHtml = rec.topic_label ? '<span style="font-size:10px; background:#EDE9FE; color:#6C4FD1; padding:1px 6px; border-radius:999px; font-weight:700;">' + rec.topic_label + '</span>' : '';
     box.innerHTML =
       '<div class="ai-support-head">' +
-        '<strong>Suggested Support from Safe Space AI</strong>' +
+        '<div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">' +
+          '<strong>Suggested Support from Safe Space AI</strong>' +
+          topicHtml +
+        '</div>' +
         '<span class="ai-badge"><i class="fas fa-wand-magic-sparkles"></i> AI Generated</span>' +
       '</div>' +
       '<p class="ai-support-text"></p>' +
       '<div class="ai-support-more" hidden></div>' +
-      '<button type="button" class="ai-view-more" hidden aria-expanded="false">View more</button>' +
-      '<div class="ai-support-foot"></div>';
+      '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:2px;">' +
+        '<div class="ai-support-foot"></div>' +
+        '<button type="button" class="ai-view-more" hidden aria-expanded="false"><i class="fas fa-circle-info"></i> View Full Support</button>' +
+      '</div>';
 
     var textEl = box.querySelector('.ai-support-text');
     var footEl = box.querySelector('.ai-support-foot');
@@ -1919,14 +1925,18 @@ Return ONLY valid JSON, no markdown fences, no extra text:
     var more = box.querySelector('.ai-support-more');
     var btn = box.querySelector('.ai-view-more');
 
-    if (rec.collapsible !== false && rec.more && rec.more.trim()) {
-      more.textContent = rec.more;
+    if (rec.collapsible !== false && (rec.full_support || (rec.more && rec.more.trim()))) {
+      more.textContent = rec.full_support || rec.more;
       btn.hidden = false;
       btn.onclick = function() {
-        var opening = more.hidden;
-        more.hidden = !opening;
-        btn.textContent = opening ? 'View less' : 'View more';
-        btn.setAttribute('aria-expanded', String(opening));
+        if (typeof window !== 'undefined' && window.openAiSupportModal && rec.id) {
+          window.openAiSupportModal(rec.id);
+        } else {
+          var opening = more.hidden;
+          more.hidden = !opening;
+          btn.innerHTML = opening ? '<i class="fas fa-chevron-up"></i> Close' : '<i class="fas fa-circle-info"></i> View Full Support';
+          btn.setAttribute('aria-expanded', String(opening));
+        }
       };
     }
 
@@ -1935,7 +1945,7 @@ Return ONLY valid JSON, no markdown fences, no extra text:
       r.href = 'resources.html';
       r.className = 'ai-resources-btn';
       r.textContent = 'View Verified Support Resources';
-      box.insertBefore(r, footEl);
+      box.insertBefore(r, box.querySelector('.ai-support-foot').parentNode);
     }
     return box;
   }

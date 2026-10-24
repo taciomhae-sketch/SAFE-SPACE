@@ -1232,8 +1232,11 @@
             };
           }
 
-          // If rec is not present, generate it dynamically for EVERY post
-          if ((!rec || (!rec.preview && !rec.message)) && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender) {
+          // If rec is missing, generic, or legacy, re-generate it dynamically for this specific post
+          const isLegacyOrMismatched = !rec || !rec.detected_topic ||
+            (rec.preview && (rec.preview.includes('Thanks for sharing this update') || rec.preview.includes('Connecting with fellow students')));
+
+          if (isLegacyOrMismatched && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender) {
             rec = window.SafeSpaceSupportRecommender.generate(
               post.content || '',
               currentSentiment,
@@ -1287,12 +1290,12 @@
             <a href="resources.html" class="ai-resources-btn">View Verified Support Resources</a>
           ` : '';
 
-          const topicBadgeHtml = rec.topic_label ? `<span style="font-size:10.5px; background:#EDE9FE; color:#6C4FD1; padding:2px 7px; border-radius:999px; font-weight:700;">${escapeHTML(rec.topic_label)}</span>` : '';
+          const topicBadgeHtml = rec.topic_label ? `<span style="font-size:10px; background:#EDE9FE; color:#6C4FD1; padding:1px 6px; border-radius:999px; font-weight:700;">${escapeHTML(rec.topic_label)}</span>` : '';
 
           const supportRecHtml = `
             <div class="ai-support" id="ai-support-${post.id}">
               <div class="ai-support-head">
-                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
                   <strong>Suggested Support from Safe Space AI</strong>
                   ${topicBadgeHtml}
                 </div>
@@ -1300,14 +1303,14 @@
               </div>
               <p class="ai-support-text">${escapeHTML(previewText)}</p>
               <div class="ai-support-more" id="ai-support-more-${post.id}" ${hasMore ? 'hidden' : (moreText ? '' : 'hidden')}>${escapeHTML(moreText)}</div>
-              ${hasMore ? `
-                <div style="display:flex; gap:10px; align-items:center; margin-top:6px;">
-                  <button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="openAiSupportModal('${post.id}')" aria-expanded="false" style="display:inline-flex; align-items:center; gap:5px; font-size:12.5px;">
-                    <i class="fas fa-circle-info"></i> View Full Support
-                  </button>
-                </div>` : ''}
               ${resBtnHtml}
-              <div class="ai-support-foot">${escapeHTML(disclaimerText)}</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:2px;">
+                <div class="ai-support-foot">${escapeHTML(disclaimerText)}</div>
+                ${hasMore ? `
+                  <button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="openAiSupportModal('${post.id}')" aria-expanded="false" title="View Full Support">
+                    <i class="fas fa-circle-info"></i> View Full Support
+                  </button>` : ''}
+              </div>
             </div>
           `;
 

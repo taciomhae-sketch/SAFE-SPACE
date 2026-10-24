@@ -274,7 +274,7 @@ def generate_support_recommendation(
     # (User is expressing hostility, threats, or urging harassment)
     # ─────────────────────────────────────────────────────────────
     is_harmful_behavior = bool(re.search(
-        r"\b(i will punch|i will beat|i will hurt|gonna beat|let's attack|doxx|ipapa-bugbog|sasapakin|papatayin|resbakan|awayin natin|sugurin)\b",
+        r"\b(i will punch|i will beat|i will hurt|gonna beat|let's attack|doxx|ipapa-bugbog|sasapakin|papatayin|resbakan|awayin natin|sugurin|wish you weren't born|wish you were dead|wish they were dead)\b",
         lower_text
     )) or (cat in ["THREAT", "VIOLENCE", "HARASSMENT"] and not is_bullying_victim)
 
@@ -681,7 +681,7 @@ def generate_support_recommendation(
     # TOPIC 13: SADNESS, EMOTIONAL EXHAUSTION & GRIEF
     # ─────────────────────────────────────────────────────────────
     is_sadness = bool(re.search(
-        r"\b(sad|crying|tears|depressed|heartbroken|empty|drained|grief|lost someone|feeling low|down in the dumps|malungkot|umiiyak|iiyak|pagod na pagod)\b",
+        r"\b(sad|crying|tears|depressed|heartbroken|empty|drained|grief|lost someone|feeling low|down in the dumps|malungkot|umiiyak|iiyak|pagod na pagod|wish.*(weren't|wasn't)\s*born)\b",
         lower_text
     )) or sent == "Negative"
 
