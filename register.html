@@ -209,6 +209,16 @@
                 <div id="usernameStatus" class="field-feedback"></div>
               </div>
 
+              <!-- Student ID -->
+              <div class="form-group" style="margin-bottom:15px;">
+                <label class="field-label" for="studentId">Student ID <span style="color:#F87171;">*</span></label>
+                <div class="input-group">
+                  <span class="input-icon"><i class="fas fa-id-badge"></i></span>
+                  <input class="auth-input" type="text" id="studentId" placeholder="Enter your student ID number" autocomplete="off" required maxlength="30" />
+                </div>
+                <div id="studentIdStatus" class="field-feedback"></div>
+              </div>
+
               <!-- Password -->
               <div class="form-group" style="margin-bottom:14px;">
                 <label class="field-label" for="password">Password <span style="color:#F87171;">*</span></label>
@@ -784,6 +794,7 @@
     function validateStep2() {
       var email       = val('email').toLowerCase();
       var username    = val('username');
+      var studentId   = val('studentId');
       var password    = document.getElementById('password').value;
       var confirmPwd  = document.getElementById('confirmPassword').value;
       var isValid     = true;
@@ -831,7 +842,32 @@
         isValid = false;
       }
 
-      // 3. Password
+      // 3. Student ID
+      var studentIdStatus = document.getElementById('studentIdStatus');
+      if (!studentId) {
+        document.getElementById('studentId').classList.add('has-error');
+        if (studentIdStatus) {
+          studentIdStatus.className = 'field-feedback error';
+          studentIdStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Please enter your student ID.';
+          studentIdStatus.style.display = 'block';
+        }
+        isValid = false;
+      } else if (studentId.length < 3 || studentId.length > 30) {
+        document.getElementById('studentId').classList.add('has-error');
+        if (studentIdStatus) {
+          studentIdStatus.className = 'field-feedback error';
+          studentIdStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Student ID must be between 3 and 30 characters.';
+          studentIdStatus.style.display = 'block';
+        }
+        isValid = false;
+      } else {
+        document.getElementById('studentId').classList.remove('has-error');
+        if (studentIdStatus) {
+          studentIdStatus.style.display = 'none';
+        }
+      }
+
+      // 4. Password
       var passwordStatus = document.getElementById('passwordStatus');
       if (!password) {
         document.getElementById('password').classList.add('has-error');
@@ -927,7 +963,7 @@
     function validateStep2Quick() {
       var pwd = document.getElementById('password').value;
       var cpwd = document.getElementById('confirmPassword').value;
-      return !!val('email') && !!val('username') && pwd.length >= 8 && pwd === cpwd;
+      return !!val('email') && !!val('username') && !!val('studentId') && pwd.length >= 8 && pwd === cpwd;
     }
 
     privacyCheckbox.addEventListener('change', function() {
@@ -1348,6 +1384,19 @@
       }, 350);
     });
 
+    var studentIdInput  = document.getElementById('studentId');
+    var studentIdStatus = document.getElementById('studentIdStatus');
+    if (studentIdInput) {
+      studentIdInput.addEventListener('input', function() {
+        studentIdInput.classList.remove('has-error');
+        if (studentIdStatus) {
+          studentIdStatus.style.display = 'none';
+          studentIdStatus.textContent = '';
+        }
+        updateSignupButtonState();
+      });
+    }
+
     /* ────────────────────────────────
        FINAL SUBMISSION (CREATE ACCOUNT)
     ──────────────────────────────── */
@@ -1386,6 +1435,7 @@
 
       var email           = val('email').toLowerCase();
       var username        = val('username');
+      var studentId       = val('studentId');
       var password        = document.getElementById('password').value;
 
       var avatarUrl       = selectedAvatar.url;
@@ -1401,6 +1451,7 @@
           email:       email,
           password:    password,
           username:    username,
+          student_id:  studentId,
           first_name:  firstName,
           last_name:   lastName,
           middle_name: null,

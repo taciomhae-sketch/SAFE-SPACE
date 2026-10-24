@@ -3108,6 +3108,10 @@
                 <strong style="color:#16a34a; font-weight:700;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Verified ASU Student</strong>
               </div>
               <div style="display:flex; justify-content:space-between; padding:12px 14px; background:var(--bg-hover); border-radius:10px;">
+                <span style="color:var(--text-muted); font-weight:600;">Student ID</span>
+                <strong style="color:var(--text-dark); font-weight:700;">${escapeHTML(currentUser.student_id || '—')}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:12px 14px; background:var(--bg-hover); border-radius:10px;">
                 <span style="color:var(--text-muted); font-weight:600;">Email Address</span>
                 <strong style="color:var(--text-dark); font-weight:700;">${escapeHTML(currentUser.email || '—')}</strong>
               </div>

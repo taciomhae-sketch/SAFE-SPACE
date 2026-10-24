@@ -547,6 +547,7 @@ var SafeSpaceDB = {
       var newUser = {
         id: 'user-' + Date.now(),
         email: email,
+        student_id: metadata.student_id || null,
         username: metadata.username || (email ? email.split('@')[0] : 'user'),
         first_name: metadata.first_name || 'Member',
         middle_name: metadata.middle_name || null,
@@ -802,7 +803,7 @@ var SafeSpaceDB = {
     updateProfile: async function(updates) {
       updates = updates || {};
       var validProfileCols = [
-        'username', 'first_name', 'middle_name', 'last_name',
+        'username', 'first_name', 'middle_name', 'last_name', 'student_id',
         'age', 'sex', 'birthday', 'avatar_url', 'avatar_type', 'avatar_value',
         'theme_mode', 'theme_color', 'bio', 'is_deactivated',
         'privacy_anonymous_posting', 'privacy_allow_discovery', 'privacy_show_profile',
