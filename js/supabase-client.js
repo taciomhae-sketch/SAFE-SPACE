@@ -351,9 +351,20 @@ var SafeSpaceDB = {
               localStorage.setItem('safe_space_user', JSON.stringify(fullUser));
             } catch (e) {}
             return fullUser;
+          } else {
+            try {
+              localStorage.removeItem('safe_space_user');
+              localStorage.removeItem('safe_space_session_active');
+            } catch (e) {}
+            return null;
           }
         } catch (e) {
           console.warn('[SafeSpace] Supabase auth check error:', e);
+          try {
+            localStorage.removeItem('safe_space_user');
+            localStorage.removeItem('safe_space_session_active');
+          } catch (err) {}
+          return null;
         }
       }
       var storedUser = JSON.parse(localStorage.getItem('safe_space_user'));
@@ -883,11 +894,33 @@ var SafeSpaceDB = {
     },
 
     signOut: async function() {
-      if (SafeSpaceDB.isSupabaseActive()) {
-        try { await _db.auth.signOut(); } catch (e) {}
+      if (SafeSpaceDB.isSupabaseActive() && _db && _db.auth) {
+        try {
+          await _db.auth.signOut();
+        } catch (e) {
+          console.warn('[SafeSpace] Supabase signOut error:', e);
+        }
       }
-      localStorage.removeItem('safe_space_user');
-      localStorage.removeItem('safe_space_session_active');
+      try {
+        localStorage.removeItem('safe_space_user');
+        localStorage.removeItem('safe_space_session_active');
+        localStorage.removeItem('safe_space_active_user');
+
+        // Thoroughly clear all Supabase auth storage tokens
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && (k.startsWith('sb-') || k.startsWith('supabase.') || k.includes('-auth-token'))) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach(function(k) {
+          try { localStorage.removeItem(k); } catch (e) {}
+        });
+      } catch (err) {}
+      try {
+        sessionStorage.clear();
+      } catch (err) {}
     },
 
     deactivateAccount: async function() {

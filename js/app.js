@@ -142,7 +142,7 @@ async function requireAuth() {
   if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
     if (!isPublic) {
       if (typeof hidePageLoader === 'function') hidePageLoader();
-      window.location.href = 'welcome.html';
+      window.location.href = 'login.html';
     }
     return null;
   }
@@ -150,14 +150,14 @@ async function requireAuth() {
     var user = await SafeSpaceDB.auth.getCurrentUser();
     if (!user && !isPublic) {
       if (typeof hidePageLoader === 'function') hidePageLoader();
-      window.location.href = 'welcome.html';
+      window.location.href = 'login.html';
     }
     return user;
   } catch (err) {
     console.warn('[Auth] Session check error:', err);
     if (!isPublic) {
       if (typeof hidePageLoader === 'function') hidePageLoader();
-      window.location.href = 'welcome.html';
+      window.location.href = 'login.html';
     }
     return null;
   }

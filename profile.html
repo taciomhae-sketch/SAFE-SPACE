@@ -3189,7 +3189,7 @@
           confirmLogoutBtn.disabled = true;
           confirmLogoutBtn.textContent = 'Logging out...';
           await SafeSpaceDB.auth.signOut();
-          window.location.href = 'login.html';
+          window.location.href = 'login.html?logged_out=1';
         });
       }
 

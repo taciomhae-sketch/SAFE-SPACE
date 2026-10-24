@@ -108,29 +108,22 @@
         </button>
       </div>
 
-      <!-- Direct Login Notice / Button (No box, smaller size) -->
-      <button type="submit" id="loginBtn" disabled style="background:transparent; border:none; outline:none; box-shadow:none; color:rgba(255,255,255,0.9); width:100%; height:auto; padding:6px 0; font-weight:700; font-size:12px; letter-spacing:0.8px; text-transform:uppercase; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px; margin-bottom:8px;" title="Verification required: You must receive and use the 6-digit verification code first before you can proceed to login">
-        <span id="loginBtnText" style="display:inline-flex; align-items:center; gap:6px;">
-          <i class="fas fa-lock" style="font-size:11px; opacity:0.85;"></i> LOGIN (VERIFICATION REQUIRED)
+      <!-- Primary Action: Login with Email & Password -->
+      <button type="submit" class="btn-auth-primary" id="loginBtn" style="margin-top:8px; margin-bottom:12px;">
+        <span id="loginBtnText" style="display:inline-flex; align-items:center; gap:8px;">
+          <i class="fas fa-right-to-bracket"></i> LOG IN
         </span>
         <span id="loginBtnSpinner" style="display:none;">
           <i class="fas fa-circle-notch fa-spin"></i> Signing in…
         </span>
       </button>
 
-      <!-- Primary Action: Send 6-Digit Code / Magic OTP -->
-      <button type="button" class="btn-auth-primary" id="magicLinkBtn" style="color:#000000 !important; font-size:13.5px; font-weight:800; letter-spacing:0.5px; height:48px; margin-top:0; margin-bottom:8px;">
-        <span id="magicLinkBtnText" style="color:#000000 !important; font-size:13.5px;">
-          <i class="fas fa-paper-plane" style="margin-right:6px; color:#000000 !important; font-size:12.5px;"></i> SEND 6-DIGIT VERIFICATION CODE
-        </span>
-        <span id="magicLinkBtnSpinner" style="display:none; color:#000000 !important; font-size:13.5px;">
-          <i class="fas fa-circle-notch fa-spin"></i> Sending 6-digit code…
-        </span>
-      </button>
-
-      <p style="font-size:11.5px; color:rgba(255,255,255,0.85); text-align:center; margin-top:10px; line-height:1.4;">
-        <i class="fas fa-shield-halved" style="color:#E9D5FF; margin-right:4px;"></i> You must receive a 6-digit verification code first before you can proceed to login.
-      </p>
+      <!-- Secondary Action: Optional 6-Digit Code / Magic OTP -->
+      <div style="text-align:center; margin-top:2px; margin-bottom:10px;">
+        <button type="button" id="magicLinkBtn">
+          <i class="fas fa-key" style="margin-right:4px;"></i> Sign in with 6-digit verification code instead
+        </button>
+      </div>
 
     </form>
 
@@ -216,6 +209,24 @@
 
     /* ── Check if already signed in ── */
     async function checkExistingSession() {
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('logged_out') === '1') {
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
+          try { await SafeSpaceDB.auth.signOut(); } catch (e) {}
+        }
+        currentActiveUser = null;
+        var card = document.getElementById('alreadySignedInCard');
+        if (card) {
+          card.style.display = 'none';
+          card.classList.add('hidden');
+        }
+        showFormAlert('You have logged out. Enter your email and password to log in again.', 'info');
+        if (typeof showToast === 'function') {
+          showToast('You have logged out. Enter your email and password to log in again.', 'info');
+        }
+        return;
+      }
+
       try {
         if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) {
           var user = await SafeSpaceDB.auth.getCurrentUser();
@@ -322,16 +333,6 @@
       emailInput.classList.remove('has-error');
       passwordInput.classList.remove('has-error');
 
-      // Check if user is already signed in with this exact email
-      if (currentActiveUser && currentActiveUser.email && currentActiveUser.email.toLowerCase() === email.toLowerCase()) {
-        showFormAlert('This account is already signed in! Redirecting to feed...', 'success');
-        setTimeout(function() {
-          if (typeof showPageLoader === 'function') showPageLoader('Opening feed...');
-          window.location.href = 'home.html';
-        }, 500);
-        return;
-      }
-
       setLoading(true);
       try {
         if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
@@ -360,7 +361,7 @@
       } catch (err) {
         var friendlyMsg = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.formatAuthError)
           ? SafeSpaceDB.auth.formatAuthError(err)
-          : (err.message || 'Login failed. Please try again.');
+          : (err.message || 'Login failed. Please check your credentials.');
 
         var rawMsg = (err && err.message) ? err.message.toLowerCase() : '';
 
@@ -371,7 +372,7 @@
             'warning',
             `<button type="button" class="auth-alert-action-btn" onclick="openOtpView('${escapeHTML(email)}')"><i class="fas fa-key"></i> Enter 6-Digit Code</button>`
           );
-        } else if (rawMsg.includes('invalid') || friendlyMsg.toLowerCase().includes('wrong password')) {
+        } else if (rawMsg.includes('invalid') || friendlyMsg.toLowerCase().includes('wrong password') || friendlyMsg.toLowerCase().includes('credentials')) {
           passwordInput.classList.add('has-error');
           emailInput.classList.add('has-error');
           showFormAlert(friendlyMsg, 'error');
@@ -386,25 +387,27 @@
       }
     }
 
-    /* ── Form submit ── */
+    /* ── Form submit: Requires both Email and Password to proceed ── */
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       var email    = emailInput.value.trim();
       var password = passwordInput.value;
 
-      var email = emailInput.value.trim();
-
       if (!email) {
         emailInput.classList.add('has-error');
-        showFormAlert('Please enter your email address to receive your 6-digit verification code.', 'error');
+        showFormAlert('Please enter your email address.', 'error');
         emailInput.focus();
         return;
       }
 
-      // Mandatory 6-digit OTP verification: send code first
-      if (magicLinkBtn) {
-        magicLinkBtn.click();
+      if (!password) {
+        passwordInput.classList.add('has-error');
+        showFormAlert('Please enter your password before you can proceed to the home dashboard.', 'error');
+        passwordInput.focus();
+        return;
       }
+
+      await doLogin(email, password);
     });
 
     // Send 6-Digit Verification Code (Magic OTP) Button
@@ -733,7 +736,9 @@
         return;
       }
 
-      if (message === 'deactivated') {
+      if (queryParams.get('logged_out') === '1' || message === 'logged_out') {
+        showFormAlert('You have logged out. Enter your email and password to log in again.', 'info');
+      } else if (message === 'deactivated') {
         showFormAlert('Your account has been deactivated.', 'info');
       } else if (message === 'deleted') {
         showFormAlert('Your account has been permanently deleted.', 'info');

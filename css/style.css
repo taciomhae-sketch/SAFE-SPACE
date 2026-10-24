@@ -457,21 +457,32 @@ select.auth-input {
 .btn-auth-primary:active { transform: scale(0.97); opacity: 0.9; }
 .btn-auth-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
-#magicLinkBtn,
-#magicLinkBtn * {
-  color: #000000 !important;
+#loginBtn {
+  background: #ffffff !important;
+  color: #6C4FD1 !important;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+#loginBtn:hover {
+  background: #f8f6ff !important;
+  transform: translateY(-1px);
 }
 
 #magicLinkBtn {
-  font-size: 13.5px !important;
-  letter-spacing: 0.5px;
-}
-
-#loginBtn {
   background: transparent !important;
   border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 12.5px !important;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 6px 12px;
+  transition: opacity 0.2s;
+}
+
+#magicLinkBtn:hover {
+  opacity: 0.8;
 }
 
 .auth-link-row {
