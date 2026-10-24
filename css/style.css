@@ -366,6 +366,25 @@ body.auth-page {
   display: flex;
   align-items: center;
 }
+/* Disable browser native password reveal & clear buttons (Edge / IE / Chromium) */
+input::-ms-reveal,
+input::-ms-clear,
+::-ms-reveal,
+::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button {
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+}
+
 .input-group .input-icon {
   position: absolute;
   left: 16px;
@@ -374,25 +393,52 @@ body.auth-page {
   pointer-events: none;
   z-index: 1;
 }
+
 .input-group .input-icon-right {
   position: absolute;
-  right: 16px;
-  font-size: 15px;
-  color: rgba(255,255,255,0.75);
-  cursor: pointer;
-  z-index: 1;
-  background: none;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: rgba(255,255,255,0.85);
+  cursor: pointer !important;
+  z-index: 20;
+  background: transparent;
   border: none;
+  border-radius: 50%;
   padding: 0;
   line-height: 1;
+  transition: all 0.18s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto !important;
 }
+
+.input-group .input-icon-right:hover {
+  color: #ffffff;
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.input-group .input-icon-right:active {
+  transform: translateY(-50%) scale(0.94);
+  background: rgba(255,255,255,0.28);
+}
+
 .auth-input {
   width: 100%;
   height: 48px;
   background: var(--auth-input-bg);
   border: 1.5px solid rgba(255,255,255,0.2);
   border-radius: var(--radius-full);
-  padding: 0 44px 0 44px;
+  padding: 0 48px 0 44px;
   font-size: 14px;
   color: var(--text-white);
   outline: none;

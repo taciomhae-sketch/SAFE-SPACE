@@ -1142,10 +1142,24 @@
       var input  = document.getElementById(inputId);
       var toggle = document.getElementById(toggleId);
       var icon   = document.getElementById(iconId);
-      toggle.addEventListener('click', function() {
+      if (!input || !toggle || !icon) return;
+
+      function toggleVisibility(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         var hidden = input.type === 'password';
         input.type     = hidden ? 'text' : 'password';
         icon.className = hidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+        toggle.setAttribute('aria-label', hidden ? 'Hide password' : 'Show password');
+        toggle.setAttribute('title', hidden ? 'Hide password' : 'Show password');
+      }
+
+      toggle.addEventListener('click', toggleVisibility);
+      toggle.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        toggleVisibility(e);
       });
     }
 

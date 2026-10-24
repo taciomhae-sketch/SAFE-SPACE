@@ -269,11 +269,25 @@
     var eyeToggle     = document.getElementById('eyeToggle');
     var eyeIcon       = document.getElementById('eyeIcon');
 
-    eyeToggle.addEventListener('click', function() {
-      var isHidden = passwordInput.type === 'password';
-      passwordInput.type = isHidden ? 'text' : 'password';
-      eyeIcon.className  = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
-    });
+    if (eyeToggle && passwordInput && eyeIcon) {
+      function togglePassword(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        var isHidden = passwordInput.type === 'password';
+        passwordInput.type = isHidden ? 'text' : 'password';
+        eyeIcon.className  = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+        eyeToggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        eyeToggle.setAttribute('title', isHidden ? 'Hide password' : 'Show password');
+      }
+
+      eyeToggle.addEventListener('click', togglePassword);
+      eyeToggle.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        togglePassword(e);
+      });
+    }
 
     // Clear error highlight on input
     [emailInput, passwordInput].forEach(function(el) {
