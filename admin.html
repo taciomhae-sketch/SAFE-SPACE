@@ -901,6 +901,16 @@
                 <span>Active Today</span>
               </div>
             </div>
+
+            <div class="metric-card" onclick="goToUsersTabWithPendingFilter()" style="cursor:pointer;" title="Click to view sign-up requests pending admin verification">
+              <div class="metric-icon-wrap" style="background:rgba(245, 158, 11, 0.14); color:#D97706;">
+                <i class="fas fa-user-clock"></i>
+              </div>
+              <div class="metric-info">
+                <h3 id="statPendingApprovals">0</h3>
+                <span>Pending Approvals</span>
+              </div>
+            </div>
           </div>
 
           <!-- Overview Split Grid: Sentiment & Live Incidents -->
@@ -1089,6 +1099,7 @@
             <!-- Filter Pills -->
             <div class="filter-pills-row" id="userFilterRow" style="margin-bottom:16px;">
               <button type="button" class="filter-pill active" data-user-filter="all">All Accounts</button>
+              <button type="button" class="filter-pill" data-user-filter="pending" style="display:inline-flex; align-items:center; gap:5px;"><i class="fas fa-clock" style="font-size:11px;"></i> Pending Approval <span id="pendingUsersCountBadge" style="display:none; background:#F59E0B; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px;">0</span></button>
               <button type="button" class="filter-pill" data-user-filter="student">Students</button>
               <button type="button" class="filter-pill" data-user-filter="counselor">Counselors</button>
               <button type="button" class="filter-pill" data-user-filter="admin">Administrators</button>
@@ -1101,6 +1112,7 @@
                 <thead>
                   <tr>
                     <th>User</th>
+                    <th>Student ID</th>
                     <th>Email</th>
                     <th>Role</th>
                     <th>Status</th>
@@ -1110,7 +1122,7 @@
                 </thead>
                 <tbody id="usersTableBody">
                   <tr>
-                    <td colspan="6" style="text-align:center; padding:32px; color:var(--text-muted);">Loading user records from database...</td>
+                    <td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">Loading user records from database...</td>
                   </tr>
                 </tbody>
               </table>
@@ -2611,6 +2623,19 @@
             flagBadge.textContent = stats.flaggedPosts || 0;
             flagBadge.style.display = (stats.flaggedPosts > 0) ? 'inline-block' : 'none';
           }
+
+          const paEl = document.getElementById('statPendingApprovals');
+          if (paEl) paEl.textContent = stats.pendingApprovals || 0;
+          const uNavBadge = document.getElementById('navUsersBadge');
+          if (uNavBadge) {
+            uNavBadge.textContent = stats.pendingApprovals || 0;
+            uNavBadge.style.display = (stats.pendingApprovals > 0) ? 'inline-block' : 'none';
+          }
+          const pBadge = document.getElementById('pendingUsersCountBadge');
+          if (pBadge) {
+            pBadge.textContent = stats.pendingApprovals || 0;
+            pBadge.style.display = (stats.pendingApprovals > 0) ? 'inline-block' : 'none';
+          }
         }
       }).catch(err => console.warn('[Admin] getStats notice:', err));
 
@@ -3171,13 +3196,35 @@
     window.goToUsersTabWithActiveFilter = goToUsersTabWithActiveFilter;
     window.inspectUserFromModal = inspectUserFromModal;
 
+    function updateUserApprovalBadges() {
+      const pendingUsers = (cachedUsers || []).filter(u => (u.approval_status === 'pending' || (u.is_approved === false && u.role !== 'admin' && !u.is_admin)));
+      const count = pendingUsers.length;
+
+      const paEl = document.getElementById('statPendingApprovals');
+      if (paEl) paEl.textContent = count;
+
+      const pBadge = document.getElementById('pendingUsersCountBadge');
+      if (pBadge) {
+        pBadge.textContent = count;
+        pBadge.style.display = count > 0 ? 'inline-block' : 'none';
+      }
+
+      const uNavBadge = document.getElementById('navUsersBadge');
+      if (uNavBadge) {
+        uNavBadge.textContent = count;
+        uNavBadge.style.display = count > 0 ? 'inline-block' : 'none';
+      }
+    }
+
     function renderUsersTable() {
       const tbody = document.getElementById('usersTableBody');
       const query = (document.getElementById('userSearchInput').value || '').trim().toLowerCase();
       let users = cachedUsers || [];
 
       if (activeUserFilter !== 'all') {
-        if (activeUserFilter === 'deactivated') {
+        if (activeUserFilter === 'pending') {
+          users = users.filter(u => (u.approval_status === 'pending' || (u.is_approved === false && u.role !== 'admin' && !u.is_admin)));
+        } else if (activeUserFilter === 'deactivated') {
           users = users.filter(u => u.is_deactivated === true);
         } else if (activeUserFilter === 'active' || activeUserFilter === 'active_today') {
           users = users.filter(u => isUserActiveToday(u));
@@ -3190,13 +3237,15 @@
         users = users.filter(u => 
           (u.username && u.username.toLowerCase().includes(query)) ||
           (u.email && u.email.toLowerCase().includes(query)) ||
+          (u.student_id && u.student_id.toLowerCase().includes(query)) ||
           (u.first_name && u.first_name.toLowerCase().includes(query)) ||
           (u.last_name && u.last_name.toLowerCase().includes(query))
         );
       }
 
       if (users.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-muted);">No accounts match the current filter.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">No accounts match the current filter.</td></tr>`;
+        updateUserApprovalBadges();
         return;
       }
 
@@ -3204,14 +3253,52 @@
         const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || 'Safe Space Member';
         const role = u.role || (u.is_admin ? 'admin' : 'student');
         const isDeactivated = Boolean(u.is_deactivated);
+        const isPending = (u.approval_status === 'pending' || (u.is_approved === false && u.role !== 'admin' && !u.is_admin));
+        const isRejected = (u.approval_status === 'rejected');
 
         let roleBadgeColor = '#6C4FD1';
         let roleBg = '#F3E8FF';
         if (role === 'admin') { roleBadgeColor = '#DC2626'; roleBg = '#FEE2E2'; }
         else if (role === 'counselor') { roleBadgeColor = '#2563EB'; roleBg = '#DBEAFE'; }
 
+        let statusBadgeMarkup = '';
+        if (isPending) {
+          statusBadgeMarkup = `<span class="status-badge" style="background:#FEF3C7; color:#D97706; font-weight:800;"><i class="fas fa-clock" style="margin-right:4px;"></i>Pending Approval</span>`;
+        } else if (isRejected) {
+          statusBadgeMarkup = `<span class="status-badge" style="background:#FEE2E2; color:#DC2626; font-weight:700;"><i class="fas fa-circle-xmark" style="margin-right:4px;"></i>Rejected</span>`;
+        } else if (isDeactivated) {
+          statusBadgeMarkup = `<span class="status-badge" style="background:#FEE2E2; color:#DC2626;">Suspended</span>`;
+        } else {
+          statusBadgeMarkup = `<span class="status-badge" style="background:#DCFCE7; color:#16A34A;"><i class="fas fa-check" style="margin-right:4px;"></i>Active</span>`;
+        }
+
+        let actionsMarkup = '';
+        if (isPending) {
+          actionsMarkup = `
+            <div style="display:inline-flex; gap:6px;">
+              <button type="button" class="admin-btn admin-btn-success" style="padding:5px 10px; font-size:11px;" onclick="handleApproveUser('${u.id}', '${escapeHTML(u.email || '')}', '${escapeHTML(u.student_id || '')}')" title="Approve Student Account & Send Verification Code">
+                <i class="fas fa-check"></i> Approve
+              </button>
+              <button type="button" class="admin-btn admin-btn-danger" style="padding:5px 9px; font-size:11px;" onclick="handleRejectUser('${u.id}', '${escapeHTML(u.username || name)}')" title="Reject Registration">
+                <i class="fas fa-xmark"></i> Reject
+              </button>
+            </div>
+          `;
+        } else {
+          actionsMarkup = `
+            <div style="display:inline-flex; gap:6px;">
+              <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px; font-size:11px;" onclick="openRoleModal('${u.id}', '${escapeHTML(u.username || name)}', '${role}')" title="Change Role">
+                <i class="fas fa-user-gear"></i> Role
+              </button>
+              <button type="button" class="admin-btn ${isDeactivated ? 'admin-btn-success' : 'admin-btn-danger'}" style="padding:4px 8px; font-size:11px;" onclick="handleToggleUserStatus('${u.id}', ${!isDeactivated})" title="${isDeactivated ? 'Reactivate' : 'Suspend'}">
+                <i class="fas ${isDeactivated ? 'fa-user-check' : 'fa-user-slash'}"></i> ${isDeactivated ? 'Reactivate' : 'Suspend'}
+              </button>
+            </div>
+          `;
+        }
+
         return `
-          <tr id="user-row-${u.id}">
+          <tr id="user-row-${u.id}" style="${isPending ? 'background:rgba(245, 158, 11, 0.04);' : ''}">
             <td>
               <div style="display:flex; align-items:center; gap:10px;">
                 <div class="admin-user-avatar" style="width:32px; height:32px; font-size:13px;">
@@ -3223,6 +3310,11 @@
                 </div>
               </div>
             </td>
+            <td>
+              <span style="display:inline-block; padding:3px 8px; border-radius:6px; background:var(--bg-hover, #F8F6FD); font-family:monospace; font-size:12px; font-weight:700; color:var(--text-dark); border:1px solid var(--border, #EFEFFA);">
+                <i class="fas fa-id-badge" style="color:var(--primary); margin-right:4px;"></i>${escapeHTML(u.student_id || '—')}
+              </span>
+            </td>
             <td style="color:var(--text-mid); font-size:12px;">${escapeHTML(u.email || '—')}</td>
             <td>
               <span class="status-badge" style="background:${roleBg}; color:${roleBadgeColor};">
@@ -3230,25 +3322,60 @@
               </span>
             </td>
             <td>
-              <span class="status-badge" style="background:${isDeactivated ? '#FEE2E2' : '#DCFCE7'}; color:${isDeactivated ? '#DC2626' : '#16A34A'};">
-                ${isDeactivated ? 'Suspended' : 'Active'}
-              </span>
+              ${statusBadgeMarkup}
             </td>
             <td style="font-size:11px; color:var(--text-muted);">${formatTime(u.created_at)}</td>
             <td style="text-align:right;">
-              <div style="display:inline-flex; gap:6px;">
-                <button type="button" class="admin-btn admin-btn-outline" style="padding:4px 8px; font-size:11px;" onclick="openRoleModal('${u.id}', '${escapeHTML(u.username || name)}', '${role}')" title="Change Role">
-                  <i class="fas fa-user-gear"></i> Role
-                </button>
-                <button type="button" class="admin-btn ${isDeactivated ? 'admin-btn-success' : 'admin-btn-danger'}" style="padding:4px 8px; font-size:11px;" onclick="handleToggleUserStatus('${u.id}', ${!isDeactivated})" title="${isDeactivated ? 'Reactivate' : 'Suspend'}">
-                  <i class="fas ${isDeactivated ? 'fa-user-check' : 'fa-user-slash'}"></i> ${isDeactivated ? 'Reactivate' : 'Suspend'}
-                </button>
-              </div>
+              ${actionsMarkup}
             </td>
           </tr>
         `;
       }).join('');
+      updateUserApprovalBadges();
     }
+
+    async function handleApproveUser(userId, email, studentId) {
+      if (!confirm(`Approve registration for Student ID "${studentId || 'N/A'}" (${email || 'user'})?\n\nThis will verify the student account, grant permission to log in, and issue their 6-digit verification code to their Gmail.`)) {
+        return;
+      }
+      try {
+        var res = await SafeSpaceDB.admin.approveUser(userId);
+        var msg = `Account approved! 6-digit verification code has been issued for ${email || 'the student'}.`;
+        if (res && res.otp) {
+          msg += ` (Code: ${res.otp})`;
+        }
+        showToast(msg, 'success');
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to approve user: ' + (err.message || err), 'error');
+      }
+    }
+
+    async function handleRejectUser(userId, username) {
+      var reason = prompt(`Please enter the rejection reason for ${username || 'this user'}:`, 'Student ID could not be verified in school database.');
+      if (reason === null) return;
+      try {
+        await SafeSpaceDB.admin.rejectUser(userId, reason);
+        showToast(`Registration rejected for ${username || 'user'}.`, 'info');
+        await loadAdminDashboardData();
+      } catch (err) {
+        showToast('Failed to reject registration.', 'error');
+      }
+    }
+
+    function goToUsersTabWithPendingFilter() {
+      activeUserFilter = 'pending';
+      switchAdminTab('users');
+      document.querySelectorAll('#userFilterRow .filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.userFilter === 'pending');
+      });
+      renderUsersTable();
+    }
+
+    window.handleApproveUser = handleApproveUser;
+    window.handleRejectUser = handleRejectUser;
+    window.goToUsersTabWithPendingFilter = goToUsersTabWithPendingFilter;
+    window.updateUserApprovalBadges = updateUserApprovalBadges;
 
     // Role modal
     function openRoleModal(userId, username, currentRole) {

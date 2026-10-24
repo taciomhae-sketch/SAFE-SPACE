@@ -420,8 +420,24 @@ var SafeSpaceDB = {
             }
 
             var fullUser = Object.assign({}, res.data.user, meta, profile);
+
+            // Verify admin approval before allowing login
+            var userRole = fullUser.role || (fullUser.is_admin ? 'admin' : 'student');
+            if (userRole !== 'admin' && !fullUser.is_admin) {
+              var appStatus = fullUser.approval_status || (fullUser.is_approved === false ? 'pending' : 'approved');
+              if (appStatus === 'pending' || fullUser.is_approved === false) {
+                throw new Error('PENDING_APPROVAL: Your registration is pending administrator approval. The admin must verify your Student ID on the Admin Dashboard before you can proceed to log in.');
+              }
+              if (appStatus === 'rejected') {
+                throw new Error('REJECTED_APPROVAL: Your account registration was not approved by the administrator.');
+              }
+            }
+
             localStorage.setItem('safe_space_user', JSON.stringify(fullUser));
           } catch (e) {
+            if (e.message && (e.message.includes('PENDING_APPROVAL') || e.message.includes('REJECTED_APPROVAL'))) {
+              throw e;
+            }
             localStorage.setItem('safe_space_user', JSON.stringify(res.data.user));
           }
         }
@@ -430,7 +446,21 @@ var SafeSpaceDB = {
       // Demo authentication
       if (!email || !password) throw new Error('Please enter email and password.');
       var stored = JSON.parse(localStorage.getItem('safe_space_user'));
-      var baseUser = stored || Object.assign({}, INITIAL_DEMO_DATA.currentUser);
+      var mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+      var mem = mems.find(function(m) { return m.email && m.email.toLowerCase() === email.toLowerCase(); });
+      var baseUser = mem || stored || Object.assign({}, INITIAL_DEMO_DATA.currentUser);
+
+      var userRole = baseUser.role || (baseUser.is_admin ? 'admin' : 'student');
+      if (userRole !== 'admin' && !baseUser.is_admin) {
+        var appStatus = baseUser.approval_status || (baseUser.is_approved === false ? 'pending' : 'approved');
+        if (appStatus === 'pending' || baseUser.is_approved === false) {
+          throw new Error('PENDING_APPROVAL: Your registration is pending administrator approval. The admin must verify your Student ID on the Admin Dashboard before you can proceed to log in.');
+        }
+        if (appStatus === 'rejected') {
+          throw new Error('REJECTED_APPROVAL: Your account registration was not approved by the administrator.');
+        }
+      }
+
       baseUser.email = email;
       localStorage.setItem('safe_space_user', JSON.stringify(baseUser));
       return { user: baseUser };
@@ -442,6 +472,26 @@ var SafeSpaceDB = {
     signInWithOtp: async function(email) {
       email = (email || '').trim().toLowerCase();
       if (!email) throw new Error('Please enter your email address.');
+
+      // Check user approval status before sending verification code
+      if (SafeSpaceDB.admin && SafeSpaceDB.admin.getUserByEmail) {
+        try {
+          var targetUser = await SafeSpaceDB.admin.getUserByEmail(email);
+          if (targetUser && targetUser.role !== 'admin' && !targetUser.is_admin) {
+            var appStatus = targetUser.approval_status || (targetUser.is_approved === false ? 'pending' : 'approved');
+            if (appStatus === 'pending' || targetUser.is_approved === false) {
+              throw new Error('PENDING_APPROVAL: Your registration is pending administrator approval. The admin must verify your Student ID on the Admin Dashboard before you can receive your verification code in Gmail.');
+            }
+            if (appStatus === 'rejected') {
+              throw new Error('REJECTED_APPROVAL: Your account registration was not approved by the administrator.');
+            }
+          }
+        } catch (chkErr) {
+          if (chkErr.message && (chkErr.message.includes('PENDING_APPROVAL') || chkErr.message.includes('REJECTED_APPROVAL'))) {
+            throw chkErr;
+          }
+        }
+      }
 
       if (SafeSpaceDB.isSupabaseActive()) {
         var redirectTarget = (typeof window !== 'undefined' && window.location)
@@ -468,6 +518,10 @@ var SafeSpaceDB = {
       var metadata = Object.assign({}, payload);
       delete metadata.email;
       delete metadata.password;
+
+      // New student signups require administrator verification on the Admin Dashboard
+      metadata.approval_status = (metadata.role === 'admin' || metadata.is_admin) ? 'approved' : 'pending';
+      metadata.is_approved = (metadata.role === 'admin' || metadata.is_admin) ? true : false;
 
       if (SafeSpaceDB.isSupabaseActive()) {
         // If REQUIRE_EMAIL_CONFIRMATION is enabled, use standard Supabase signup to trigger real SMTP confirmation email
@@ -498,13 +552,33 @@ var SafeSpaceDB = {
             throw new Error('User already registered. An account with this email already exists. Please log in instead.');
           }
 
-          // Return pending 6-digit OTP verification state before user can proceed to login
+          var sbUser = res.data ? res.data.user : null;
+          if (sbUser) {
+            try {
+              var client = _dbAdmin || _db;
+              await client.from('profiles').upsert({
+                id: sbUser.id,
+                email: email,
+                username: metadata.username || (email ? email.split('@')[0] : 'user'),
+                student_id: metadata.student_id || null,
+                first_name: metadata.first_name || 'Member',
+                last_name: metadata.last_name || '',
+                role: metadata.role || 'student',
+                approval_status: metadata.approval_status,
+                is_approved: metadata.is_approved,
+                created_at: new Date().toISOString()
+              });
+            } catch (pErr) {}
+          }
+
           return {
-            user: res.data ? res.data.user : null,
+            user: sbUser,
             session: null,
+            needsAdminApproval: !metadata.is_approved,
             needsEmailConfirmation: true,
-            needsOtp: true,
-            email: email
+            needsOtp: false,
+            email: email,
+            studentId: metadata.student_id
           };
         }
 
@@ -533,15 +607,20 @@ var SafeSpaceDB = {
               throw new Error(errMessage);
             }
 
-            var loginRes = await _db.auth.signInWithPassword({ email: email, password: password });
-            if (loginRes.error) throw loginRes.error;
-            return loginRes.data;
+            return {
+              user: adminData,
+              session: null,
+              needsAdminApproval: !metadata.is_approved,
+              email: email,
+              studentId: metadata.student_id
+            };
           } catch (adminErr) {
             console.warn('[SafeSpace] Admin auto-confirm signup error:', adminErr);
             throw adminErr;
           }
         }
       }
+
       // Demo Signup: Generate strictly 6-digit verification code so flow matches production
       var demoOtp = String(Math.floor(100000 + Math.random() * 900000));
       var newUser = {
@@ -558,13 +637,28 @@ var SafeSpaceDB = {
         bio: metadata.bio || 'Hello, Safe Space!',
         avatar_url: metadata.avatar_url || null,
         created_at: new Date().toISOString(),
-        email_confirmed: false
+        email_confirmed: false,
+        approval_status: metadata.approval_status,
+        is_approved: metadata.is_approved
       };
       localStorage.setItem('safe_space_user', JSON.stringify(newUser));
+
+      // Register new user into member list for Admin Dashboard verification
+      try {
+        var curMems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+        var existingIdx = curMems.findIndex(function(m) { return m.email && m.email.toLowerCase() === (email || '').toLowerCase(); });
+        if (existingIdx >= 0) {
+          curMems[existingIdx] = Object.assign({}, curMems[existingIdx], newUser);
+        } else {
+          curMems.unshift(newUser);
+        }
+        localStorage.setItem('safe_space_members', JSON.stringify(curMems));
+      } catch (e) {}
+
       try {
         localStorage.setItem('safe_space_pending_otp_' + (email || '').toLowerCase(), JSON.stringify({
           code: demoOtp,
-          expires_at: Date.now() + 10 * 60 * 1000,
+          expires_at: Date.now() + 24 * 60 * 60 * 1000,
           user: newUser
         }));
       } catch (e) {}
@@ -572,9 +666,11 @@ var SafeSpaceDB = {
       return {
         user: newUser,
         session: null,
+        needsAdminApproval: !newUser.is_approved,
         needsEmailConfirmation: true,
-        needsOtp: true,
+        needsOtp: false,
         email: email,
+        studentId: metadata.student_id,
         demoOtp: demoOtp
       };
     },
@@ -807,6 +903,7 @@ var SafeSpaceDB = {
         'age', 'sex', 'birthday', 'avatar_url', 'avatar_type', 'avatar_value',
         'theme_mode', 'theme_color', 'bio', 'is_deactivated',
         'privacy_anonymous_posting', 'privacy_allow_discovery', 'privacy_show_profile',
+        'approval_status', 'is_approved', 'reject_reason',
         'updated_at'
       ];
       var dbPayload = {};
@@ -5197,14 +5294,15 @@ var SafeSpaceDB = {
         resolvedReports: 0,
         dismissedReports: 0,
         flaggedPosts: 0,
-        activeUsersToday: 0
+        activeUsersToday: 0,
+        pendingApprovals: 0
       };
 
       if (SafeSpaceDB.isSupabaseActive()) {
         try {
           var client = _dbAdmin || _db;
           var [usersRes, postsRes, reportsRes, commentsRes] = await Promise.all([
-            client.from('profiles').select('id, last_active, is_online, is_deactivated', { count: 'exact' }),
+            client.from('profiles').select('id, last_active, is_online, is_deactivated, approval_status, is_approved, role, is_admin', { count: 'exact' }),
             client.from('posts').select('id, moderation_status, deleted_at', { count: 'exact' }),
             client.from('reports').select('id, status', { count: 'exact' }),
             client.from('post_comments').select('id', { count: 'exact' })
@@ -5233,6 +5331,9 @@ var SafeSpaceDB = {
             stats.activeUsersToday = usersRes.data.filter(function(u) {
               return u.is_online || (u.last_active && (Date.now() - new Date(u.last_active).getTime() < 86400000));
             }).length;
+            stats.pendingApprovals = usersRes.data.filter(function(u) {
+              return (u.approval_status === 'pending' || u.is_approved === false) && u.role !== 'admin' && !u.is_admin;
+            }).length;
           }
           return stats;
         } catch (e) {
@@ -5247,6 +5348,9 @@ var SafeSpaceDB = {
       stats.totalUsers = Math.max(localMembers.length, 1);
       stats.totalPosts = localPosts.length;
       stats.totalReports = localReports.length;
+      stats.pendingApprovals = localMembers.filter(function(u) {
+        return (u.approval_status === 'pending' || u.is_approved === false) && u.role !== 'admin' && !u.is_admin;
+      }).length;
       localReports.forEach(function(r) {
         var s = (r.status || 'Pending').toLowerCase();
         if (s === 'pending') stats.pendingReports++;
@@ -5958,6 +6062,132 @@ var SafeSpaceDB = {
       mems.unshift(newLocal);
       localStorage.setItem('safe_space_members', JSON.stringify(mems));
       return newLocal;
+    },
+
+    approveUser: async function(userId) {
+      if (!userId) throw new Error('User ID is required');
+      var now = new Date().toISOString();
+      var demoOtp = String(Math.floor(100000 + Math.random() * 900000));
+      var updatedUser = null;
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB._isUUID(userId)) {
+        try {
+          var client = _dbAdmin || _db;
+          await client.from('profiles').update({
+            approval_status: 'approved',
+            is_approved: true,
+            approved_at: now
+          }).eq('id', userId);
+
+          if (_dbAdmin && _dbAdmin.auth && _dbAdmin.auth.admin) {
+            await _dbAdmin.auth.admin.updateUserById(userId, {
+              user_metadata: { approval_status: 'approved', is_approved: true }
+            });
+          }
+        } catch (e) {
+          console.warn('[SafeSpace] Supabase admin.approveUser error:', e);
+        }
+      }
+
+      // Local / demo sync
+      var mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+      mems = mems.map(function(m) {
+        if (m.id === userId || m.email === userId) {
+          m.approval_status = 'approved';
+          m.is_approved = true;
+          m.approved_at = now;
+          updatedUser = m;
+        }
+        return m;
+      });
+      localStorage.setItem('safe_space_members', JSON.stringify(mems));
+
+      var curStored = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+      if (curStored && (curStored.id === userId || (updatedUser && curStored.email === updatedUser.email))) {
+        curStored.approval_status = 'approved';
+        curStored.is_approved = true;
+        curStored.approved_at = now;
+        localStorage.setItem('safe_space_user', JSON.stringify(curStored));
+      }
+
+      var targetEmail = (updatedUser && updatedUser.email) ? updatedUser.email : (curStored ? curStored.email : null);
+      if (targetEmail) {
+        localStorage.setItem('safe_space_pending_otp_' + targetEmail.toLowerCase(), JSON.stringify({
+          code: demoOtp,
+          expires_at: Date.now() + 24 * 3600 * 1000,
+          user: updatedUser || curStored
+        }));
+      }
+
+      return { success: true, user: updatedUser, otp: demoOtp };
+    },
+
+    rejectUser: async function(userId, reason) {
+      if (!userId) throw new Error('User ID is required');
+      var now = new Date().toISOString();
+      reason = reason || 'Registration details could not be verified.';
+      var updatedUser = null;
+
+      if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB._isUUID(userId)) {
+        try {
+          var client = _dbAdmin || _db;
+          await client.from('profiles').update({
+            approval_status: 'rejected',
+            is_approved: false,
+            reject_reason: reason,
+            rejected_at: now
+          }).eq('id', userId);
+
+          if (_dbAdmin && _dbAdmin.auth && _dbAdmin.auth.admin) {
+            await _dbAdmin.auth.admin.updateUserById(userId, {
+              user_metadata: { approval_status: 'rejected', is_approved: false, reject_reason: reason }
+            });
+          }
+        } catch (e) {
+          console.warn('[SafeSpace] Supabase admin.rejectUser error:', e);
+        }
+      }
+
+      var mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+      mems = mems.map(function(m) {
+        if (m.id === userId || m.email === userId) {
+          m.approval_status = 'rejected';
+          m.is_approved = false;
+          m.reject_reason = reason;
+          m.rejected_at = now;
+          updatedUser = m;
+        }
+        return m;
+      });
+      localStorage.setItem('safe_space_members', JSON.stringify(mems));
+
+      var curStored = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+      if (curStored && (curStored.id === userId || (updatedUser && curStored.email === updatedUser.email))) {
+        curStored.approval_status = 'rejected';
+        curStored.is_approved = false;
+        curStored.reject_reason = reason;
+        localStorage.setItem('safe_space_user', JSON.stringify(curStored));
+      }
+
+      return { success: true, user: updatedUser };
+    },
+
+    getUserByEmail: async function(email) {
+      if (!email) return null;
+      email = email.trim().toLowerCase();
+      if (SafeSpaceDB.isSupabaseActive()) {
+        try {
+          var client = _dbAdmin || _db;
+          var res = await client.from('profiles').select('*').ilike('email', email).maybeSingle();
+          if (res.data) return res.data;
+        } catch (e) {}
+      }
+      var mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+      var found = mems.find(function(m) { return m.email && m.email.toLowerCase() === email; });
+      if (found) return found;
+      var curStored = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+      if (curStored && curStored.email && curStored.email.toLowerCase() === email) return curStored;
+      return null;
     },
 
     getAllPosts: async function() {

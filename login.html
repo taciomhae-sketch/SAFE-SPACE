@@ -367,6 +367,27 @@
           return;
         }
 
+        // Verify admin approval before completing sign in
+        if (loggedUser && loggedUser.role !== 'admin' && !loggedUser.is_admin) {
+          var appStatus = loggedUser.approval_status || (loggedUser.is_approved === false ? 'pending' : 'approved');
+          if (appStatus === 'pending' || loggedUser.is_approved === false) {
+            setLoading(false);
+            showFormAlert(
+              'Your registration is currently pending administrator verification. The admin must review and approve your Student ID (' + escapeHTML(loggedUser.student_id || 'ID') + ') on the Admin Dashboard before you can receive your verification code in Gmail and proceed to log in.',
+              'warning'
+            );
+            return;
+          }
+          if (appStatus === 'rejected') {
+            setLoading(false);
+            showFormAlert(
+              'Your account registration was not approved by the administrator. Please contact your campus student affairs or guidance office.',
+              'error'
+            );
+            return;
+          }
+        }
+
         if (typeof showToast === 'function') {
           showToast('Welcome back! Signing you in...', 'success');
         }
@@ -378,6 +399,24 @@
           : (err.message || 'Login failed. Please check your credentials.');
 
         var rawMsg = (err && err.message) ? err.message.toLowerCase() : '';
+
+        if (rawMsg.includes('pending_approval') || friendlyMsg.includes('pending administrator approval') || friendlyMsg.includes('awaiting administrator')) {
+          showFormAlert(
+            'Your account registration is awaiting administrator verification. The admin must review and approve your account on the Admin Dashboard before you can receive your verification code in Gmail and proceed to log in.',
+            'warning'
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (rawMsg.includes('rejected_approval') || friendlyMsg.includes('rejected by the administrator')) {
+          showFormAlert(
+            'Your registration was not approved by the administrator. Please contact your campus student affairs or guidance office for assistance.',
+            'error'
+          );
+          setLoading(false);
+          return;
+        }
 
         // If email not confirmed, provide instant 6-digit OTP verification button
         if (rawMsg.includes('email not confirmed') || rawMsg.includes('email_not_confirmed')) {
@@ -434,6 +473,19 @@
           showFormAlert('Please enter your email above to receive your 6-digit verification code.', 'info');
           emailInput.focus();
           return;
+        }
+
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.admin && SafeSpaceDB.admin.getUserByEmail) {
+          try {
+            var checkUser = await SafeSpaceDB.admin.getUserByEmail(email);
+            if (checkUser && checkUser.role !== 'admin' && !checkUser.is_admin) {
+              var chkStatus = checkUser.approval_status || (checkUser.is_approved === false ? 'pending' : 'approved');
+              if (chkStatus === 'pending' || checkUser.is_approved === false) {
+                showFormAlert('Your registration is pending administrator approval. The admin must verify your Student ID (' + escapeHTML(checkUser.student_id || 'ID') + ') on the Admin Dashboard before verification codes can be sent to your Gmail.', 'warning');
+                return;
+              }
+            }
+          } catch(e) {}
         }
 
         var btnText = document.getElementById('magicLinkBtnText');
