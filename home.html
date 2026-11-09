@@ -245,6 +245,15 @@
           </div>
         </div>
 
+        <!-- Anonymous Safety & Privacy Disclosure (RA 10173) -->
+        <div id="anonymousPrivacyNotice" style="display:none; margin-bottom:12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px 12px; font-size:11px; color:#475569; line-height:1.4;">
+          <div style="display:flex; align-items:center; gap:6px; font-weight:700; color:#334155; margin-bottom:3px;">
+            <i class="fas fa-shield-halved" style="color:var(--primary);"></i>
+            <span>Anonymous Posting &amp; Student Safety Notice</span>
+          </div>
+          Your name and avatar remain completely hidden from other students in the public feed. Under our Safety Policy and the Philippine Data Privacy Act (RA 10173), account identification is strictly limited to authorized safety administrators investigating urgent life-safety concerns or emergency threats.
+        </div>
+
         <!-- AI Moderation Active Banner -->
         <div class="ai-status-banner" id="aiStatusBanner">
           <div class="ai-status-banner-left">
@@ -472,13 +481,26 @@
   <!-- AI Safety Pre-Posting Screening Warning Modal -->
   <div class="ai-warning-modal-overlay" id="aiWarningModal" role="dialog" aria-modal="true" aria-labelledby="aiWarningTitle">
     <div class="ai-warning-card">
-      <div class="ai-warning-icon-wrap" id="aiWarningIcon" style="background:#FEF2F2; color:#EF4444;">
-        <i class="fas fa-triangle-exclamation"></i>
+      <div class="ai-warning-icon-wrap" id="aiWarningIcon" style="background:#FFF7ED; color:#EA580C;">
+        <i class="fas fa-shield-halved"></i>
       </div>
-      <div class="ai-warning-title" id="aiWarningTitle">Trigger Warning — Sensitive Content Detected</div>
-      <div class="ai-warning-category-pill" id="aiWarningCategory">SENSITIVE CONTENT</div>
+      <div class="ai-warning-title" id="aiWarningTitle">Content Warning</div>
+      <div class="ai-warning-category-pill" id="aiWarningCategory" style="display:none;">SENSITIVE CONTENT</div>
+      
       <div class="ai-warning-desc" id="aiWarningReason">
-        Your post may contain sensitive or emotionally distressing content related to topics such as self-harm, violence, abuse, or other difficult experiences. Please review your content before sharing it with the community. You may edit your post, cancel the submission, or continue if the content complies with our community guidelines.
+        Your post may contain sensitive or distressing content that could affect other students.
+        <br><br>
+        Please review your post before publishing. You may edit your content to make it more appropriate for the Safe Space community or proceed if you believe your post is necessary and follows the platform's community guidelines.
+      </div>
+
+      <!-- Detected Content Categories Section -->
+      <div class="ai-warning-detected-box" id="aiWarningDetectedBox">
+        <div class="ai-warning-detected-title">
+          <i class="fas fa-tags"></i> Detected Content:
+        </div>
+        <div class="ai-warning-detected-tags" id="aiWarningDetectedTags">
+          <span class="ai-warning-tag-chip">Sensitive Content</span>
+        </div>
       </div>
 
       <!-- Urgent 24/7 Crisis Hotline Box (Shown for self-harm / suicide concerns) -->
@@ -492,14 +514,17 @@
         </div>
       </div>
 
-      <div class="ai-warning-guidance" id="aiWarningGuidance">
-        Safe Space promotes psychological safety, emotional well-being, and mutual respect for all students.
+      <div class="ai-warning-prompt-question" id="aiWarningPromptQuestion">
+        What would you like to do with your post?
       </div>
 
       <!-- Action Buttons (Responsive Layout) -->
       <div class="ai-warning-actions" id="aiWarningActions">
         <button type="button" class="ai-btn-edit" id="aiCloseWarningBtn">
-          <i class="fas fa-pen"></i> <span id="aiCloseWarningLabel">Review / Edit Post</span>
+          <i class="fas fa-pen"></i> <span id="aiCloseWarningLabel">Edit Post</span>
+        </button>
+        <button type="button" class="ai-btn-continue" id="aiProceedWarningBtn">
+          <i class="fas fa-paper-plane"></i> <span id="aiProceedWarningLabel">Proceed to Post</span>
         </button>
         <button type="button" class="ai-btn-resources" id="aiResourcesWarningBtn" style="display:none;" onclick="window.open('resources.html', '_blank')">
           <i class="fas fa-hand-holding-heart"></i> <span>View Support Resources</span>
@@ -508,11 +533,12 @@
           <i class="fas fa-book-bookmark"></i> <span>View Community Guidelines</span>
         </button>
         <button type="button" class="ai-btn-cancel" id="aiCancelWarningBtn">
-          <i class="fas fa-times"></i> <span>Cancel Posting</span>
+          <i class="fas fa-times"></i> <span>Cancel</span>
         </button>
-        <button type="button" class="ai-btn-continue" id="aiProceedWarningBtn" style="display:none;">
-          <i class="fas fa-paper-plane"></i> <span>Continue Posting</span>
-        </button>
+      </div>
+
+      <div class="ai-warning-unnotified">
+        <i class="fas fa-info-circle"></i> Your post has not been published yet.
       </div>
     </div>
   </div>
@@ -1292,57 +1318,59 @@
 
           const topicBadgeHtml = rec.topic_label ? `<span style="font-size:10px; background:#EDE9FE; color:#6C4FD1; padding:1px 6px; border-radius:999px; font-weight:700;">${escapeHTML(rec.topic_label)}</span>` : '';
 
-          const supportRecHtml = `
-            <div class="ai-support" id="ai-support-${post.id}">
-              <div class="ai-support-head">
-                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-                  <strong>Suggested Support from Safe Space AI</strong>
-                  ${topicBadgeHtml}
-                </div>
-                <span class="ai-badge"><i class="fas fa-wand-magic-sparkles"></i> AI Generated</span>
-              </div>
-              <p class="ai-support-text">${escapeHTML(previewText)}</p>
-              <div class="ai-support-more" id="ai-support-more-${post.id}" ${hasMore ? 'hidden' : (moreText ? '' : 'hidden')}>${escapeHTML(moreText)}</div>
-              ${resBtnHtml}
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:2px;">
-                <div class="ai-support-foot">${escapeHTML(disclaimerText)}</div>
-                ${hasMore ? `
-                  <button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="openAiSupportModal('${post.id}')" aria-expanded="false" title="View Full Support">
-                    <i class="fas fa-circle-info"></i> View Full Support
-                  </button>` : ''}
-              </div>
-            </div>
-          `;
+          const supportRecHtml = '';
 
           const isPostSensitive = Boolean(
+            post.sensitive_content === true ||
+            post.blur_enabled === true ||
+            (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
+            pMeta.sensitive_content === true ||
+            pMeta.blur_enabled === true ||
             post.has_trigger_warning === true ||
             pMeta.has_trigger_warning === true ||
-            (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(String(post.moderation_category).toUpperCase())) ||
-            (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW')
+            (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
           );
 
-          let twBadgeLabel = post.trigger_warning_label || pMeta.trigger_warning_label || 'Sensitive Content';
-          const rawTwCat = String(post.trigger_warning_category || pMeta.trigger_warning_category || post.moderation_category || '').toUpperCase();
-          if (rawTwCat.includes('NUDITY') || rawTwCat.includes('SEXUAL')) twBadgeLabel = 'Nudity / Explicit Content';
-          else if (rawTwCat.includes('SELF_HARM')) twBadgeLabel = 'Self-Harm / Crisis Concern';
-          else if (rawTwCat.includes('THREAT') || rawTwCat.includes('VIOLEN')) twBadgeLabel = 'Violence or Threatening Content';
-          else if (rawTwCat.includes('BULLY') || rawTwCat.includes('HARASS')) twBadgeLabel = 'Bullying or Harassment';
-          else if (rawTwCat.includes('TRAUMA') || rawTwCat.includes('ABUSE')) twBadgeLabel = 'Trauma or Abuse';
-          else if (rawTwCat.includes('DISTRESS') || rawTwCat.includes('ALARM')) twBadgeLabel = 'Distressing Emotional Content';
+          let sensitiveWarning = post.sensitive_warning || pMeta.sensitive_warning;
+          if (isPostSensitive && !sensitiveWarning && window.SafeSpaceSensitiveDetector) {
+            const evalRes = SafeSpaceSensitiveDetector.evaluate(post.content || '');
+            if (evalRes && evalRes.is_sensitive) {
+              sensitiveWarning = evalRes.warning;
+            }
+          }
+          if (!sensitiveWarning) {
+            sensitiveWarning = 'Sensitive Content: This post may contain potentially distressing or sensitive material.';
+          }
+
+          window._revealedPostsSet = window._revealedPostsSet || new Set();
+          const isRevealed = window._revealedPostsSet.has(post.id);
 
           let postBodyHtml = '';
           if (isPostSensitive) {
             postBodyHtml = `
-              <div class="post-trigger-warning-card" id="tw-card-${post.id}">
-                <div class="tw-card-header">
-                  <span class="tw-badge"><i class="fas fa-triangle-exclamation"></i> Trigger Warning: ${escapeHTML(twBadgeLabel)}</span>
-                  <button type="button" class="tw-view-toggle-btn" id="tw-btn-${post.id}" onclick="toggleSensitivePostContent('${post.id}')" aria-label="Choose whether to view sensitive content">
-                    <i class="fas fa-eye"></i> <span>View Content</span>
+              <div class="sensitive-content-banner" id="sensitive-banner-${post.id}">
+                <div class="sensitive-banner-header">
+                  <div class="sensitive-title-wrap">
+                    <i class="fas fa-shield-alt sensitive-shield-icon"></i>
+                    <span class="sensitive-title">Sensitive Content</span>
+                  </div>
+                  <span class="content-warning-pill">Content Warning</span>
+                </div>
+                <p class="sensitive-desc">${escapeHTML(sensitiveWarning)}</p>
+                <div class="sensitive-blur-prompt" id="sensitive-prompt-${post.id}" style="${isRevealed ? 'display:none;' : ''}">
+                  <i class="fas fa-eye-slash sensitive-eye-icon"></i>
+                  <span class="sensitive-hidden-label">Post content is blurred and hidden</span>
+                  <button type="button" class="btn-view-content" onclick="window.revealSensitivePost('${post.id}')" aria-label="Reveal sensitive content">
+                    View Content
                   </button>
                 </div>
-                <p class="tw-card-desc">This post discusses a potentially distressing topic. Choose whether to view the content.</p>
+                <div class="sensitive-reveal-bar" id="sensitive-reveal-bar-${post.id}" style="${isRevealed ? 'text-align:right; margin-top:-6px; margin-bottom:4px;' : 'display:none; text-align:right; margin-top:-6px; margin-bottom:4px;'}">
+                  <button type="button" class="btn-hide-content" onclick="window.hideSensitivePost('${post.id}')" aria-label="Hide sensitive content">
+                    <i class="fas fa-eye-slash"></i> <span>Hide Content</span>
+                  </button>
+                </div>
               </div>
-              <div class="sensitive-content-collapse is-concealed" id="sensitive-wrap-${post.id}">
+              <div class="post-content-wrap ${isRevealed ? 'is-revealed' : 'is-blurred'}" id="post-content-wrap-${post.id}">
                 <div class="post-content">${escapeHTML(post.content || '')}</div>
                 ${post.photo_url ? `
                   <div class="post-image">
@@ -1353,12 +1381,14 @@
             `;
           } else {
             postBodyHtml = `
-              <div class="post-content">${escapeHTML(post.content || '')}</div>
-              ${post.photo_url ? `
-                <div class="post-image">
-                  <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />
-                </div>
-              ` : ''}
+              <div class="post-content-wrap is-revealed" id="post-content-wrap-${post.id}">
+                <div class="post-content">${escapeHTML(post.content || '')}</div>
+                ${post.photo_url ? `
+                  <div class="post-image">
+                    <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />
+                  </div>
+                ` : ''}
+              </div>
             `;
           }
 
@@ -1383,7 +1413,6 @@
 
               ${postBodyHtml}
 
-              ${supportRecHtml}
 
               ${likeCount > 0 ? `
                 <div class="post-reactions-bar" id="reactions-bar-${post.id}" onclick="openLikesModal('${post.id}', event)" title="See who reacted to this post" role="button" tabindex="0">
@@ -1603,12 +1632,15 @@
           const labelEl = document.getElementById('currentIdentityLabel');
           const avatarSlot = document.getElementById('currentIdentityAvatarSlot');
           const myName = formatDisplayName(currentUser ? (currentUser.first_name || currentUser.username) : '', 'Me');
+          const anonNotice = document.getElementById('anonymousPrivacyNotice');
 
           if (isAnon) {
             if (labelEl) labelEl.textContent = 'Post as Anonymous';
             if (avatarSlot) avatarSlot.innerHTML = '<i class="fas fa-user-secret" id="currentIdentityIcon"></i>';
+            if (anonNotice) anonNotice.style.display = 'block';
           } else {
             if (labelEl) labelEl.textContent = `Post as ${myName}`;
+            if (anonNotice) anonNotice.style.display = 'none';
             if (avatarSlot) {
               if (currentUser && currentUser.avatar_url && window.SafeSpaceAvatars) {
                 avatarSlot.innerHTML = window.SafeSpaceAvatars.renderHtml(currentUser.avatar_url, {
@@ -1730,11 +1762,31 @@
           var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || aiResult.status === 'REVIEW' || (aiResult.category && aiResult.category !== 'SAFE');
 
           const cfg = aiResult.warning_config || {};
-          const hasTriggerWarning = Boolean(isFlagged || cfg.has_trigger_warning);
-          const twCategory = cfg.trigger_warning_category || aiResult.category || (isFlagged ? 'SENSITIVE' : null);
-          const twLabel = cfg.trigger_warning_label || (isFlagged ? 'Sensitive Content' : null);
+          const isSensitive = Boolean(aiResult.sensitive_content || (aiResult.sensitive_categories && aiResult.sensitive_categories.length > 0) || cfg.has_trigger_warning || isFlagged);
+          const hasTriggerWarning = Boolean(isFlagged || isSensitive || cfg.has_trigger_warning);
+          const twCategory = cfg.trigger_warning_category || (aiResult.sensitive_categories && aiResult.sensitive_categories[0]) || aiResult.category || (isFlagged ? 'SENSITIVE' : null);
+          const twLabel = cfg.trigger_warning_label || (isSensitive ? 'Sensitive Content' : null);
+          const sensitiveCategories = aiResult.sensitive_categories || (twCategory ? [twCategory] : []);
+          let sensitiveWarning = aiResult.sensitive_warning || null;
+          if (!sensitiveWarning) {
+            if (aiResult.category === 'SELF_HARM' || (sensitiveCategories && sensitiveCategories.includes('SELF_HARM'))) {
+              sensitiveWarning = 'Sensitive Content: This post discusses self-harm, suicide-related experiences, or emotional distress.';
+            } else if (aiResult.category === 'BULLYING') {
+              sensitiveWarning = 'Sensitive Content: This post may contain bullying, harassment, or offensive language.';
+            } else if (aiResult.category === 'VIOLENCE') {
+              sensitiveWarning = 'Sensitive Content: This post may contain violence, disturbing descriptions, or graphic material.';
+            } else if (aiResult.category === 'TRAUMA') {
+              sensitiveWarning = 'Sensitive Content: This post may discuss trauma, abuse, or distressing personal experiences.';
+            } else if (aiResult.has_profanity || aiResult.category === 'PROFANITY') {
+              sensitiveWarning = 'Sensitive Content: This post may contain profanity or offensive language.';
+            } else if (isSensitive) {
+              sensitiveWarning = 'Sensitive Content: This post may contain material that some users find distressing.';
+            }
+          }
+          const blurEnabled = Boolean(isSensitive || isFlagged);
+          const resolvedModStatus = (isSensitive || isFlagged) ? 'REVIEW' : (aiResult.status || 'APPROVED');
 
-          // ── Save Post with AI Metadata & Trigger Warning ──
+          // ── Save Post with AI Metadata & Sensitive Content Fields ──
           const newPost = await SafeSpaceDB.posts.createPost({
             content,
             mood: postState.selectedMood,
@@ -1743,15 +1795,21 @@
             category: postState.selectedCategory || 'general',
             sentiment: aiResult.sentiment || 'NEUTRAL',
             sentiment_score: aiResult.sentiment_score || 0.5,
-            moderation_status: isFlagged ? 'REVIEW' : (aiResult.status || 'APPROVED'),
-            moderation_category: aiResult.category || (isFlagged ? 'HARASSMENT' : 'SAFE'),
+            moderation_status: resolvedModStatus,
+            moderation_category: aiResult.category || (isSensitive ? 'SENSITIVE' : (isFlagged ? 'HARASSMENT' : 'SAFE')),
             moderation_confidence: aiResult.confidence || 0.95,
-            moderation_reason: aiResult.reason || (isFlagged ? 'Flagged by safety filter; confirmed by user' : 'Approved'),
+            moderation_reason: aiResult.reason || (isSensitive ? 'Sensitive content detected; blur enabled' : 'Approved'),
             ai_recommendation: aiResult.support_recommendation,
-            is_user_confirmed: isFlagged,
+            is_user_confirmed: true,
             has_trigger_warning: hasTriggerWarning,
             trigger_warning_category: twCategory,
-            trigger_warning_label: twLabel
+            trigger_warning_label: twLabel,
+            sensitive_content: isSensitive,
+            sensitive_categories: sensitiveCategories,
+            sensitive_category_names: aiResult.sensitive_category_names || [],
+            sensitive_warning: sensitiveWarning,
+            blur_enabled: blurEnabled,
+            assessed_at: new Date().toISOString()
           });
 
           // Cache AI metadata locally so it survives refreshes immediately
@@ -1760,12 +1818,17 @@
             aiStore[newPost.id] = {
               sentiment: newPost.sentiment || aiResult.sentiment || 'NEUTRAL',
               sentiment_score: newPost.sentiment_score !== undefined ? newPost.sentiment_score : (aiResult.sentiment_score || 0.5),
-              moderation_status: newPost.moderation_status || (isFlagged ? 'REVIEW' : 'APPROVED'),
-              moderation_category: newPost.moderation_category || (isFlagged ? 'HARASSMENT' : 'SAFE'),
+              moderation_status: resolvedModStatus,
+              moderation_category: newPost.moderation_category || (isSensitive ? 'SENSITIVE' : 'SAFE'),
               ai_recommendation: newPost.ai_recommendation || aiResult.support_recommendation,
-              has_trigger_warning: hasTriggerWarning,
+              has_trigger_warning: true,
               trigger_warning_category: twCategory,
-              trigger_warning_label: twLabel
+              trigger_warning_label: twLabel,
+              sensitive_content: isSensitive,
+              sensitive_categories: sensitiveCategories,
+              sensitive_category_names: aiResult.sensitive_category_names || [],
+              sensitive_warning: sensitiveWarning,
+              blur_enabled: blurEnabled
             };
             localStorage.setItem('safe_space_post_ai_meta', JSON.stringify(aiStore));
 
@@ -1807,13 +1870,17 @@
           document.getElementById('moodToolbarLabel').textContent = 'Add Mood';
           moodChips.forEach(c => c.classList.remove('selected'));
           moodContainer.style.display = 'none';
+          const anonNoticeReset = document.getElementById('anonymousPrivacyNotice');
+          if (anonNoticeReset) anonNoticeReset.style.display = 'none';
           modal.classList.remove('open');
 
-          if (isFlagged) {
+          if (isSensitive) {
+            showToast('Your post has been published successfully.', 'success');
+          } else if (isFlagged) {
             showToast('Post submitted. Flagged for counselor review.', 'info');
           } else {
             var sentimentNote = aiResult.sentiment === 'POSITIVE' ? ' · Positive ✨' : (aiResult.sentiment === 'NEGATIVE' ? ' · Seeking Support 💙' : '');
-            showToast(`Shared with the community!${sentimentNote}`, 'success');
+            showToast(`Your post has been published successfully.${sentimentNote}`, 'success');
           }
         } catch (err) {
           console.error('[CreatePost] Error:', err);
@@ -1861,22 +1928,61 @@
           // Pre-censor profanity using asterisks rule for published content
           let censoredContent = SafeSpaceDB.censorProfanity(originalText);
 
-          // ── Step 2: Handle Flagged Content ──
-          var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || aiResult.status === 'REVIEW' || (aiResult.category && aiResult.category !== 'SAFE');
+          // ── Step 2: Content Analysis & Pre-Publishing Confirmation (Prompt Requirements) ──
+          // Evaluate whether post contains sensitive, offensive, harmful, or emotionally distressing material
+          const requiresContentWarning = Boolean(
+            aiResult.sensitive_content === true ||
+            (Array.isArray(aiResult.sensitive_categories) && aiResult.sensitive_categories.length > 0) ||
+            (!aiResult.allowed) ||
+            aiResult.status === 'BLOCKED' ||
+            aiResult.status === 'REVIEW' ||
+            (aiResult.category && aiResult.category !== 'SAFE' && aiResult.category !== 'NONE') ||
+            (aiResult.has_profanity === true) ||
+            (aiResult.warning_config && aiResult.warning_config.has_trigger_warning)
+          );
 
-          if (isFlagged) {
+          if (requiresContentWarning) {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Post';
 
-            showToast('Safety check: Please review your post before sharing.', 'warning');
+            // Check if post violates critical safety rules
+            const cfg = aiResult.warning_config || (window.AIService && typeof window.AIService.getWarningConfig === 'function'
+              ? window.AIService.getWarningConfig(aiResult.category, aiResult.severity, aiResult.status, aiResult.reason)
+              : null);
+            const isCriticalSafetyViolation = Boolean(
+              (cfg && cfg.can_continue === false) ||
+              aiResult.category === 'THREAT' ||
+              aiResult.category === 'ENCOURAGEMENT_OF_SELF_HARM' ||
+              aiResult.category === 'NUDITY' ||
+              aiResult.category === 'SEXUAL_CONTENT' ||
+              (aiResult.severity === 'critical' && aiResult.category === 'VIOLENCE')
+            );
 
-            showAiWarningModal(aiResult, 'post', function() {
-              executePostPublish(censoredContent, aiResult);
+            if (isCriticalSafetyViolation) {
+              showToast('Content that violates critical safety rules cannot be published. Please revise your content.', 'error');
+              showAiWarningModal(aiResult, 'post', null);
+              return;
+            }
+
+            // Display Content Warning confirmation modal with both Edit Post and Proceed to Post
+            showAiWarningModal(aiResult, 'post', async function() {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Publishing...';
+              try {
+                // User explicitly confirmed Proceed to Post: validate and publish
+                aiResult.is_user_confirmed = true;
+                await executePostPublish(censoredContent, aiResult);
+              } catch (pubErr) {
+                console.error('[PostSubmission] Proceed error:', pubErr);
+                showToast(pubErr.message || 'Failed to publish post.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Post';
+              }
             });
             return;
           }
 
-          // Safe post: publish directly
+          // Normal, positive, informational, or harmless post: publish directly without interruption
           await executePostPublish(censoredContent, aiResult);
         } catch (err) {
           console.error('[PostSubmission] Error:', err);
@@ -1936,18 +2042,54 @@
     window.openCommunityGuidelinesModal = openCommunityGuidelinesModal;
     window.closeCommunityGuidelinesModal = closeCommunityGuidelinesModal;
 
-    // Trigger Warning Sensitive Content Toggle in Feed
+    // ── Sensitive Post Reveal / Hide State & Controls ──
+    window._revealedPostsSet = window._revealedPostsSet || new Set();
+
+    function revealSensitivePost(postId) {
+      window._revealedPostsSet.add(postId);
+      const wrap = document.getElementById(`post-content-wrap-${postId}`);
+      const prompt = document.getElementById(`sensitive-prompt-${postId}`);
+      const hideBar = document.getElementById(`sensitive-reveal-bar-${postId}`);
+      if (wrap) {
+        wrap.classList.remove('is-blurred');
+        wrap.classList.add('is-revealed');
+      }
+      if (prompt) {
+        prompt.style.display = 'none';
+      }
+      if (hideBar) {
+        hideBar.style.display = 'block';
+        hideBar.style.textAlign = 'right';
+        hideBar.style.marginTop = '-6px';
+        hideBar.style.marginBottom = '4px';
+      }
+    }
+    window.revealSensitivePost = revealSensitivePost;
+
+    function hideSensitivePost(postId) {
+      window._revealedPostsSet.delete(postId);
+      const wrap = document.getElementById(`post-content-wrap-${postId}`);
+      const prompt = document.getElementById(`sensitive-prompt-${postId}`);
+      const hideBar = document.getElementById(`sensitive-reveal-bar-${postId}`);
+      if (wrap) {
+        wrap.classList.remove('is-revealed');
+        wrap.classList.add('is-blurred');
+      }
+      if (prompt) {
+        prompt.style.display = 'flex';
+      }
+      if (hideBar) {
+        hideBar.style.display = 'none';
+      }
+    }
+    window.hideSensitivePost = hideSensitivePost;
+
+    // Backward compatibility alias
     function toggleSensitivePostContent(postId) {
-      const wrap = document.getElementById(`sensitive-wrap-${postId}`);
-      const btn = document.getElementById(`tw-btn-${postId}`);
-      if (!wrap) return;
-      const isConcealed = wrap.classList.toggle('is-concealed');
-      if (btn) {
-        if (isConcealed) {
-          btn.innerHTML = '<i class="fas fa-eye"></i> <span>View Content</span>';
-        } else {
-          btn.innerHTML = '<i class="fas fa-eye-slash"></i> <span>Hide Content</span>';
-        }
+      if (window._revealedPostsSet && window._revealedPostsSet.has(postId)) {
+        hideSensitivePost(postId);
+      } else {
+        revealSensitivePost(postId);
       }
     }
     window.toggleSensitivePostContent = toggleSensitivePostContent;
@@ -1958,105 +2100,156 @@
       window._pendingWarningCallback = (typeof onProceed === 'function') ? onProceed : null;
       const modal = document.getElementById('aiWarningModal');
       const titleEl = document.getElementById('aiWarningTitle');
-      const catEl = document.getElementById('aiWarningCategory');
       const reasonEl = document.getElementById('aiWarningReason');
       const iconWrap = document.getElementById('aiWarningIcon');
+      const detectedBox = document.getElementById('aiWarningDetectedBox');
+      const detectedTags = document.getElementById('aiWarningDetectedTags');
       const crisisBox = document.getElementById('aiWarningCrisisBox');
       const closeWarnLabel = document.getElementById('aiCloseWarningLabel');
       const resourcesBtn = document.getElementById('aiResourcesWarningBtn');
       const guidelinesBtn = document.getElementById('aiGuidelinesWarningBtn');
       const cancelWarnBtn = document.getElementById('aiCancelWarningBtn');
       const proceedWarnBtn = document.getElementById('aiProceedWarningBtn');
+      const proceedWarnLabel = document.getElementById('aiProceedWarningLabel');
       if (!modal) return;
 
       const cfg = aiResult.warning_config || (window.AIService && typeof window.AIService.getWarningConfig === 'function'
         ? window.AIService.getWarningConfig(aiResult.category, aiResult.severity, aiResult.status, aiResult.reason)
         : null);
 
-      const categoryName = (aiResult.category || (cfg && cfg.category) || 'HARASSMENT').replace(/_/g, ' ').toUpperCase();
-      const confidencePct = aiResult.confidence ? Math.round(aiResult.confidence * 100) : 85;
+      // Determine human-friendly detected categories (only relevant ones!)
+      let detectedList = [];
+      if (Array.isArray(aiResult.sensitive_category_names) && aiResult.sensitive_category_names.length > 0) {
+        detectedList = aiResult.sensitive_category_names.map(c => String(c).trim());
+      } else if (Array.isArray(aiResult.sensitive_categories) && aiResult.sensitive_categories.length > 0) {
+        detectedList = aiResult.sensitive_categories.map(c => {
+          const map = {
+            'BULLYING': 'Bullying or Harassment',
+            'PROFANITY': 'Offensive Language',
+            'DISCRIMINATION': 'Discrimination',
+            'DISTRESS': 'Emotional Distress',
+            'TRAUMA': 'Sensitive Personal Experience',
+            'SELF_HARM': 'Self-Harm-Related Content',
+            'VIOLENCE': 'Violence or Graphic Content',
+            'SEXUAL_CONTENT': 'Sexual Content',
+            'NUDITY': 'Nudity'
+          };
+          return map[c] || c.replace(/_/g, ' ');
+        });
+      } else if (aiResult.category && aiResult.category !== 'SAFE' && aiResult.category !== 'NONE') {
+        const catMap = {
+          'BULLYING': 'Bullying or Harassment',
+          'HARASSMENT': 'Bullying or Harassment',
+          'PROFANITY': 'Offensive Language',
+          'OFFENSIVE_LANGUAGE': 'Offensive Language',
+          'DISCRIMINATION': 'Discrimination',
+          'HATE': 'Discrimination or Hate Speech',
+          'DISTRESS': 'Emotional Distress',
+          'ALARMING': 'Emotional Distress',
+          'TRAUMA': 'Sensitive Personal Experience',
+          'ABUSE': 'Sensitive Personal Experience',
+          'SELF_HARM': 'Self-Harm-Related Content',
+          'VIOLENCE': 'Violence or Threatening Language',
+          'THREAT': 'Threatening or Aggressive Language',
+          'SEXUAL_CONTENT': 'Sexual Content',
+          'NUDITY': 'Nudity'
+        };
+        detectedList = [catMap[aiResult.category] || aiResult.category.replace(/_/g, ' ')];
+      }
 
-      if (catEl) catEl.textContent = `CATEGORY: ${categoryName} (${confidencePct}% CONFIDENCE)`;
+      // Filter out 'Safe' or duplicate categories
+      detectedList = Array.from(new Set(detectedList.filter(c => c && c.toUpperCase() !== 'SAFE' && c.toUpperCase() !== 'NONE')));
 
-      // Dynamic Title based on category
-      if (titleEl) {
-        if (cfg && cfg.title) {
-          titleEl.textContent = activeWarningSource === 'comment'
-            ? cfg.title.replace(/Post/g, 'Comment')
-            : cfg.title;
+      if (detectedTags && detectedBox) {
+        if (detectedList.length > 0) {
+          detectedTags.innerHTML = detectedList.map(name => `<span class="ai-warning-tag-chip"><i class="fas fa-tag"></i> ${escapeHTML(name)}</span>`).join('');
+          detectedBox.style.display = 'block';
         } else {
-          titleEl.textContent = 'Please Review Your ' + (activeWarningSource === 'comment' ? 'Comment' : 'Post');
+          detectedTags.innerHTML = `<span class="ai-warning-tag-chip">Sensitive Content</span>`;
+          detectedBox.style.display = 'block';
         }
+      }
+
+      // Title - Standardized student-friendly Content Warning
+      if (titleEl) {
+        titleEl.textContent = 'Content Warning';
       }
 
       // Dynamic Icon & Accent Colors
       if (iconWrap) {
-        if (categoryName.includes('SELF HARM') || categoryName.includes('DISTRESS')) {
+        const joinedStr = detectedList.join(' ').toUpperCase();
+        if (joinedStr.includes('SELF-HARM') || joinedStr.includes('DISTRESS')) {
           iconWrap.style.background = '#EFF6FF';
           iconWrap.style.color = '#3B82F6';
           iconWrap.innerHTML = '<i class="fas fa-hand-holding-heart"></i>';
-        } else if (categoryName.includes('THREAT') || categoryName.includes('VIOLENCE')) {
+        } else if (joinedStr.includes('THREAT') || joinedStr.includes('VIOLENCE')) {
           iconWrap.style.background = '#FEF2F2';
           iconWrap.style.color = '#EF4444';
-          iconWrap.innerHTML = '<i class="fas fa-shield-halved"></i>';
-        } else if (categoryName.includes('NUDITY') || categoryName.includes('SEXUAL')) {
-          iconWrap.style.background = '#FFF1F2';
-          iconWrap.style.color = '#E11D48';
-          iconWrap.innerHTML = '<i class="fas fa-eye-slash"></i>';
-        } else {
-          iconWrap.style.background = '#FFFBEB';
-          iconWrap.style.color = '#D97706';
           iconWrap.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+        } else {
+          iconWrap.style.background = '#FFF7ED';
+          iconWrap.style.color = '#EA580C';
+          iconWrap.innerHTML = '<i class="fas fa-shield-halved"></i>';
         }
       }
 
-      // Dynamic Message from Warning Configuration
-      let displayMessage = (cfg && cfg.message) ? cfg.message : (aiResult.reason || 'Your submission requires review before publishing.');
-      if (activeWarningSource === 'comment') {
-        displayMessage = displayMessage.replace(/\bpost\b/gi, 'comment').replace(/\bposting\b/gi, 'commenting');
+      // Context-Tailored AI-Generated Warning Message (Section 7)
+      let customMessage = '';
+      const catCheck = (detectedList.join(' ') + ' ' + (aiResult.category || '')).toUpperCase();
+      if (catCheck.includes('SELF-HARM') || catCheck.includes('SELF_HARM')) {
+        customMessage = 'Your post may contain sensitive content related to self-harm. Please review your message carefully. The platform\'s safety rules may restrict publication of content that encourages or promotes harm.';
+      } else if (catCheck.includes('BULLY')) {
+        customMessage = 'Your post may contain bullying-related content or descriptions of negative experiences. Please review your wording before publishing.';
+      } else if (catCheck.includes('OFFENSIVE') || catCheck.includes('PROFANITY')) {
+        customMessage = 'Your post may contain offensive language that could make other students uncomfortable. You may edit your post before publishing.';
+      } else if (catCheck.includes('DISTRESS') || catCheck.includes('TRAUMA') || catCheck.includes('PERSONAL EXPERIENCE')) {
+        customMessage = 'Your post may describe an emotionally difficult experience. Consider reviewing your content before sharing it with the community.';
+      } else {
+        customMessage = 'Your post may contain sensitive or distressing content that could affect other students. Please review your post before publishing. You may edit your content to make it more appropriate for the Safe Space community or proceed if you believe your post is necessary and follows the platform\'s community guidelines.';
       }
-      if (reasonEl) reasonEl.textContent = displayMessage;
+
+      if (activeWarningSource === 'comment') {
+        customMessage = customMessage.replace(/\bpost\b/gi, 'comment').replace(/\bposting\b/gi, 'commenting');
+      }
+      if (reasonEl) reasonEl.innerHTML = escapeHTML(customMessage);
 
       // Crisis Hotline Box (Visible for self-harm or imminent distress)
+      const hasSelfHarm = catCheck.includes('SELF-HARM') || catCheck.includes('SELF_HARM') || (cfg && cfg.is_imminent_danger);
       if (crisisBox) {
-        crisisBox.style.display = (cfg && (cfg.is_imminent_danger || cfg.show_support_resources)) ? 'block' : 'none';
+        crisisBox.style.display = hasSelfHarm ? 'block' : 'none';
       }
 
-      // Primary Edit/Review Button
+      // Edit Post Button (Recommended action)
       if (closeWarnLabel) {
-        let label = (cfg && cfg.primary_button_label) || 'Edit Post';
-        if (activeWarningSource === 'comment') label = label.replace(/Post/g, 'Comment');
-        closeWarnLabel.textContent = label;
+        closeWarnLabel.textContent = activeWarningSource === 'comment' ? 'Edit Comment' : 'Edit Post';
       }
 
-      // Support Resources Button
-      if (resourcesBtn) {
-        resourcesBtn.style.display = (cfg && cfg.show_support_resources) ? 'inline-flex' : 'none';
-        resourcesBtn.innerHTML = '<i class="fas fa-hand-holding-heart"></i> <span>View Support Resources</span>';
-      }
-
-      // Community Guidelines Button
-      if (guidelinesBtn) {
-        guidelinesBtn.style.display = (cfg && cfg.show_guidelines_button) ? 'inline-flex' : 'none';
-        guidelinesBtn.innerHTML = '<i class="fas fa-book-bookmark"></i> <span>View Community Guidelines</span>';
-      }
-
-      // Cancel Posting Button
-      if (cancelWarnBtn) {
-        const cancelText = (cfg && cfg.secondary_button_label) || ('Cancel ' + (activeWarningSource === 'comment' ? 'Comment' : 'Posting'));
-        cancelWarnBtn.innerHTML = '<i class="fas fa-times"></i> <span>' + escapeHTML(cancelText) + '</span>';
-      }
-
-      // Continue Button (Strictly suppressed if can_continue is false, e.g. threats or critical self-harm)
+      // Proceed to Post / Continue Post button
       if (proceedWarnBtn) {
-        const canContinue = cfg ? cfg.can_continue : (aiResult.allowed !== false && aiResult.status !== 'BLOCKED');
-        if (canContinue && window._pendingWarningCallback) {
+        // Critical safety rule: if content violates critical safety rules (violence threats, self-harm encouragement, etc.),
+        // the post cannot be published.
+        const cannotContinue = Boolean(
+          cfg && cfg.can_continue === false
+        );
+
+        if (cannotContinue) {
+          proceedWarnBtn.style.display = 'none';
+        } else if (window._pendingWarningCallback) {
           proceedWarnBtn.style.display = 'inline-flex';
-          const continueText = (cfg && cfg.continue_label) || ('Continue ' + (activeWarningSource === 'comment' ? 'Commenting' : 'Posting') + ', if permitted');
-          proceedWarnBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>' + escapeHTML(continueText) + '</span>';
+          if (proceedWarnLabel) {
+            proceedWarnLabel.textContent = activeWarningSource === 'comment' ? 'Proceed to Comment' : 'Proceed to Post';
+          }
         } else {
           proceedWarnBtn.style.display = 'none';
         }
+      }
+
+      // Support Resources & Guidelines buttons
+      if (resourcesBtn) {
+        resourcesBtn.style.display = hasSelfHarm ? 'inline-flex' : 'none';
+      }
+      if (guidelinesBtn) {
+        guidelinesBtn.style.display = 'inline-flex';
       }
 
       modal.classList.add('open');
@@ -2065,8 +2258,6 @@
       try {
         const metrics = JSON.parse(localStorage.getItem('safe_space_ai_metrics') || '{}');
         metrics.warnings_displayed = (metrics.warnings_displayed || 0) + 1;
-        metrics.by_category = metrics.by_category || {};
-        metrics.by_category[categoryName] = (metrics.by_category[categoryName] || 0) + 1;
         localStorage.setItem('safe_space_ai_metrics', JSON.stringify(metrics));
       } catch (e) {}
     }

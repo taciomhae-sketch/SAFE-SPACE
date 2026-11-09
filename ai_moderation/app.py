@@ -37,7 +37,8 @@ from censor import (
     add_custom_word, remove_custom_word, get_custom_words
 )
 from support_recommender import generate_support_recommendation
-from typing import Optional
+from safety_analyzer import SafetyAnalyzer
+from typing import Optional, List, Dict, Any
 
 
 # ── FastAPI Application Instance ──────────────────────────────
@@ -88,6 +89,17 @@ class SupportRequest(BaseModel):
 
 class KeywordRequest(BaseModel):
     word: str
+
+
+class SafetyAnalysisRequest(BaseModel):
+    text: str
+    is_anonymous: Optional[bool] = False
+    history: Optional[List[Dict[str, Any]]] = []
+
+
+class LongitudinalRequest(BaseModel):
+    history: List[Dict[str, Any]] = []
+    latest_risk: Optional[str] = "none"
 
 
 # ── Helper: Safe Error Response ───────────────────────────────
@@ -169,12 +181,15 @@ async def moderate_endpoint(request: TextRequest):
     # Run sentiment analysis
     sent_result = analyze_sentiment(text)
 
+    # Run AI-Powered Safety Risk Analysis
+    safety_eval = SafetyAnalyzer.evaluate(text)
+
     # Generate supportive recommendation
     support_rec = generate_support_recommendation(
         text=text,
         sentiment=sent_result["sentiment"],
         category=mod_result["category"],
-        risk_level=mod_result.get("risk_level", "low"),
+        risk_level=safety_eval.get("risk_level", mod_result.get("risk_level", "low")),
         language=mod_result.get("language", "english")
     )
 
@@ -184,7 +199,7 @@ async def moderate_endpoint(request: TextRequest):
         "allowed":             mod_result["allowed"],
         "status":              mod_result["status"],
         "action":              mod_result["action"],
-        "risk_level":          mod_result.get("risk_level", "low"),
+        "risk_level":          safety_eval.get("risk_level", mod_result.get("risk_level", "low")),
         "language":            mod_result["language"],
         "language_confidence": mod_result["language_confidence"],
         "category":            mod_result["category"],
@@ -201,6 +216,14 @@ async def moderate_endpoint(request: TextRequest):
         "censored_text":       mod_result.get("censored_text", text),
         "has_profanity":       mod_result.get("has_profanity", False),
         "warning_config":      mod_result.get("warning_config", {}),
+        # — Automated Sensitive Content Detection & Blur —
+        "sensitive_content":   mod_result.get("sensitive_content", False),
+        "sensitive_categories": mod_result.get("sensitive_categories", []),
+        "sensitive_category_names": mod_result.get("sensitive_category_names", []),
+        "sensitive_warning":   mod_result.get("sensitive_warning", None),
+        "blur_enabled":        mod_result.get("blur_enabled", False),
+        # — Personal Safety Risk Fields —
+        "safety_risk":         safety_eval,
         # — Sentiment fields —
         "sentiment":           sent_result["sentiment"],
         "sentiment_score":     sent_result["sentiment_score"],
@@ -314,6 +337,11 @@ async def moderation_only_endpoint(request: TextRequest):
         "original_text":       mod_result.get("original_text", text),
         "censored_text":       mod_result.get("censored_text", text),
         "has_profanity":       mod_result.get("has_profanity", False),
+        "sensitive_content":   mod_result.get("sensitive_content", False),
+        "sensitive_categories": mod_result.get("sensitive_categories", []),
+        "sensitive_category_names": mod_result.get("sensitive_category_names", []),
+        "sensitive_warning":   mod_result.get("sensitive_warning", None),
+        "blur_enabled":        mod_result.get("blur_enabled", False),
     }
 
 
@@ -338,6 +366,55 @@ async def recommend_support_endpoint(request: SupportRequest):
     return {
         "success": True,
         "recommendation": rec
+    }
+
+
+# ── POST /safety-analyze — AI-Powered User Safety & Risk Detection ───
+@app.post("/safety-analyze", summary="AI-Powered User Safety & Risk Detection")
+async def safety_analyze_endpoint(request: SafetyAnalysisRequest):
+    """
+    Evaluates student content for safety risks, suicidal ideation,
+    emotional distress, hopelessness, violence threats, and longitudinal escalation.
+    """
+    text = request.text
+    safety_result = SafetyAnalyzer.evaluate(text, history=request.history or [])
+    mod_result = moderate(text)
+    sent_result = analyze_sentiment(text)
+
+    return {
+        "success": True,
+        "risk_level": safety_result["risk_level"],
+        "concern_type": safety_result["concern_type"],
+        "moderation_category": safety_result["moderation_category"] or mod_result["category"],
+        "moderation_severity": safety_result["moderation_severity"] or mod_result["severity"],
+        "reason": safety_result["reason"],
+        "evidence_reference": safety_result["evidence_reference"],
+        "confidence": safety_result["confidence"],
+        "urgency": safety_result["urgency"],
+        "recommended_action": safety_result["recommended_action"],
+        "language_detected": safety_result["language_detected"],
+        "requires_human_review": safety_result["requires_human_review"],
+        "alert_required": safety_result["alert_required"],
+        "is_imminent_danger": safety_result["is_imminent_danger"],
+        "distress_indicators": safety_result["distress_indicators"],
+        "longitudinal_risk": safety_result["longitudinal_risk"],
+        "sentiment": sent_result["sentiment"],
+        "sentiment_score": sent_result["sentiment_score"],
+        "is_anonymous": request.is_anonymous,
+        "disclaimer": "AI results are advisory indicators for authorized personnel only, not clinical diagnoses."
+    }
+
+
+# ── POST /longitudinal-analyze — Longitudinal Progression Analysis ──
+@app.post("/longitudinal-analyze", summary="Longitudinal Analysis of User Content")
+async def longitudinal_analyze_endpoint(request: LongitudinalRequest):
+    """
+    Analyzes historical sequence of user posts to detect emotional progression or escalation.
+    """
+    longitudinal_data = SafetyAnalyzer.analyze_longitudinal(request.history, latest_risk=request.latest_risk or "none")
+    return {
+        "success": True,
+        "longitudinal": longitudinal_data
     }
 
 

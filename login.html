@@ -368,23 +368,27 @@
         }
 
         // Verify admin approval before completing sign in
-        if (loggedUser && loggedUser.role !== 'admin' && !loggedUser.is_admin) {
-          var appStatus = loggedUser.approval_status || (loggedUser.is_approved === false ? 'pending' : 'approved');
-          if (appStatus === 'pending' || loggedUser.is_approved === false) {
-            setLoading(false);
-            showFormAlert(
-              'Your registration is currently pending administrator verification. The admin must review and approve your Student ID (' + escapeHTML(loggedUser.student_id || 'ID') + ') on the Admin Dashboard before you can receive your verification code in Gmail and proceed to log in.',
-              'warning'
-            );
-            return;
-          }
-          if (appStatus === 'rejected') {
-            setLoading(false);
-            showFormAlert(
-              'Your account registration was not approved by the administrator. Please contact your campus student affairs or guidance office.',
-              'error'
-            );
-            return;
+        if (loggedUser) {
+          var uRole = (loggedUser.role || '').toLowerCase();
+          var isAdmin = (uRole === 'admin' || loggedUser.is_admin === true || (loggedUser.email && loggedUser.email.toLowerCase() === 'taciomhae@gmail.com'));
+          if (!isAdmin) {
+            if (loggedUser.approval_status === 'rejected') {
+              setLoading(false);
+              showFormAlert(
+                'Your account registration was not approved by the administrator. Please contact your campus student affairs or guidance office.',
+                'error'
+              );
+              return;
+            }
+            if (loggedUser.approval_status !== 'approved' && loggedUser.is_approved !== true) {
+              setLoading(false);
+              var sidDisplay = loggedUser.student_id ? ' (Student ID: ' + escapeHTML(loggedUser.student_id) + ')' : '';
+              showFormAlert(
+                'Your registration is currently pending administrator verification' + sidDisplay + '. The admin must review and approve your account on the Admin Portal before you can receive your verification code in Gmail and proceed to log in.',
+                'warning'
+              );
+              return;
+            }
           }
         }
 
@@ -402,7 +406,7 @@
 
         if (rawMsg.includes('pending_approval') || friendlyMsg.includes('pending administrator approval') || friendlyMsg.includes('awaiting administrator')) {
           showFormAlert(
-            'Your account registration is awaiting administrator verification. The admin must review and approve your account on the Admin Dashboard before you can receive your verification code in Gmail and proceed to log in.',
+            'Your account registration is awaiting administrator verification. The admin must review and approve your account on the Admin Portal before you can receive your verification code in Gmail and proceed to log in.',
             'warning'
           );
           setLoading(false);
@@ -418,10 +422,51 @@
           return;
         }
 
-        // If email not confirmed, provide instant 6-digit OTP verification button
+        // If email not confirmed, verify if student has been approved by admin first!
         if (rawMsg.includes('email not confirmed') || rawMsg.includes('email_not_confirmed')) {
+          var isPendingAdminReview = false;
+          var isRejectedByAdmin = false;
+          var foundStudentId = '';
+
+          if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.admin && SafeSpaceDB.admin.getUserByEmail) {
+            try {
+              var targetProfile = await SafeSpaceDB.admin.getUserByEmail(email);
+              if (targetProfile) {
+                var r = (targetProfile.role || '').toLowerCase();
+                var isAdm = (r === 'admin' || targetProfile.is_admin === true || (targetProfile.email && targetProfile.email.toLowerCase() === 'taciomhae@gmail.com'));
+                if (!isAdm) {
+                  if (targetProfile.approval_status === 'rejected') {
+                    isRejectedByAdmin = true;
+                  } else if (targetProfile.approval_status !== 'approved' && targetProfile.is_approved !== true) {
+                    isPendingAdminReview = true;
+                    foundStudentId = targetProfile.student_id || '';
+                  }
+                }
+              }
+            } catch(e) {}
+          }
+
+          if (isRejectedByAdmin) {
+            showFormAlert(
+              'Your account registration was not approved by the administrator. Please contact your campus student affairs or guidance office.',
+              'error'
+            );
+            setLoading(false);
+            return;
+          }
+
+          if (isPendingAdminReview) {
+            var sidStr = foundStudentId ? ' (Student ID: ' + escapeHTML(foundStudentId) + ')' : '';
+            showFormAlert(
+              'Your registration is currently pending administrator verification' + sidStr + '. The admin must review and approve your account on the Admin Portal before you can receive your verification code in Gmail and proceed to log in.',
+              'warning'
+            );
+            setLoading(false);
+            return;
+          }
+
           showFormAlert(
-            'Your account email is not verified yet. Please enter the 6-digit verification code sent to your email before you can proceed to login.',
+            'Your account is approved! Please enter the 6-digit verification code sent to your email before you can proceed to login.',
             'warning',
             `<button type="button" class="auth-alert-action-btn" onclick="openOtpView('${escapeHTML(email)}')"><i class="fas fa-key"></i> Enter 6-Digit Code</button>`
           );
@@ -802,7 +847,9 @@
         return;
       }
 
-      if (queryParams.get('logged_out') === '1' || message === 'logged_out') {
+      if (queryParams.get('pending') === '1') {
+        showFormAlert('Your student account registration is currently awaiting administrator review. Once the admin approves your account, you will be able to log in to the student dashboard.', 'warning');
+      } else if (queryParams.get('logged_out') === '1' || message === 'logged_out') {
         showFormAlert('You have logged out. Enter your email and password to log in again.', 'info');
       } else if (message === 'deactivated') {
         showFormAlert('Your account has been deactivated.', 'info');

@@ -1208,27 +1208,7 @@
 
       const topicBadgeHtml = rec.topic_label ? `<span style="font-size:10px; background:#EDE9FE; color:#6C4FD1; padding:1px 6px; border-radius:999px; font-weight:700;">${escapeHTML(rec.topic_label)}</span>` : '';
 
-      return `
-        <div class="ai-support" id="ai-support-${post.id}">
-          <div class="ai-support-head">
-            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-              <strong>Suggested Support from Safe Space AI</strong>
-              ${topicBadgeHtml}
-            </div>
-            <span class="ai-badge"><i class="fas fa-wand-magic-sparkles"></i> AI Generated</span>
-          </div>
-          <p class="ai-support-text">${escapeHTML(previewText)}</p>
-          <div class="ai-support-more" id="ai-support-more-${post.id}" ${hasMore ? 'hidden' : (moreText ? '' : 'hidden')}>${escapeHTML(moreText)}</div>
-          ${resBtnHtml}
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:2px;">
-            <div class="ai-support-foot">${escapeHTML(disclaimerText)}</div>
-            ${hasMore ? `
-              <button type="button" class="ai-view-more" id="ai-view-more-${post.id}" onclick="openAiSupportModal('${post.id}')" aria-expanded="false" title="View Full Support">
-                <i class="fas fa-circle-info"></i> View Full Support
-              </button>` : ''}
-          </div>
-        </div>
-      `;
+      return '';
     }
     window.buildAiSupportCardHtml = buildAiSupportCardHtml;
 

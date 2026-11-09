@@ -151,7 +151,45 @@ async function requireAuth() {
     if (!user && !isPublic) {
       if (typeof hidePageLoader === 'function') hidePageLoader();
       window.location.href = 'login.html';
+      return null;
     }
+
+    // Verify student approval status on protected pages
+    if (user && !isPublic) {
+      var role = (user.role || '').toLowerCase();
+      var isAdmin = (role === 'admin' || user.is_admin === true || user.isAdmin === true || (user.email && user.email.toLowerCase() === 'taciomhae@gmail.com'));
+      
+      if (!isAdmin) {
+        var isApproved = (user.is_approved === true || user.is_approved === 'true' || user.is_approved === 1 || String(user.approval_status || '').toLowerCase() === 'approved');
+
+        // Always verify with live database to prevent bypassing with stale session tokens
+        if (SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive() && user.id) {
+          try {
+            var liveProfile = await SafeSpaceDB.profiles.getProfile(user.id);
+            if (liveProfile) {
+              var liveStatus = String(liveProfile.approval_status || '').toLowerCase().trim();
+              var liveApproved = (liveProfile.is_approved === true || liveProfile.is_approved === 'true' || liveProfile.is_approved === 1 || liveStatus === 'approved');
+              isApproved = liveApproved;
+              user.is_approved = liveApproved;
+              user.approval_status = liveProfile.approval_status || (liveApproved ? 'approved' : 'pending');
+              try {
+                localStorage.setItem('safe_space_user', JSON.stringify(user));
+              } catch (e) {}
+            }
+          } catch (pe) {
+            console.warn('[Auth] Live approval status check warning:', pe);
+          }
+        }
+
+        if (!isApproved) {
+          console.warn('[Auth] Unapproved student access blocked from protected page:', user.email);
+          if (typeof hidePageLoader === 'function') hidePageLoader();
+          window.location.href = 'login.html?pending=1';
+          return null;
+        }
+      }
+    }
+
     return user;
   } catch (err) {
     console.warn('[Auth] Session check error:', err);

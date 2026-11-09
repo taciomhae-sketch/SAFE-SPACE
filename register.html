@@ -209,14 +209,86 @@
                 <div id="usernameStatus" class="field-feedback"></div>
               </div>
 
-              <!-- Student ID -->
-              <div class="form-group" style="margin-bottom:15px;">
+              <!-- Student ID Section with Verification & Acquisition -->
+              <div class="form-group" style="margin-bottom:18px;">
                 <label class="field-label" for="studentId">Student ID <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-id-badge"></i></span>
-                  <input class="auth-input" type="text" id="studentId" placeholder="Enter your student ID number" autocomplete="off" required maxlength="30" />
+                  <input class="auth-input" type="text" id="studentId" placeholder="Enter your official student ID number" autocomplete="off" required maxlength="30" />
                 </div>
                 <div id="studentIdStatus" class="field-feedback"></div>
+
+                <!-- Student ID Document Verification Box -->
+                <div class="student-id-upload-card" id="studentIdUploadCard">
+                  <div class="student-id-instruction">
+                    <i class="fas fa-circle-info"></i>
+                    <div>
+                      <strong>Submit a clear photo of your official school-issued Student ID for verification.</strong>
+                      <div style="font-size:11px; opacity:0.8; margin-top:2px;">Supported formats: JPG, JPEG, PNG, WEBP (Max 5 MB). Physical IDs must be clearly readable.</div>
+                    </div>
+                  </div>
+
+                  <!-- Acquisition Options -->
+                  <div class="student-id-buttons" id="studentIdAcquisitionButtons">
+                    <button type="button" class="student-id-action-btn primary" id="btnOpenStudentIdCamera">
+                      <i class="fas fa-camera"></i> <span>Take Photo</span>
+                    </button>
+                    <button type="button" class="student-id-action-btn" id="btnTriggerStudentIdFile">
+                      <i class="fas fa-cloud-arrow-up"></i> <span>Upload Student ID</span>
+                    </button>
+                    <!-- Hidden File Input -->
+                    <input type="file" id="studentIdFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
+                  </div>
+
+                  <!-- Feedback / Error Notice -->
+                  <div id="studentIdDocFeedback" class="field-feedback error" style="display:none; margin-top:8px;"></div>
+
+                  <!-- Preview & Verification Status UI -->
+                  <div class="student-id-preview-box" id="studentIdPreviewBox" style="display:none;">
+                    <div class="student-id-preview-header">
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-id-card" style="color:#A78BFA; font-size:15px;"></i>
+                        <span style="font-size:12px; font-weight:700; color:#FFFFFF;">Student ID Submitted</span>
+                      </div>
+                      <span class="student-id-status-badge" id="studentIdStatusBadge">
+                        <i class="fas fa-clock"></i> Pending Verification
+                      </span>
+                    </div>
+
+                    <div class="student-id-preview-img-wrap">
+                      <img id="studentIdPreviewImage" src="" alt="Student ID Preview" />
+                    </div>
+
+                    <!-- Matching Results Area -->
+                    <div class="student-id-match-banner" id="studentIdMatchBanner" style="display:none;">
+                      <div class="match-title" id="studentIdMatchTitle">
+                        <i class="fas fa-circle-notch fa-spin"></i> Processing OCR Verification...
+                      </div>
+                      <div class="match-desc" id="studentIdMatchDesc">
+                        Extracting Student ID from document...
+                      </div>
+                      <div class="match-details-row" id="studentIdMatchDetails" style="display:none;">
+                        <span>Entered: <code id="matchEnteredDisplay">—</code></span>
+                        <span>Detected: <code id="matchDetectedDisplay">—</code></span>
+                      </div>
+                    </div>
+
+                    <div class="student-id-preview-actions">
+                      <button type="button" class="student-id-sub-btn" id="btnEditStudentIdField" style="display:none;">
+                        <i class="fas fa-pen"></i> Edit Student ID
+                      </button>
+                      <button type="button" class="student-id-sub-btn" id="btnRetakeStudentIdPhoto">
+                        <i class="fas fa-camera-rotate"></i> Retake Photo
+                      </button>
+                      <button type="button" class="student-id-sub-btn" id="btnReuploadStudentIdDoc">
+                        <i class="fas fa-arrow-up-from-bracket"></i> Upload Another
+                      </button>
+                      <button type="button" class="student-id-sub-btn danger" id="btnRemoveStudentIdDoc">
+                        <i class="fas fa-trash-can"></i> Remove Image
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Password -->
@@ -383,12 +455,31 @@
 
         <div style="background:rgba(254,243,199,0.15); border:1px solid rgba(254,243,199,0.3); border-radius:12px; padding:12px 14px; font-size:12.5px; color:#FDE68A; line-height:1.5; margin-bottom:22px; text-align:left;">
           <i class="fas fa-shield-halved" style="color:#F59E0B; margin-right:6px;"></i>
-          <strong>Next Step:</strong> The administrator reviews your Student ID on the Admin Dashboard. Once approved, your 6-digit verification code will be sent to your Gmail so you can log in.
+          <strong>Next Step:</strong> The administrator reviews your Student ID on the Admin Dashboard. Once approved, your account will be unlocked so you can log in to the student dashboard.
         </div>
 
-        <a href="login.html" class="btn-auth-primary" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:48px; border-radius:999px; text-decoration:none; font-weight:800;">
-          <i class="fas fa-right-to-bracket"></i> Return to Sign In
-        </a>
+        <div id="pendingApprovedNotice" style="display:none; margin-bottom:18px;">
+          <div style="background:rgba(16,185,129,0.22); border:1.5px solid #10B981; border-radius:14px; padding:18px; text-align:center;">
+            <div style="font-weight:800; font-size:16px; color:#10B981; margin-bottom:6px;">
+              <i class="fas fa-circle-check"></i> Your account has been approved!
+            </div>
+            <div style="font-size:13px; color:#FFFFFF; line-height:1.45; margin-bottom:14px;">
+              Your account has been approved! You can now proceed to the Safe Space student dashboard.
+            </div>
+            <a href="login.html" class="btn-auth-primary" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:46px; border-radius:999px; text-decoration:none; font-weight:800; background:#10B981;">
+              Proceed to Student Dashboard <i class="fas fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <div id="pendingActionBtns" style="display:flex; flex-direction:column; gap:10px;">
+          <button type="button" id="checkPendingApprovalBtn" onclick="checkCurrentApprovalStatus()" class="btn-auth-secondary" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:44px; border-radius:999px; border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.1); color:#FFFFFF; font-weight:700; cursor:pointer;">
+            <i class="fas fa-rotate"></i> Check Approval Status
+          </button>
+          <a href="login.html" class="btn-auth-primary" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:48px; border-radius:999px; text-decoration:none; font-weight:800;">
+            <i class="fas fa-right-to-bracket"></i> Return to Sign In
+          </a>
+        </div>
       </div>
 
       <!-- ========================================================
@@ -486,6 +577,60 @@
   </div>
 
   <!-- ========================================================
+       STUDENT ID CAMERA CAPTURE MODAL OVERLAY
+       ======================================================== -->
+  <div class="camera-modal-overlay" id="studentIdCameraModal" role="dialog" aria-modal="true" aria-labelledby="studentIdCameraTitle">
+    <div class="camera-modal-box">
+      <div class="camera-modal-header">
+        <div class="camera-modal-title" id="studentIdCameraTitle">
+          <i class="fas fa-camera" style="color:#A78BFA;"></i>
+          <span>Capture Student ID</span>
+        </div>
+        <button type="button" class="btn-cancel" id="btnCloseStudentIdCamera" aria-label="Close" style="background:transparent; border:none; color:#FFFFFF; font-size:18px; cursor:pointer;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Viewfinder Area -->
+      <div class="camera-viewfinder" id="studentIdCameraViewfinder">
+        <video id="studentIdCameraVideo" autoplay playsinline muted></video>
+        <canvas id="studentIdCameraCanvas" style="display:none;"></canvas>
+        <div class="camera-guide-overlay" id="studentIdCameraGuide">
+          <span><i class="fas fa-id-card"></i> Position Student ID within frame</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="camera-modal-footer">
+        <!-- Live Preview Phase -->
+        <div id="cameraLiveControls" style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+          <button type="button" class="student-id-sub-btn" id="btnCancelCameraLive" style="padding:10px 18px; font-size:12px;">
+            Cancel
+          </button>
+          <button type="button" class="student-id-action-btn primary" id="btnCaptureStudentIdPhoto" style="padding:10px 22px; font-size:13px;">
+            <i class="fas fa-camera"></i> Capture Photo
+          </button>
+        </div>
+
+        <!-- Review Captured Photo Phase -->
+        <div id="cameraReviewControls" style="display:none; width:100%; justify-content:space-between; align-items:center; gap:10px;">
+          <button type="button" class="student-id-sub-btn" id="btnRetakeFromCamera" style="padding:10px 16px; font-size:12px;">
+            <i class="fas fa-camera-rotate"></i> Retake
+          </button>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="student-id-sub-btn danger" id="btnCancelFromCamera" style="padding:10px 14px; font-size:12px;">
+              Cancel
+            </button>
+            <button type="button" class="student-id-action-btn primary" id="btnUseCapturedPhoto" style="padding:10px 20px; font-size:12px;">
+              <i class="fas fa-check"></i> Use Photo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
        CUTE AVATAR COLLECTION MODAL OVERLAY
        ======================================================== -->
   <div class="modal-overlay" id="cuteAvatarModalOverlay" role="dialog" aria-modal="true" aria-labelledby="cuteAvatarModalTitle">
@@ -566,6 +711,7 @@
   </div>
 
   <script src="js/lib/supabase.js"></script>
+  <script src="js/lib/tesseract.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/cute-avatars.js"></script>
   <script src="js/supabase-client.js"></script>
@@ -828,6 +974,442 @@
     });
 
     /* ────────────────────────────────
+       Student ID Acquisition, OCR & Number Matching
+    ──────────────────────────────── */
+    var studentIdDocument = {
+      file: null,
+      dataUrl: null,
+      status: 'PENDING_VERIFICATION',
+      matchingStatus: 'UNCHECKED', // 'MATCH' | 'MISMATCH' | 'UNREADABLE' | 'MULTIPLE' | 'UNCHECKED'
+      detectedId: null,
+      detectedNumbers: []
+    };
+
+    var cameraStream = null;
+    var capturedPhotoDataUrl = null;
+    var currentOcrRequestId = 0;
+
+    var btnOpenStudentIdCamera   = document.getElementById('btnOpenStudentIdCamera');
+    var btnTriggerStudentIdFile  = document.getElementById('btnTriggerStudentIdFile');
+    var studentIdFileInput       = document.getElementById('studentIdFileInput');
+    var studentIdDocFeedback     = document.getElementById('studentIdDocFeedback');
+    var studentIdPreviewBox      = document.getElementById('studentIdPreviewBox');
+    var studentIdPreviewImage    = document.getElementById('studentIdPreviewImage');
+    var studentIdStatusBadge     = document.getElementById('studentIdStatusBadge');
+    var studentIdMatchBanner     = document.getElementById('studentIdMatchBanner');
+    var studentIdMatchTitle      = document.getElementById('studentIdMatchTitle');
+    var studentIdMatchDesc       = document.getElementById('studentIdMatchDesc');
+    var studentIdMatchDetails    = document.getElementById('studentIdMatchDetails');
+    var matchEnteredDisplay      = document.getElementById('matchEnteredDisplay');
+    var matchDetectedDisplay     = document.getElementById('matchDetectedDisplay');
+    var btnEditStudentIdField    = document.getElementById('btnEditStudentIdField');
+    var btnRetakeStudentIdPhoto  = document.getElementById('btnRetakeStudentIdPhoto');
+    var btnReuploadStudentIdDoc  = document.getElementById('btnReuploadStudentIdDoc');
+    var btnRemoveStudentIdDoc    = document.getElementById('btnRemoveStudentIdDoc');
+
+    var cameraModal              = document.getElementById('studentIdCameraModal');
+    var cameraVideo              = document.getElementById('studentIdCameraVideo');
+    var cameraCanvas             = document.getElementById('studentIdCameraCanvas');
+    var btnCloseStudentIdCamera  = document.getElementById('btnCloseStudentIdCamera');
+    var btnCancelCameraLive      = document.getElementById('btnCancelCameraLive');
+    var btnCaptureStudentIdPhoto = document.getElementById('btnCaptureStudentIdPhoto');
+    var cameraLiveControls       = document.getElementById('cameraLiveControls');
+    var cameraReviewControls     = document.getElementById('cameraReviewControls');
+    var btnRetakeFromCamera      = document.getElementById('btnRetakeFromCamera');
+    var btnCancelFromCamera      = document.getElementById('btnCancelFromCamera');
+    var btnUseCapturedPhoto      = document.getElementById('btnUseCapturedPhoto');
+    var studentIdCameraGuide     = document.getElementById('studentIdCameraGuide');
+
+    // Strict School Format Normalization Helpers
+    function normalizeStudentIdString(raw) {
+      if (!raw) return '';
+      // Trim accidental spaces; preserve leading zeros and characters
+      var str = String(raw).trim();
+      // Keep only alphanumeric characters and standard hyphen
+      return str.replace(/[^\w-]/g, '').toUpperCase();
+    }
+
+    // Extract potential Student ID numbers according to school ID format (e.g. YYYY-XXXXX, digits, etc.)
+    function extractPotentialStudentIds(text) {
+      if (!text) return [];
+      var results = [];
+      var clean = String(text).toUpperCase();
+
+      // Priority 1: Match standard school campus ID format YYYY-XXXXX (e.g., 2026-00125, 2023-10842)
+      var rePattern1 = /\b(20[1-3][0-9])[-–—\s](\d{4,6})\b/g;
+      var match;
+      while ((match = rePattern1.exec(clean)) !== null) {
+        var numPart = match[2];
+        var formatted = match[1] + '-' + numPart;
+        if (!results.includes(formatted)) results.push(formatted);
+      }
+
+      // Priority 2: Match labeled patterns like "ID: 2026-00125" or "STUDENT NO. 202600125"
+      var rePattern2 = /(?:ID|STUDENT|NO|NUMBER|SN|IDNO)[\s:.\-#]*([A-Z0-9]{3,4}[-–—\s]?[A-Z0-9]{4,7})/gi;
+      while ((match = rePattern2.exec(clean)) !== null) {
+        var rawCandidate = match[1].replace(/[-–—\s]/g, '-').trim();
+        if (rawCandidate && !results.includes(rawCandidate)) results.push(rawCandidate);
+      }
+
+      // Priority 3: Fallback contiguous digits 8-10 long (e.g. 202600125)
+      var rePattern3 = /\b(20[1-3][0-9]{6,8})\b/g;
+      while ((match = rePattern3.exec(clean)) !== null) {
+        var yr = match[1].substring(0, 4);
+        var rest = match[1].substring(4);
+        var hyphenated = yr + '-' + rest;
+        if (!results.includes(hyphenated)) results.push(hyphenated);
+        if (!results.includes(match[1])) results.push(match[1]);
+      }
+
+      return results;
+    }
+
+    function showStudentIdDocError(msg) {
+      if (studentIdDocFeedback) {
+        studentIdDocFeedback.style.display = 'block';
+        studentIdDocFeedback.innerHTML = '<i class="fas fa-circle-xmark"></i> ' + escapeHtml(msg);
+      }
+    }
+
+    function clearStudentIdDocError() {
+      if (studentIdDocFeedback) {
+        studentIdDocFeedback.style.display = 'none';
+        studentIdDocFeedback.innerHTML = '';
+      }
+    }
+
+    // Render Matching Status in the UI
+    function renderMatchingStatus(status, details) {
+      studentIdDocument.matchingStatus = status;
+      details = details || {};
+      var entered = normalizeStudentIdString(val('studentId'));
+      var detected = details.detectedId ? normalizeStudentIdString(details.detectedId) : (studentIdDocument.detectedId || '—');
+
+      if (!studentIdMatchBanner || !studentIdMatchTitle || !studentIdMatchDesc) return;
+      studentIdMatchBanner.style.display = 'flex';
+      studentIdMatchBanner.className = 'student-id-match-banner ' + (status.toLowerCase());
+
+      if (btnEditStudentIdField) btnEditStudentIdField.style.display = 'none';
+      if (studentIdMatchDetails) studentIdMatchDetails.style.display = 'none';
+
+      if (status === 'PROCESSING') {
+        if (studentIdStatusBadge) {
+          studentIdStatusBadge.className = 'student-id-status-badge processing';
+          studentIdStatusBadge.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Reading ID...';
+        }
+        studentIdMatchTitle.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Analyzing Student ID Document';
+        studentIdMatchDesc.textContent = 'Scanning official Student ID with Optical Character Recognition (OCR)...';
+      } else if (status === 'MATCH') {
+        if (studentIdStatusBadge) {
+          studentIdStatusBadge.className = 'student-id-status-badge matched';
+          studentIdStatusBadge.innerHTML = '<i class="fas fa-circle-check"></i> Matched';
+        }
+        studentIdMatchTitle.innerHTML = '<i class="fas fa-circle-check"></i> Student ID Number Matched';
+        studentIdMatchDesc.textContent = 'Your entered Student ID matches the number detected in your uploaded school ID.';
+        if (studentIdMatchDetails && entered) {
+          studentIdMatchDetails.style.display = 'flex';
+          if (matchEnteredDisplay) matchEnteredDisplay.textContent = entered;
+          if (matchDetectedDisplay) matchDetectedDisplay.textContent = detected;
+        }
+      } else if (status === 'MISMATCH') {
+        if (studentIdStatusBadge) {
+          studentIdStatusBadge.className = 'student-id-status-badge mismatch';
+          studentIdStatusBadge.innerHTML = '<i class="fas fa-circle-xmark"></i> Number Mismatch';
+        }
+        studentIdMatchTitle.innerHTML = '<i class="fas fa-circle-xmark"></i> Student ID Number Does Not Match';
+        studentIdMatchDesc.textContent = 'The Student ID number entered does not match the number detected in your image. Please check your Student ID number or upload the correct school-issued Student ID.';
+        if (studentIdMatchDetails && entered) {
+          studentIdMatchDetails.style.display = 'flex';
+          if (matchEnteredDisplay) matchEnteredDisplay.textContent = entered;
+          if (matchDetectedDisplay) matchDetectedDisplay.textContent = detected;
+        }
+        if (btnEditStudentIdField) btnEditStudentIdField.style.display = 'inline-flex';
+      } else if (status === 'UNREADABLE') {
+        if (studentIdStatusBadge) {
+          studentIdStatusBadge.className = 'student-id-status-badge unreadable';
+          studentIdStatusBadge.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Unable to Read';
+        }
+        studentIdMatchTitle.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Unable to Read Student ID';
+        studentIdMatchDesc.textContent = 'The system could not clearly detect the Student ID number in your image. Please upload a clearer photo of your official school-issued Student ID.';
+      } else if (status === 'MULTIPLE') {
+        if (studentIdStatusBadge) {
+          studentIdStatusBadge.className = 'student-id-status-badge review';
+          studentIdStatusBadge.innerHTML = '<i class="fas fa-clock-rotate-left"></i> Requires Review';
+        }
+        studentIdMatchTitle.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Student ID Verification Requires Review';
+        studentIdMatchDesc.textContent = 'The system detected multiple numbers in your submitted document and could not confidently identify your Student ID. Please submit a clearer image or wait for administrator verification.';
+      } else {
+        studentIdMatchBanner.style.display = 'none';
+        if (studentIdStatusBadge) {
+          studentIdStatusBadge.className = 'student-id-status-badge';
+          studentIdStatusBadge.innerHTML = '<i class="fas fa-clock"></i> Pending Verification';
+        }
+      }
+
+      updateSignupButtonState();
+    }
+
+    // OCR Analysis Process (Hybrid: Tesseract.js / Canvas heuristics / Server fallback)
+    async function runStudentIdOcrAndMatch(dataUrl) {
+      if (!dataUrl) return;
+      var thisReqId = ++currentOcrRequestId;
+      renderMatchingStatus('PROCESSING');
+
+      var enteredRaw = val('studentId');
+      var entered = normalizeStudentIdString(enteredRaw);
+
+      try {
+        var detectedList = [];
+        var ocrFullText = '';
+
+        // Attempt 1: In-browser Tesseract.js OCR
+        if (typeof Tesseract !== 'undefined' && Tesseract.recognize) {
+          try {
+            var ocrRes = await Tesseract.recognize(dataUrl, 'eng', {
+              logger: function(m) {}
+            });
+            if (thisReqId !== currentOcrRequestId) return; // Stale request discarded
+            if (ocrRes && ocrRes.data && ocrRes.data.text) {
+              ocrFullText = ocrRes.data.text;
+              detectedList = extractPotentialStudentIds(ocrFullText);
+            }
+          } catch (tessErr) {
+            console.warn('[OCR] Tesseract client recognition notice:', tessErr);
+          }
+        }
+
+        // Attempt 2: Server API matching check (if available)
+        if (detectedList.length === 0 && typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.verifyStudentIdOCR) {
+          try {
+            var srvRes = await SafeSpaceDB.auth.verifyStudentIdOCR({
+              entered_id: entered,
+              image_data: dataUrl
+            });
+            if (thisReqId !== currentOcrRequestId) return;
+            if (srvRes && srvRes.detected_id) {
+              detectedList = [srvRes.detected_id];
+              ocrFullText = srvRes.raw_text || '';
+            }
+          } catch (srvErr) {}
+        }
+
+        // Evaluate Results
+        if (thisReqId !== currentOcrRequestId) return;
+
+        if (detectedList.length === 0) {
+          // If no clear candidate was identified by OCR engine
+          studentIdDocument.detectedId = null;
+          studentIdDocument.detectedNumbers = [];
+          renderMatchingStatus('UNREADABLE');
+          return;
+        }
+
+        studentIdDocument.detectedNumbers = detectedList;
+
+        // Check if multiple conflicting candidate ID numbers were found
+        var distinctValid = Array.from(new Set(detectedList.map(normalizeStudentIdString)));
+        if (distinctValid.length > 2 && !distinctValid.includes(entered)) {
+          studentIdDocument.detectedId = distinctValid[0];
+          renderMatchingStatus('MULTIPLE');
+          return;
+        }
+
+        // Strict comparison: Check for exact match against entered ID
+        var matched = distinctValid.find(function(cand) {
+          // Strict normalize comparison preserving leading zeros and characters
+          if (cand === entered) return true;
+          // Format comparison: If user entered 2026-00125 and OCR got 202600125 or vice versa
+          var noHyphenCand = cand.replace(/-/g, '');
+          var noHyphenEntered = entered.replace(/-/g, '');
+          if (noHyphenCand === noHyphenEntered && noHyphenCand.length >= 7) return true;
+          return false;
+        });
+
+        if (matched) {
+          studentIdDocument.detectedId = matched;
+          renderMatchingStatus('MATCH', { detectedId: matched });
+        } else {
+          studentIdDocument.detectedId = distinctValid[0];
+          renderMatchingStatus('MISMATCH', { detectedId: distinctValid[0] });
+        }
+      } catch (err) {
+        console.error('[OCR] Matching error:', err);
+        if (thisReqId === currentOcrRequestId) {
+          renderMatchingStatus('UNREADABLE');
+        }
+      }
+    }
+
+    function setStudentIdDocument(dataUrl, file) {
+      studentIdDocument.dataUrl = dataUrl;
+      studentIdDocument.file = file || null;
+      studentIdDocument.status = 'PENDING_VERIFICATION';
+
+      if (studentIdPreviewImage) {
+        studentIdPreviewImage.src = dataUrl;
+      }
+      if (studentIdPreviewBox) {
+        studentIdPreviewBox.style.display = 'flex';
+      }
+      clearStudentIdDocError();
+
+      // Trigger automatic OCR reading & number matching
+      runStudentIdOcrAndMatch(dataUrl);
+    }
+
+    function removeStudentIdDocument() {
+      studentIdDocument.dataUrl = null;
+      studentIdDocument.file = null;
+      studentIdDocument.status = 'PENDING_VERIFICATION';
+      studentIdDocument.matchingStatus = 'UNCHECKED';
+      studentIdDocument.detectedId = null;
+      studentIdDocument.detectedNumbers = [];
+      currentOcrRequestId++;
+
+      if (studentIdPreviewImage) studentIdPreviewImage.src = '';
+      if (studentIdPreviewBox) studentIdPreviewBox.style.display = 'none';
+      if (studentIdMatchBanner) studentIdMatchBanner.style.display = 'none';
+      if (studentIdFileInput) studentIdFileInput.value = '';
+      clearStudentIdDocError();
+      updateSignupButtonState();
+    }
+
+    // Camera Handlers
+    async function openStudentIdCamera() {
+      clearStudentIdDocError();
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showStudentIdDocError('Camera is not supported on this browser or device. Please use "Upload Student ID".');
+        return;
+      }
+
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        if (cameraVideo) {
+          cameraVideo.srcObject = cameraStream;
+          cameraVideo.style.display = 'block';
+          await cameraVideo.play();
+        }
+        if (cameraCanvas) cameraCanvas.style.display = 'none';
+        if (studentIdCameraGuide) studentIdCameraGuide.style.display = 'flex';
+        if (cameraLiveControls) cameraLiveControls.style.display = 'flex';
+        if (cameraReviewControls) cameraReviewControls.style.display = 'none';
+
+        if (cameraModal) cameraModal.classList.add('open');
+      } catch (err) {
+        console.warn('[Camera] Access denied or error:', err);
+        var msg = 'Camera permission was denied or camera is unavailable. Please allow camera access in your browser settings or use the file upload option.';
+        showStudentIdDocError(msg);
+      }
+    }
+
+    function stopStudentIdCameraStream() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(function(track) { track.stop(); });
+        cameraStream = null;
+      }
+      if (cameraVideo) cameraVideo.srcObject = null;
+    }
+
+    function closeStudentIdCamera() {
+      stopStudentIdCameraStream();
+      if (cameraModal) cameraModal.classList.remove('open');
+      capturedPhotoDataUrl = null;
+    }
+
+    function captureStudentIdFrame() {
+      if (!cameraVideo || !cameraCanvas) return;
+      var w = cameraVideo.videoWidth || 640;
+      var h = cameraVideo.videoHeight || 480;
+      cameraCanvas.width = w;
+      cameraCanvas.height = h;
+
+      var ctx = cameraCanvas.getContext('2d');
+      ctx.drawImage(cameraVideo, 0, 0, w, h);
+      capturedPhotoDataUrl = cameraCanvas.toDataURL('image/jpeg', 0.90);
+
+      // Transition to review controls
+      cameraVideo.style.display = 'none';
+      cameraCanvas.style.display = 'block';
+      if (studentIdCameraGuide) studentIdCameraGuide.style.display = 'none';
+      if (cameraLiveControls) cameraLiveControls.style.display = 'none';
+      if (cameraReviewControls) cameraReviewControls.style.display = 'flex';
+    }
+
+    function retakeStudentIdCapture() {
+      capturedPhotoDataUrl = null;
+      if (cameraCanvas) cameraCanvas.style.display = 'none';
+      if (cameraVideo) {
+        cameraVideo.style.display = 'block';
+      }
+      if (studentIdCameraGuide) studentIdCameraGuide.style.display = 'flex';
+      if (cameraLiveControls) cameraLiveControls.style.display = 'flex';
+      if (cameraReviewControls) cameraReviewControls.style.display = 'none';
+    }
+
+    function useCapturedStudentIdPhoto() {
+      if (!capturedPhotoDataUrl) return;
+      setStudentIdDocument(capturedPhotoDataUrl, null);
+      closeStudentIdCamera();
+    }
+
+    // File Upload Handler (Option 2)
+    function handleStudentIdFileSelection(e) {
+      clearStudentIdDocError();
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      var validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type.toLowerCase())) {
+        showStudentIdDocError('Invalid file type. Please upload a JPG, JPEG, PNG, or WEBP image.');
+        studentIdFileInput.value = '';
+        return;
+      }
+
+      var maxBytes = 5 * 1024 * 1024; // 5 MB
+      if (file.size > maxBytes) {
+        showStudentIdDocError('File size exceeds 5 MB limit. Please choose a smaller image.');
+        studentIdFileInput.value = '';
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function(evt) {
+        setStudentIdDocument(evt.target.result, file);
+      };
+      reader.onerror = function() {
+        showStudentIdDocError('Could not read the selected image file. Please try another.');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    if (btnOpenStudentIdCamera) btnOpenStudentIdCamera.addEventListener('click', openStudentIdCamera);
+    if (btnCloseStudentIdCamera) btnCloseStudentIdCamera.addEventListener('click', closeStudentIdCamera);
+    if (btnCancelCameraLive) btnCancelCameraLive.addEventListener('click', closeStudentIdCamera);
+    if (btnCaptureStudentIdPhoto) btnCaptureStudentIdPhoto.addEventListener('click', captureStudentIdFrame);
+    if (btnRetakeFromCamera) btnRetakeFromCamera.addEventListener('click', retakeStudentIdCapture);
+    if (btnCancelFromCamera) btnCancelFromCamera.addEventListener('click', closeStudentIdCamera);
+    if (btnUseCapturedPhoto) btnUseCapturedPhoto.addEventListener('click', useCapturedStudentIdPhoto);
+
+    if (btnTriggerStudentIdFile) btnTriggerStudentIdFile.addEventListener('click', function() {
+      if (studentIdFileInput) studentIdFileInput.click();
+    });
+    if (studentIdFileInput) studentIdFileInput.addEventListener('change', handleStudentIdFileSelection);
+
+    if (btnRetakeStudentIdPhoto) btnRetakeStudentIdPhoto.addEventListener('click', openStudentIdCamera);
+    if (btnReuploadStudentIdDoc) btnReuploadStudentIdDoc.addEventListener('click', function() {
+      if (studentIdFileInput) studentIdFileInput.click();
+    });
+    if (btnRemoveStudentIdDoc) btnRemoveStudentIdDoc.addEventListener('click', removeStudentIdDocument);
+
+    /* ────────────────────────────────
        Step 2 Validation
     ──────────────────────────────── */
     function validateStep2() {
@@ -881,7 +1463,7 @@
         isValid = false;
       }
 
-      // 3. Student ID
+      // 3. Student ID Number
       var studentIdStatus = document.getElementById('studentIdStatus');
       if (!studentId) {
         document.getElementById('studentId').classList.add('has-error');
@@ -904,6 +1486,29 @@
         if (studentIdStatus) {
           studentIdStatus.style.display = 'none';
         }
+      }
+
+      // 3.5 Student ID Document & Matching Requirement (Strict Verification)
+      if (!studentIdDocument.dataUrl) {
+        showStudentIdDocError('Please capture or upload a clear photo of your Student ID before proceeding.');
+        isValid = false;
+      } else if (studentIdDocument.matchingStatus === 'PROCESSING') {
+        showStudentIdDocError('Please wait while the system verifies the Student ID number on your document.');
+        isValid = false;
+      } else if (studentIdDocument.matchingStatus === 'MISMATCH') {
+        showStudentIdDocError('Your Student ID number does not match the number detected in your uploaded school ID. Please correct your Student ID number or upload the correct document.');
+        isValid = false;
+      } else if (studentIdDocument.matchingStatus === 'UNREADABLE') {
+        showStudentIdDocError('Unable to verify your Student ID number. Please upload a clearer image.');
+        isValid = false;
+      } else if (studentIdDocument.matchingStatus === 'MULTIPLE') {
+        showStudentIdDocError('Multiple numbers detected on your ID document. Please upload a clearer image focusing on your Student ID number.');
+        isValid = false;
+      } else if (studentIdDocument.matchingStatus !== 'MATCH') {
+        showStudentIdDocError('Student ID document number matching is required. Please verify your document.');
+        isValid = false;
+      } else {
+        clearStudentIdDocError();
       }
 
       // 4. Password
@@ -939,7 +1544,7 @@
       }
 
       if (!isValid) {
-        showFormAlert('Please correct the errors in your account credentials before continuing.', 'error');
+        showFormAlert('Please complete all required fields and upload your Student ID document before continuing.', 'error');
       }
       return isValid;
     }
@@ -1002,7 +1607,8 @@
     function validateStep2Quick() {
       var pwd = document.getElementById('password').value;
       var cpwd = document.getElementById('confirmPassword').value;
-      return !!val('email') && !!val('username') && !!val('studentId') && pwd.length >= 8 && pwd === cpwd;
+      var hasValidMatching = (studentIdDocument.matchingStatus === 'MATCH');
+      return !!val('email') && !!val('username') && !!val('studentId') && !!studentIdDocument.dataUrl && hasValidMatching && pwd.length >= 8 && pwd === cpwd;
     }
 
     privacyCheckbox.addEventListener('change', function() {
@@ -1432,7 +2038,25 @@
           studentIdStatus.style.display = 'none';
           studentIdStatus.textContent = '';
         }
+
+        // Automatic rechecking when entered Student ID changes
+        if (studentIdDocument.dataUrl) {
+          // Re-trigger OCR verification with the newly entered number
+          runStudentIdOcrAndMatch(studentIdDocument.dataUrl);
+        } else {
+          studentIdDocument.matchingStatus = 'UNCHECKED';
+        }
+
         updateSignupButtonState();
+      });
+    }
+
+    if (btnEditStudentIdField) {
+      btnEditStudentIdField.addEventListener('click', function() {
+        if (studentIdInput) {
+          studentIdInput.focus();
+          studentIdInput.select();
+        }
       });
     }
 
@@ -1486,11 +2110,27 @@
           throw new Error('Database client is loading... Please try again.');
         }
 
+        // Upload Student ID document photo if provided
+        var uploadedIdCardUrl = studentIdDocument.dataUrl || null;
+        if (studentIdDocument.file || studentIdDocument.dataUrl) {
+          try {
+            var sDoc = studentIdDocument.file || studentIdDocument.dataUrl;
+            var cloudIdUrl = await SafeSpaceDB.storage.uploadImage(sDoc, 'student-ids');
+            if (cloudIdUrl) uploadedIdCardUrl = cloudIdUrl;
+          } catch (uploadErr) {
+            console.warn('[Register] ID Document cloud upload error, falling back to data URL:', uploadErr);
+          }
+        }
+
         var payload = {
           email:       email,
           password:    password,
           username:    username,
           student_id:  studentId,
+          id_card_url: uploadedIdCardUrl,
+          student_id_detected: studentIdDocument.detectedId || null,
+          student_id_matching_status: studentIdDocument.matchingStatus || 'MATCH',
+          student_id_status: 'PENDING_VERIFICATION',
           first_name:  firstName,
           last_name:   lastName,
           middle_name: null,
@@ -1506,6 +2146,31 @@
             daily_notifications: true
           }
         };
+
+        if (email && studentId) {
+          try {
+            localStorage.setItem('safe_space_student_id_' + email.toLowerCase(), studentId);
+            var sMap = JSON.parse(localStorage.getItem('safe_space_student_ids') || '{}');
+            sMap[email.toLowerCase()] = studentId;
+            localStorage.setItem('safe_space_student_ids', JSON.stringify(sMap));
+
+            if (uploadedIdCardUrl) {
+              localStorage.setItem('safe_space_id_card_url_' + email.toLowerCase(), uploadedIdCardUrl);
+              var docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}');
+              docMap[email.toLowerCase()] = uploadedIdCardUrl;
+              localStorage.setItem('safe_space_student_id_docs', JSON.stringify(docMap));
+
+              var matchMap = JSON.parse(localStorage.getItem('safe_space_student_id_matches') || '{}');
+              matchMap[email.toLowerCase()] = {
+                matching_status: studentIdDocument.matchingStatus || 'MATCH',
+                detected_id: studentIdDocument.detectedId || studentId,
+                entered_id: studentId,
+                verified_at: new Date().toISOString()
+              };
+              localStorage.setItem('safe_space_student_id_matches', JSON.stringify(matchMap));
+            }
+          } catch(e) {}
+        }
 
         var result = await SafeSpaceDB.auth.signUp(payload);
         if (result && result.error) throw result.error;
@@ -1539,6 +2204,60 @@
     });
 
     /* ── Show Pending Admin Approval Screen ── */
+    var pendingPollerInterval = null;
+
+    async function checkCurrentApprovalStatus() {
+      var pEmail = document.getElementById('pendingCardEmail');
+      var email = (pEmail ? pEmail.textContent : '').trim();
+      if (!email || email === '—') email = val('email');
+      if (!email) return;
+
+      var checkBtn = document.getElementById('checkPendingApprovalBtn');
+      if (checkBtn) {
+        checkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking status...';
+        checkBtn.disabled = true;
+      }
+
+      try {
+        var userProfile = null;
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.admin && SafeSpaceDB.admin.getUserByEmail) {
+          userProfile = await SafeSpaceDB.admin.getUserByEmail(email);
+        }
+
+        if (userProfile) {
+          var appStatus = String(userProfile.approval_status || '').toLowerCase().trim();
+          var isAppr = (userProfile.is_approved === true || userProfile.is_approved === 'true' || userProfile.is_approved === 1 || appStatus === 'approved');
+
+          if (isAppr) {
+            if (pendingPollerInterval) clearInterval(pendingPollerInterval);
+            var notice = document.getElementById('pendingApprovedNotice');
+            var actionBtns = document.getElementById('pendingActionBtns');
+            if (notice) notice.style.display = 'block';
+            if (actionBtns) actionBtns.style.display = 'none';
+            if (typeof showToast === 'function') {
+              showToast('Your account has been approved! You can now proceed to the Safe Space student dashboard.', 'success');
+            }
+            return;
+          }
+        }
+        if (checkBtn) {
+          checkBtn.innerHTML = '<i class="fas fa-clock"></i> Still Awaiting Approval';
+          setTimeout(function() {
+            if (checkBtn) {
+              checkBtn.innerHTML = '<i class="fas fa-rotate"></i> Check Approval Status';
+              checkBtn.disabled = false;
+            }
+          }, 2000);
+        }
+      } catch (err) {
+        if (checkBtn) {
+          checkBtn.innerHTML = '<i class="fas fa-rotate"></i> Check Approval Status';
+          checkBtn.disabled = false;
+        }
+      }
+    }
+    window.checkCurrentApprovalStatus = checkCurrentApprovalStatus;
+
     function showPendingApprovalStep(email, studentId) {
       document.getElementById('signupSection').style.display = 'none';
       document.getElementById('otpSection').style.display = 'none';
@@ -1555,6 +2274,9 @@
       if (typeof showToast === 'function') {
         showToast('Registration submitted for administrator review!', 'info');
       }
+
+      if (pendingPollerInterval) clearInterval(pendingPollerInterval);
+      pendingPollerInterval = setInterval(checkCurrentApprovalStatus, 6000);
     }
 
     /* ── Show Success Screen ── */

@@ -129,16 +129,29 @@
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  var DEFAULT_BANNED_KEYWORDS = [
+    'gago', 'tarantado', 'boboka', 'bobo', 'ulol', 'tangina',
+    'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you',
+    'bitch', 'tado', 'yawa', 'letche', 'fuck off', 'fuck you', 'stfu', 'shit',
+    'gagu', 'mamatay kana', 'bwesit', 'hell', 'esmiringhoy',
+    'inutil', 'leche', 'pakshet', 'puta', 'kupal', 'ogag', 'peste'
+  ];
+
   function getStoredCustomKeywords() {
     try {
       if (typeof localStorage !== 'undefined') {
         var stored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
-        if (Array.isArray(stored)) {
-          return stored.map(function(w) { return String(w || '').trim().toLowerCase(); }).filter(Boolean);
+        if (Array.isArray(stored) && stored.length > 0) {
+          var clean = stored.map(function(w) { return String(w || '').trim().toLowerCase(); }).filter(Boolean);
+          if (clean.indexOf('esmiringhoy') === -1) {
+            clean.push('esmiringhoy');
+            try { localStorage.setItem('safe_space_banned_keywords', JSON.stringify(clean)); } catch (e) {}
+          }
+          return clean;
         }
       }
     } catch (e) {}
-    return [];
+    return DEFAULT_BANNED_KEYWORDS.slice();
   }
 
   var SafeSpaceCensor = {
@@ -1111,14 +1124,15 @@
     };
 
     if (category === 'SELF_HARM' || category === 'ENCOURAGEMENT_OF_SELF_HARM') {
-      config.title = 'Your Post May Indicate a Safety Concern';
-      config.message = 'Some parts of your post suggest that you may be experiencing serious distress. You deserve support, and you do not have to face difficult moments alone. Would you like to review your post or explore available support resources before continuing?';
+      config.title = 'Content Warning';
+      config.message = 'Your post may contain sensitive content related to self-harm. Please review your message carefully. The platform\'s safety rules may restrict publication of content that encourages or promotes harm.';
       config.show_support_resources = true;
       config.show_guidelines_button = false;
-      config.is_imminent_danger = (severity === 'critical' || category === 'SELF_HARM');
-      config.primary_button_label = 'Review My Post';
+      config.is_imminent_danger = (severity === 'critical');
+      config.primary_button_label = 'Edit Post';
       config.secondary_button_label = 'Cancel Posting';
-      config.can_continue = false;
+      config.continue_label = 'Proceed to Post';
+      config.can_continue = (status !== 'BLOCKED' && severity !== 'critical' && category !== 'ENCOURAGEMENT_OF_SELF_HARM');
     } else if (category === 'BULLYING' || category === 'HARASSMENT' || category === 'HATE') {
       config.title = 'Please Review Your Post';
       config.message = 'Your post may contain language that could hurt or target another person. Consider revising it to help maintain a respectful and supportive community.';
@@ -1164,6 +1178,160 @@
 
     return config;
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // AUTOMATED SENSITIVE CONTENT DETECTOR & BLUR CONTROLLER
+  // Categories A through H per Specification
+  // ─────────────────────────────────────────────────────────────
+  var SafeSpaceSensitiveDetector = {
+    CATEGORY_DISPLAY_NAMES: {
+      'SEXUAL_CONTENT': 'Sexual Content',
+      'NUDITY': 'Nudity',
+      'BULLYING': 'Bullying and Harassment',
+      'VIOLENCE': 'Violence and Graphic Content',
+      'SELF_HARM': 'Self-Harm and Suicide-Related Content',
+      'TRAUMA': 'Trauma and Distressing Experiences',
+      'PROFANITY': 'Profanity and Offensive Language',
+      'OTHER': 'Sensitive Content'
+    },
+
+    WARNING_MESSAGES: {
+      'SEXUAL_CONTENT': 'Sensitive Content: This post may contain sexual content or sexually suggestive material.',
+      'NUDITY': 'Sensitive Content: This post may contain nudity or exposed body parts.',
+      'BULLYING': 'Sensitive Content: This post may contain bullying, harassment, or offensive language.',
+      'VIOLENCE': 'Sensitive Content: This post may contain violence, disturbing descriptions, or graphic material.',
+      'SELF_HARM': 'Sensitive Content: This post discusses self-harm, suicide-related experiences, or emotional distress.',
+      'TRAUMA': 'Sensitive Content: This post may discuss trauma, abuse, or distressing personal experiences.',
+      'PROFANITY': 'Sensitive Content: This post may contain profanity or offensive language.',
+      'OTHER': 'Sensitive Content: This post may contain material that some users find distressing.'
+    },
+
+    evaluate: function(text, photoIsSensitive) {
+      if (!text || typeof text !== 'string') text = '';
+      var lower = text.toLowerCase().trim();
+
+      if (!lower && !photoIsSensitive) {
+        return {
+          is_sensitive: false,
+          categories: [],
+          category_names: [],
+          primary_category: null,
+          warning: null,
+          blur_enabled: false
+        };
+      }
+
+      // Check benign academic concern patterns
+      var isAcademicStress = false;
+      var hasAcademicWord = /\b(exam|test|quiz|assignment|homework|thesis|defense|grades?|score|school|subject|class|studying|study|prof|teacher|presentation|project|bagsak|pumasa|nakapasa|aral|klase|eskwela|guro|proyekto|takdang-aralin)\b/i.test(lower);
+      var hasNormalEmotion = /\b(tired|exhausted|sleepy|sad|down|frustrated|upset|anxious|stressed|overwhelmed|pagod|antok|lungkot|nalulungkot|hirap|nahihirapan|stress)\b/i.test(lower);
+
+      if (hasAcademicWord && hasNormalEmotion && !photoIsSensitive) {
+        isAcademicStress = true;
+      }
+
+      var detected = [];
+
+      // A. Sexual Content
+      if (/\b(sexual|sexuality|intercourse|horny|orgasm|erotic|sensual|intimate\s*encounter|hookup|hooking\s*up|making\s*out|foreplay|kantot|kantutan|chupain|tsupain|pakikipagtalik|pagnanasa|libog|malibog|pakikipagrelasyon\s*sa\s*kama)\b/i.test(lower)) {
+        if (!detected.includes('SEXUAL_CONTENT')) detected.push('SEXUAL_CONTENT');
+      }
+
+      // B. Nudity
+      if (/\b(nudity|nude|nudes|naked|topless|bottomless|undressed|stripping|exposed\s*(body|skin|chest|private\s*parts)|hubad|nakahubad|walang\s*damit|bold|paghuhubad|maselang\s*bahagi|tite|puke|puki|kiki|burat|bayag|pepe|penis|vagina|boobs|boobies|tits)\b/i.test(lower)) {
+        if (!detected.includes('NUDITY')) detected.push('NUDITY');
+      }
+
+      // C. Bullying & Harassment
+      if (/\b(bullied|bullying|cyberbullied|cyberbullying|harassed|harassment|teased|humiliated|name-calling|picked\s*on|gang(ed)?\s*up\s*on|mocked|mocking|make\s*fun\s*of|making\s*fun\s*of|ridiculed|ridiculing|belittled|belittling|ostracized|na-bully|binully|nambu-bully|pang-aapi|inapi|inaapi|tinutukso|hinahamak|pinapahiya|pinahiya|pangungutya|pang-aasar|tinatawanan|pinagtatawanan|bobo|tanga|gago|ulol|inutil|tarantado|salot|loser|worthless|pathetic|stupid|idiot|dumbass)\b/i.test(lower) || /\b(everyone\s*(should|must|let'?s)?\s*(hate|avoid|ignore|mock|bully|make\s*fun\s*of))\b/i.test(lower)) {
+        if (!detected.includes('BULLYING')) detected.push('BULLYING');
+      }
+
+      // D. Violence & Graphic Content
+      if (/\b(violence|violent|assault|assaulted|beaten\s*up|punch(ed)?|stab(bed)?|shot|shooting|blood(y)?|wound(ed)?|injury|injuries|fracture|broken\s*bones|sinapak|binugbog|binaril|sinaksak|saksakan|bugbugan|duguan|sugat|karahasan|pambubugbog|napaslang|patayan|madugong|suntukan|graphic\s*content|disturbing\s*scene|graphic\s*images?|horror|gore|mutilat(ion|ed))\b/i.test(lower)) {
+        if (!detected.includes('VIOLENCE')) detected.push('VIOLENCE');
+      }
+
+      // E. Self-Harm & Suicide-Related Content
+      if (/\b(self-harm|self\s*harm|cutting|slit(ting)?\s*wrists?|burned\s*myself|suicid(e|al)|ending\s*(my|one'?s)\s*life|kill(ing)?\s*myself|magpakamatay|pagpapakamatay|maglaslas|laslas|magbigti|kitilin\s*ang\s*buhay|patayin\s*ang\s*sarili|ayaw\s*ko\s*nang\s*mabuhay|gusto\s*ko\s*nang\s*mawala|recovery\s*from\s*(self-harm|cutting)|trying\s*to\s*stay\s*clean|urges\s*to\s*harm|crisis\s*hotline)\b/i.test(lower)) {
+        if (!detected.includes('SELF_HARM')) detected.push('SELF_HARM');
+      }
+
+      // F. Trauma & Distressing Experiences
+      if (/\b(trauma|traumatic|traumatiz(ed|ing)|ptsd|abuse|abused|abusive|molest(ed|ation)|rape|raped|survivor\s*of\s*abuse|toxic\s*household|pinagmalupitan|minolestya|ginahasa|pang-aabuso|na-trauma|nakaranas\s*ng\s*trauma|masakit\s*na\s*karanasan|masamang\s*karanasan|flashbacks?|painful\s*memories|frightening\s*event|horrific\s*accident|distressing\s*experience|emotional\s*crisis|mental\s*breakdown|umiiyak\s*lang\s*(ako)?\s*gabi\s*gabi|hirap\s*na\s*hirap\s*na\s*ako\s*umiiyak)\b/i.test(lower)) {
+        if (!detected.includes('TRAUMA')) detected.push('TRAUMA');
+      }
+
+      // G. Profanity & Offensive Language
+      if (/\b(putangina|tangina|taena|amputa|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|fuck|fucking|fucker|fucked|shit|bitch|bastard|asshole|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)\b/i.test(lower)) {
+        if (!detected.includes('PROFANITY')) detected.push('PROFANITY');
+      }
+
+      if (photoIsSensitive && !detected.includes('NUDITY') && !detected.includes('SEXUAL_CONTENT') && !detected.includes('VIOLENCE')) {
+        detected.push('OTHER');
+      }
+
+      // Safeguard: Academic distress alone without triggering topics is NOT sensitive
+      if (isAcademicStress && !detected.some(function(c) { return ['SEXUAL_CONTENT', 'NUDITY', 'BULLYING', 'VIOLENCE', 'SELF_HARM', 'TRAUMA'].includes(c); })) {
+        if (!detected.includes('PROFANITY')) {
+          return {
+            is_sensitive: false,
+            categories: [],
+            category_names: [],
+            primary_category: null,
+            warning: null,
+            blur_enabled: false
+          };
+        }
+      }
+
+      var isSensitive = detected.length > 0;
+      if (!isSensitive) {
+        return {
+          is_sensitive: false,
+          categories: [],
+          category_names: [],
+          primary_category: null,
+          warning: null,
+          blur_enabled: false
+        };
+      }
+
+      var warning = this.generateWarningMessage(detected);
+      var categoryNames = detected.map(function(c) {
+        return SafeSpaceSensitiveDetector.CATEGORY_DISPLAY_NAMES[c] || c;
+      });
+
+      return {
+        is_sensitive: true,
+        categories: detected,
+        category_names: categoryNames,
+        primary_category: detected[0] || 'OTHER',
+        warning: warning,
+        blur_enabled: true
+      };
+    },
+
+    generateWarningMessage: function(categories) {
+      if (!categories || categories.length === 0) return this.WARNING_MESSAGES['OTHER'];
+      if (categories.length === 1) return this.WARNING_MESSAGES[categories[0]] || this.WARNING_MESSAGES['OTHER'];
+
+      var labels = [];
+      if (categories.includes('BULLYING')) labels.push('bullying');
+      if (categories.includes('PROFANITY')) labels.push('offensive language');
+      if (categories.includes('TRAUMA')) labels.push('distressing personal experiences');
+      if (categories.includes('VIOLENCE')) labels.push('violence or disturbing descriptions');
+      if (categories.includes('SELF_HARM')) labels.push('self-harm or emotional distress');
+      if (categories.includes('SEXUAL_CONTENT')) labels.push('sexual content');
+      if (categories.includes('NUDITY')) labels.push('nudity');
+
+      if (labels.length === 0) return this.WARNING_MESSAGES['OTHER'];
+      if (labels.length === 1) return 'Sensitive Content: This post may contain ' + labels[0] + '.';
+      if (labels.length === 2) return 'Sensitive Content: This post may contain ' + labels[0] + ' or ' + labels[1] + '.';
+      var last = labels.pop();
+      return 'Sensitive Content: This post may contain ' + labels.join(', ') + ', and ' + last + '.';
+    }
+  };
 
   var SafeSpaceSupportRecommender = {
     SYSTEM_PROMPT: `You are "Safe Space AI", the supportive-recommendation assistant of Safe Space, a peer-support platform for college students in the Philippines. After a post is published, you write ONE short recommendation that appears under that post as "Suggested Support from Safe Space AI". You are NOT a counselor, therapist, or emergency dispatcher. Your reply is never saved as a comment.
@@ -2188,6 +2356,15 @@ Return ONLY valid JSON, no markdown fences, no extra text:
           })();
           var resolvedScore = (typeof result.sentiment_score === 'number') ? result.sentiment_score : SafeSpaceSentiment.analyze(originalText).sentiment_score;
 
+          var sensEval = (result.sensitive_content !== undefined) ? {
+            is_sensitive: Boolean(result.sensitive_content),
+            categories: result.sensitive_categories || [],
+            category_names: result.sensitive_category_names || [],
+            primary_category: (result.sensitive_categories && result.sensitive_categories[0]) || null,
+            warning: result.sensitive_warning || null,
+            blur_enabled: Boolean(result.blur_enabled)
+          } : SafeSpaceSensitiveDetector.evaluate(originalText, Boolean(context && context.hasPhoto && context.photoIsSensitive));
+
           finalResult = {
             success: true,
             online: true,
@@ -2212,6 +2389,11 @@ Return ONLY valid JSON, no markdown fences, no extra text:
             original_text: originalText,
             censored_text: result.censored_text || censoredText,
             has_profanity: typeof result.has_profanity === 'boolean' ? result.has_profanity : hasProfanity,
+            sensitive_content: sensEval.is_sensitive,
+            sensitive_categories: sensEval.categories,
+            sensitive_category_names: sensEval.category_names,
+            sensitive_warning: sensEval.warning,
+            blur_enabled: sensEval.blur_enabled,
             sentiment: resolvedSentiment,
             sentiment_score: resolvedScore,
             support_recommendation: result.support_recommendation || SafeSpaceSupportRecommender.generate(originalText, resolvedSentiment, validCat, resolvedRisk, result.language || fastResult.language, context),
@@ -2264,17 +2446,29 @@ Return ONLY valid JSON, no markdown fences, no extra text:
         res.sentiment_confidence = sentEval.confidence;
         res.risk_level = computeRiskLevel(res.category, res.severity, res.status);
         res.warning_config = getWarningConfig(res.category, res.severity, res.status, res.reason, res.is_academic_stress, res.is_targeted);
+
+        var sensEval = SafeSpaceSensitiveDetector.evaluate(text);
+        res.sensitive_content = sensEval.is_sensitive;
+        res.sensitive_categories = sensEval.categories;
+        res.sensitive_category_names = sensEval.category_names;
+        res.sensitive_warning = sensEval.warning;
+        res.blur_enabled = sensEval.blur_enabled;
+        if (sensEval.is_sensitive) {
+          res.has_trigger_warning = true;
+          res.trigger_warning_category = sensEval.primary_category;
+          res.trigger_warning_label = sensEval.category_names[0] || 'Sensitive Content';
+        }
+
         res.support_recommendation = SafeSpaceSupportRecommender.generate(text, res.sentiment, res.category, res.risk_level, res.language);
         return res;
       }
 
       // 0. Banned Words & Slang Filter Check (From Admin AI Governance panel)
-      var defaultBannedWords = [
-        'gago', 'tarantado', 'boboka', 'bobo', 'ulol',
-        'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you',
-        'tado', 'gagu'
-      ];
-      var activeBannedWords = defaultBannedWords.slice();
+      // Custom slang and human-made words (e.g. "esmiringhoy") are censored with asterisks (e*********y)
+      // and allowed to be published safely with asterisks rather than triggering false AI rejections.
+      var activeBannedWords = (typeof SafeSpaceCensor !== 'undefined' && SafeSpaceCensor.getWords)
+        ? SafeSpaceCensor.getWords()
+        : DEFAULT_BANNED_KEYWORDS.slice();
       try {
         if (typeof localStorage !== 'undefined') {
           var customStored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
@@ -2308,32 +2502,39 @@ Return ONLY valid JSON, no markdown fences, no extra text:
         if (matchedBannedWord) break;
       }
 
-      if (matchedBannedWord) {
+      // Explicit violent death threats & severe crisis phrases trigger an immediate safety block
+      var EXTREME_CRISIS_PHRASES = ['kill yourself', 'mamatay kana', 'mamatay ka', 'magpakamatay', 'suicide'];
+      if (matchedBannedWord && EXTREME_CRISIS_PHRASES.indexOf(matchedBannedWord) !== -1) {
         return _wrap({
           success: true,
           online: false,
           fallback: true,
           allowed: false,
-          status: 'REVIEW',
-          action: 'warn',
+          status: 'BLOCKED',
+          action: 'block',
           language: langInfo.language,
           language_confidence: langInfo.confidence,
-          category: 'HARASSMENT',
-          categories: ['HARASSMENT', 'PROFANITY'],
-          severity: 'high',
-          confidence: 0.98,
-          reason: 'Harmful language detected from Banned Words & Slang Filter: "' + matchedBannedWord + '"',
+          category: 'CRITICAL_RISK',
+          categories: ['CRITICAL_RISK'],
+          severity: 'critical',
+          confidence: 0.99,
+          reason: 'Severe crisis keyword detected: "' + matchedBannedWord + '"',
           matched_word: matchedBannedWord,
-          detection_source: 'banned_filter',
+          detection_source: 'banned_filter_crisis',
           has_obfuscation: norm.has_obfuscation,
           obfuscation_types: norm.obfuscation_types,
           is_academic_stress: false,
           is_targeted: ctx.is_targeted,
           sentiment: 'NEGATIVE',
-          sentiment_score: 0.90,
+          sentiment_score: 0.95,
           elapsedMs: 1
         });
       }
+
+      // For slang and custom bad words added by admin (e.g. "esmiringhoy"):
+      // The banned filter now asterisks the word (e.g. "e*********y") via SafeSpaceCensor.
+      // Posts are allowed with asterisks, enabling community members to express themselves
+      // without false AI blocks while keeping content safe and censored.
 
       // 1. Safety Rules First (Violations always take priority over shortcuts)
       var matchedRule = null;
@@ -2574,8 +2775,535 @@ Return ONLY valid JSON, no markdown fences, no extra text:
 
 
     getWarningConfig: getWarningConfig,
-    computeRiskLevel: computeRiskLevel
+    computeRiskLevel: computeRiskLevel,
+
+    /**
+     * AI-Powered User Safety & Risk Detection
+     * Evaluates content for suicidal intent, depression, distress, violence, and longitudinal trend.
+     */
+    evaluateSafetyRisk: async function(text, history, options) {
+      options = options || {};
+      text = (text || '').trim();
+      var self = this;
+
+      if (this._state === 'online') {
+        try {
+          var controller = new AbortController();
+          var timeoutId = setTimeout(function() { controller.abort(); }, 3500);
+          var res = await fetch(self.getApiUrl() + '/safety-analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: text,
+              is_anonymous: Boolean(options.isAnonymous),
+              history: Array.isArray(history) ? history.slice(-5) : []
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            var data = await res.json();
+            if (data && data.success) return data;
+          }
+        } catch (e) {
+          // fallback to client engine
+        }
+      }
+
+      // Client-side Safety Engine Fallback
+      return SafeSpaceSafetyEngine.evaluate(text, history, options);
+    },
+
+    /**
+     * Longitudinal Progression Analysis
+     */
+    analyzeLongitudinal: function(history, latestRisk) {
+      return SafeSpaceSafetyEngine.analyzeLongitudinal(history, latestRisk);
+    }
   };
+
+  // ─────────────────────────────────────────────────────────────
+  // 6. AI-POWERED USER RISK DETECTION & SAFETY MONITORING ENGINE
+  // ─────────────────────────────────────────────────────────────
+  var SafeSpaceSafetyEngine = {
+    RISK_CRITICAL: 'critical',
+    RISK_HIGH: 'high',
+    RISK_MODERATE: 'moderate',
+    RISK_LOW: 'low',
+    RISK_NONE: 'none',
+
+    CONCERN_SUICIDAL_IMMINENT: 'SUICIDAL_IDEATION_IMMINENT',
+    CONCERN_SUICIDAL_PASSIVE: 'SUICIDAL_IDEATION_PASSIVE',
+    CONCERN_SELF_HARM: 'SELF_HARM_CONCERN',
+    CONCERN_EMOTIONAL_DISTRESS: 'POSSIBLE_EMOTIONAL_DISTRESS',
+    CONCERN_HOPELESSNESS: 'REPEATED_HOPELESSNESS_INDICATORS',
+    CONCERN_NEGATIVE_EXPRESSION: 'PERSISTENT_NEGATIVE_SELF_EXPRESSION',
+    CONCERN_ESCALATING_DISTRESS: 'INCREASING_DISTRESS_HUMAN_REVIEW_RECOMMENDED',
+    CONCERN_VIOLENCE_THREAT: 'CREDIBLE_VIOLENCE_OR_THREAT',
+    CONCERN_BULLYING_HARASSMENT: 'BULLYING_OR_HARASSMENT',
+    CONCERN_NUDITY_VIOLATION: 'NUDITY_OR_EXPLICIT_CONTENT',
+    CONCERN_ACADEMIC_STRESS: 'ACADEMIC_STRESS_BENIGN',
+    CONCERN_EDUCATIONAL_AWARENESS: 'EDUCATIONAL_OR_REPORTING_AWARENESS',
+    CONCERN_SAFE_EXPRESSION: 'SAFE_STUDENT_EXPRESSION',
+
+    IMMINENT_PATTERNS: [
+      /\b(i('m| am| will| plan to| decide to| decided to| want to| need to| ready to)?\s*(going to|gonna|will)?\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|overdose|jump off|swallow pills|take my own life)\s*(tonight|today|now|soon|this evening|after this|goodbye|right now)?)\b/i,
+      /\b(i\s*want\s*to\s*(end\s*my\s*life|die|kill\s*myself)\s*(tonight|today|now|soon)?)\b/i,
+      /\b(goodbye\s*(cruel\s*world|everyone|everybody|forever|guys|y'?all|to\s*all)\b.*?(won'?t\s*be\s*here|never\s*see\s*me|last\s*(post|message|day|night)|ending\s*it)?)\b/i,
+      /\b(this\s*is\s*my\s*(last|final)\s*(post|message|note|goodbye))\b/i,
+      /\b(i\s*don'?t\s*want\s*to\s*(live|exist|be\s*alive|wake\s*up)\s*anymore\s*(and|so)?\s*(i('m| am)?\s*(ending|done|killing)))\b/i,
+      /\b(i\s*have\s*(a\s*plan|written\s*my\s*note|prepared\s*everything)\s*(to\s*die|to\s*end\s*it|to\s*kill\s*myself))\b/i,
+      /\b(magpapakamatay\s*na\s*(ako|ko)|tatapusin\s*ko\s*na\s*ang\s*buhay\s*ko|gusto\s*ko\s*nang\s*(mamatay|mawala\s*sa\s*mundo|maglaho\s*ng\s*tuluyan))\b/i,
+      /\b(paalam\s*(sa\s*lahat|sa\s*inyo|mundo)\s*.*?(huling\s*(post|mensahe|araw|gabi)|hindi\s*na\s*ako\s*magigising))\b/i,
+      /\b(huling\s*(post|paalam|mensahe)\s*ko\s*na\s*ito)\b/i
+    ],
+
+    PASSIVE_PATTERNS: [
+      /\b(i\s*(wish|hope)\s*i\s*(was|were)\s*dead)\b/i,
+      /\b(i\s*(don'?t|do\s*not)\s*want\s*to\s*(be\s*here|exist|wake\s*up|live)\s*anymore)\b/i,
+      /\b(what\s*is\s*the\s*point\s*of\s*(living|life|going\s*on|trying|anything)\b.*?(better\s*off\s*dead|if\s*i\s*die)?)\b/i,
+      /\b(wish\s*i\s*could\s*(just\s*)?(disappear\s*forever|sleep\s*and\s*never\s*wake\s*up))\b/i,
+      /\b(sana\s*(patay\s*na\s*lang\s*ako|hindi\s*na\s*lang\s*ako\s*ipinanganak|mawala\s*na\s*lang\s*ako))\b/i,
+      /\b(mas\s*mabuti\s*pang\s*(mawala|mamatay)\s*na\s*lang\s*ako)\b/i,
+      /\b(ayoko\s*nang\s*(gumising|mabuhay|magpatuloy))\b/i,
+      /\b(sana\s*makatulog\s*nang\s*hindi\s*na\s*magising)\b/i
+    ],
+
+    SELF_HARM_PATTERNS: [
+      /\b(i\s*(cut|burned|hit|hurt|harmed)\s*myself\s*(again|today|last\s*night)?)\b/i,
+      /\b(urge\s*to\s*(cut|self-harm|hurt\s*myself))\b/i,
+      /\b(relapsed\s*(on|with)?\s*self-harm)\b/i,
+      /\b(sinasaktan\s*ko\s*ang\s*sarili\s*ko|naglalaslas|naghihiwa\s*ako\s*ng\s*braso)\b/i,
+      /\b(gusto\s*kong\s*saktan\s*ang\s*sarili\s*ko)\b/i
+    ],
+
+    DISTRESS_PATTERNS: [
+      /\b(nothing\s*(ever|will\s*ever|seems\s*to)?\s*(gets?|getting)\s*better)\b/i,
+      /\b(i\s*feel\s*(completely\s*)?(hopeless|empty|numb|broken|trapped|drowning))\b/i,
+      /\b(there\s*is\s*no\s*(hope|way\s*out|point|light|future)\s*(for\s*me)?)\b/i,
+      /\b(giving\s*up\s*on\s*(everything|life|myself|my\s*future))\b/i,
+      /\b(wala\s*nang\s*(pag-asa|patutunguhan|saysay\s*ang\s*lahat))\b/i,
+      /\b(parang\s*walang\s*katapusan\s*ang\s*(lungkot|paghihirap|dilim))\b/i,
+      /\b(i\s*feel\s*so\s*(worthless|useless|pathetic|like\s*garbage))\b/i,
+      /\b(i\s*am\s*a\s*(failure|disappointment|burden)\s*to\s*(everyone|my\s*parents|my\s*family))\b/i,
+      /\b(i\s*am\s*just\s*a\s*burden\s*to\s*(everyone|my\s*family|my\s*friends|society))\b/i,
+      /\b(pabigat\s*lang\s*ako\s*sa\s*(lahat|pamilya\s*ko|magulang\s*ko))\b/i,
+      /\b(walang\s*silbi\s*(ako|buhay\s*ko)|inutil\s*ako)\b/i,
+      /\b(i\s*(can'?t|cannot)\s*(take\s*it|cope|do\s*this|handle\s*this|keep\s*going)\s*anymore)\b/i,
+      /\b(i('m| am)\s*(so\s*)?(emotionally\s*drained|mentally\s*exhausted|breaking\s*down))\b/i,
+      /\b(sobrang\s*(pagod\s*na\s*ako|suko\s*na\s*ako)|hindi\s*ko\s*na\s*kaya)\b/i,
+      /\b(ubos\s*na\s*ubos\s*na\s*ako|sukong-suko\s*na\s*ako)\b/i,
+      /\b(no\s*one\s*(cares|understands|would\s*notice|loves\s*me)\s*(if\s*i\s*(was\s*gone|disappeared))?)\b/i,
+      /\b(i\s*am\s*so\s*alone\s*(and|in\s*this|with\s*no\s*one))\b/i,
+      /\b(walang\s*(may\s*pakialam|nakikinig|nagmamahal)\s*sa\s*akin)\b/i
+    ],
+
+    VIOLENCE_PATTERNS: [
+      /\b(i('ll| will| am going to| gonna)\s*(kill|murder|shoot|stab|choke|strangle|slit\s*the\s*throat\s*of)\s*(you|him|her|them|everyone|all\s*of\s*you))\b/i,
+      /\b(i('m| am)\s*bringing\s*(a\s*gun|a\s*knife|a\s*weapon|a\s*bomb)\s*to\s*(school|campus|class|building))\b/i,
+      /\b(watch\s*your\s*back\s*.*?(gonna\s*die|beat\s*you|kill\s*you))\b/i,
+      /\b(papatayin\s*kita|sasaksakin\s*kita|babarilin\s*ko\s*kayo|papatayin\s*ko\s*kayo)\b/i
+    ],
+
+    EDUCATIONAL_PATTERNS: [
+      /\b(in\s*(our|my|the)?\s*(psychology|guidance|ethics|philosophy|science|health|values|pe)\s*(class|lecture|subject|course|seminar|webinar))\b/i,
+      /\b(we\s*(discussed|studied|talked\s*about|learned\s*about)\s*(suicide\s*prevention|depression|mental\s*health|anxiety))\b/i,
+      /\b(the\s*(lecture|topic|presentation|seminar|lesson)\s*(is|was|covered)\s*(about)?\s*(suicide|depression|self-harm))\b/i,
+      /\b(suicide\s*prevention\s*(awareness|month|campaign|hotlines?|strategies))\b/i,
+      /\b(how\s*to\s*(help|support)\s*(a\s*friend|someone|classmates?)\s*(struggling|who\s*is\s*sad))\b/i
+    ],
+
+    SAFE_ACADEMIC_PATTERNS: [
+      /\b(stressed|exhausted|tired|anxious|nervous|upset|crying|depressed)\s*(because|since|about|with|over|due\s*to)?\s*(i\s*(failed|did\s*bad)|my|our|the)?\s*(exam|midterm|finals|thesis|quiz|grades?|defense|project|deadline|school|homework|all\s*night|scores?)\b/i,
+      /\b(i\s*(failed|did\s*bad\s*on|flunked|messed\s*up)\s*(my|the)?\s*(exam|test|quiz|subject|thesis|midterm))\b/i,
+      /\b(bumagsak\s*ako|bagsak\s*ako|hirap\s*sa\s*(exam|thesis|school))\b/i,
+      /\b(sobrang\s*daming\s*(requirements|tasks|deadlines))\b/i
+    ],
+
+    SAFE_IDIOM_PATTERNS: [
+      /\b(dying\s*(of\s*)?laughing|died\s*laughing|dead\s*tired)\b/i,
+      /\b(my\s*(phone|laptop|earphones|pc|car)\s*(died|is\s*dead))\b/i,
+      /\b(kill\s*(time|the\s*game|it|the\s*vibe))\b/i,
+      /\b(diet|dieting|balanced diet)\b/i
+    ],
+
+    evaluate: function(text, history, options) {
+      options = options || {};
+      text = (text || '').trim();
+      var lower = text.toLowerCase();
+      var distressIndicators = [];
+      var matchedEvidence = '';
+
+      // 1. Idioms / Safe Expressions
+      for (var i = 0; i < this.SAFE_IDIOM_PATTERNS.length; i++) {
+        if (this.SAFE_IDIOM_PATTERNS[i].test(lower)) {
+          if (!/\b(kill myself|end my life|magpapakamatay)\b/i.test(lower)) {
+            return this._buildSafeResult(text, 'Idiomatic or harmless student expression.', this.CONCERN_SAFE_EXPRESSION);
+          }
+        }
+      }
+
+      // 2. Educational / Reporting Context
+      var isEducational = false;
+      for (var e = 0; e < this.EDUCATIONAL_PATTERNS.length; e++) {
+        if (this.EDUCATIONAL_PATTERNS[e].test(lower)) {
+          isEducational = true;
+          break;
+        }
+      }
+
+      // 3. Imminent Suicidal Crisis (Critical Risk)
+      for (var im = 0; im < this.IMMINENT_PATTERNS.length; im++) {
+        var m = lower.match(this.IMMINENT_PATTERNS[im]);
+        if (m) {
+          return {
+            success: true,
+            risk_level: this.RISK_CRITICAL,
+            concern_type: this.CONCERN_SUICIDAL_IMMINENT,
+            moderation_category: 'SELF_HARM',
+            moderation_severity: 'critical',
+            reason: 'Explicit indicator of acute or imminent suicidal intent. Immediate protective human response required.',
+            evidence_reference: m[0],
+            confidence: 0.98,
+            urgency: 'immediate',
+            recommended_action: 'Urgent safety alert generated. Immediate intervention recommended; provide verified emergency crisis hotlines (NCMH 1553, 911, ASU Ibajay Counselor Ext. 104) and restrict account identity review to authorized safety personnel.',
+            language_detected: this._detectLang(text),
+            requires_human_review: true,
+            alert_required: true,
+            is_imminent_danger: true,
+            distress_indicators: ['Imminent Suicidal Intent', 'Desire to End Life', 'Potential Goodbye Message'],
+            longitudinal_risk: this.analyzeLongitudinal(history, this.RISK_CRITICAL),
+            is_anonymous: Boolean(options.isAnonymous)
+          };
+        }
+      }
+
+      // 4. Physical Violence Threat (High Risk)
+      for (var v = 0; v < this.VIOLENCE_PATTERNS.length; v++) {
+        var mv = lower.match(this.VIOLENCE_PATTERNS[v]);
+        if (mv) {
+          return {
+            success: true,
+            risk_level: this.RISK_HIGH,
+            concern_type: this.CONCERN_VIOLENCE_THREAT,
+            moderation_category: 'THREAT',
+            moderation_severity: 'critical',
+            reason: 'Direct, credible threat of severe physical harm or violence against another individual.',
+            evidence_reference: mv[0],
+            confidence: 0.96,
+            urgency: 'immediate',
+            recommended_action: 'Halt post from public view. Notify designated safety administrator immediately for urgent investigation and threat mitigation.',
+            language_detected: this._detectLang(text),
+            requires_human_review: true,
+            alert_required: true,
+            is_imminent_danger: true,
+            distress_indicators: ['Physical Threat', 'Targeted Violence'],
+            longitudinal_risk: this.analyzeLongitudinal(history, this.RISK_HIGH),
+            is_anonymous: Boolean(options.isAnonymous)
+          };
+        }
+      }
+
+      // 5. Educational discussion check (when no imminent threat exists)
+      if (isEducational) {
+        return {
+          success: true,
+          risk_level: this.RISK_NONE,
+          concern_type: this.CONCERN_EDUCATIONAL_AWARENESS,
+          moderation_category: 'SAFE',
+          moderation_severity: 'none',
+          reason: 'Educational or awareness discussion concerning mental health without personal crisis intent.',
+          evidence_reference: text.substring(0, 80),
+          confidence: 0.93,
+          urgency: 'none',
+          recommended_action: 'Permit standard publication. No personal safety alert required.',
+          language_detected: this._detectLang(text),
+          requires_human_review: false,
+          alert_required: false,
+          is_imminent_danger: false,
+          distress_indicators: [],
+          longitudinal_risk: { trend: 'stable', escalation_detected: false }
+        };
+      }
+
+      // 6. Passive thoughts of death (High Risk)
+      for (var p = 0; p < this.PASSIVE_PATTERNS.length; p++) {
+        var mp = lower.match(this.PASSIVE_PATTERNS[p]);
+        if (mp) {
+          distressIndicators.push('Passive Thoughts of Death / Lack of Desire to Live');
+          matchedEvidence = mp[0];
+          break;
+        }
+      }
+
+      // 7. Self-Harm Concerns
+      for (var sh = 0; sh < this.SELF_HARM_PATTERNS.length; sh++) {
+        var msh = lower.match(this.SELF_HARM_PATTERNS[sh]);
+        if (msh) {
+          distressIndicators.push('Self-Harm Reference');
+          if (!matchedEvidence) matchedEvidence = msh[0];
+          break;
+        }
+      }
+
+      // 8. Depression / Hopelessness / Burden Indicators
+      for (var d = 0; d < this.DISTRESS_PATTERNS.length; d++) {
+        var md = lower.match(this.DISTRESS_PATTERNS[d]);
+        if (md) {
+          var flag = 'Possible Emotional Distress';
+          var s = md[0].toLowerCase();
+          if (s.indexOf('burden') !== -1 || s.indexOf('pabigat') !== -1) {
+            flag = 'Feeling Like a Burden';
+          } else if (s.indexOf('hopeless') !== -1 || s.indexOf('pag-asa') !== -1) {
+            flag = 'Repeated Hopelessness Indicators';
+          } else if (s.indexOf('worthless') !== -1 || s.indexOf('walang silbi') !== -1) {
+            flag = 'Expressions of Worthlessness';
+          } else if (s.indexOf('exhausted') !== -1 || s.indexOf('drained') !== -1 || s.indexOf('pagod') !== -1) {
+            flag = 'Emotional Exhaustion & Inability to Cope';
+          } else if (s.indexOf('alone') !== -1 || s.indexOf('no one') !== -1) {
+            flag = 'Severe Social Isolation';
+          }
+          if (distressIndicators.indexOf(flag) === -1) distressIndicators.push(flag);
+          if (!matchedEvidence) matchedEvidence = md[0];
+        }
+      }
+
+      // Academic Stress Check
+      var isAcademic = false;
+      for (var a = 0; a < this.SAFE_ACADEMIC_PATTERNS.length; a++) {
+        if (this.SAFE_ACADEMIC_PATTERNS[a].test(lower)) {
+          isAcademic = true;
+          break;
+        }
+      }
+
+      var longitudinalData = this.analyzeLongitudinal(history, 'none', distressIndicators);
+
+      // Decision Matrix
+      if (distressIndicators.indexOf('Passive Thoughts of Death / Lack of Desire to Live') !== -1) {
+        return {
+          success: true,
+          risk_level: this.RISK_HIGH,
+          concern_type: this.CONCERN_SUICIDAL_PASSIVE,
+          moderation_category: 'DISTRESS',
+          moderation_severity: 'high',
+          reason: 'Expressed thoughts about not wanting to exist or severe despair. Context indicates serious mental distress.',
+          evidence_reference: matchedEvidence,
+          confidence: 0.92,
+          urgency: 'urgent',
+          recommended_action: 'Route to Counselor Triage Queue. Offer supportive guidance and verified mental health resources; monitor for escalation.',
+          language_detected: this._detectLang(text),
+          requires_human_review: true,
+          alert_required: true,
+          is_imminent_danger: false,
+          distress_indicators: distressIndicators,
+          longitudinal_risk: longitudinalData,
+          is_anonymous: Boolean(options.isAnonymous)
+        };
+      }
+
+      if (distressIndicators.indexOf('Self-Harm Reference') !== -1) {
+        return {
+          success: true,
+          risk_level: longitudinalData.escalation_detected ? this.RISK_HIGH : this.RISK_MODERATE,
+          concern_type: this.CONCERN_SELF_HARM,
+          moderation_category: 'SELF_HARM',
+          moderation_severity: 'high',
+          reason: 'Content indicates potential self-harm behavior or recurring self-injury urges.',
+          evidence_reference: matchedEvidence,
+          confidence: 0.90,
+          urgency: longitudinalData.escalation_detected ? 'urgent' : 'routine',
+          recommended_action: 'Create administrator notification and queue for counselor safety review.',
+          language_detected: this._detectLang(text),
+          requires_human_review: true,
+          alert_required: true,
+          is_imminent_danger: false,
+          distress_indicators: distressIndicators,
+          longitudinal_risk: longitudinalData,
+          is_anonymous: Boolean(options.isAnonymous)
+        };
+      }
+
+      if (distressIndicators.length >= 2 || longitudinalData.escalation_detected) {
+        var cType = longitudinalData.escalation_detected ? this.CONCERN_ESCALATING_DISTRESS : this.CONCERN_HOPELESSNESS;
+        return {
+          success: true,
+          risk_level: this.RISK_MODERATE,
+          concern_type: cType,
+          moderation_category: 'DISTRESS',
+          moderation_severity: 'medium',
+          reason: 'Content contains multiple potential emotional distress indicators: ' + distressIndicators.join(', ') + '. Human review recommended.',
+          evidence_reference: matchedEvidence,
+          confidence: 0.88,
+          urgency: 'routine',
+          recommended_action: 'Offer contextual coping guidance and Suggested Support. Record safety indicator for counselor review.',
+          language_detected: this._detectLang(text),
+          requires_human_review: true,
+          alert_required: true,
+          is_imminent_danger: false,
+          distress_indicators: distressIndicators,
+          longitudinal_risk: longitudinalData,
+          is_anonymous: Boolean(options.isAnonymous)
+        };
+      }
+
+      if (distressIndicators.length === 1) {
+        if (isAcademic) {
+          return {
+            success: true,
+            risk_level: this.RISK_LOW,
+            concern_type: this.CONCERN_ACADEMIC_STRESS,
+            moderation_category: 'SAFE',
+            moderation_severity: 'none',
+            reason: 'Expressed academic frustration or study pressure. Evaluated as safe student peer-support sharing.',
+            evidence_reference: matchedEvidence,
+            confidence: 0.91,
+            urgency: 'none',
+            recommended_action: 'Provide empathetic student coping recommendation (Study tips / break encouragement). No administrative alert required.',
+            language_detected: this._detectLang(text),
+            requires_human_review: false,
+            alert_required: false,
+            is_imminent_danger: false,
+            distress_indicators: distressIndicators,
+            longitudinal_risk: longitudinalData,
+            is_anonymous: Boolean(options.isAnonymous)
+          };
+        } else {
+          return {
+            success: true,
+            risk_level: this.RISK_LOW,
+            concern_type: this.CONCERN_EMOTIONAL_DISTRESS,
+            moderation_category: 'DISTRESS',
+            moderation_severity: 'low',
+            reason: 'Single potential distress indicator identified: ' + distressIndicators[0] + '.',
+            evidence_reference: matchedEvidence,
+            confidence: 0.85,
+            urgency: 'routine',
+            recommended_action: 'Provide AI Suggested Support. Record indicator for trend monitoring.',
+            language_detected: this._detectLang(text),
+            requires_human_review: false,
+            alert_required: false,
+            is_imminent_danger: false,
+            distress_indicators: distressIndicators,
+            longitudinal_risk: longitudinalData,
+            is_anonymous: Boolean(options.isAnonymous)
+          };
+        }
+      }
+
+      if (isAcademic) {
+        return {
+          success: true,
+          risk_level: this.RISK_LOW,
+          concern_type: this.CONCERN_ACADEMIC_STRESS,
+          moderation_category: 'SAFE',
+          moderation_severity: 'none',
+          reason: 'Expressed academic frustration or study pressure. Evaluated as non-urgent student expression.',
+          evidence_reference: text.substring(0, 60),
+          confidence: 0.92,
+          urgency: 'none',
+          recommended_action: 'Provide empathetic student coping recommendation. No administrative alert required.',
+          language_detected: this._detectLang(text),
+          requires_human_review: false,
+          alert_required: false,
+          is_imminent_danger: false,
+          distress_indicators: ['Academic Stress / Study Pressure'],
+          longitudinal_risk: longitudinalData,
+          is_anonymous: Boolean(options.isAnonymous)
+        };
+      }
+
+      return this._buildSafeResult(text, 'No potential safety risk identified in content.', this.CONCERN_SAFE_EXPRESSION, options);
+    },
+
+    analyzeLongitudinal: function(history, latestRisk, currentIndicators) {
+      if (!Array.isArray(history) || history.length === 0) {
+        return {
+          total_historical_posts: 0,
+          recent_concerning_count: 0,
+          trend: 'baseline',
+          escalation_detected: false,
+          summary: 'First observed post or no historical distress records.'
+        };
+      }
+
+      var concerning = [];
+      var recent = history.slice(-5);
+      for (var i = 0; i < recent.length; i++) {
+        var p = recent[i];
+        var r = String(p.risk_level || 'low').toLowerCase();
+        var s = String(p.sentiment || 'NEUTRAL').toUpperCase();
+        if (r === 'critical' || r === 'high' || r === 'moderate' || s === 'NEGATIVE') {
+          concerning.push({
+            snippet: String(p.content || '').substring(0, 60),
+            risk_level: r,
+            sentiment: s,
+            created_at: p.created_at
+          });
+        }
+      }
+
+      var count = concerning.length;
+      var escalation = false;
+      var trend = 'stable';
+
+      if (count >= 2) {
+        trend = (latestRisk === 'critical' || latestRisk === 'high' || latestRisk === 'moderate') ? 'escalating' : 'persistent';
+        escalation = true;
+      } else if (count === 1 && (latestRisk === 'critical' || latestRisk === 'high')) {
+        trend = 'acute_escalation';
+        escalation = true;
+      }
+
+      return {
+        total_historical_posts: history.length,
+        recent_concerning_count: count,
+        trend: trend,
+        escalation_detected: escalation,
+        summary: escalation
+          ? 'Progression detected: User has shared ' + count + ' concerning statement(s) recently. Contextual review recommended.'
+          : 'Historical expressions remain within normal bounds.',
+        recent_signals: concerning
+      };
+    },
+
+    _detectLang: function(text) {
+      var t = text.toLowerCase();
+      var filMarkers = ['ako', 'ko', 'mo', 'ka', 'na', 'sa', 'ang', 'ng', 'mga', 'para', 'buhay', 'ayaw', 'gusto', 'sana'];
+      var count = 0;
+      for (var i = 0; i < filMarkers.length; i++) {
+        if (new RegExp('\\b' + filMarkers[i] + '\\b', 'i').test(t)) count++;
+      }
+      if (count >= 3) return 'filipino';
+      if (count >= 1) return 'taglish';
+      return 'english';
+    },
+
+    _buildSafeResult: function(text, reason, concernType, options) {
+      options = options || {};
+      return {
+        success: true,
+        risk_level: this.RISK_NONE,
+        concern_type: concernType || this.CONCERN_SAFE_EXPRESSION,
+        moderation_category: 'SAFE',
+        moderation_severity: 'none',
+        reason: reason,
+        evidence_reference: text.substring(0, 60),
+        confidence: 0.95,
+        urgency: 'none',
+        recommended_action: 'Standard publication permitted. No safety alert required.',
+        language_detected: 'english',
+        requires_human_review: false,
+        alert_required: false,
+        is_imminent_danger: false,
+        distress_indicators: [],
+        longitudinal_risk: { trend: 'stable', escalation_detected: false, summary: 'Standard student expression.' },
+        is_anonymous: Boolean(options.isAnonymous)
+      };
+    }
+  };
+
+  AIService.SafetyEngine = SafeSpaceSafetyEngine;
 
   // Immediate non-blocking status check
   try {
@@ -2589,6 +3317,8 @@ Return ONLY valid JSON, no markdown fences, no extra text:
   AIService.censorProfanity = function(t) { return SafeSpaceCensor.censor(t); };
   AIService.containsProfanity = function(t) { return SafeSpaceCensor.hasProfanity(t); };
   window.SafeSpaceSupportRecommender = SafeSpaceSupportRecommender;
+  window.SafeSpaceSensitiveDetector = SafeSpaceSensitiveDetector;
+  AIService.evaluateSensitive = function(t, p) { return SafeSpaceSensitiveDetector.evaluate(t, p); };
 
   window.AIService = AIService;
 })(window);

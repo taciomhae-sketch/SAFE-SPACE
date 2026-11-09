@@ -11,6 +11,7 @@ from language_detector import LanguageDetector
 from normalizer import TextNormalizer
 from context_analyzer import ContextAnalyzer
 from censor import censor_profanity, contains_profanity
+from sensitive_analyzer import SensitiveContentDetector
 from rules import (
     RULES_CONFIG,
     CATEGORY_SAFE, CATEGORY_PROFANITY, CATEGORY_HARASSMENT,
@@ -306,12 +307,20 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "is_targeted": False,
             "original_text": text or "",
             "censored_text": text or "",
-            "has_profanity": False
+            "has_profanity": False,
+            "sensitive_content": False,
+            "sensitive_categories": [],
+            "sensitive_category_names": [],
+            "sensitive_warning": None,
+            "blur_enabled": False
         }
 
     original_text = text.strip()
     censored_text = censor_profanity(original_text)
     has_profanity = (censored_text != original_text)
+
+    # Evaluate Automated Sensitive Content Detection & Trigger Warning
+    sensitive_eval = SensitiveContentDetector.evaluate(original_text)
 
     # Step 1: Normalization & Obfuscation Detection
     norm = TextNormalizer.normalize(original_text)
@@ -404,7 +413,12 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
                 "is_targeted": is_targeted,
                 "original_text": original_text,
                 "censored_text": censored_text,
-                "has_profanity": has_profanity
+                "has_profanity": has_profanity,
+                "sensitive_content": sensitive_eval["is_sensitive"],
+                "sensitive_categories": sensitive_eval["categories"],
+                "sensitive_category_names": sensitive_eval.get("category_names", []),
+                "sensitive_warning": sensitive_eval["warning"],
+                "blur_enabled": sensitive_eval["blur_enabled"]
             }
 
     # 4A. Benign Whitelist Shortcut (e.g., "my phone died", "healthy diet", "puto bumbong")
@@ -428,7 +442,12 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "is_targeted": is_targeted,
             "original_text": original_text,
             "censored_text": censored_text,
-            "has_profanity": has_profanity
+            "has_profanity": has_profanity,
+            "sensitive_content": False,
+            "sensitive_categories": [],
+            "sensitive_category_names": [],
+            "sensitive_warning": None,
+            "blur_enabled": False
         }
 
     # 4B. Academic / Student Stress Shortcut (Empathetic sharing)
@@ -452,7 +471,12 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "is_targeted": is_targeted,
             "original_text": original_text,
             "censored_text": censored_text,
-            "has_profanity": has_profanity
+            "has_profanity": has_profanity,
+            "sensitive_content": False,
+            "sensitive_categories": [],
+            "sensitive_category_names": [],
+            "sensitive_warning": None,
+            "blur_enabled": False
         }
 
     # 4C. Educational Discussion or Quoting / Reporting
@@ -476,7 +500,12 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
             "is_targeted": is_targeted,
             "original_text": original_text,
             "censored_text": censored_text,
-            "has_profanity": has_profanity
+            "has_profanity": has_profanity,
+            "sensitive_content": sensitive_eval["is_sensitive"],
+            "sensitive_categories": sensitive_eval["categories"],
+            "sensitive_category_names": sensitive_eval.get("category_names", []),
+            "sensitive_warning": sensitive_eval["warning"],
+            "blur_enabled": sensitive_eval["blur_enabled"]
         }
 
     # Step 6: AI Neural Classification
@@ -580,5 +609,10 @@ def moderate(text: str, context_meta: Optional[Dict[str, Any]] = None) -> Dict[s
         "is_targeted": is_targeted,
         "original_text": original_text,
         "censored_text": censored_text,
-        "has_profanity": has_profanity
+        "has_profanity": has_profanity,
+        "sensitive_content": sensitive_eval["is_sensitive"],
+        "sensitive_categories": sensitive_eval["categories"],
+        "sensitive_category_names": sensitive_eval.get("category_names", []),
+        "sensitive_warning": sensitive_eval["warning"],
+        "blur_enabled": sensitive_eval["blur_enabled"]
     }
