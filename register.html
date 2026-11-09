@@ -389,15 +389,58 @@
                 </div>
               </div>
 
-              <!-- Privacy Policy Checkbox (Required) -->
-              <div class="privacy-consent-box" style="margin-bottom:20px;">
-                <label class="privacy-checkbox-label" for="privacyConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                  <input type="checkbox" id="privacyConsentCheckbox" required style="margin-top:3px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
-                  <span style="font-size:13px; line-height:1.45; color:rgba(255,255,255,0.95);">
-                    I agree to the <button type="button" id="openPrivacyPolicyBtn" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:13px; font-family:inherit;">Privacy Policy</button> and <button type="button" id="openTermsBtn" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:13px; font-family:inherit;">Terms of Use</button>. <span style="color:#F87171;">*</span>
-                  </span>
-                </label>
-                <div id="consentError" class="field-feedback error" style="display:none; margin-top:6px;"></div>
+              <!-- ========================================================
+                   DATA PRIVACY AND CONSENT (RA 10173 COMPLIANCE)
+                   ======================================================== -->
+              <div class="data-privacy-consent-card" style="margin-bottom:20px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.28); border-radius:14px; padding:16px 18px; text-align:left;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                  <i class="fas fa-shield-halved" style="color:#FDE68A; font-size:16px;"></i>
+                  <h3 style="font-size:13.5px; font-weight:800; color:#FFFFFF; margin:0; letter-spacing:0.5px; text-transform:uppercase;">
+                    Data Privacy and Consent
+                  </h3>
+                </div>
+
+                <p style="font-size:12.5px; line-height:1.55; color:rgba(255,255,255,0.92); margin:0 0 10px;">
+                  Safe Space respects your privacy and is committed to protecting your personal information in accordance with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>.
+                </p>
+
+                <p style="font-size:12px; line-height:1.5; color:rgba(255,255,255,0.85); margin:0 0 12px;">
+                  Your personal information will be collected and processed for account registration, authentication, student verification, platform security, community safety, and the operation of the Safe Space platform. Please read the Privacy Notice before proceeding.
+                </p>
+
+                <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                  <button type="button" id="openPrivacyPolicyBtn" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); color:#FDE68A; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-family:inherit;">
+                    <i class="fas fa-file-shield"></i> View Privacy Notice
+                  </button>
+                  <button type="button" id="openDpaInfoBtn" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); color:#FDE68A; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-family:inherit;">
+                    <i class="fas fa-scale-balanced"></i> View Data Privacy Act Information
+                  </button>
+                  <button type="button" id="openTermsBtn" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); color:#FFFFFF; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-family:inherit;">
+                    <i class="fas fa-file-contract"></i> View Terms of Use
+                  </button>
+                </div>
+
+                <!-- Independent Checkbox 1: Privacy Notice (Required, unchecked by default) -->
+                <div style="margin-bottom:10px;">
+                  <label class="privacy-checkbox-label" for="privacyConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="privacyConsentCheckbox" required style="margin-top:2px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
+                    <span style="font-size:12.5px; line-height:1.45; color:rgba(255,255,255,0.96);">
+                      I have read and understood the <button type="button" id="linkReadPrivacyNotice" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:12.5px; font-family:inherit;">Safe Space Privacy Notice</button>. I acknowledge that my personal information will be collected and processed for account registration, student verification, platform security, community moderation, and student safety, as explained in the Privacy Notice. <span style="color:#F87171;">*</span>
+                    </span>
+                  </label>
+                  <div id="consentError" class="field-feedback error" style="display:none; margin-top:5px; font-size:12px;"></div>
+                </div>
+
+                <!-- Independent Checkbox 2: Terms and Conditions (Required, unchecked by default) -->
+                <div>
+                  <label class="privacy-checkbox-label" for="termsConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="termsConsentCheckbox" required style="margin-top:2px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
+                    <span style="font-size:12.5px; line-height:1.45; color:rgba(255,255,255,0.96);">
+                      I agree to the <button type="button" id="linkReadTerms" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:12.5px; font-family:inherit;">Safe Space Terms and Conditions</button>. <span style="color:#F87171;">*</span>
+                    </span>
+                  </label>
+                  <div id="termsConsentError" class="field-feedback error" style="display:none; margin-top:5px; font-size:12px;"></div>
+                </div>
               </div>
 
               <!-- Step 3 Actions: BACK & CREATE ACCOUNT Buttons -->
@@ -669,43 +712,157 @@
   </div>
 
   <!-- ========================================================
-       PRIVACY POLICY & TERMS MODAL
+       DATA PRIVACY NOTICE & RA 10173 COMPLIANCE MODAL
        ======================================================== -->
   <div class="privacy-modal-overlay" id="privacyModalOverlay" role="dialog" aria-modal="true" aria-labelledby="privacyModalTitle">
-    <div class="privacy-modal-card">
+    <div class="privacy-modal-card" style="max-width:680px; width:92%; max-height:88vh; display:flex; flex-direction:column;">
       <div class="privacy-modal-header">
-        <h3 id="privacyModalTitle"><i class="fas fa-shield-halved"></i> Safe Space Privacy Policy &amp; Terms</h3>
+        <h3 id="privacyModalTitle"><i class="fas fa-shield-halved"></i> Safe Space Privacy Notice (RA 10173)</h3>
         <button type="button" id="closePrivacyModalBtn" aria-label="Close">
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <div class="privacy-modal-body">
-        <h4>1. Student Identity &amp; Account Information</h4>
-        <p>Safe Space collects basic registration information: your name, birthday (used to derive age), gender identity, username, email address, and securely hashed password. Profile photos or avatar selections are optional.</p>
+      <div class="privacy-modal-body" style="overflow-y:auto; padding:20px 24px; font-size:13px; line-height:1.65; color:#374151;">
+        <div style="background:#EEF2FF; border-left:4px solid #6366F1; padding:10px 14px; border-radius:6px; margin-bottom:16px;">
+          <strong style="color:#312E81;">Republic Act No. 10173 (Data Privacy Act of 2012) Compliance Notice:</strong>
+          <div style="font-size:12px; color:#4338CA; margin-top:2px;">Notice Version: <strong>1.0</strong> | Effective Date: <strong>November 2026</strong></div>
+        </div>
 
-        <h4>2. Purpose of Collection</h4>
-        <p>Your information is used strictly to provide access to Safe Space support features, maintain respectful community moderation, enable confidential communication, and preserve account security.</p>
+        <h4>A. Personal Information Collected</h4>
+        <p>Safe Space collects only information strictly necessary for the platform's actual educational, student verification, and safe-expression purposes. We collect:</p>
+        <ul style="padding-left:20px; margin:6px 0 12px;">
+          <li><strong>Email address:</strong> For account authentication, notifications, and verification.</li>
+          <li><strong>Username:</strong> For displaying your chosen identity within the student platform.</li>
+          <li><strong>Student ID number:</strong> For verifying legitimate enrollment in the educational institution.</li>
+          <li><strong>Student ID image:</strong> Captured via camera or file upload, used exclusively to verify that the registered student holds a valid school-issued ID.</li>
+          <li><strong>Password:</strong> Stored strictly using irreversible, secure password hashing (passwords are never stored as plain text and cannot be viewed by administrators).</li>
+          <li><strong>Account registration info:</strong> First name, last name, birthday (used to calculate age), and sex/gender.</li>
+          <li><strong>Profile information:</strong> Voluntarily provided avatar selection or bio.</li>
+          <li><strong>Community posts and interactions:</strong> Posts, comments, reactions, and saved items created by you.</li>
+          <li><strong>Reports:</strong> Reports submitted regarding community guidelines or safety concerns.</li>
+          <li><strong>AI moderation &amp; sentiment analysis results:</strong> Real-time text safety classifications generated by the client-side/moderation engine.</li>
+          <li><strong>Security &amp; access logs:</strong> Login timestamps, privacy acknowledgment records, and audit events necessary for account safety.</li>
+        </ul>
+        <p><em>We do not request unnecessary sensitive information. We collect only what is lawful, proportional, and directly relevant to platform operations.</em></p>
 
-        <h4>3. Account Security &amp; Passwords</h4>
-        <p>Passwords are securely hashed before storage and are never stored as plain text. Passwords cannot be viewed by platform administrators or sent back to the browser.</p>
+        <h4>B. Purpose of Data Collection</h4>
+        <p>Safe Space processes personal information for the following specific, legitimate purposes:</p>
+        <ol style="padding-left:20px; margin:6px 0 12px;">
+          <li>Creating and managing student accounts.</li>
+          <li>Authenticating users during login.</li>
+          <li>Checking Student ID number consistency between entered text and school documents.</li>
+          <li>Supporting student verification and ensuring campus safety.</li>
+          <li>Maintaining account security and preventing unauthorized access.</li>
+          <li>Moderating community posts to detect potentially harmful, offensive, or distressing content.</li>
+          <li>Supporting student safety through automated crisis helpline recommendations (e.g., NCMH 1553, 911).</li>
+          <li>Managing reports and platform incidents fairly and confidentially.</li>
+          <li>Improving platform functionality, peer support, and user experience.</li>
+          <li>Maintaining necessary system audit records.</li>
+        </ol>
+        <p><em>Notice on AI Moderation:</em> Safe Space utilizes AI moderation and sentiment analysis to flag cyberbullying, self-harm risks, and harassment. <strong>AI moderation is an assistive safety filter and cannot guarantee absolute student safety or replace human counseling.</strong></p>
 
-        <h4>4. Anonymous &amp; Safe Expression</h4>
-        <p>When you post anonymously in community spaces, your personal identifying information is hidden from peer students. Your well-being, privacy, and peace of mind are paramount.</p>
+        <h4>C. Student ID Image Processing</h4>
+        <p>When you register, you submit an image of your school-issued Student ID via device camera or file upload. The system utilizes optical character recognition (OCR) to extract the ID number and verify consistency against your form input.</p>
+        <ul style="padding-left:20px; margin:6px 0 12px;">
+          <li><strong>Verification limitation:</strong> OCR consistency matching confirms document number alignment but does not independently certify document authenticity.</li>
+          <li><strong>Storage &amp; Protection:</strong> Uploaded Student ID documents are stored in protected, access-restricted cloud storage and local encrypted cache.</li>
+          <li><strong>Access restriction:</strong> Student ID documents are accessible strictly by authorized institutional administrators for verification audits and are <strong>never displayed publicly or to other students</strong>.</li>
+          <li><strong>Retention &amp; Disposal:</strong> Student ID images are retained only for the duration of the student's active enrollment or the research evaluation period, after which they are securely purged according to institutional retention policies.</li>
+        </ul>
 
-        <h4>5. AI Moderation &amp; Safety</h4>
-        <p>Safe Space utilizes respectful AI moderation to safeguard students against cyberbullying, self-harm risks, and harassment. Content flagged for safety review is handled confidentially.</p>
+        <h4>D. Data Storage and Security Measures</h4>
+        <p>Safe Space implements organizational, physical, and technical security safeguards, including:</p>
+        <ul style="padding-left:20px; margin:6px 0 12px;">
+          <li>Secure token-based authentication and sessions.</li>
+          <li>Irreversible bcrypt/argon password hashing.</li>
+          <li>Row-Level Security (RLS) policies restricting database queries to authorized users.</li>
+          <li>HTTPS encrypted in-transit communication and protected storage buckets.</li>
+          <li>Role-based administrative access controls.</li>
+        </ul>
+        <p><em>Security Notice:</em> While we implement robust industry safeguards, no digital system can claim absolute invulnerability. We continually review and update our safeguards to protect student data.</p>
 
-        <h4>6. User Rights, Profile &amp; Data Deletion</h4>
-        <p>You have full autonomy over your data. You can view, edit, or remove your personal details anytime via Profile → Account Information. You may also request account deactivation or deletion.</p>
+        <h4>E. Data Sharing and Disclosure</h4>
+        <p>Safe Space does not sell, rent, or trade your personal information. Personal data is shared only with:</p>
+        <ul style="padding-left:20px; margin:6px 0 12px;">
+          <li><strong>Authorized school counselors / administrators:</strong> Exclusively for student verification, critical safety escalation, or managing incident reports.</li>
+          <li><strong>Essential technical service providers:</strong> Secure cloud database and hosting providers operating under strict data processing agreements.</li>
+          <li><strong>Legal obligations:</strong> When required by lawful court order, regulation, or immediate protection of human life.</li>
+        </ul>
 
-        <h4>7. Non-Medical Platform Notice</h4>
-        <p>Safe Space is a peer support and safe-expression web platform for students. It does not replace professional medical advice, clinical psychiatric diagnosis, or emergency crisis intervention services.</p>
+        <h4>F. Your Rights as a Data Subject</h4>
+        <p>Under Republic Act No. 10173 (Data Privacy Act of 2012), you are entitled to the following rights:</p>
+        <ul style="padding-left:20px; margin:6px 0 12px;">
+          <li><strong>Right to be Informed:</strong> To know whether your personal data is being processed.</li>
+          <li><strong>Right to Access:</strong> To request a copy of your personal data held in Safe Space.</li>
+          <li><strong>Right to Rectification:</strong> To correct inaccurate or outdated information via Profile settings.</li>
+          <li><strong>Right to Erasure or Blocking:</strong> To request deletion or suspension of your account and personal data, subject to legitimate safety/legal retention requirements.</li>
+          <li><strong>Right to Object:</strong> To object to data processing where applicable by law.</li>
+          <li><strong>Right to Data Portability:</strong> To obtain an electronic copy of your submitted information.</li>
+          <li><strong>Right to File a Complaint:</strong> To lodge a formal complaint with the <strong>National Privacy Commission (NPC)</strong> at <em>https://privacy.gov.ph</em> if your rights have been violated.</li>
+        </ul>
 
-        <h4>8. Contact &amp; Research Context</h4>
-        <p>Safe Space is crafted for student well-being as part of an academic thesis initiative. For inquiries, reach out to the Safe Space Student Support research team.</p>
+        <h4>G. Data Retention Policy</h4>
+        <p>Personal data is retained only for as long as necessary to fulfill the educational, safety, and community purposes outlined in this notice. When accounts are deleted or retention periods lapse, records are systematically anonymized or destroyed, except where specific records must be preserved for documented legal, safety, or disciplinary audits.</p>
+
+        <h4>H. Data Protection Contact &amp; Inquiries</h4>
+        <div style="background:#F3F4F6; border:1px solid #E5E7EB; border-radius:8px; padding:12px; margin-top:8px;">
+          <p style="margin:0 0 4px;"><strong>Responsible Institution / Research Team:</strong> Safe Space Student Support Thesis Initiative</p>
+          <p style="margin:0 0 4px;"><strong>Designated Data Protection Contact:</strong> Institutional Privacy &amp; Guidance Desk</p>
+          <p style="margin:0;"><strong>Inquiries &amp; Privacy Requests:</strong> <a href="mailto:safespace.privacy@gmail.com" style="color:#6366F1; font-weight:700;">safespace.privacy@gmail.com</a></p>
+        </div>
       </div>
-      <div class="privacy-modal-footer">
-        <button type="button" class="privacy-modal-close-btn" id="privacyModalOkBtn">I Understand &amp; Agree</button>
+      <div class="privacy-modal-footer" style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px;">
+        <span style="font-size:11.5px; color:#6B7280;"><i class="fas fa-check-circle"></i> Version 1.0 (RA 10173)</span>
+        <button type="button" class="privacy-modal-close-btn" id="privacyModalOkBtn" style="padding:10px 22px; border-radius:999px;">
+          Close &amp; Return to Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SEPARATE TERMS AND CONDITIONS MODAL
+       ======================================================== -->
+  <div class="privacy-modal-overlay" id="termsModalOverlay" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
+    <div class="privacy-modal-card" style="max-width:640px; width:92%; max-height:85vh; display:flex; flex-direction:column;">
+      <div class="privacy-modal-header">
+        <h3 id="termsModalTitle"><i class="fas fa-file-contract"></i> Safe Space Terms and Conditions</h3>
+        <button type="button" id="closeTermsModalBtn" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="privacy-modal-body" style="overflow-y:auto; padding:20px 24px; font-size:13px; line-height:1.6; color:#374151;">
+        <div style="background:#F0FDF4; border-left:4px solid #22C55E; padding:10px 14px; border-radius:6px; margin-bottom:14px;">
+          <strong style="color:#166534;">Safe Space Community Rules:</strong>
+          <div style="font-size:12px; color:#15803D; margin-top:2px;">Terms Version <strong>1.0</strong> | Platform Usage Agreement</div>
+        </div>
+
+        <h4>1. Eligibility &amp; Accurate Information</h4>
+        <p>Safe Space is designed for students. By creating an account, you agree that you are a bona fide student and have submitted your actual school Student ID.</p>
+
+        <h4>2. Community Conduct &amp; Respect</h4>
+        <p>Our platform thrives on mutual empathy, psychological safety, and respect. You agree NOT to post:</p>
+        <ul style="padding-left:20px; margin:6px 0 10px;">
+          <li>Bullying, harassment, hate speech, or targeted defamation.</li>
+          <li>Direct threats of physical violence against any person.</li>
+          <li>Content encouraging suicide, self-harm, or harmful acts.</li>
+          <li>Nudity, sexual solicitation, or inappropriate commercial spam.</li>
+        </ul>
+
+        <h4>3. Content Moderation &amp; Enforcement</h4>
+        <p>Posts and comments are subject to automatic AI moderation and human counselor review. Content violating critical safety rules will be blocked. Off-words are automatically masked with asterisks, and emotionally sensitive posts are blurred to protect readers.</p>
+
+        <h4>4. Anonymous Posting Responsibility</h4>
+        <p>Anonymous posting allows you to seek advice without fear of judgment. While your username is hidden from other students, abusive behavior remains traceable by administrators to ensure community safety.</p>
+
+        <h4>5. Educational &amp; Peer Support Notice</h4>
+        <p>Safe Space provides peer support, venting spaces, and wellness resources. It is not a clinical medical facility or emergency response station. In life-threatening emergencies, students must contact official hotlines (NCMH 1553, 911).</p>
+      </div>
+      <div class="privacy-modal-footer" style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px;">
+        <span style="font-size:11.5px; color:#6B7280;">Terms Version 1.0</span>
+        <button type="button" class="privacy-modal-close-btn" id="termsModalOkBtn" style="padding:10px 22px; border-radius:999px;">
+          Close &amp; Return to Form
+        </button>
       </div>
     </div>
   </div>
@@ -1592,11 +1749,14 @@
     var defaultAvatarBtn    = document.getElementById('defaultAvatarBtn');
     var privacyCheckbox      = document.getElementById('privacyConsentCheckbox');
     var consentError         = document.getElementById('consentError');
+    var termsCheckbox        = document.getElementById('termsConsentCheckbox');
+    var termsConsentError    = document.getElementById('termsConsentError');
     var signupBtn            = document.getElementById('signupBtn');
 
     function updateSignupButtonState() {
-      var termsChecked = privacyCheckbox.checked;
-      var canSubmit = termsChecked && validateStep1Quick() && validateStep2Quick();
+      var privacyChecked = privacyCheckbox && privacyCheckbox.checked;
+      var termsChecked = termsCheckbox && termsCheckbox.checked;
+      var canSubmit = privacyChecked && termsChecked && validateStep1Quick() && validateStep2Quick();
       signupBtn.disabled = !canSubmit;
     }
 
@@ -1611,12 +1771,23 @@
       return !!val('email') && !!val('username') && !!val('studentId') && !!studentIdDocument.dataUrl && hasValidMatching && pwd.length >= 8 && pwd === cpwd;
     }
 
-    privacyCheckbox.addEventListener('change', function() {
-      if (this.checked) {
-        consentError.style.display = 'none';
-      }
-      updateSignupButtonState();
-    });
+    if (privacyCheckbox) {
+      privacyCheckbox.addEventListener('change', function() {
+        if (this.checked && consentError) {
+          consentError.style.display = 'none';
+        }
+        updateSignupButtonState();
+      });
+    }
+
+    if (termsCheckbox) {
+      termsCheckbox.addEventListener('change', function() {
+        if (this.checked && termsConsentError) {
+          termsConsentError.style.display = 'none';
+        }
+        updateSignupButtonState();
+      });
+    }
 
     // Upload Photo Action
     uploadPhotoBtn.addEventListener('click', function() {
@@ -1786,35 +1957,59 @@
     });
 
     /* ────────────────────────────────
-       Privacy Policy Modal Handler
+       Privacy Policy & Terms Modals Handler (RA 10173)
     ──────────────────────────────── */
     var privacyModalOverlay  = document.getElementById('privacyModalOverlay');
     var openPrivacyPolicyBtn = document.getElementById('openPrivacyPolicyBtn');
-    var openTermsBtn         = document.getElementById('openTermsBtn');
+    var openDpaInfoBtn       = document.getElementById('openDpaInfoBtn');
+    var linkReadPrivacyNotice= document.getElementById('linkReadPrivacyNotice');
     var closePrivacyModalBtn = document.getElementById('closePrivacyModalBtn');
     var privacyModalOkBtn    = document.getElementById('privacyModalOkBtn');
 
+    var termsModalOverlay    = document.getElementById('termsModalOverlay');
+    var openTermsBtn         = document.getElementById('openTermsBtn');
+    var linkReadTerms        = document.getElementById('linkReadTerms');
+    var closeTermsModalBtn   = document.getElementById('closeTermsModalBtn');
+    var termsModalOkBtn      = document.getElementById('termsModalOkBtn');
+
     function openPrivacyModal(e) {
       if (e) e.preventDefault();
-      privacyModalOverlay.classList.add('open');
+      if (privacyModalOverlay) privacyModalOverlay.classList.add('open');
     }
-    openPrivacyPolicyBtn.addEventListener('click', openPrivacyModal);
-    if (openTermsBtn) openTermsBtn.addEventListener('click', openPrivacyModal);
 
     function closePrivacyModal() {
-      privacyModalOverlay.classList.remove('open');
+      if (privacyModalOverlay) privacyModalOverlay.classList.remove('open');
     }
-    closePrivacyModalBtn.addEventListener('click', closePrivacyModal);
-    privacyModalOverlay.addEventListener('click', function(e) {
-      if (e.target === privacyModalOverlay) closePrivacyModal();
-    });
 
-    privacyModalOkBtn.addEventListener('click', function() {
-      closePrivacyModal();
-      privacyCheckbox.checked = true;
-      consentError.style.display = 'none';
-      updateSignupButtonState();
-    });
+    function openTermsModal(e) {
+      if (e) e.preventDefault();
+      if (termsModalOverlay) termsModalOverlay.classList.add('open');
+    }
+
+    function closeTermsModal() {
+      if (termsModalOverlay) termsModalOverlay.classList.remove('open');
+    }
+
+    if (openPrivacyPolicyBtn) openPrivacyPolicyBtn.addEventListener('click', openPrivacyModal);
+    if (openDpaInfoBtn) openDpaInfoBtn.addEventListener('click', openPrivacyModal);
+    if (linkReadPrivacyNotice) linkReadPrivacyNotice.addEventListener('click', openPrivacyModal);
+    if (closePrivacyModalBtn) closePrivacyModalBtn.addEventListener('click', closePrivacyModal);
+    if (privacyModalOkBtn) closePrivacyModalBtn && privacyModalOkBtn.addEventListener('click', closePrivacyModal);
+    if (privacyModalOverlay) {
+      privacyModalOverlay.addEventListener('click', function(e) {
+        if (e.target === privacyModalOverlay) closePrivacyModal();
+      });
+    }
+
+    if (openTermsBtn) openTermsBtn.addEventListener('click', openTermsModal);
+    if (linkReadTerms) linkReadTerms.addEventListener('click', openTermsModal);
+    if (closeTermsModalBtn) closeTermsModalBtn.addEventListener('click', closeTermsModal);
+    if (termsModalOkBtn) termsModalOkBtn.addEventListener('click', closeTermsModal);
+    if (termsModalOverlay) {
+      termsModalOverlay.addEventListener('click', function(e) {
+        if (e.target === termsModalOverlay) closeTermsModal();
+      });
+    }
 
     /* ────────────────────────────────
        Eye Toggles & Password Strength
@@ -2077,10 +2272,24 @@
         return;
       }
 
-      if (!privacyCheckbox.checked) {
-        consentError.style.display = 'block';
-        consentError.innerHTML = '<i class="fas fa-circle-exclamation"></i> You must agree to the Privacy Policy and Terms of Use to create an account.';
-        showFormAlert('Please agree to the Privacy Policy and Terms of Use.', 'error');
+      // Section 5: Validate Data Privacy Act consent and Terms & Conditions
+      if (!privacyCheckbox || !privacyCheckbox.checked) {
+        if (consentError) {
+          consentError.style.display = 'block';
+          consentError.innerHTML = '<i class="fas fa-circle-exclamation"></i> Please read and acknowledge the Safe Space Privacy Notice before continuing.';
+        }
+        showFormAlert('Please read and acknowledge the Safe Space Privacy Notice before continuing.', 'error');
+        showStep(3);
+        return;
+      }
+
+      if (!termsCheckbox || !termsCheckbox.checked) {
+        if (termsConsentError) {
+          termsConsentError.style.display = 'block';
+          termsConsentError.innerHTML = '<i class="fas fa-circle-exclamation"></i> Please accept the Safe Space Terms and Conditions before continuing.';
+        }
+        showFormAlert('Please accept the Safe Space Terms and Conditions before continuing.', 'error');
+        showStep(3);
         return;
       }
 
@@ -2122,6 +2331,7 @@
           }
         }
 
+        var consentTimestamp = new Date().toISOString();
         var payload = {
           email:       email,
           password:    password,
@@ -2140,6 +2350,13 @@
           avatar_url:  avatarUrl,
           avatar_type: avatarType,
           avatar_value: avatarValue,
+          // Data Privacy Act of 2012 (RA 10173) Consent & Terms Records
+          privacy_notice_acknowledged: true,
+          privacy_notice_version: '1.0',
+          privacy_acknowledged_at: consentTimestamp,
+          terms_accepted: true,
+          terms_version: '1.0',
+          terms_accepted_at: consentTimestamp,
           preferences: {
             topics: [],
             anonymous_default: false,
@@ -2153,6 +2370,21 @@
             var sMap = JSON.parse(localStorage.getItem('safe_space_student_ids') || '{}');
             sMap[email.toLowerCase()] = studentId;
             localStorage.setItem('safe_space_student_ids', JSON.stringify(sMap));
+
+            // Store immutable local privacy consent record
+            var privacyAuditMap = JSON.parse(localStorage.getItem('safe_space_privacy_consent_logs') || '{}');
+            privacyAuditMap[email.toLowerCase()] = {
+              email: email.toLowerCase(),
+              student_id: studentId,
+              privacy_notice_acknowledged: true,
+              privacy_notice_version: '1.0',
+              privacy_acknowledged_at: consentTimestamp,
+              terms_accepted: true,
+              terms_version: '1.0',
+              terms_accepted_at: consentTimestamp,
+              consent_channel: 'web_registration'
+            };
+            localStorage.setItem('safe_space_privacy_consent_logs', JSON.stringify(privacyAuditMap));
 
             if (uploadedIdCardUrl) {
               localStorage.setItem('safe_space_id_card_url_' + email.toLowerCase(), uploadedIdCardUrl);

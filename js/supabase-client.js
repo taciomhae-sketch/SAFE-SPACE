@@ -596,6 +596,12 @@ var SafeSpaceDB = {
                 role: metadata.role || 'student',
                 approval_status: metadata.approval_status || 'pending',
                 is_approved: metadata.is_approved || false,
+                privacy_notice_acknowledged: metadata.privacy_notice_acknowledged || false,
+                privacy_notice_version: metadata.privacy_notice_version || '1.0',
+                privacy_acknowledged_at: metadata.privacy_acknowledged_at || null,
+                terms_accepted: metadata.terms_accepted || false,
+                terms_version: metadata.terms_version || '1.0',
+                terms_accepted_at: metadata.terms_accepted_at || null,
                 created_at: new Date().toISOString()
               };
               if (existIdx >= 0) curMems[existIdx] = Object.assign({}, curMems[existIdx], memRec);
@@ -676,7 +682,13 @@ var SafeSpaceDB = {
         created_at: new Date().toISOString(),
         email_confirmed: false,
         approval_status: metadata.approval_status,
-        is_approved: metadata.is_approved
+        is_approved: metadata.is_approved,
+        privacy_notice_acknowledged: metadata.privacy_notice_acknowledged || false,
+        privacy_notice_version: metadata.privacy_notice_version || '1.0',
+        privacy_acknowledged_at: metadata.privacy_acknowledged_at || null,
+        terms_accepted: metadata.terms_accepted || false,
+        terms_version: metadata.terms_version || '1.0',
+        terms_accepted_at: metadata.terms_accepted_at || null
       };
       localStorage.setItem('safe_space_user', JSON.stringify(newUser));
 

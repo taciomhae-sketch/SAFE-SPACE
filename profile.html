@@ -2710,17 +2710,23 @@
             </form>
           </div>
 
-          <!-- Privacy Information Notice -->
-          <div style="background:var(--bg-hover); border-radius:var(--radius-md); padding:16px; border:1px solid var(--border); font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:20px;">
-            <p style="margin:0 0 6px 0; font-weight:700; color:var(--text-dark);">
-              <i class="fas fa-circle-info" style="color:var(--primary); margin-right:5px;"></i> Privacy Information
+          <!-- Privacy Information & Data Privacy Act (RA 10173) Section -->
+          <div style="background:var(--bg-hover); border-radius:var(--radius-md); padding:18px; border:1px solid var(--border); font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:20px;">
+            <p style="margin:0 0 6px 0; font-weight:800; color:var(--text-dark); display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-shield-halved" style="color:var(--primary);"></i> Data Privacy &amp; Protection (RA 10173)
             </p>
-            <p style="margin:0 0 6px 0;">
-              Your personal information is protected and should only be used for the purposes necessary to operate Safe Space.
+            <p style="margin:0 0 10px 0;">
+              Safe Space complies with Republic Act No. 10173 (Philippine Data Privacy Act of 2012). Your personal data and Student ID information are securely processed solely for educational, community safety, and authentication purposes.
             </p>
-            <p style="margin:0;">
-              Your account information should not be publicly exposed without appropriate permission.
-            </p>
+            
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;">
+              <button type="button" onclick="window.openProfilePrivacyNoticeModal()" class="btn-sub-action" style="padding:7px 16px; border-radius:var(--radius-full); font-size:12px; font-weight:700; background:var(--primary); color:#fff; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-file-shield"></i> View Privacy Notice
+              </button>
+              <button type="button" onclick="window.openProfileDataPrivacyRequestModal()" class="btn-sub-action" style="padding:7px 16px; border-radius:var(--radius-full); font-size:12px; font-weight:700; background:var(--surface); color:var(--text-dark); border:1px solid var(--border); cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-envelope-open-text"></i> Data Privacy Requests
+              </button>
+            </div>
           </div>
 
           <!-- Section 22: Account Management / Danger Zone -->
@@ -3563,6 +3569,100 @@
         renderUserProfile();
       }
     });
+
+    // Data Privacy Act (RA 10173) Modals
+    window.openProfilePrivacyNoticeModal = function() {
+      let modal = document.getElementById('profilePrivacyNoticeModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'profilePrivacyNoticeModal';
+        modal.className = 'modal-backdrop-custom';
+        modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.65); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(3px);';
+        modal.innerHTML = `
+          <div style="background:var(--card-bg, #fff); border-radius:18px; width:95%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); border:1px solid var(--border);">
+            <div style="padding:16px 22px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:var(--bg-hover);">
+              <h3 style="margin:0; font-size:16px; font-weight:800; color:var(--text-dark); display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-shield-halved" style="color:var(--primary);"></i> Safe Space Privacy Notice (RA 10173)
+              </h3>
+              <button type="button" onclick="document.getElementById('profilePrivacyNoticeModal').style.display='none'" style="background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer;">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div style="padding:22px; overflow-y:auto; font-size:13px; line-height:1.65; color:var(--text-mid);">
+              <div style="background:#EEF2FF; border-left:4px solid #6366F1; padding:10px 14px; border-radius:6px; margin-bottom:14px;">
+                <strong style="color:#312E81;">Republic Act No. 10173 Compliance:</strong>
+                <div style="font-size:12px; color:#4338CA; margin-top:2px;">Version 1.0 | Student Privacy &amp; Data Subject Rights</div>
+              </div>
+              <h4 style="color:var(--text-dark); margin:12px 0 6px;">Personal Information Collected</h4>
+              <p>Email address, username, student ID number, securely hashed passwords, voluntary profile details, community posts, reactions, and automated AI moderation flags.</p>
+              <h4 style="color:var(--text-dark); margin:12px 0 6px;">Purpose of Processing</h4>
+              <p>Authentication, student identity verification, campus safety, respectful content moderation, and providing crisis resource assistance.</p>
+              <h4 style="color:var(--text-dark); margin:12px 0 6px;">Student ID Document Protection</h4>
+              <p>Student ID documents are protected by strict access controls and are NEVER displayed publicly. Only authorized institutional personnel may review documents for verification.</p>
+              <h4 style="color:var(--text-dark); margin:12px 0 6px;">Your Data Subject Rights</h4>
+              <p>You have the right to be informed, right to access, right to rectify, right to object, and right to request erasure where applicable by law.</p>
+            </div>
+            <div style="padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; background:var(--bg-hover);">
+              <button type="button" onclick="document.getElementById('profilePrivacyNoticeModal').style.display='none'" style="padding:8px 20px; border-radius:999px; background:var(--primary); color:#fff; border:none; font-weight:700; cursor:pointer;">
+                Close
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+      modal.style.display = 'flex';
+    };
+
+    window.openProfileDataPrivacyRequestModal = function() {
+      let modal = document.getElementById('profilePrivacyRequestModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'profilePrivacyRequestModal';
+        modal.className = 'modal-backdrop-custom';
+        modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.65); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(3px);';
+        modal.innerHTML = `
+          <div style="background:var(--card-bg, #fff); border-radius:18px; width:95%; max-width:620px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); border:1px solid var(--border);">
+            <div style="padding:16px 22px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:var(--bg-hover);">
+              <h3 style="margin:0; font-size:16px; font-weight:800; color:var(--text-dark); display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-envelope-open-text" style="color:var(--primary);"></i> Data Privacy Rights &amp; Requests
+              </h3>
+              <button type="button" onclick="document.getElementById('profilePrivacyRequestModal').style.display='none'" style="background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer;">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div style="padding:22px; overflow-y:auto; font-size:13px; line-height:1.6; color:var(--text-mid);">
+              <p style="margin:0 0 12px;">
+                As a student data subject under Republic Act No. 10173, you may submit formal requests regarding your personal information:
+              </p>
+              <ul style="padding-left:20px; margin:0 0 14px;">
+                <li><strong>Access Request:</strong> Request an export or copy of your account records.</li>
+                <li><strong>Rectification Request:</strong> Request updates to verified details.</li>
+                <li><strong>Erasure / Blocking Request:</strong> Request deletion or suspension of your personal data (subject to legitimate institutional safety/legal retention obligations).</li>
+                <li><strong>Privacy Inquiries / Concerns:</strong> Inquire into automated processing or AI moderation flags.</li>
+              </ul>
+              <div style="background:var(--bg-hover); border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:12px;">
+                <div style="font-weight:700; color:var(--text-dark); margin-bottom:4px;">
+                  <i class="fas fa-building-columns"></i> Institutional Data Protection Desk:
+                </div>
+                <div>Responsible Entity: <strong>Safe Space Student Support Thesis Initiative</strong></div>
+                <div>Inquiries &amp; Official Privacy Requests: <a href="mailto:safespace.privacy@gmail.com" style="color:var(--primary); font-weight:700;">safespace.privacy@gmail.com</a></div>
+                <div style="margin-top:6px; font-size:11.5px; color:var(--text-muted);">
+                  Official requests are acknowledged and addressed in accordance with the timelines set by the National Privacy Commission (NPC).
+                </div>
+              </div>
+            </div>
+            <div style="padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; background:var(--bg-hover);">
+              <button type="button" onclick="document.getElementById('profilePrivacyRequestModal').style.display='none'" style="padding:8px 20px; border-radius:999px; background:var(--primary); color:#fff; border:none; font-weight:700; cursor:pointer;">
+                Close
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+      modal.style.display = 'flex';
+    };
   </script>
 </body>
 </html>
