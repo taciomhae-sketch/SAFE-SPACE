@@ -230,71 +230,81 @@
                     </div>
                   </div>
 
-                  <!-- Primary Unified Action Button (when not yet submitted) -->
-                  <div id="unifiedCaptureUploadActionRow" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
-                    <button type="button" class="student-id-action-btn primary" id="btnUnifiedCaptureUpload" style="width:100%; height:44px; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
-                      <i class="fas fa-camera-rotate"></i> <span>Capture or Upload Student ID</span>
-                    </button>
-                    <!-- Hidden file inputs for independent/guided uploads -->
-                    <input type="file" id="frontFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
-                    <input type="file" id="backFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
-                  </div>
-
-                  <!-- Combined Front & Back Preview Container -->
-                  <div id="unifiedIdPreviewsWrap" style="display:none; margin-bottom:12px;">
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
-                      <!-- Front Side Preview Column -->
-                      <div class="unified-preview-col" id="unifiedFrontCol" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:10px; padding:10px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                          <span style="font-size:11px; font-weight:800; color:#60A5FA; letter-spacing:0.5px;">
-                            <i class="fas fa-id-card"></i> FRONT SIDE
-                          </span>
-                          <span id="unifiedFrontBadge" style="font-size:10px; padding:2px 6px; border-radius:6px; background:rgba(255,255,255,0.15); color:#fff;">
-                            Required
-                          </span>
-                        </div>
-                        <div class="unified-preview-img-box" style="height:120px; background:rgba(0,0,0,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                          <img id="frontPreviewImg" src="" alt="Front ID Preview" style="width:100%; height:100%; object-fit:contain; display:none;" />
-                          <div id="frontPlaceholderText" style="font-size:11px; color:rgba(255,255,255,0.6); text-align:center; padding:8px;">
-                            <i class="fas fa-image" style="font-size:18px; display:block; margin-bottom:4px; opacity:0.5;"></i> Front not uploaded
-                          </div>
-                        </div>
-                        <div style="margin-top:8px; display:flex; gap:6px;">
-                          <button type="button" class="student-id-sub-btn" id="btnReplaceFront" style="flex:1; font-size:10.5px; padding:6px 4px;">
-                            <i class="fas fa-rotate"></i> Replace Front
-                          </button>
-                        </div>
-                      </div>
-
-                      <!-- Back Side Preview Column -->
-                      <div class="unified-preview-col" id="unifiedBackCol" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:10px; padding:10px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                          <span style="font-size:11px; font-weight:800; color:#34D399; letter-spacing:0.5px;">
-                            <i class="fas fa-barcode"></i> BACK SIDE
-                          </span>
-                          <span id="unifiedBackBadge" style="font-size:10px; padding:2px 6px; border-radius:6px; background:rgba(255,255,255,0.15); color:#fff;">
-                            Required
-                          </span>
-                        </div>
-                        <div class="unified-preview-img-box" style="height:120px; background:rgba(0,0,0,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                          <img id="backPreviewImg" src="" alt="Back ID Preview" style="width:100%; height:100%; object-fit:contain; display:none;" />
-                          <div id="backPlaceholderText" style="font-size:11px; color:rgba(255,255,255,0.6); text-align:center; padding:8px;">
-                            <i class="fas fa-image" style="font-size:18px; display:block; margin-bottom:4px; opacity:0.5;"></i> Back not uploaded
-                          </div>
-                        </div>
-                        <div style="margin-top:8px; display:flex; gap:6px;">
-                          <button type="button" class="student-id-sub-btn" id="btnReplaceBack" style="flex:1; font-size:10.5px; padding:6px 4px;">
-                            <i class="fas fa-rotate"></i> Replace Back
-                          </button>
-                        </div>
-                      </div>
+                  <!-- Front Side Section -->
+                  <div class="id-side-card" id="frontIdCardSection" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:14px; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                      <span style="font-size:12px; font-weight:800; color:#FFFFFF; text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="fas fa-id-card-clip" style="color:#60A5FA; margin-right:6px;"></i> FRONT SIDE OF STUDENT ID <span style="color:#F87171;">*</span>
+                      </span>
+                      <span class="student-id-status-badge" id="frontIdStatusBadge" style="font-size:10.5px; padding:2px 8px; border-radius:6px; background:rgba(255,255,255,0.15); color:#fff;">
+                        Required
+                      </span>
                     </div>
 
-                    <!-- Remove Both Button -->
-                    <div style="text-align:right; margin-top:8px;">
-                      <button type="button" class="student-id-sub-btn danger" id="btnRemoveBothDocs" style="font-size:11px; padding:5px 12px;">
-                        <i class="fas fa-trash-can"></i> Remove Images
+                    <p style="font-size:11.5px; color:rgba(255,255,255,0.85); line-height:1.4; margin:0 0 10px;">
+                      Submit the front side of your official ASU-Ibajay Student ID showing your photograph, name, and Student ID number.
+                    </p>
+
+                    <!-- Separate Take Photo and Upload Buttons for Front Side -->
+                    <div class="student-id-buttons" id="frontIdButtons" style="display:flex; gap:8px;">
+                      <button type="button" class="student-id-action-btn primary" id="btnOpenFrontCamera" style="flex:1; height:42px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <i class="fas fa-camera"></i> <span>Take Front Photo</span>
                       </button>
+                      <button type="button" class="student-id-action-btn" id="btnTriggerFrontFile" style="flex:1; height:42px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <i class="fas fa-cloud-arrow-up"></i> <span>Upload Front ID</span>
+                      </button>
+                      <input type="file" id="frontFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
+                    </div>
+
+                    <!-- Front Preview Box -->
+                    <div class="student-id-preview-box" id="frontPreviewBox" style="display:none; margin-top:10px;">
+                      <div class="student-id-preview-img-wrap" style="max-height:150px; background:rgba(0,0,0,0.3); border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center;">
+                        <img id="frontPreviewImg" src="" alt="Front Student ID Preview" style="max-width:100%; max-height:150px; object-fit:contain; display:block;" />
+                      </div>
+                      <div class="student-id-preview-actions" style="margin-top:8px; display:flex; gap:6px;">
+                        <button type="button" class="student-id-sub-btn" id="btnRetakeFrontPhoto"><i class="fas fa-camera-rotate"></i> Retake Front</button>
+                        <button type="button" class="student-id-sub-btn" id="btnReuploadFrontFile"><i class="fas fa-arrow-up-from-bracket"></i> Upload Another</button>
+                        <button type="button" class="student-id-sub-btn danger" id="btnRemoveFrontDoc"><i class="fas fa-trash-can"></i> Remove</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Back Side Section -->
+                  <div class="id-side-card" id="backIdCardSection" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:14px; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                      <span style="font-size:12px; font-weight:800; color:#FFFFFF; text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="fas fa-barcode" style="color:#34D399; margin-right:6px;"></i> BACK SIDE OF STUDENT ID <span style="color:#F87171;">*</span>
+                      </span>
+                      <span class="student-id-status-badge" id="backIdStatusBadge" style="font-size:10.5px; padding:2px 8px; border-radius:6px; background:rgba(255,255,255,0.15); color:#fff;">
+                        Required
+                      </span>
+                    </div>
+
+                    <p style="font-size:11.5px; color:rgba(255,255,255,0.85); line-height:1.4; margin:0 0 10px;">
+                      Submit the back side of your official ASU-Ibajay Student ID showing your academic-year validation and barcode.
+                    </p>
+
+                    <!-- Separate Take Photo and Upload Buttons for Back Side -->
+                    <div class="student-id-buttons" id="backIdButtons" style="display:flex; gap:8px;">
+                      <button type="button" class="student-id-action-btn primary" id="btnOpenBackCamera" style="flex:1; height:42px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <i class="fas fa-camera"></i> <span>Take Back Photo</span>
+                      </button>
+                      <button type="button" class="student-id-action-btn" id="btnTriggerBackFile" style="flex:1; height:42px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <i class="fas fa-cloud-arrow-up"></i> <span>Upload Back ID</span>
+                      </button>
+                      <input type="file" id="backFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
+                    </div>
+
+                    <!-- Back Preview Box -->
+                    <div class="student-id-preview-box" id="backPreviewBox" style="display:none; margin-top:10px;">
+                      <div class="student-id-preview-img-wrap" style="max-height:150px; background:rgba(0,0,0,0.3); border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center;">
+                        <img id="backPreviewImg" src="" alt="Back Student ID Preview" style="max-width:100%; max-height:150px; object-fit:contain; display:block;" />
+                      </div>
+                      <div class="student-id-preview-actions" style="margin-top:8px; display:flex; gap:6px;">
+                        <button type="button" class="student-id-sub-btn" id="btnRetakeBackPhoto"><i class="fas fa-camera-rotate"></i> Retake Back</button>
+                        <button type="button" class="student-id-sub-btn" id="btnReuploadBackFile"><i class="fas fa-arrow-up-from-bracket"></i> Upload Another</button>
+                        <button type="button" class="student-id-sub-btn danger" id="btnRemoveBackDoc"><i class="fas fa-trash-can"></i> Remove</button>
+                      </div>
                     </div>
                   </div>
 
@@ -653,61 +663,7 @@
     </div>
   </div>
 
-  <!-- ========================================================
-       UNIFIED GUIDED STUDENT ID SUBMISSION MODAL
-       (Step 1: Front Side -> Step 2: Back Side)
-       ======================================================== -->
-  <div class="modal-overlay" id="unifiedIdFlowModal" role="dialog" aria-modal="true" aria-labelledby="unifiedIdFlowTitle" style="display:none; align-items:center; justify-content:center; position:fixed; inset:0; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); z-index:10050; padding:16px;">
-    <div class="modal-sheet" style="max-width:480px; width:100%; background:linear-gradient(145deg, #1E1B4B 0%, #311042 100%); border:1px solid rgba(255,255,255,0.22); border-radius:20px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); overflow:hidden;">
-      <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.12); display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <span class="modal-title" id="unifiedIdFlowTitle" style="font-size:16px; font-weight:800; color:#FFFFFF; display:flex; align-items:center; gap:8px;">
-            <i class="fas fa-id-card" style="color:#A78BFA;"></i> Student ID Submission
-          </span>
-          <div id="unifiedFlowStepIndicator" style="font-size:11.5px; color:#FDE68A; margin-top:2px; font-weight:600;">
-            Step 1 of 2: Front Side of ID
-          </div>
-        </div>
-        <button type="button" class="modal-close" id="closeUnifiedFlowModalBtn" aria-label="Close" style="background:none; border:none; color:rgba(255,255,255,0.8); font-size:18px; cursor:pointer;"><i class="fas fa-times"></i></button>
-      </div>
 
-      <div class="modal-body" style="padding:20px;">
-        <!-- Step Instruction -->
-        <p id="unifiedFlowInstruction" style="font-size:12.5px; color:rgba(255,255,255,0.9); line-height:1.5; margin:0 0 16px;">
-          Please capture or upload the <strong>Front Side</strong> of your ASU-Ibajay Student ID showing your photograph, name, and Student ID number.
-        </p>
-
-        <!-- Current Step Preview (if captured/uploaded) -->
-        <div id="unifiedFlowCurrentPreviewWrap" style="display:none; margin-bottom:16px; text-align:center;">
-          <div style="max-height:180px; background:rgba(0,0,0,0.3); border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center;">
-            <img id="unifiedFlowCurrentPreviewImg" src="" alt="Captured preview" style="max-width:100%; max-height:180px; object-fit:contain;" />
-          </div>
-          <div style="margin-top:8px; font-size:11.5px; color:#34D399; font-weight:700;">
-            <i class="fas fa-check-circle"></i> Image captured successfully!
-          </div>
-        </div>
-
-        <!-- Submission Options -->
-        <div id="unifiedFlowActionButtons" style="display:flex; flex-direction:column; gap:10px;">
-          <button type="button" class="student-id-action-btn primary" id="btnUnifiedFlowCamera" style="width:100%; height:46px; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px;">
-            <i class="fas fa-camera"></i> <span id="unifiedFlowCameraBtnLabel">Take Photo of Front Side</span>
-          </button>
-          <button type="button" class="student-id-action-btn" id="btnUnifiedFlowUpload" style="width:100%; height:46px; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px;">
-            <i class="fas fa-cloud-arrow-up"></i> <span id="unifiedFlowUploadBtnLabel">Upload Front Side from Device</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="modal-footer" style="padding:14px 20px; border-top:1px solid rgba(255,255,255,0.12); display:flex; justify-content:space-between; gap:10px;">
-        <button type="button" class="btn-wizard-back" id="btnUnifiedFlowBack" style="flex:1; height:42px; font-size:12px; font-weight:700; display:none;">
-          <i class="fas fa-arrow-left"></i> Previous Side
-        </button>
-        <button type="button" class="btn-cancel" id="btnUnifiedFlowCancel" style="flex:1; height:42px; font-size:12px; font-weight:700; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:999px; cursor:pointer;">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- ========================================================
        STUDENT ID CAMERA CAPTURE MODAL OVERLAY
@@ -1247,36 +1203,27 @@
     var capturedPhotoDataUrl = null;
     var currentOcrRequestId = 0;
 
-    // Unified Component Elements
-    var btnUnifiedCaptureUpload = document.getElementById('btnUnifiedCaptureUpload');
-    var unifiedCaptureUploadActionRow = document.getElementById('unifiedCaptureUploadActionRow');
-    var unifiedIdPreviewsWrap   = document.getElementById('unifiedIdPreviewsWrap');
-    var frontPreviewImg         = document.getElementById('frontPreviewImg');
-    var backPreviewImg          = document.getElementById('backPreviewImg');
-    var frontPlaceholderText    = document.getElementById('frontPlaceholderText');
-    var backPlaceholderText     = document.getElementById('backPlaceholderText');
-    var unifiedFrontBadge       = document.getElementById('unifiedFrontBadge');
-    var unifiedBackBadge        = document.getElementById('unifiedBackBadge');
-    var btnReplaceFront         = document.getElementById('btnReplaceFront');
-    var btnReplaceBack          = document.getElementById('btnReplaceBack');
-    var btnRemoveBothDocs       = document.getElementById('btnRemoveBothDocs');
+    // Elements - Front Side
+    var btnOpenFrontCamera      = document.getElementById('btnOpenFrontCamera');
+    var btnTriggerFrontFile     = document.getElementById('btnTriggerFrontFile');
     var frontFileInput          = document.getElementById('frontFileInput');
-    var backFileInput           = document.getElementById('backFileInput');
+    var frontPreviewBox         = document.getElementById('frontPreviewBox');
+    var frontPreviewImg         = document.getElementById('frontPreviewImg');
+    var frontIdStatusBadge      = document.getElementById('frontIdStatusBadge');
+    var btnRetakeFrontPhoto     = document.getElementById('btnRetakeFrontPhoto');
+    var btnReuploadFrontFile    = document.getElementById('btnReuploadFrontFile');
+    var btnRemoveFrontDoc       = document.getElementById('btnRemoveFrontDoc');
 
-    // Unified Guided Flow Modal Elements
-    var unifiedIdFlowModal           = document.getElementById('unifiedIdFlowModal');
-    var unifiedFlowStepIndicator     = document.getElementById('unifiedFlowStepIndicator');
-    var unifiedFlowInstruction       = document.getElementById('unifiedFlowInstruction');
-    var unifiedFlowCameraBtnLabel    = document.getElementById('unifiedFlowCameraBtnLabel');
-    var unifiedFlowUploadBtnLabel    = document.getElementById('unifiedFlowUploadBtnLabel');
-    var unifiedFlowCurrentPreviewWrap= document.getElementById('unifiedFlowCurrentPreviewWrap');
-    var unifiedFlowCurrentPreviewImg = document.getElementById('unifiedFlowCurrentPreviewImg');
-    var btnUnifiedFlowCamera         = document.getElementById('btnUnifiedFlowCamera');
-    var btnUnifiedFlowUpload         = document.getElementById('btnUnifiedFlowUpload');
-    var btnUnifiedFlowBack           = document.getElementById('btnUnifiedFlowBack');
-    var btnUnifiedFlowCancel         = document.getElementById('btnUnifiedFlowCancel');
-    var closeUnifiedFlowModalBtn     = document.getElementById('closeUnifiedFlowModalBtn');
-    var unifiedFlowCurrentStep       = 1; // 1 = Front, 2 = Back
+    // Elements - Back Side
+    var btnOpenBackCamera       = document.getElementById('btnOpenBackCamera');
+    var btnTriggerBackFile      = document.getElementById('btnTriggerBackFile');
+    var backFileInput           = document.getElementById('backFileInput');
+    var backPreviewBox          = document.getElementById('backPreviewBox');
+    var backPreviewImg          = document.getElementById('backPreviewImg');
+    var backIdStatusBadge       = document.getElementById('backIdStatusBadge');
+    var btnRetakeBackPhoto      = document.getElementById('btnRetakeBackPhoto');
+    var btnReuploadBackFile     = document.getElementById('btnReuploadBackFile');
+    var btnRemoveBackDoc        = document.getElementById('btnRemoveBackDoc');
 
     // Elements - Results & Feedback
     var studentIdDocFeedback    = document.getElementById('studentIdDocFeedback');
@@ -1368,49 +1315,41 @@
       }
     }
 
-    // Synchronize Combined Previews and Action Row visibility
+    // Synchronize Dual-Side Previews and Badges UI
     function syncCombinedIdPreviewUI() {
       var hasFront = Boolean(studentIdFrontDoc.dataUrl);
       var hasBack = Boolean(studentIdBackDoc.dataUrl);
 
-      if (frontPreviewImg && frontPlaceholderText && unifiedFrontBadge) {
+      if (frontPreviewImg && frontPreviewBox && frontIdButtons && frontIdStatusBadge) {
         if (hasFront) {
           frontPreviewImg.src = studentIdFrontDoc.dataUrl;
-          frontPreviewImg.style.display = 'block';
-          frontPlaceholderText.style.display = 'none';
-          unifiedFrontBadge.style.background = '#10B981';
-          unifiedFrontBadge.innerHTML = '<i class="fas fa-check"></i> Uploaded';
+          frontPreviewBox.style.display = 'block';
+          frontIdButtons.style.display = 'none';
+          frontIdStatusBadge.style.background = '#10B981';
+          frontIdStatusBadge.innerHTML = '<i class="fas fa-check"></i> Front Uploaded';
         } else {
           frontPreviewImg.src = '';
-          frontPreviewImg.style.display = 'none';
-          frontPlaceholderText.style.display = 'block';
-          unifiedFrontBadge.style.background = 'rgba(255,255,255,0.15)';
-          unifiedFrontBadge.innerHTML = 'Required';
+          frontPreviewBox.style.display = 'none';
+          frontIdButtons.style.display = 'flex';
+          frontIdStatusBadge.style.background = 'rgba(255,255,255,0.15)';
+          frontIdStatusBadge.innerHTML = 'Required';
         }
       }
 
-      if (backPreviewImg && backPlaceholderText && unifiedBackBadge) {
+      if (backPreviewImg && backPreviewBox && backIdButtons && backIdStatusBadge) {
         if (hasBack) {
           backPreviewImg.src = studentIdBackDoc.dataUrl;
-          backPreviewImg.style.display = 'block';
-          backPlaceholderText.style.display = 'none';
-          unifiedBackBadge.style.background = '#10B981';
-          unifiedBackBadge.innerHTML = '<i class="fas fa-check"></i> Uploaded';
+          backPreviewBox.style.display = 'block';
+          backIdButtons.style.display = 'none';
+          backIdStatusBadge.style.background = '#10B981';
+          backIdStatusBadge.innerHTML = '<i class="fas fa-check"></i> Back Uploaded';
         } else {
           backPreviewImg.src = '';
-          backPreviewImg.style.display = 'none';
-          backPlaceholderText.style.display = 'block';
-          unifiedBackBadge.style.background = 'rgba(255,255,255,0.15)';
-          unifiedBackBadge.innerHTML = 'Required';
+          backPreviewBox.style.display = 'none';
+          backIdButtons.style.display = 'flex';
+          backIdStatusBadge.style.background = 'rgba(255,255,255,0.15)';
+          backIdStatusBadge.innerHTML = 'Required';
         }
-      }
-
-      if (hasFront || hasBack) {
-        if (unifiedIdPreviewsWrap) unifiedIdPreviewsWrap.style.display = 'block';
-        if (unifiedCaptureUploadActionRow) unifiedCaptureUploadActionRow.style.display = 'none';
-      } else {
-        if (unifiedIdPreviewsWrap) unifiedIdPreviewsWrap.style.display = 'none';
-        if (unifiedCaptureUploadActionRow) unifiedCaptureUploadActionRow.style.display = 'flex';
       }
     }
 
@@ -1769,110 +1708,20 @@
       reader.readAsDataURL(file);
     }
 
-    // Unified Guided Flow Modal Management
-    function openUnifiedFlowModal(initialStep) {
-      unifiedFlowCurrentStep = initialStep || 1;
-      setUnifiedFlowStep(unifiedFlowCurrentStep);
-      if (unifiedIdFlowModal) unifiedIdFlowModal.style.display = 'flex';
-      clearStudentIdDocError();
-    }
-
-    function closeUnifiedFlowModal() {
-      if (unifiedIdFlowModal) unifiedIdFlowModal.style.display = 'none';
-      if (unifiedFlowCurrentPreviewWrap) unifiedFlowCurrentPreviewWrap.style.display = 'none';
-    }
-
-    function setUnifiedFlowStep(step) {
-      unifiedFlowCurrentStep = step;
-      if (unifiedFlowStepIndicator && unifiedFlowInstruction && unifiedFlowCameraBtnLabel && unifiedFlowUploadBtnLabel && btnUnifiedFlowBack) {
-        if (step === 1) {
-          unifiedFlowStepIndicator.textContent = 'Step 1 of 2: Front Side of ID';
-          unifiedFlowInstruction.innerHTML = 'Please capture or upload the <strong>Front Side</strong> of your official ASU-Ibajay Student ID showing your photograph, name, and Student ID number.';
-          unifiedFlowCameraBtnLabel.textContent = 'Take Photo of Front Side';
-          unifiedFlowUploadBtnLabel.textContent = 'Upload Front Side from Device';
-          btnUnifiedFlowBack.style.display = 'none';
-
-          if (studentIdFrontDoc.dataUrl && unifiedFlowCurrentPreviewImg && unifiedFlowCurrentPreviewWrap) {
-            unifiedFlowCurrentPreviewImg.src = studentIdFrontDoc.dataUrl;
-            unifiedFlowCurrentPreviewWrap.style.display = 'block';
-          } else if (unifiedFlowCurrentPreviewWrap) {
-            unifiedFlowCurrentPreviewWrap.style.display = 'none';
-          }
-        } else {
-          unifiedFlowStepIndicator.textContent = 'Step 2 of 2: Back Side of ID';
-          unifiedFlowInstruction.innerHTML = 'Now capture or upload the <strong>Back Side</strong> of your ASU-Ibajay Student ID showing your academic-year validation and barcode.';
-          unifiedFlowCameraBtnLabel.textContent = 'Take Photo of Back Side';
-          unifiedFlowUploadBtnLabel.textContent = 'Upload Back Side from Device';
-          btnUnifiedFlowBack.style.display = 'inline-block';
-
-          if (studentIdBackDoc.dataUrl && unifiedFlowCurrentPreviewImg && unifiedFlowCurrentPreviewWrap) {
-            unifiedFlowCurrentPreviewImg.src = studentIdBackDoc.dataUrl;
-            unifiedFlowCurrentPreviewWrap.style.display = 'block';
-          } else if (unifiedFlowCurrentPreviewWrap) {
-            unifiedFlowCurrentPreviewWrap.style.display = 'none';
-          }
-        }
-      }
-    }
-
-    // Attach Event Listeners for Unified Component & Guided Modal
-    if (btnUnifiedCaptureUpload) {
-      btnUnifiedCaptureUpload.addEventListener('click', function() {
-        if (!studentIdFrontDoc.dataUrl) openUnifiedFlowModal(1);
-        else if (!studentIdBackDoc.dataUrl) openUnifiedFlowModal(2);
-        else openUnifiedFlowModal(1);
-      });
-    }
-
-    if (btnReplaceFront) {
-      btnReplaceFront.addEventListener('click', function() {
-        openUnifiedFlowModal(1);
-      });
-    }
-
-    if (btnReplaceBack) {
-      btnReplaceBack.addEventListener('click', function() {
-        openUnifiedFlowModal(2);
-      });
-    }
-
-    if (btnRemoveBothDocs) {
-      btnRemoveBothDocs.addEventListener('click', removeBothDocuments);
-    }
-
-    if (btnUnifiedFlowCamera) {
-      btnUnifiedFlowCamera.addEventListener('click', function() {
-        var targetSide = unifiedFlowCurrentStep === 1 ? 'front' : 'back';
-        openCameraForSide(targetSide);
-      });
-    }
-
-    if (btnUnifiedFlowUpload) {
-      btnUnifiedFlowUpload.addEventListener('click', function() {
-        if (unifiedFlowCurrentStep === 1) {
-          if (frontFileInput) frontFileInput.click();
-        } else {
-          if (backFileInput) backFileInput.click();
-        }
-      });
-    }
-
+    // Attach Event Listeners for Front & Back Side Actions
+    if (btnOpenFrontCamera) btnOpenFrontCamera.addEventListener('click', function() { openCameraForSide('front'); });
+    if (btnTriggerFrontFile) btnTriggerFrontFile.addEventListener('click', function() { if (frontFileInput) frontFileInput.click(); });
     if (frontFileInput) frontFileInput.addEventListener('change', function(e) { handleFileSelection(e, 'front'); });
+    if (btnRetakeFrontPhoto) btnRetakeFrontPhoto.addEventListener('click', function() { openCameraForSide('front'); });
+    if (btnReuploadFrontFile) btnReuploadFrontFile.addEventListener('click', function() { if (frontFileInput) frontFileInput.click(); });
+    if (btnRemoveFrontDoc) btnRemoveFrontDoc.addEventListener('click', removeFrontDocument);
+
+    if (btnOpenBackCamera) btnOpenBackCamera.addEventListener('click', function() { openCameraForSide('back'); });
+    if (btnTriggerBackFile) btnTriggerBackFile.addEventListener('click', function() { if (backFileInput) backFileInput.click(); });
     if (backFileInput) backFileInput.addEventListener('change', function(e) { handleFileSelection(e, 'back'); });
-
-    if (btnUnifiedFlowBack) {
-      btnUnifiedFlowBack.addEventListener('click', function() {
-        setUnifiedFlowStep(1);
-      });
-    }
-
-    if (btnUnifiedFlowCancel) btnUnifiedFlowCancel.addEventListener('click', closeUnifiedFlowModal);
-    if (closeUnifiedFlowModalBtn) closeUnifiedFlowModalBtn.addEventListener('click', closeUnifiedFlowModal);
-    if (unifiedIdFlowModal) {
-      unifiedIdFlowModal.addEventListener('click', function(e) {
-        if (e.target === unifiedIdFlowModal) closeUnifiedFlowModal();
-      });
-    }
+    if (btnRetakeBackPhoto) btnRetakeBackPhoto.addEventListener('click', function() { openCameraForSide('back'); });
+    if (btnReuploadBackFile) btnReuploadBackFile.addEventListener('click', function() { if (backFileInput) backFileInput.click(); });
+    if (btnRemoveBackDoc) btnRemoveBackDoc.addEventListener('click', removeBackDocument);
 
     // Camera Modal Actions
     if (btnCloseStudentIdCamera) btnCloseStudentIdCamera.addEventListener('click', closeStudentIdCamera);
