@@ -522,6 +522,14 @@ var SafeSpaceDB = {
       delete metadata.email;
       delete metadata.password;
 
+      // Duplicate Student ID prevention check before signup
+      if (metadata.student_id) {
+        var idCheck = await SafeSpaceDB.auth.checkStudentIdAvailability(metadata.student_id);
+        if (idCheck && idCheck.available === false) {
+          throw new Error('DUPLICATE_STUDENT_ID: ' + (idCheck.message || 'This Student ID number is already associated with an existing Safe Space account.'));
+        }
+      }
+
       // New student signups require administrator verification on the Admin Dashboard
       metadata.approval_status = (metadata.role === 'admin' || metadata.is_admin) ? 'approved' : 'pending';
       metadata.is_approved = (metadata.role === 'admin' || metadata.is_admin) ? true : false;
@@ -586,7 +594,9 @@ var SafeSpaceDB = {
                 id: sbUser ? sbUser.id : ('user-' + Date.now()),
                 email: email,
                 student_id: metadata.student_id,
-                id_card_url: metadata.id_card_url || null,
+                id_card_url: metadata.id_card_url || metadata.id_card_front_url || null,
+                id_card_front_url: metadata.id_card_front_url || metadata.id_card_url || null,
+                id_card_back_url: metadata.id_card_back_url || null,
                 student_id_detected: metadata.student_id_detected || null,
                 student_id_matching_status: metadata.student_id_matching_status || 'MATCH',
                 student_id_status: metadata.student_id_status || 'PENDING_VERIFICATION',
@@ -666,7 +676,9 @@ var SafeSpaceDB = {
         id: 'user-' + Date.now(),
         email: email,
         student_id: metadata.student_id || null,
-        id_card_url: metadata.id_card_url || null,
+        id_card_url: metadata.id_card_url || metadata.id_card_front_url || null,
+        id_card_front_url: metadata.id_card_front_url || metadata.id_card_url || null,
+        id_card_back_url: metadata.id_card_back_url || null,
         student_id_detected: metadata.student_id_detected || null,
         student_id_matching_status: metadata.student_id_matching_status || 'MATCH',
         student_id_status: metadata.student_id_status || 'PENDING_VERIFICATION',
@@ -968,6 +980,79 @@ var SafeSpaceDB = {
       return { available: true, message: 'Email address is available.' };
     },
 
+    /**
+     * Checks whether a Student ID number is already registered in an existing account
+     * Enforces duplicate account prevention (active, suspended, or deactivated accounts retain the ID).
+     */
+    checkStudentIdAvailability: async function(studentId, currentUserId) {
+      if (!studentId || !String(studentId).trim()) {
+        return { available: false, error: 'Please enter your official student ID number.' };
+      }
+      var cleanId = String(studentId).trim();
+      var normalized = cleanId.toLowerCase();
+
+      if (SafeSpaceDB.isSupabaseActive()) {
+        try {
+          var query = _db.from('profiles').select('id, student_id, email, approval_status, is_deactivated').ilike('student_id', cleanId);
+          if (currentUserId) {
+            query = query.neq('id', currentUserId);
+          }
+          var res = await query.limit(1);
+          if (res.data && res.data.length > 0) {
+            return {
+              available: false,
+              exists: true,
+              message: 'This Student ID number is already associated with an existing Safe Space account. You cannot create another account using the same Student ID number.'
+            };
+          }
+          return { available: true, exists: false, message: 'Student ID is available.' };
+        } catch (e) {
+          console.warn('[SafeSpace] checkStudentIdAvailability Supabase error, checking local store:', e);
+        }
+      }
+
+      // Check local accounts / members / student id map
+      try {
+        var sMap = JSON.parse(localStorage.getItem('safe_space_student_ids') || '{}');
+        for (var key in sMap) {
+          if (sMap.hasOwnProperty(key)) {
+            if (String(sMap[key]).trim().toLowerCase() === normalized) {
+              if (!currentUserId || (key !== currentUserId && key.toLowerCase() !== String(currentUserId).toLowerCase())) {
+                return {
+                  available: false,
+                  exists: true,
+                  message: 'This Student ID number is already associated with an existing Safe Space account. You cannot create another account using the same Student ID number.'
+                };
+              }
+            }
+          }
+        }
+
+        var mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+        var foundMem = mems.find(function(m) {
+          return m && m.student_id && String(m.student_id).trim().toLowerCase() === normalized && (!currentUserId || m.id !== currentUserId);
+        });
+        if (foundMem) {
+          return {
+            available: false,
+            exists: true,
+            message: 'This Student ID number is already associated with an existing Safe Space account. You cannot create another account using the same Student ID number.'
+          };
+        }
+
+        var curStored = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        if (curStored && curStored.student_id && String(curStored.student_id).trim().toLowerCase() === normalized && (!currentUserId || curStored.id !== currentUserId)) {
+          return {
+            available: false,
+            exists: true,
+            message: 'This Student ID number is already associated with an existing Safe Space account. You cannot create another account using the same Student ID number.'
+          };
+        }
+      } catch (err) {}
+
+      return { available: true, exists: false, message: 'Student ID is available.' };
+    },
+
     updateProfile: async function(updates) {
       updates = updates || {};
       var validProfileCols = [
@@ -1111,6 +1196,9 @@ var SafeSpaceDB = {
         throw new Error('Incorrect current password.');
       }
 
+      var freedStudentId = (currentUser.student_id || (curStored && curStored.student_id) || '').trim();
+      var freedEmail = (currentUser.email || (curStored && curStored.email) || '').trim().toLowerCase();
+
       if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB._isUUID(currentUser.id)) {
         try {
           var client = _dbAdmin || _db;
@@ -1144,6 +1232,20 @@ var SafeSpaceDB = {
       var members = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
       members = members.filter(function(m) { return m.id !== currentUser.id; });
       localStorage.setItem('safe_space_members', JSON.stringify(members));
+
+      // Release Student ID association upon permanent account deletion
+      try {
+        if (freedEmail) {
+          localStorage.removeItem('safe_space_student_id_' + freedEmail);
+          localStorage.removeItem('safe_space_id_card_url_' + freedEmail);
+          localStorage.removeItem('safe_space_id_card_front_url_' + freedEmail);
+          localStorage.removeItem('safe_space_id_card_back_url_' + freedEmail);
+        }
+        var sMap = JSON.parse(localStorage.getItem('safe_space_student_ids') || '{}');
+        if (freedEmail && sMap[freedEmail]) delete sMap[freedEmail];
+        if (currentUser.id && sMap[currentUser.id]) delete sMap[currentUser.id];
+        localStorage.setItem('safe_space_student_ids', JSON.stringify(sMap));
+      } catch (e) {}
 
       await SafeSpaceDB.auth.signOut();
       return { success: true };
