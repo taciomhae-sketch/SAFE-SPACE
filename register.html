@@ -455,8 +455,8 @@
                 <!-- Step 3 In-Form 6-Digit Email Verification Code Input -->
                 <div id="step3OtpVerificationWrap" style="background:rgba(255,255,255,0.14); border:1.5px solid rgba(255,255,255,0.35); border-radius:12px; padding:14px 16px; margin-top:14px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <label class="field-label" for="step3OtpInput" style="margin:0; font-size:12.5px; font-weight:800; color:#FFFFFF; text-transform:uppercase; letter-spacing:0.5px;">
-                      <i class="fas fa-shield-halved" style="color:#FDE68A; margin-right:4px;"></i> 6-Digit Verification Code <span style="color:#F87171;">*</span>
+                    <label class="field-label" style="margin:0; font-size:12.5px; font-weight:800; color:#FFFFFF; text-transform:uppercase; letter-spacing:0.5px;">
+                      <i class="fas fa-shield-halved" style="color:#FDE68A; margin-right:4px;"></i> Enter Verification Code <span style="color:#F87171;">*</span>
                     </label>
                     <button type="button" id="step3ResendOtpBtn" style="background:none; border:none; color:#FDE68A; font-size:11px; font-weight:700; text-decoration:underline; cursor:pointer; padding:0;">
                       <i class="fas fa-rotate"></i> Send Code
@@ -468,7 +468,7 @@
                   </div>
 
                   <!-- Generated OTP banner / card (Matching exact design) -->
-                  <div id="step3OtpPreviewCard" style="display:block; background:#FFFFFF; border-radius:10px; padding:12px 14px; margin-bottom:10px; color:#1F2937; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+                  <div id="step3OtpPreviewCard" style="display:block; background:#FFFFFF; border-radius:10px; padding:12px 14px; margin-bottom:14px; color:#1F2937; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
                     <div style="font-size:13px; font-weight:800; color:#111827; margin-bottom:2px;">Welcome to Safe Space!</div>
                     <div style="font-size:11px; color:#6B7280; margin-bottom:6px;">Your 6-digit verification code (OTP) is:</div>
                     <div style="background:#F5F3FF; border:1px solid #DDD6FE; border-radius:8px; padding:6px; text-align:center; margin-bottom:6px;">
@@ -479,11 +479,18 @@
                     </button>
                   </div>
 
-                  <div class="input-group">
-                    <span class="input-icon"><i class="fas fa-key"></i></span>
-                    <input class="auth-input" type="text" id="step3OtpInput" maxlength="6" inputmode="numeric" placeholder="Enter 6-digit code" autocomplete="one-time-code" style="font-family:monospace; letter-spacing:4px; font-weight:700; font-size:16px; text-align:center;" />
+                  <!-- 6 Distinct Digit Box UI [1] [2] [3] [4] [5] [6] -->
+                  <div class="otp-inputs-row" id="step3OtpInputsRow" style="display:flex; justify-content:center; gap:8px; margin-bottom:10px;">
+                    <input type="text" maxlength="1" inputmode="numeric" class="otp-digit step3-otp-digit" data-idx="0" />
+                    <input type="text" maxlength="1" inputmode="numeric" class="otp-digit step3-otp-digit" data-idx="1" />
+                    <input type="text" maxlength="1" inputmode="numeric" class="otp-digit step3-otp-digit" data-idx="2" />
+                    <input type="text" maxlength="1" inputmode="numeric" class="otp-digit step3-otp-digit" data-idx="3" />
+                    <input type="text" maxlength="1" inputmode="numeric" class="otp-digit step3-otp-digit" data-idx="4" />
+                    <input type="text" maxlength="1" inputmode="numeric" class="otp-digit step3-otp-digit" data-idx="5" />
                   </div>
-                  <div id="step3OtpStatus" class="field-feedback" style="display:none; margin-top:5px; font-size:12px;"></div>
+                  <input type="hidden" id="step3OtpInput" />
+
+                  <div id="step3OtpStatus" class="field-feedback" style="display:none; margin-top:5px; font-size:12px; justify-content:center;"></div>
                 </div>
               </div>
 
@@ -2192,24 +2199,93 @@
       }
     }
 
-    if (step3AutoFillOtpBtn) {
-      step3AutoFillOtpBtn.addEventListener('click', function() {
+    var step3OtpInputs = document.querySelectorAll('#step3OtpInputsRow .step3-otp-digit');
+
+    function syncStep3OtpValue() {
+      var fullCode = '';
+      step3OtpInputs.forEach(function(inp) { fullCode += inp.value.trim(); });
+      if (step3OtpInput) step3OtpInput.value = fullCode;
+
+      if (fullCode.length === 6) {
         if (!currentStep3OtpCode) ensureStep3OtpGenerated();
-        if (step3OtpInput && currentStep3OtpCode) {
-          step3OtpInput.value = currentStep3OtpCode;
-          step3OtpInput.classList.remove('has-error');
+        if (fullCode === currentStep3OtpCode) {
+          step3OtpInputs.forEach(function(inp) { inp.classList.remove('has-error'); });
           if (step3OtpStatus) {
             step3OtpStatus.className = 'field-feedback success';
             step3OtpStatus.style.display = 'block';
-            step3OtpStatus.innerHTML = '<i class="fas fa-circle-check"></i> 6-digit verification code matched!';
+            step3OtpStatus.innerHTML = '<i class="fas fa-circle-check"></i> Verification code matched!';
           }
-          updateSignupButtonState();
+        } else {
+          step3OtpInputs.forEach(function(inp) { inp.classList.add('has-error'); });
+          if (step3OtpStatus) {
+            step3OtpStatus.className = 'field-feedback error';
+            step3OtpStatus.style.display = 'block';
+            step3OtpStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Code does not match.';
+          }
+        }
+      } else {
+        step3OtpInputs.forEach(function(inp) { inp.classList.remove('has-error'); });
+        if (step3OtpStatus) step3OtpStatus.style.display = 'none';
+      }
+      updateSignupButtonState();
+    }
+
+    step3OtpInputs.forEach(function(inp, idx) {
+      inp.addEventListener('input', function(e) {
+        var clean = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = clean ? clean.charAt(clean.length - 1) : '';
+        if (e.target.value) {
+          e.target.classList.add('filled');
+          if (idx < step3OtpInputs.length - 1) step3OtpInputs[idx + 1].focus();
+        } else {
+          e.target.classList.remove('filled');
+        }
+        syncStep3OtpValue();
+      });
+
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+          step3OtpInputs[idx - 1].focus();
+          step3OtpInputs[idx - 1].value = '';
+          step3OtpInputs[idx - 1].classList.remove('filled');
+          syncStep3OtpValue();
+        }
+      });
+
+      inp.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+        var rawDigits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+        for (var i = 0; i < rawDigits.length; i++) {
+          if (step3OtpInputs[i]) {
+            step3OtpInputs[i].value = rawDigits[i];
+            step3OtpInputs[i].classList.add('filled');
+          }
+        }
+        var nextIdx = Math.min(rawDigits.length, step3OtpInputs.length - 1);
+        if (step3OtpInputs[nextIdx]) step3OtpInputs[nextIdx].focus();
+        syncStep3OtpValue();
+      });
+    });
+
+    if (step3AutoFillOtpBtn) {
+      step3AutoFillOtpBtn.addEventListener('click', function() {
+        if (!currentStep3OtpCode) ensureStep3OtpGenerated();
+        if (currentStep3OtpCode) {
+          var digits = String(currentStep3OtpCode).split('');
+          step3OtpInputs.forEach(function(inp, i) {
+            if (digits[i]) {
+              inp.value = digits[i];
+              inp.classList.add('filled');
+            }
+          });
+          syncStep3OtpValue();
         }
       });
     }
 
     if (step3ResendOtpBtn) {
-      step3ResendOtpBtn.addEventListener('click', function() {
+      step3ResendOtpBtn.addEventListener('click', async function() {
         var em = (val('email') || '').toLowerCase();
         if (!em) {
           showFormAlert('Please enter your email in Step 2 first.', 'error');
@@ -2222,43 +2298,18 @@
             email: em,
             expires_at: Date.now() + 10 * 60 * 1000
           }));
+          if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.resendOtp) {
+            SafeSpaceDB.auth.resendOtp(em, 'signup').catch(function(e){ console.warn('[Resend OTP]', e); });
+          }
         } catch(e) {}
 
         if (step3OtpPreviewCode) step3OtpPreviewCode.textContent = currentStep3OtpCode;
-        if (typeof showToast === 'function') showToast('New 6-digit code sent: ' + currentStep3OtpCode, 'success');
+        if (typeof showToast === 'function') showToast('Verification code sent to ' + em + '!', 'success');
         if (step3OtpStatus) {
           step3OtpStatus.className = 'field-feedback info';
           step3OtpStatus.style.display = 'block';
-          step3OtpStatus.innerHTML = '<i class="fas fa-info-circle"></i> New code generated: ' + currentStep3OtpCode;
+          step3OtpStatus.innerHTML = '<i class="fas fa-info-circle"></i> Verification code sent: ' + currentStep3OtpCode;
         }
-      });
-    }
-
-    if (step3OtpInput) {
-      step3OtpInput.addEventListener('input', function() {
-        var clean = this.value.replace(/[^0-9]/g, '');
-        this.value = clean.slice(0, 6);
-        if (clean.length === 6) {
-          if (!currentStep3OtpCode) ensureStep3OtpGenerated();
-          if (clean === currentStep3OtpCode) {
-            step3OtpInput.classList.remove('has-error');
-            if (step3OtpStatus) {
-              step3OtpStatus.className = 'field-feedback success';
-              step3OtpStatus.style.display = 'block';
-              step3OtpStatus.innerHTML = '<i class="fas fa-circle-check"></i> Code verified!';
-            }
-          } else {
-            step3OtpInput.classList.add('has-error');
-            if (step3OtpStatus) {
-              step3OtpStatus.className = 'field-feedback error';
-              step3OtpStatus.style.display = 'block';
-              step3OtpStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Code does not match.';
-            }
-          }
-        } else if (step3OtpStatus) {
-          step3OtpStatus.style.display = 'none';
-        }
-        updateSignupButtonState();
       });
     }
 
