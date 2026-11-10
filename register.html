@@ -219,7 +219,7 @@
                 <div id="studentIdStatus" class="field-feedback"></div>
 
                 <!-- FRONT & BACK OF STUDENT ID Section (Unified Single Submission Component) -->
-                <div class="form-group" id="studentIdVerificationSection" style="margin-bottom:18px; display:none;">
+                <div class="form-group" id="studentIdVerificationSection" style="margin-bottom:18px;">
                   <label class="field-label" style="text-transform:uppercase; font-size:12px; font-weight:800; letter-spacing:0.5px;">
                     FRONT &amp; BACK OF STUDENT ID <span style="color:#F87171;">*</span>
                   </label>
@@ -229,8 +229,21 @@
                       Please capture or upload both the front and back sides of your official ASU-Ibajay Student ID. Make sure your Student ID number is clearly visible on the front.
                     </p>
 
-                    <!-- Compact Front and Back Side-by-Side Previews -->
-                    <div id="studentIdPreviewsWrap" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <!-- Exact Two Action Buttons: [Take Photo] [Upload] -->
+                    <div class="student-id-buttons" id="studentIdActionButtons" style="display:flex; gap:10px; margin-bottom:10px;">
+                      <button type="button" class="student-id-action-btn primary" id="btnStudentIdTakePhoto" style="flex:1; height:40px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class="fas fa-camera"></i> <span>Take Photo</span>
+                      </button>
+                      <button type="button" class="student-id-action-btn" id="btnStudentIdUpload" style="flex:1; height:40px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class="fas fa-cloud-arrow-up"></i> <span>Upload</span>
+                      </button>
+                      <!-- Hidden file inputs for consecutive upload flow -->
+                      <input type="file" id="frontFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
+                      <input type="file" id="backFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
+                    </div>
+
+                    <!-- Compact Front and Back Side-by-Side Previews (Appears below [Take Photo] and [Upload] once captured or uploaded) -->
+                    <div id="studentIdPreviewsWrap" style="display:none; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; margin-top:10px;">
                       <!-- Compact Front ID Box -->
                       <div id="frontPreviewCard" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:10px; padding:8px; text-align:center;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -268,19 +281,6 @@
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    <!-- Exact Two Action Buttons Placed Beneath Previews: [Take Photo] [Upload] -->
-                    <div class="student-id-buttons" id="studentIdActionButtons" style="display:flex; gap:10px; margin-bottom:10px;">
-                      <button type="button" class="student-id-action-btn primary" id="btnStudentIdTakePhoto" style="flex:1; height:40px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <i class="fas fa-camera"></i> <span>Take Photo</span>
-                      </button>
-                      <button type="button" class="student-id-action-btn" id="btnStudentIdUpload" style="flex:1; height:40px; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <i class="fas fa-cloud-arrow-up"></i> <span>Upload</span>
-                      </button>
-                      <!-- Hidden file inputs for consecutive upload flow -->
-                      <input type="file" id="frontFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
-                      <input type="file" id="backFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
                     </div>
 
                     <!-- Optional Clean Remove Action (shown only when either image is present) -->
@@ -1013,11 +1013,6 @@
         activeStepEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
-      // Check and update Student ID verification section visibility on step 2
-      if (currentStep === 2 && typeof updateStudentIdVerificationVisibility === 'function') {
-        updateStudentIdVerificationVisibility();
-      }
-
       // Check create account button enabled state on step 3
       if (currentStep === 3) {
         updateSignupButtonState();
@@ -1402,9 +1397,9 @@
       var hasFront = Boolean(studentIdFrontDoc.dataUrl);
       var hasBack  = Boolean(studentIdBackDoc.dataUrl);
 
-      // Previews are always visible side-by-side in the compact component
+      // Previews appear below [Take Photo] and [Upload] once the user has uploaded or captured an ID picture
       if (studentIdPreviewsWrap) {
-        studentIdPreviewsWrap.style.display = 'grid';
+        studentIdPreviewsWrap.style.display = (hasFront || hasBack) ? 'grid' : 'none';
       }
 
       if (studentIdResetRow) {
@@ -2466,7 +2461,6 @@
       if (!raw) {
         usernameStatus.textContent = '';
         isUsernameAvailable = null;
-        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
         return;
       }
@@ -2511,7 +2505,6 @@
           isUsernameAvailable = true;
           usernameStatus.innerHTML = '';
         }
-        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
       }, 350);
     });
@@ -2524,7 +2517,6 @@
       if (!raw) {
         emailStatus.textContent = '';
         isEmailAvailable = null;
-        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
         return;
       }
@@ -2561,26 +2553,9 @@
           isEmailAvailable = true;
           emailStatus.innerHTML = '';
         }
-        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
       }, 350);
     });
-
-    // Dynamic Visibility for Student ID Verification Component
-    function updateStudentIdVerificationVisibility() {
-      if (!studentIdVerificationSection) return;
-      var hasEmail = Boolean(val('email'));
-      var hasUsername = Boolean(val('username'));
-      var hasStudentId = Boolean(val('studentId'));
-      var hasAnyIdPhoto = Boolean(studentIdFrontDoc.dataUrl || studentIdBackDoc.dataUrl);
-
-      // Show the capture/upload component if email, username, and student ID are filled (or if photos are already submitted)
-      if ((hasEmail && hasUsername && hasStudentId) || hasAnyIdPhoto) {
-        studentIdVerificationSection.style.display = 'block';
-      } else {
-        studentIdVerificationSection.style.display = 'none';
-      }
-    }
 
     var studentIdInput  = document.getElementById('studentId');
     var studentIdStatus = document.getElementById('studentIdStatus');
@@ -2597,7 +2572,6 @@
           runFrontIdOcrAndMatch(studentIdFrontDoc.dataUrl);
         }
 
-        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
       });
     }
