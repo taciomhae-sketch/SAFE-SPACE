@@ -1239,11 +1239,95 @@
       return str.replace(/[^\w-]/g, '').toUpperCase();
     }
 
+    // Fuzzy/OCR Character Normalizer for Student IDs
+    function normalizeOcrCharacters(str) {
+      if (!str) return '';
+      return String(str).toUpperCase()
+        .replace(/O|D|Q/g, '0')
+        .replace(/I|L|\||!/g, '1')
+        .replace(/Z/g, '2')
+        .replace(/S|\$/g, '5')
+        .replace(/B/g, '8')
+        .replace(/T/g, '7');
+    }
+
+    // Canvas image preprocessing to optimize OCR recognition
+    function preprocessCardForOcr(sourceDataUrl) {
+      return new Promise(function(resolve) {
+        if (!sourceDataUrl) return resolve(sourceDataUrl);
+        var img = new Image();
+        img.onload = function() {
+          try {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var origW = img.naturalWidth || img.width;
+            var origH = img.naturalHeight || img.height;
+
+            // Target minimum width around 1200px for clear text recognition
+            var scale = 1;
+            if (origW < 1200) {
+              scale = 1200 / origW;
+            }
+            var targetW = Math.round(origW * scale);
+            var targetH = Math.round(origH * scale);
+
+            canvas.width = targetW;
+            canvas.height = targetH;
+
+            // Draw scaled image
+            ctx.drawImage(img, 0, 0, targetW, targetH);
+
+            // Enhance contrast and convert to grayscale for OCR accuracy
+            var imgData = ctx.getImageData(0, 0, targetW, targetH);
+            var d = imgData.data;
+            // Contrast enhancement factor
+            var contrast = 40; // -255 to 255
+            var factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+            for (var i = 0; i < d.length; i += 4) {
+              // Grayscale luminance
+              var gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+              // Contrast
+              var adj = factor * (gray - 128) + 128;
+              if (adj < 0) adj = 0;
+              if (adj > 255) adj = 255;
+              d[i]     = adj;
+              d[i + 1] = adj;
+              d[i + 2] = adj;
+            }
+            ctx.putImageData(imgData, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch (e) {
+            console.warn('[OCR Preprocessing] Canvas transform fallback:', e);
+            resolve(sourceDataUrl);
+          }
+        };
+        img.onerror = function() {
+          resolve(sourceDataUrl);
+        };
+        img.src = sourceDataUrl;
+      });
+    }
+
     // Extract ASU-Ibajay Student ID number specifically from front card text
-    function extractAsuStudentIdNumber(text) {
+    function extractAsuStudentIdNumber(text, enteredId) {
       if (!text) return [];
       var results = [];
-      var clean = String(text).toUpperCase();
+      var raw = String(text);
+      var clean = raw.toUpperCase();
+      var normalizedClean = normalizeOcrCharacters(clean);
+
+      // Check if user's entered ID or fuzzy version is found anywhere in the OCR text
+      if (enteredId) {
+        var cleanEntered = normalizeStudentIdString(enteredId);
+        var normEntered = normalizeOcrCharacters(cleanEntered);
+
+        if (clean.indexOf(cleanEntered) !== -1 || clean.replace(/[\s-]/g, '').indexOf(cleanEntered.replace(/[\s-]/g, '')) !== -1) {
+          if (!results.includes(cleanEntered)) results.push(cleanEntered);
+        } else if (normalizedClean.indexOf(normEntered) !== -1 || normalizedClean.replace(/[\s-]/g, '').indexOf(normEntered.replace(/[\s-]/g, '')) !== -1) {
+          if (!results.includes(cleanEntered)) results.push(cleanEntered);
+        }
+      }
 
       // Priority 1: Label-targeted regex - number immediately preceding or surrounding "(STUDENT I.D. NUMBER)" or "STUDENT ID"
       var reLabelAbove = /([A-Z0-9-]{6,12})[\s\n\r]*\(?\s*STUDENT\s*I\.?D\.?\s*NUMBER\s*\)?/gi;
@@ -1264,6 +1348,16 @@
       while ((match = reSevenDigits.exec(clean)) !== null) {
         var num = match[1];
         if (!results.includes(num)) results.push(num);
+      }
+
+      // Priority 2b: 7-digit numbers with OCR fuzzy character substitutions
+      var reSevenFuzzy = /\b([0-9A-Z]{7})\b/g;
+      while ((match = reSevenFuzzy.exec(clean)) !== null) {
+        var candF = match[1];
+        var conv = normalizeOcrCharacters(candF);
+        if (/^\d{7}$/.test(conv) && !results.includes(conv)) {
+          results.push(conv);
+        }
       }
 
       // Priority 3: Standard campus year-sequence format YYYY-XXXXX (e.g., 2023-10842)
@@ -1421,13 +1515,17 @@
         var detectedList = [];
         var ocrFullText = '';
 
+        // Preprocess image for enhanced contrast and resolution
+        var processedImage = await preprocessCardForOcr(dataUrl);
+        if (thisReqId !== currentOcrRequestId) return;
+
         if (typeof Tesseract !== 'undefined' && Tesseract.recognize) {
           try {
-            var ocrRes = await Tesseract.recognize(dataUrl, 'eng', { logger: function(m) {} });
+            var ocrRes = await Tesseract.recognize(processedImage || dataUrl, 'eng', { logger: function(m) {} });
             if (thisReqId !== currentOcrRequestId) return;
             if (ocrRes && ocrRes.data && ocrRes.data.text) {
               ocrFullText = ocrRes.data.text;
-              detectedList = extractAsuStudentIdNumber(ocrFullText);
+              detectedList = extractAsuStudentIdNumber(ocrFullText, entered);
             }
           } catch (tessErr) {
             console.warn('[OCR] Front card Tesseract error:', tessErr);
@@ -1436,17 +1534,25 @@
 
         if (thisReqId !== currentOcrRequestId) return;
 
+        // If Tesseract failed to extract any candidates
         if (detectedList.length === 0) {
           studentIdFrontDoc.detectedId = null;
           studentIdFrontDoc.detectedNumbers = [];
-          renderMatchingStatus('UNREADABLE');
+
+          // If the back ID is not yet submitted, do not frighten the user with a premature unreadable alert;
+          // inform them to submit the back side first!
+          if (!studentIdBackDoc.dataUrl) {
+            renderMatchingStatus('FRONT_SUBMITTED');
+          } else {
+            renderMatchingStatus('UNREADABLE');
+          }
           return;
         }
 
         studentIdFrontDoc.detectedNumbers = detectedList;
         var distinctValid = Array.from(new Set(detectedList.map(normalizeStudentIdString)));
 
-        // Strict exact match against entered ID
+        // Strict exact match against entered ID (or normalized unhyphenated form)
         var matched = distinctValid.find(function(cand) {
           if (cand === entered) return true;
           var noHyphenCand = cand.replace(/-/g, '');
@@ -1478,13 +1584,22 @@
             renderMatchingStatus('FRONT_SUBMITTED', { detectedId: matched });
           }
         } else {
+          // If back is not yet submitted, indicate front submitted rather than premature mismatch
           studentIdFrontDoc.detectedId = distinctValid[0];
-          renderMatchingStatus('MISMATCH', { detectedId: distinctValid[0] });
+          if (!studentIdBackDoc.dataUrl) {
+            renderMatchingStatus('FRONT_SUBMITTED', { detectedId: distinctValid[0] });
+          } else {
+            renderMatchingStatus('MISMATCH', { detectedId: distinctValid[0] });
+          }
         }
       } catch (err) {
         console.error('[OCR] Matching error:', err);
         if (thisReqId === currentOcrRequestId) {
-          renderMatchingStatus('UNREADABLE');
+          if (!studentIdBackDoc.dataUrl) {
+            renderMatchingStatus('FRONT_SUBMITTED');
+          } else {
+            renderMatchingStatus('UNREADABLE');
+          }
         }
       }
     }
@@ -1544,12 +1659,17 @@
       clearStudentIdDocError();
       syncCombinedIdPreviewUI();
 
-      if (studentIdFrontDoc.dataUrl && studentIdFrontDoc.detectedId) {
+      if (studentIdFrontDoc.dataUrl) {
         var entered = normalizeStudentIdString(val('studentId'));
-        if (studentIdFrontDoc.detectedId === entered) {
-          renderMatchingStatus('MATCH', { detectedId: studentIdFrontDoc.detectedId });
-        } else {
-          renderMatchingStatus('MISMATCH', { detectedId: studentIdFrontDoc.detectedId });
+        if (studentIdFrontDoc.detectedId) {
+          if (studentIdFrontDoc.detectedId === entered) {
+            renderMatchingStatus('MATCH', { detectedId: studentIdFrontDoc.detectedId });
+          } else {
+            renderMatchingStatus('MISMATCH', { detectedId: studentIdFrontDoc.detectedId });
+          }
+        } else if (studentIdFrontDoc.status === 'SUBMITTED') {
+          // Re-evaluate front card with entered ID now that both cards are submitted
+          runFrontIdOcrAndMatch(studentIdFrontDoc.dataUrl);
         }
       } else if (!studentIdFrontDoc.dataUrl) {
         renderMatchingStatus('BACK_SUBMITTED');
