@@ -447,18 +447,7 @@
                   </button>
                 </div>
 
-                <!-- Independent Checkbox 1: Privacy Notice (Required, unchecked by default) -->
-                <div style="margin-bottom:10px;">
-                  <label class="privacy-checkbox-label" for="privacyConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                    <input type="checkbox" id="privacyConsentCheckbox" required style="margin-top:2px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
-                    <span style="font-size:12.5px; line-height:1.45; color:rgba(255,255,255,0.96);">
-                      I have read and understood the <button type="button" id="linkReadPrivacyNotice" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:12.5px; font-family:inherit;">Safe Space Privacy Notice</button>. I acknowledge that my personal information will be collected and processed for account registration, student verification, platform security, community moderation, and student safety, as explained in the Privacy Notice. <span style="color:#F87171;">*</span>
-                    </span>
-                  </label>
-                  <div id="consentError" class="field-feedback error" style="display:none; margin-top:5px; font-size:12px;"></div>
-                </div>
-
-                <!-- Independent Checkbox 2: Terms and Conditions (Required, unchecked by default) -->
+                <!-- Agreement Checkbox: Terms and Conditions -->
                 <div>
                   <label class="privacy-checkbox-label" for="termsConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
                     <input type="checkbox" id="termsConsentCheckbox" required style="margin-top:2px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
@@ -2119,9 +2108,8 @@
     var signupBtn            = document.getElementById('signupBtn');
 
     function updateSignupButtonState() {
-      var privacyChecked = privacyCheckbox && privacyCheckbox.checked;
       var termsChecked = termsCheckbox && termsCheckbox.checked;
-      var canSubmit = privacyChecked && termsChecked && validateStep1Quick() && validateStep2Quick();
+      var canSubmit = termsChecked && validateStep1Quick() && validateStep2Quick();
       signupBtn.disabled = !canSubmit;
     }
 
@@ -2636,17 +2624,7 @@
         return;
       }
 
-      // Section 5: Validate Data Privacy Act consent and Terms & Conditions
-      if (!privacyCheckbox || !privacyCheckbox.checked) {
-        if (consentError) {
-          consentError.style.display = 'block';
-          consentError.innerHTML = '<i class="fas fa-circle-exclamation"></i> Please read and acknowledge the Safe Space Privacy Notice before continuing.';
-        }
-        showFormAlert('Please read and acknowledge the Safe Space Privacy Notice before continuing.', 'error');
-        showStep(3);
-        return;
-      }
-
+      // Section 5: Validate Terms & Conditions agreement
       if (!termsCheckbox || !termsCheckbox.checked) {
         if (termsConsentError) {
           termsConsentError.style.display = 'block';
