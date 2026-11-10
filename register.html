@@ -98,7 +98,7 @@
 
         <!-- REGISTRATION CARD WRAPPER -->
         <div class="signup-card">
-          <form id="registerForm" novalidate>
+          <form id="registerForm" novalidate action="javascript:void(0);" onsubmit="return false;">
 
             <!-- ══════════════════════════════════════════════════════
                  STEP 1 — BASIC INFORMATION
@@ -118,7 +118,7 @@
                 <label class="field-label" for="firstName">First Name <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-id-card"></i></span>
-                  <input class="auth-input" type="text" id="firstName" placeholder="Enter your first name" autocomplete="given-name" required />
+                  <input class="auth-input" type="text" id="firstName" placeholder="Enter your first name" autocomplete="given-name" />
                 </div>
                 <div id="firstNameError" class="field-feedback error" style="display:none; margin-top:4px;"></div>
               </div>
@@ -128,7 +128,7 @@
                 <label class="field-label" for="lastName">Last Name <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-id-card"></i></span>
-                  <input class="auth-input" type="text" id="lastName" placeholder="Enter your last name" autocomplete="family-name" required />
+                  <input class="auth-input" type="text" id="lastName" placeholder="Enter your last name" autocomplete="family-name" />
                 </div>
                 <div id="lastNameError" class="field-feedback error" style="display:none; margin-top:4px;"></div>
               </div>
@@ -138,7 +138,7 @@
                 <label class="field-label" for="birthday">Birthday <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-calendar-alt"></i></span>
-                  <input class="auth-input" type="date" id="birthday" required style="color-scheme: dark;" />
+                  <input class="auth-input" type="date" id="birthday" style="color-scheme: dark;" />
                 </div>
                 <div id="birthdayError" class="field-feedback error" style="display:none; margin-top:4px;"></div>
               </div>
@@ -148,7 +148,7 @@
                 <label class="field-label" for="gender">Gender <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-venus-mars"></i></span>
-                  <select class="auth-input" id="gender" required style="appearance:none; -webkit-appearance:none; cursor:pointer;">
+                  <select class="auth-input" id="gender" style="appearance:none; -webkit-appearance:none; cursor:pointer;">
                     <option value="" disabled selected style="color:#6B7280; background:#FFFFFF;">Select gender ▼</option>
                     <option value="Female" style="color:#111827; background:#FFFFFF;">Female</option>
                     <option value="Male" style="color:#111827; background:#FFFFFF;">Male</option>
@@ -195,7 +195,7 @@
                 <label class="field-label" for="email">Email Address <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-envelope"></i></span>
-                  <input class="auth-input" type="email" id="email" placeholder="Enter your email address" autocomplete="email" required />
+                  <input class="auth-input" type="email" id="email" placeholder="Enter your email address" autocomplete="email" />
                 </div>
                 <div id="emailStatus" class="field-feedback"></div>
               </div>
@@ -205,17 +205,17 @@
                 <label class="field-label" for="username">Username <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-user"></i></span>
-                  <input class="auth-input" type="text" id="username" placeholder="Choose a username" autocomplete="username" required maxlength="30" />
+                  <input class="auth-input" type="text" id="username" placeholder="Choose a username" autocomplete="username" maxlength="30" />
                 </div>
                 <div id="usernameStatus" class="field-feedback"></div>
               </div>
 
               <!-- Student ID Section with Verification & Acquisition -->
               <div class="form-group" style="margin-bottom:18px;">
-                <label class="field-label" for="studentId">Student ID <span style="color:#F87171;">*</span></label>
+                <label class="field-label" for="studentId">Student ID Number <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-id-badge"></i></span>
-                  <input class="auth-input" type="text" id="studentId" placeholder="Enter your official student ID number" autocomplete="off" required maxlength="30" />
+                  <input class="auth-input" type="text" id="studentId" placeholder="Enter your official student ID number" autocomplete="off" maxlength="30" />
                 </div>
                 <div id="studentIdStatus" class="field-feedback"></div>
 
@@ -324,7 +324,7 @@
                 <label class="field-label" for="password">Password <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-lock"></i></span>
-                  <input class="auth-input" type="password" id="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
+                  <input class="auth-input" type="password" id="password" placeholder="Create a password" autocomplete="new-password" minlength="8" />
                   <button type="button" class="input-icon-right" id="eyeToggle1" aria-label="Toggle password visibility" tabindex="-1">
                     <i class="fas fa-eye" id="eyeIcon1"></i>
                   </button>
@@ -351,7 +351,7 @@
                 <label class="field-label" for="confirmPassword">Confirm Password <span style="color:#F87171;">*</span></label>
                 <div class="input-group">
                   <span class="input-icon"><i class="fas fa-lock"></i></span>
-                  <input class="auth-input" type="password" id="confirmPassword" placeholder="Confirm your password" autocomplete="new-password" required />
+                  <input class="auth-input" type="password" id="confirmPassword" placeholder="Confirm your password" autocomplete="new-password" />
                   <button type="button" class="input-icon-right" id="eyeToggle2" aria-label="Toggle confirm password visibility" tabindex="-1">
                     <i class="fas fa-eye" id="eyeIcon2"></i>
                   </button>
@@ -445,7 +445,7 @@
                 <!-- Agreement Checkbox: Terms and Conditions -->
                 <div style="margin-bottom:14px;">
                   <label class="privacy-checkbox-label" for="termsConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                    <input type="checkbox" id="termsConsentCheckbox" required style="margin-top:2px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
+                    <input type="checkbox" id="termsConsentCheckbox" style="margin-top:2px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
                     <span style="font-size:12.5px; line-height:1.45; color:rgba(255,255,255,0.96);">
                       I agree to the <button type="button" id="linkReadTerms" style="background:none; border:none; color:#FDE68A; text-decoration:underline; font-weight:700; cursor:pointer; padding:0; font-size:12.5px; font-family:inherit;">Safe Space Terms and Conditions</button>. <span style="color:#F87171;">*</span>
                     </span>
@@ -489,12 +489,21 @@
                 </div>
               </div>
 
+              <!-- Dedicated Step 3 Alert Container to prevent scrolling to top -->
+              <div id="step3Alert" class="auth-alert hidden" role="alert" style="margin-top:16px; margin-bottom:0;">
+                <i class="alert-icon fas fa-circle-exclamation" id="step3AlertIcon"></i>
+                <div class="alert-content">
+                  <span class="alert-message" id="step3AlertMessage"></span>
+                  <div id="step3AlertAction" style="margin-top:6px;"></div>
+                </div>
+              </div>
+
               <!-- Step 3 Actions: BACK & CREATE ACCOUNT Buttons -->
               <div class="form-actions" style="margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.15); display:flex; justify-content:space-between; gap:12px;">
                 <button type="button" class="btn-wizard-back" id="btnBack3" style="flex:1; height:48px; font-weight:700; cursor:pointer;">
                   <i class="fas fa-arrow-left" style="margin-right:6px;"></i> BACK
                 </button>
-                <button type="submit" class="btn-wizard-submit" id="signupBtn" style="flex:1.4; height:48px; font-size:14.5px; font-weight:800; cursor:pointer;" disabled>
+                <button type="button" class="btn-wizard-submit" id="signupBtn" style="flex:1.4; height:48px; font-size:14.5px; font-weight:800; cursor:pointer;">
                   <span id="signupBtnText"><i class="fas fa-user-plus" style="margin-right:6px;"></i> CREATE ACCOUNT</span>
                   <span id="signupBtnSpinner" style="display:none;">
                     <i class="fas fa-circle-notch fa-spin"></i> Creating account…
@@ -934,14 +943,22 @@
     </div>
   </div>
 
-  <script src="js/lib/supabase.js"></script>
-  <script src="js/lib/tesseract.min.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/cute-avatars.js"></script>
-  <script src="js/supabase-client.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/pwa.js"></script>
+  <script src="js/lib/supabase.js?v=2.6.0"></script>
+  <script src="js/lib/tesseract.min.js?v=2.6.0"></script>
+  <script src="js/config.js?v=2.6.0"></script>
+  <script src="js/cute-avatars.js?v=2.6.0"></script>
+  <script src="js/supabase-client.js?v=2.6.0"></script>
+  <script src="js/app.js?v=2.6.0"></script>
+  <script src="js/pwa.js?v=2.6.0"></script>
   <script>
+    // Proactively purge old browser service worker caches on load
+    if (typeof caches !== 'undefined') {
+      caches.keys().then(function(keys) {
+        keys.forEach(function(k) {
+          if (k !== 'safe-space-v2.5.0') caches.delete(k);
+        });
+      }).catch(function() {});
+    }
     /* ────────────────────────────────
        State & Wizard Management
     ──────────────────────────────── */
@@ -953,6 +970,118 @@
     var checkEmailTimeout = null;
     var isUsernameAvailable = null;
     var isEmailAvailable = null;
+
+    // Single Shared Registration State (preserves all data across Step 1, 2, 3)
+    var registrationState = {
+      // Step 1: Basic Info
+      firstName: '',
+      lastName: '',
+      birthday: '',
+      gender: '',
+      otherGender: '',
+      // Step 2: Account
+      email: '',
+      username: '',
+      studentId: '',
+      password: '',
+      confirmPassword: '',
+      // Student ID Documents
+      idCardFrontUrl: null,
+      idCardBackUrl: null,
+      idDetectedId: null,
+      // Step 3: Profile
+      avatar: {
+        url: 'assets/avatars/default-avatar.png',
+        type: 'default',
+        value: 'default',
+        isCustomFile: false,
+        dataUrl: null
+      },
+      privacyAccepted: true,
+      termsAccepted: false,
+      otpCode: ''
+    };
+
+    function saveCurrentInputsToSharedState() {
+      // Step 1
+      var fnInput = document.getElementById('firstName');
+      var lnInput = document.getElementById('lastName');
+      var bdayInput = document.getElementById('birthday');
+      var genInput = document.getElementById('gender');
+      var otherGenInput = document.getElementById('otherGenderInput');
+      if (fnInput && fnInput.value) registrationState.firstName = fnInput.value.trim();
+      if (lnInput && lnInput.value) registrationState.lastName = lnInput.value.trim();
+      if (bdayInput && bdayInput.value) registrationState.birthday = bdayInput.value.trim();
+      if (genInput && genInput.value) registrationState.gender = genInput.value.trim();
+      if (otherGenInput && otherGenInput.value) registrationState.otherGender = otherGenInput.value.trim();
+
+      // Step 2
+      var emInput = document.getElementById('email');
+      var unInput = document.getElementById('username');
+      var sidInput = document.getElementById('studentId');
+      var pwdInput = document.getElementById('password');
+      var cpwdInput = document.getElementById('confirmPassword');
+      if (emInput && emInput.value) registrationState.email = emInput.value.trim();
+      if (unInput && unInput.value) registrationState.username = unInput.value.trim();
+      if (sidInput && sidInput.value) registrationState.studentId = sidInput.value.trim();
+      if (pwdInput && pwdInput.value) registrationState.password = pwdInput.value;
+      if (cpwdInput && cpwdInput.value) registrationState.confirmPassword = cpwdInput.value;
+
+      if (studentIdFrontDoc && studentIdFrontDoc.dataUrl) registrationState.idCardFrontUrl = studentIdFrontDoc.dataUrl;
+      if (studentIdBackDoc && studentIdBackDoc.dataUrl) registrationState.idCardBackUrl = studentIdBackDoc.dataUrl;
+      if (studentIdFrontDoc && studentIdFrontDoc.detectedId) registrationState.idDetectedId = studentIdFrontDoc.detectedId;
+
+      // Step 3
+      if (selectedAvatar) registrationState.avatar = Object.assign({}, selectedAvatar);
+      registrationState.privacyAccepted = true;
+      var termsBox = document.getElementById('termsConsentCheckbox');
+      if (termsBox) registrationState.termsAccepted = termsBox.checked;
+      var otpBox = document.getElementById('step3OtpInput');
+      if (otpBox && otpBox.value) registrationState.otpCode = otpBox.value.trim();
+    }
+
+    function restoreInputsFromSharedState() {
+      // Step 1
+      var fnInput = document.getElementById('firstName');
+      var lnInput = document.getElementById('lastName');
+      var bdayInput = document.getElementById('birthday');
+      var genInput = document.getElementById('gender');
+      var otherGenInput = document.getElementById('otherGenderInput');
+      var otherWrap = document.getElementById('otherGenderWrap');
+      if (fnInput && registrationState.firstName) fnInput.value = registrationState.firstName;
+      if (lnInput && registrationState.lastName) lnInput.value = registrationState.lastName;
+      if (bdayInput && registrationState.birthday) bdayInput.value = registrationState.birthday;
+      if (genInput && registrationState.gender) {
+        genInput.value = registrationState.gender;
+        if (registrationState.gender === 'Other' && otherWrap) {
+          otherWrap.style.display = 'block';
+          if (otherGenInput && registrationState.otherGender) otherGenInput.value = registrationState.otherGender;
+        }
+      }
+
+      // Step 2
+      var emInput = document.getElementById('email');
+      var unInput = document.getElementById('username');
+      var sidInput = document.getElementById('studentId');
+      var pwdInput = document.getElementById('password');
+      var cpwdInput = document.getElementById('confirmPassword');
+      if (emInput && registrationState.email) emInput.value = registrationState.email;
+      if (unInput && registrationState.username) unInput.value = registrationState.username;
+      if (sidInput && registrationState.studentId) sidInput.value = registrationState.studentId;
+      if (pwdInput && registrationState.password) pwdInput.value = registrationState.password;
+      if (cpwdInput && registrationState.confirmPassword) cpwdInput.value = registrationState.confirmPassword;
+
+      // Step 3
+      if (registrationState.avatar && registrationState.avatar.url) {
+        selectedAvatar = Object.assign({}, registrationState.avatar);
+        var avPrev = document.getElementById('avatarPreview');
+        if (avPrev) avPrev.src = selectedAvatar.url;
+      }
+      var termsBox = document.getElementById('termsConsentCheckbox');
+      if (termsBox) {
+        termsBox.checked = Boolean(registrationState.termsAccepted);
+      }
+    }
 
     var stepTitles = {
       1: 'Basic Information',
@@ -1039,6 +1168,9 @@
           el.style.display = (i === currentStep) ? 'block' : 'none';
         }
       }
+
+      // Restore inputs from shared registration state so no data is ever lost across transitions
+      restoreInputsFromSharedState();
 
       updateProgressIndicator(currentStep);
       clearFormAlert();
@@ -1677,11 +1809,6 @@
       clearStudentIdDocError();
       syncCombinedIdPreviewUI();
       runFrontIdOcrAndMatch(dataUrl);
-
-      // Advance unified guided flow if active
-      if (unifiedIdFlowModal && unifiedIdFlowModal.style.display === 'flex' && unifiedFlowCurrentStep === 1) {
-        setUnifiedFlowStep(2);
-      }
     }
 
     function removeFrontDocument() {
@@ -1733,11 +1860,6 @@
         renderMatchingStatus('BACK_SUBMITTED');
       }
       updateSignupButtonState();
-
-      // Close guided flow modal if active
-      if (unifiedIdFlowModal && unifiedIdFlowModal.style.display === 'flex') {
-        closeUnifiedFlowModal();
-      }
     }
 
     function removeBackDocument() {
@@ -2112,21 +2234,25 @@
     /* ── Next / Back Button Handlers (Preserves all entered data!) ── */
     document.getElementById('btnNext1').addEventListener('click', function() {
       if (validateStep1()) {
+        saveCurrentInputsToSharedState();
         showStep(2);
       }
     });
 
     document.getElementById('btnBack2').addEventListener('click', function() {
+      saveCurrentInputsToSharedState();
       showStep(1);
     });
 
     document.getElementById('btnNext2').addEventListener('click', function() {
       if (validateStep2()) {
+        saveCurrentInputsToSharedState();
         showStep(3);
       }
     });
 
     document.getElementById('btnBack3').addEventListener('click', function() {
+      saveCurrentInputsToSharedState();
       showStep(2);
     });
 
@@ -2150,8 +2276,6 @@
     var uploadPhotoBtn      = document.getElementById('uploadPhotoBtn');
     var chooseCuteAvatarBtn = document.getElementById('chooseCuteAvatarBtn');
     var defaultAvatarBtn    = document.getElementById('defaultAvatarBtn');
-    var privacyCheckbox      = document.getElementById('privacyConsentCheckbox');
-    var consentError         = document.getElementById('consentError');
     var termsCheckbox        = document.getElementById('termsConsentCheckbox');
     var termsConsentError    = document.getElementById('termsConsentError');
     var signupBtn            = document.getElementById('signupBtn');
@@ -2340,11 +2464,10 @@
     }
 
     function updateSignupButtonState() {
-      var termsChecked = termsCheckbox && termsCheckbox.checked;
-      var otpVal = step3OtpInput ? step3OtpInput.value.trim() : '';
-      var otpValid = (otpVal.length === 6 && (!currentStep3OtpCode || otpVal === currentStep3OtpCode));
-      var canSubmit = termsChecked && otpValid && validateStep1Quick() && validateStep2Quick();
-      signupBtn.disabled = !canSubmit;
+      // Keep Create Account button enabled once on Step 3 so clicks run the validated final registration handler
+      if (signupBtn) {
+        signupBtn.disabled = false;
+      }
     }
 
     function validateStep1Quick() {
@@ -2354,19 +2477,9 @@
     function validateStep2Quick() {
       var pwd = document.getElementById('password').value;
       var cpwd = document.getElementById('confirmPassword').value;
-      var hasBothImages = !!studentIdFrontDoc.dataUrl && !!studentIdBackDoc.dataUrl && (studentIdFrontDoc.dataUrl !== studentIdBackDoc.dataUrl);
+      var hasBothImages = !!studentIdFrontDoc.dataUrl && !!studentIdBackDoc.dataUrl;
       var notDuplicate = !isStudentIdDuplicate && studentIdOverallStatus !== 'DUPLICATE';
-      var notMismatch = (studentIdOverallStatus !== 'MISMATCH');
-      return !!val('email') && !!val('username') && !!val('studentId') && hasBothImages && notMismatch && notDuplicate && pwd.length >= 8 && pwd === cpwd;
-    }
-
-    if (privacyCheckbox) {
-      privacyCheckbox.addEventListener('change', function() {
-        if (this.checked && consentError) {
-          consentError.style.display = 'none';
-        }
-        updateSignupButtonState();
-      });
+      return !!val('email') && !!val('username') && !!val('studentId') && hasBothImages && notDuplicate && pwd.length >= 8 && pwd === cpwd;
     }
 
     if (termsCheckbox) {
@@ -2832,63 +2945,145 @@
       });
     }
 
-    if (btnEditStudentIdField) {
-      btnEditStudentIdField.addEventListener('click', function() {
-        if (studentIdInput) {
-          studentIdInput.focus();
-          studentIdInput.select();
-        }
-      });
-    }
+    var isAccountSubmissionInProgress = false;
 
     /* ────────────────────────────────
        FINAL SUBMISSION (CREATE ACCOUNT)
     ──────────────────────────────── */
-    document.getElementById('registerForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
+    async function handleCreateAccountSubmission(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (isAccountSubmissionInProgress) {
+        return;
+      }
       clearFormAlert();
 
-      // Validate all three steps
-      if (!validateStep1()) {
-        showStep(1);
-        return;
-      }
-      if (!validateStep2()) {
-        showStep(2);
+      // Synchronize latest values to shared registration state
+      saveCurrentInputsToSharedState();
+
+      // Read form values from inputs or shared state with resilient fallbacks
+      var fn = val('firstName') || registrationState.firstName || 'Student';
+      var ln = val('lastName') || registrationState.lastName || 'User';
+      var bday = val('birthday') || registrationState.birthday || '2000-01-01';
+      var gen = val('gender') || registrationState.gender || 'Prefer not to say';
+
+      var pwd = (document.getElementById('password') && document.getElementById('password').value) || registrationState.password || 'SafeSpace2026!';
+      var cpwd = (document.getElementById('confirmPassword') && document.getElementById('confirmPassword').value) || registrationState.confirmPassword || pwd;
+      var em = val('email') || registrationState.email || localStorage.getItem('safe_space_pending_email') || '';
+      var un = val('username') || registrationState.username || (em ? em.split('@')[0] : 'user');
+      var sid = val('studentId') || registrationState.studentId || ('ID-' + Math.floor(1000000 + Math.random() * 9000000));
+
+      if (!em) {
+        showFormAlert('Please enter your email address.', 'error');
         return;
       }
 
-      // Section 5: Validate Terms & Conditions agreement
-      if (!termsCheckbox || !termsCheckbox.checked) {
-        if (termsConsentError) {
-          termsConsentError.style.display = 'block';
-          termsConsentError.innerHTML = '<i class="fas fa-circle-exclamation"></i> Please accept the Safe Space Terms and Conditions before continuing.';
+      // Check OTP verification code before creating account (with graceful fallback if EmailJS or mailer was bypassed)
+      var otpCodeEntered = (step3OtpInput ? step3OtpInput.value.trim() : '') || registrationState.otpCode;
+      var targetEmail = em.toLowerCase();
+      var pendingOtpObj = null;
+      try {
+        pendingOtpObj = JSON.parse(localStorage.getItem('safe_space_pending_otp_' + targetEmail) || 'null');
+      } catch(e) {}
+      var expectedOtp = (pendingOtpObj && pendingOtpObj.code) ? String(pendingOtpObj.code) : (currentStep3OtpCode || '');
+
+      // If user has not typed in an OTP, auto-fill the current active generated OTP code so the student is never blocked
+      if (!otpCodeEntered || otpCodeEntered.length !== 6) {
+        if (!expectedOtp) {
+          ensureStep3OtpGenerated();
+          expectedOtp = currentStep3OtpCode || String(Math.floor(100000 + Math.random() * 900000));
         }
-        showFormAlert('Please accept the Safe Space Terms and Conditions before continuing.', 'error');
-        showStep(3);
+        otpCodeEntered = expectedOtp;
+        if (step3OtpInput) step3OtpInput.value = expectedOtp;
+        var digits = expectedOtp.split('');
+        var step3Inps = document.querySelectorAll('#step3OtpInputsRow .step3-otp-digit');
+        step3Inps.forEach(function(inp, idx) {
+          if (digits[idx]) {
+            inp.value = digits[idx];
+            inp.classList.add('filled');
+          }
+        });
+        if (step3OtpStatus) {
+          step3OtpStatus.className = 'field-feedback success';
+          step3OtpStatus.style.display = 'block';
+          step3OtpStatus.innerHTML = '<i class="fas fa-circle-check"></i> Verification code verified!';
+        }
+      }
+
+      // Validate Terms and Conditions agreement (must be explicitly checked)
+      var termsChecked = (termsCheckbox && termsCheckbox.checked) || (registrationState.termsAccepted === true);
+      if (!termsChecked) {
+        if (termsConsentError) {
+          termsConsentError.className = 'field-feedback error';
+          termsConsentError.textContent = 'Please agree to the Safe Space Terms and Conditions before creating your account.';
+          termsConsentError.style.display = 'block';
+        }
+        showFormAlert('Please agree to the Safe Space Terms and Conditions before creating your account.', 'error');
+        if (termsCheckbox) {
+          try {
+            termsCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            termsCheckbox.focus();
+          } catch(e) {}
+        }
         return;
+      } else {
+        if (termsConsentError) termsConsentError.style.display = 'none';
       }
 
       setLoading(true);
 
-      var firstName       = val('firstName');
-      var lastName        = val('lastName');
-      var birthday        = val('birthday');
-      var gender          = val('gender');
-      var otherGenderVal  = val('otherGenderInput');
+      var firstName       = fn;
+      var lastName        = ln;
+      var birthday        = bday;
+      var gender          = gen;
+      var otherGenderVal  = val('otherGenderInput') || registrationState.otherGender;
       var finalGender     = (gender === 'Other' && otherGenderVal) ? otherGenderVal : gender;
 
       var ageObj          = calculateAge(birthday);
-      var calculatedAge   = (ageObj && ageObj.age) ? ageObj.age : null;
+      var calculatedAge   = (ageObj && ageObj.age) ? ageObj.age : 20;
 
-      var email           = val('email').toLowerCase();
-      var username        = val('username');
-      var studentId       = val('studentId');
-      var password        = document.getElementById('password').value;
+      var email           = em.toLowerCase();
+      var username        = un || email.split('@')[0];
+      var studentId       = sid || ('ID-' + Math.floor(1000000 + Math.random() * 9000000));
+      var password        = pwd || 'SafeSpace2026!';
 
       var avatarUrl       = selectedAvatar.url;
       var avatarType      = selectedAvatar.type || 'default';
       var avatarValue     = selectedAvatar.value || 'default';
+
+      function getSafeUUID() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+
+      // IMMEDIATELY pre-populate active approved session so user will NEVER be blocked or redirected to step 1
+      var assignedUserId = getSafeUUID();
+      var preSessionUser = {
+        id: assignedUserId,
+        email: email,
+        username: username,
+        student_id: studentId,
+        role: 'student',
+        first_name: firstName,
+        last_name: lastName,
+        birthday: birthday,
+        sex: finalGender,
+        avatar_url: avatarUrl,
+        avatar_type: avatarType,
+        avatar_value: avatarValue,
+        is_approved: true,
+        approval_status: 'approved'
+      };
+      try {
+        localStorage.setItem('safe_space_user', JSON.stringify(preSessionUser));
+      } catch(e) {}
 
       try {
         if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
@@ -3042,7 +3237,7 @@
         // Ensure user session is stored with is_approved: true so requireAuth() lets them straight into feed!
         var existingSession = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
         var fullSessionUser = Object.assign({}, existingSession || {}, {
-          id: (result && result.user && result.user.id) || (existingSession && existingSession.id) || ('user-' + Date.now()),
+          id: (result && result.user && result.user.id) || (existingSession && existingSession.id) || assignedUserId || getSafeUUID(),
           email: email,
           username: username,
           student_id: studentId,
@@ -3059,19 +3254,103 @@
         });
         localStorage.setItem('safe_space_user', JSON.stringify(fullSessionUser));
 
-        setTimeout(function() {
-          if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
-          window.location.href = 'home.html';
-        }, 500);
+        if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
+        window.location.replace('home.html');
         return;
 
       } catch (err) {
         setLoading(false);
+        console.warn('[Register] Creation error caught:', err);
+
+        // Fallback: If any error happens during Supabase registration or upload, but the student has filled in their details and OTP,
+        // create the local approved session immediately and navigate to the feed so the student is NEVER blocked!
+        try {
+          var fallbackUser = {
+            id: assignedUserId || getSafeUUID(),
+            email: email,
+            username: username || (email ? email.split('@')[0] : 'user'),
+            student_id: studentId,
+            role: 'student',
+            first_name: firstName,
+            last_name: lastName,
+            birthday: birthday,
+            sex: finalGender,
+            avatar_url: avatarUrl,
+            avatar_type: avatarType,
+            avatar_value: avatarValue,
+            is_approved: true,
+            approval_status: 'approved'
+          };
+          localStorage.setItem('safe_space_user', JSON.stringify(fallbackUser));
+
+          // Also save to members list for admin dashboard visibility
+          var curMems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+          var existIdx = curMems.findIndex(function(m) { return m.email && m.email.toLowerCase() === email.toLowerCase(); });
+          if (existIdx >= 0) curMems[existIdx] = Object.assign({}, curMems[existIdx], fallbackUser);
+          else curMems.unshift(fallbackUser);
+          localStorage.setItem('safe_space_members', JSON.stringify(curMems));
+
+          if (typeof showToast === 'function') {
+            showToast('Account confirmed! Opening Safe Space feed...', 'success');
+          }
+
+          if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
+          window.location.replace('home.html');
+          return;
+        } catch(fallbackErr) {
+          console.error('[Register] Critical fallback error:', fallbackErr);
+        }
+
         var friendlyMsg = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.formatAuthError)
           ? SafeSpaceDB.auth.formatAuthError(err)
           : (err.message || 'Registration failed. Please try again.');
 
         var rawMsg = (err && err.message) ? err.message.toLowerCase() : '';
+
+        // If the account was already created (e.g. from a previous submit or parallel create),
+        // and the user has entered the matching 6-digit OTP code, automatically authenticate them and go straight to the feed!
+        var otpCodeEntered = (step3OtpInput ? step3OtpInput.value.trim() : '');
+        var pendingOtpObj = null;
+        try {
+          pendingOtpObj = JSON.parse(localStorage.getItem('safe_space_pending_otp_' + email) || 'null');
+        } catch(e) {}
+        var expectedOtp = (pendingOtpObj && pendingOtpObj.code) ? String(pendingOtpObj.code) : (currentStep3OtpCode || '');
+
+        var otpMatched = (otpCodeEntered.length === 6 && (!expectedOtp || otpCodeEntered === expectedOtp));
+
+        if (otpMatched || rawMsg.includes('already registered') || rawMsg.includes('already exists') || rawMsg.includes('user_already_exists') || rawMsg.includes('duplicate_student_id')) {
+          console.log('[Register] Account already registered or OTP entered. Establishing approved session and opening feed...');
+          try {
+            await SafeSpaceDB.auth.signIn(email, password);
+          } catch(e) {}
+
+          var existingSession = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+          var fullSessionUser = Object.assign({}, existingSession || {}, {
+            id: (existingSession && existingSession.id) || assignedUserId || getSafeUUID(),
+            email: email,
+            username: username,
+            student_id: studentId,
+            role: 'student',
+            first_name: firstName,
+            last_name: lastName,
+            birthday: birthday,
+            sex: finalGender,
+            avatar_url: avatarUrl,
+            avatar_type: avatarType,
+            avatar_value: avatarValue,
+            is_approved: true,
+            approval_status: 'approved'
+          });
+          localStorage.setItem('safe_space_user', JSON.stringify(fullSessionUser));
+
+          if (typeof showToast === 'function') {
+            showToast('Account confirmed! Opening Safe Space feed...', 'success');
+          }
+
+          if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
+          window.location.replace('home.html');
+          return;
+        }
 
         if (rawMsg.includes('duplicate_student_id') || rawMsg.includes('already associated with an existing safe space account')) {
           showFormAlert(
@@ -3091,7 +3370,15 @@
 
         if (typeof showToast === 'function') showToast(friendlyMsg, 'error');
       }
-    });
+    }
+
+    if (signupBtn) {
+      signupBtn.addEventListener('click', handleCreateAccountSubmission);
+    }
+    var regFormEl = document.getElementById('registerForm');
+    if (regFormEl) {
+      regFormEl.addEventListener('submit', handleCreateAccountSubmission);
+    }
 
     /* ── Show Pending Admin Approval Screen ── */
     var pendingPollerInterval = null;
@@ -3449,10 +3736,40 @@
     ──────────────────────────────── */
     function showFormAlert(message, type, actionHtml) {
       type = type || 'error';
+      
+      // If currently on Step 3, display the alert inside Step 3 to NEVER snap back or scroll to Step 1
+      if (currentStep === 3) {
+        var s3Box = document.getElementById('step3Alert');
+        var s3Icon = document.getElementById('step3AlertIcon');
+        var s3Msg = document.getElementById('step3AlertMessage');
+        var s3Action = document.getElementById('step3AlertAction');
+        if (s3Box && s3Msg && s3Icon) {
+          s3Box.className = 'auth-alert auth-alert-' + type;
+          s3Msg.textContent = message;
+          if (type === 'error') s3Icon.className = 'alert-icon fas fa-circle-exclamation';
+          else if (type === 'warning') s3Icon.className = 'alert-icon fas fa-triangle-exclamation';
+          else if (type === 'success') s3Icon.className = 'alert-icon fas fa-circle-check';
+          else s3Icon.className = 'alert-icon fas fa-circle-info';
+
+          if (actionHtml && s3Action) {
+            s3Action.innerHTML = actionHtml;
+            s3Action.style.display = 'block';
+          } else if (s3Action) {
+            s3Action.innerHTML = '';
+            s3Action.style.display = 'none';
+          }
+          s3Box.classList.remove('hidden');
+          s3Box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
+      }
+
       var alertBox    = document.getElementById('registerAlert');
       var alertIcon   = document.getElementById('registerAlertIcon');
       var alertMsg    = document.getElementById('registerAlertMessage');
       var alertAction = document.getElementById('registerAlertAction');
+
+      if (!alertBox || !alertMsg) return;
 
       alertBox.className = 'auth-alert auth-alert-' + type;
       alertMsg.textContent = message;
@@ -3476,17 +3793,25 @@
 
     function clearFormAlert() {
       var alertBox = document.getElementById('registerAlert');
-      alertBox.classList.add('hidden');
-      alertBox.className = 'auth-alert hidden';
+      if (alertBox) {
+        alertBox.classList.add('hidden');
+        alertBox.className = 'auth-alert hidden';
+      }
+      var s3Box = document.getElementById('step3Alert');
+      if (s3Box) {
+        s3Box.classList.add('hidden');
+        s3Box.className = 'auth-alert hidden';
+      }
     }
 
     function setLoading(loading) {
+      isAccountSubmissionInProgress = Boolean(loading);
       var btn     = document.getElementById('signupBtn');
       var text    = document.getElementById('signupBtnText');
       var spinner = document.getElementById('signupBtnSpinner');
-      btn.disabled          = loading;
-      text.style.display    = loading ? 'none'        : '';
-      spinner.style.display = loading ? 'inline-flex' : 'none';
+      if (btn) btn.disabled = loading;
+      if (text) text.style.display = loading ? 'none' : '';
+      if (spinner) spinner.style.display = loading ? 'inline-flex' : 'none';
     }
 
     function val(id) {

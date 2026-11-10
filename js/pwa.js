@@ -4,12 +4,26 @@
  */
 let deferredPrompt = null;
 
-// 1. Service Worker Registration (active when served over HTTP/HTTPS)
+// 1. Service Worker Registration & Cache Management (active when served over HTTP/HTTPS)
 if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+  // Clear any obsolete CacheStorage versions to prevent serving stale form scripts
+  if ('caches' in window) {
+    caches.keys().then((names) => {
+      names.forEach((name) => {
+        if (name !== 'safe-space-v2.5.0') {
+          console.log('[PWA] Purging outdated cache:', name);
+          caches.delete(name);
+        }
+      });
+    }).catch(() => {});
+  }
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    navigator.serviceWorker.register('./sw.js?v=2.6.0')
       .then((reg) => {
         console.log('[PWA] Service Worker registered with scope:', reg.scope);
+        // Force update of worker if changes exist
+        if (reg.update) reg.update();
       })
       .catch((err) => {
         console.warn('[PWA] Service Worker registration failed:', err);

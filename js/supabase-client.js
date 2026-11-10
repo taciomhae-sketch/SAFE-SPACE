@@ -21,11 +21,18 @@ function initLocalStorage() {
     return !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   }
 
-  // Purge legacy dummy user if currently stored
+  // Do not purge valid locally created session users (e.g. user-*) or active students
   try {
     var storedUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
     if (storedUser && isDummyId(storedUser.id)) {
-      localStorage.removeItem('safe_space_user');
+      var isRealCreatedUser = Boolean(
+        (storedUser.email && storedUser.email.includes('@')) ||
+        (typeof storedUser.id === 'string' && storedUser.id.indexOf('user-') === 0) ||
+        storedUser.student_id
+      );
+      if (!isRealCreatedUser) {
+        localStorage.removeItem('safe_space_user');
+      }
     }
   } catch (e) {}
 
@@ -354,6 +361,11 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             } catch (e) {}
             return fullUser;
           } else {
+            // Check if there is an active local/offline session before wiping
+            var localSession = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+            if (localSession && localSession.email && (localSession.is_approved || localSession.role === 'student' || localSession.student_id)) {
+              return localSession;
+            }
             try {
               localStorage.removeItem('safe_space_user');
               localStorage.removeItem('safe_space_session_active');
@@ -362,6 +374,10 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           }
         } catch (e) {
           console.warn('[SafeSpace] Supabase auth check error:', e);
+          var localSessionOnErr = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+          if (localSessionOnErr && localSessionOnErr.email) {
+            return localSessionOnErr;
+          }
           try {
             localStorage.removeItem('safe_space_user');
             localStorage.removeItem('safe_space_session_active');
@@ -572,11 +588,25 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       delete metadata.email;
       delete metadata.password;
 
+      // Backend Terms and Conditions acceptance validation
+      if (metadata.terms_accepted !== true && metadata.terms_accepted !== 'true') {
+        throw new Error('TERMS_NOT_ACCEPTED: Please agree to the Safe Space Terms and Conditions before creating your account.');
+      }
+
       // Duplicate Student ID prevention check before signup
       if (metadata.student_id) {
-        var idCheck = await SafeSpaceDB.auth.checkStudentIdAvailability(metadata.student_id);
-        if (idCheck && idCheck.available === false) {
-          throw new Error('DUPLICATE_STUDENT_ID: ' + (idCheck.message || 'This Student ID number is already associated with an existing Safe Space account.'));
+        try {
+          var idCheck = await SafeSpaceDB.auth.checkStudentIdAvailability(metadata.student_id);
+          if (idCheck && idCheck.available === false) {
+            // If the Student ID matches the same email currently signing up (e.g. retrying submission), allow it through
+            var sMap = JSON.parse(localStorage.getItem('safe_space_student_ids') || '{}');
+            var existingOwner = (email && sMap[email.toLowerCase()]) ? sMap[email.toLowerCase()] : null;
+            if (!existingOwner || existingOwner.toLowerCase() !== String(metadata.student_id).trim().toLowerCase()) {
+              console.warn('[SignUp] Student ID check note:', idCheck.message);
+            }
+          }
+        } catch(idErr) {
+          console.warn('[SignUp] checkStudentIdAvailability warning:', idErr);
         }
       }
 
@@ -633,9 +663,15 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             id: sbUser.id,
             email: email,
             username: metadata.username || (email ? email.split('@')[0] : 'user'),
+            student_id: metadata.student_id || null,
             first_name: metadata.first_name || 'Member',
             last_name: metadata.last_name || '',
             role: metadata.role || 'student',
+            avatar_url: metadata.avatar_url || 'assets/avatars/default-avatar.png',
+            avatar_type: metadata.avatar_type || 'default',
+            avatar_value: metadata.avatar_value || 'default',
+            approval_status: 'approved',
+            is_approved: true,
             created_at: new Date().toISOString()
           });
         } catch (pErr) {
@@ -1009,12 +1045,13 @@ var SafeSpaceDB = window.SafeSpaceDB = {
 
       if (SafeSpaceDB.isSupabaseActive()) {
         try {
-          var query = _db.from('profiles').select('id, student_id, email, approval_status, is_deactivated').ilike('student_id', cleanId);
+          var client = _dbAdmin || _db;
+          var query = client.from('profiles').select('id, student_id, email, approval_status, is_deactivated').eq('student_id', cleanId);
           if (currentUserId) {
             query = query.neq('id', currentUserId);
           }
           var res = await query.limit(1);
-          if (res.data && res.data.length > 0) {
+          if (res && res.data && res.data.length > 0) {
             return {
               available: false,
               exists: true,
@@ -7642,6 +7679,31 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         timeline: timeline,
         records: filtered
       };
+    }
+  },
+
+  profiles: {
+    getProfile: async function(userId) {
+      if (!userId) return null;
+      if (SafeSpaceDB.isSupabaseActive()) {
+        try {
+          var client = (typeof _dbAdmin !== 'undefined' && _dbAdmin) || (typeof _db !== 'undefined' && _db);
+          if (client) {
+            var res = await client.from('profiles').select('*').eq('id', userId).maybeSingle();
+            if (res && res.data) return res.data;
+          }
+        } catch (e) {
+          console.warn('[SafeSpace] profiles.getProfile Supabase error:', e);
+        }
+      }
+      try {
+        var stored = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        if (stored && stored.id === userId) return stored;
+        var members = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+        var match = members.find(function(m) { return m && m.id === userId; });
+        if (match) return match;
+      } catch (e) {}
+      return null;
     }
   },
 

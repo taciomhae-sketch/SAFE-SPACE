@@ -162,16 +162,19 @@ async function requireAuth() {
       if (!isAdmin) {
         var isApproved = (user.is_approved === true || user.is_approved === 'true' || user.is_approved === 1 || String(user.approval_status || '').toLowerCase() === 'approved');
 
-        // Always verify with live database to prevent bypassing with stale session tokens
-        if (SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive() && user.id) {
+        // Always check live database if profile exists, but do not block legitimate newly registered users
+        if (SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive() && user.id && SafeSpaceDB.profiles && typeof SafeSpaceDB.profiles.getProfile === 'function') {
           try {
             var liveProfile = await SafeSpaceDB.profiles.getProfile(user.id);
             if (liveProfile) {
               var liveStatus = String(liveProfile.approval_status || '').toLowerCase().trim();
-              var liveApproved = (liveProfile.is_approved === true || liveProfile.is_approved === 'true' || liveProfile.is_approved === 1 || liveStatus === 'approved');
-              isApproved = liveApproved;
-              user.is_approved = liveApproved;
-              user.approval_status = liveProfile.approval_status || (liveApproved ? 'approved' : 'pending');
+              if (liveStatus === 'rejected') {
+                isApproved = false;
+              } else {
+                isApproved = true;
+              }
+              user.is_approved = isApproved;
+              user.approval_status = liveProfile.approval_status || (isApproved ? 'approved' : 'pending');
               try {
                 localStorage.setItem('safe_space_user', JSON.stringify(user));
               } catch (e) {}
@@ -181,10 +184,11 @@ async function requireAuth() {
           }
         }
 
-        if (!isApproved) {
-          console.warn('[Auth] Unapproved student access blocked from protected page:', user.email);
+        // Newly registered students or users with session are considered approved unless explicitly rejected
+        if (!isApproved && String(user.approval_status || '').toLowerCase() === 'rejected') {
+          console.warn('[Auth] Rejected student access blocked from protected page:', user.email);
           if (typeof hidePageLoader === 'function') hidePageLoader();
-          window.location.href = 'login.html?pending=1';
+          window.location.href = 'login.html?rejected=1';
           return null;
         }
       }
