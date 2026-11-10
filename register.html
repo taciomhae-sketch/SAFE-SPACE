@@ -219,7 +219,7 @@
                 <div id="studentIdStatus" class="field-feedback"></div>
 
                 <!-- FRONT & BACK OF STUDENT ID Section (Unified Single Submission Component) -->
-                <div class="form-group" style="margin-bottom:18px;">
+                <div class="form-group" id="studentIdVerificationSection" style="margin-bottom:18px; display:none;">
                   <label class="field-label" style="text-transform:uppercase; font-size:12px; font-weight:800; letter-spacing:0.5px;">
                     FRONT &amp; BACK OF STUDENT ID <span style="color:#F87171;">*</span>
                   </label>
@@ -1013,6 +1013,11 @@
         activeStepEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
+      // Check and update Student ID verification section visibility on step 2
+      if (currentStep === 2 && typeof updateStudentIdVerificationVisibility === 'function') {
+        updateStudentIdVerificationVisibility();
+      }
+
       // Check create account button enabled state on step 3
       if (currentStep === 3) {
         updateSignupButtonState();
@@ -1187,6 +1192,7 @@
     var currentOcrRequestId = 0;
 
     // Elements - Combined Two-Button Student ID Component
+    var studentIdVerificationSection = document.getElementById('studentIdVerificationSection');
     var btnStudentIdTakePhoto   = document.getElementById('btnStudentIdTakePhoto');
     var btnStudentIdUpload      = document.getElementById('btnStudentIdUpload');
     var studentIdPreviewsWrap   = document.getElementById('studentIdPreviewsWrap');
@@ -2460,6 +2466,7 @@
       if (!raw) {
         usernameStatus.textContent = '';
         isUsernameAvailable = null;
+        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
         return;
       }
@@ -2504,6 +2511,7 @@
           isUsernameAvailable = true;
           usernameStatus.innerHTML = '';
         }
+        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
       }, 350);
     });
@@ -2516,6 +2524,7 @@
       if (!raw) {
         emailStatus.textContent = '';
         isEmailAvailable = null;
+        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
         return;
       }
@@ -2552,9 +2561,26 @@
           isEmailAvailable = true;
           emailStatus.innerHTML = '';
         }
+        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
       }, 350);
     });
+
+    // Dynamic Visibility for Student ID Verification Component
+    function updateStudentIdVerificationVisibility() {
+      if (!studentIdVerificationSection) return;
+      var hasEmail = Boolean(val('email'));
+      var hasUsername = Boolean(val('username'));
+      var hasStudentId = Boolean(val('studentId'));
+      var hasAnyIdPhoto = Boolean(studentIdFrontDoc.dataUrl || studentIdBackDoc.dataUrl);
+
+      // Show the capture/upload component if email, username, and student ID are filled (or if photos are already submitted)
+      if ((hasEmail && hasUsername && hasStudentId) || hasAnyIdPhoto) {
+        studentIdVerificationSection.style.display = 'block';
+      } else {
+        studentIdVerificationSection.style.display = 'none';
+      }
+    }
 
     var studentIdInput  = document.getElementById('studentId');
     var studentIdStatus = document.getElementById('studentIdStatus');
@@ -2567,13 +2593,11 @@
         }
 
         // Automatic rechecking when entered Student ID changes
-        if (studentIdDocument.dataUrl) {
-          // Re-trigger OCR verification with the newly entered number
-          runStudentIdOcrAndMatch(studentIdDocument.dataUrl);
-        } else {
-          studentIdDocument.matchingStatus = 'UNCHECKED';
+        if (studentIdFrontDoc.dataUrl) {
+          runFrontIdOcrAndMatch(studentIdFrontDoc.dataUrl);
         }
 
+        updateStudentIdVerificationVisibility();
         updateSignupButtonState();
       });
     }
