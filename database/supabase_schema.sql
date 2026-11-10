@@ -84,8 +84,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ban_reason TEXT NULL;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_deactivated BOOLEAN DEFAULT false;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS student_id TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'pending';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'approved';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT true;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ NULL;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS reject_reason TEXT NULL;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMPTZ NULL;
@@ -410,8 +410,8 @@ BEGIN
         COALESCE(NEW.raw_user_meta_data->>'avatar_type', 'default'),
         COALESCE(NEW.raw_user_meta_data->>'avatar_value', 'default'),
         COALESCE(NEW.raw_user_meta_data->>'bio', 'Hello, Safe Space!'),
-        COALESCE(NEW.raw_user_meta_data->>'approval_status', 'pending'),
-        COALESCE((NEW.raw_user_meta_data->>'is_approved')::BOOLEAN, false)
+        COALESCE(NEW.raw_user_meta_data->>'approval_status', 'approved'),
+        COALESCE((NEW.raw_user_meta_data->>'is_approved')::BOOLEAN, true)
     )
     ON CONFLICT (id) DO UPDATE SET
         student_id = COALESCE(EXCLUDED.student_id, profiles.student_id),

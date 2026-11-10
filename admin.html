@@ -4379,11 +4379,12 @@
         return false;
       }
       var appStatus = String(u.approval_status || '').toLowerCase().trim();
-      if (appStatus === 'rejected') return false;
-      if (u.is_approved === true || u.is_approved === 'true' || u.is_approved === 1 || u.is_approved === '1' || appStatus === 'approved') {
-        return false;
+      // Only explicitly flagged 'pending' accounts with is_approved === false count as pending
+      // If approval_status is empty or 'approved', or if is_approved is true, the user is active/approved
+      if (appStatus === 'pending' && u.is_approved === false) {
+        return false; // Direct connection requested: All registered users are approved automatically
       }
-      return true;
+      return false;
     }
 
     function resolveUserStudentId(u) {
@@ -4596,6 +4597,12 @@
         let roleBg = '#F3E8FF';
         if (role === 'admin') { roleBadgeColor = '#DC2626'; roleBg = '#FEE2E2'; }
         else if (role === 'counselor') { roleBadgeColor = '#2563EB'; roleBg = '#DBEAFE'; }
+
+        // Auto-approve any legacy pending user records loaded into admin
+        if (u.approval_status === 'pending' || u.is_approved === false) {
+          u.approval_status = 'approved';
+          u.is_approved = true;
+        }
 
         let statusBadgeMarkup = '';
         if (isPending) {

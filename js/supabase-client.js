@@ -539,9 +539,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               if (targetUser.approval_status === 'rejected') {
                 throw new Error('REJECTED_APPROVAL: Your account registration was not approved by the administrator.');
               }
-              if (targetUser.approval_status !== 'approved' && targetUser.is_approved !== true) {
-                throw new Error('PENDING_APPROVAL: Your registration is pending administrator approval. The admin must verify your Student ID on the Admin Dashboard before you can receive your verification code in Gmail.');
-              }
+              // Direct connection: all newly registered users connect immediately without requiring admin approval
             }
           }
         } catch (chkErr) {
@@ -904,9 +902,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               if (targetUser.approval_status === 'rejected') {
                 throw new Error('REJECTED_APPROVAL: Your registration was not approved by the administrator.');
               }
-              if (targetUser.approval_status !== 'approved' && targetUser.is_approved !== true) {
-                throw new Error('PENDING_APPROVAL: Your registration is currently pending administrator verification. The admin must review and approve your account on the Admin Portal before you can receive your verification code in Gmail.');
-              }
+              // Direct connection: all newly registered users connect immediately without requiring admin approval
             }
           }
         } catch(chkErr) {
@@ -5439,7 +5435,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         try {
           var client = _dbAdmin || _db;
           if (postIds.length > 0) {
-            var postsRes = await client.from('posts').select('id, user_id, content, mood, category, photo_url, is_anonymous, archived, deleted_at, deleted_by, deletion_reason, moderation_status, created_at').in('id', postIds);
+            var postsRes = await client.from('posts').select('id, user_id, content, mood, category, photo_url, is_anonymous, archived, moderation_status, created_at').in('id', postIds);
             if (postsRes.data) {
               postsRes.data.forEach(function(p) { postsMap[p.id] = p; });
             }
@@ -5683,7 +5679,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           var client = _dbAdmin || _db;
           var [usersRes, postsRes, reportsRes, commentsRes] = await Promise.all([
             client.from('profiles').select('id, last_active, is_online, is_deactivated, approval_status, is_approved, role, is_admin', { count: 'exact' }),
-            client.from('posts').select('id, moderation_status, deleted_at', { count: 'exact' }),
+            client.from('posts').select('id, moderation_status', { count: 'exact' }),
             client.from('reports').select('id, status', { count: 'exact' }),
             client.from('post_comments').select('id', { count: 'exact' })
           ]);
@@ -5704,20 +5700,14 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           }
           if (postsRes.data) {
             stats.flaggedPosts = postsRes.data.filter(function(p) {
-              return p.moderation_status === 'FLAGGED' || p.moderation_status === 'REVIEW' || p.moderation_status === 'BLOCKED' || Boolean(p.deleted_at);
+              return p.moderation_status === 'FLAGGED' || p.moderation_status === 'REVIEW' || p.moderation_status === 'BLOCKED';
             }).length;
           }
           if (usersRes.data) {
             stats.activeUsersToday = usersRes.data.filter(function(u) {
               return u.is_online || (u.last_active && (Date.now() - new Date(u.last_active).getTime() < 86400000));
             }).length;
-            stats.pendingApprovals = usersRes.data.filter(function(u) {
-              var r = (u.role || '').toLowerCase();
-              var isAdm = (r === 'admin' || u.is_admin === true || (u.email && u.email.toLowerCase() === 'taciomhae@gmail.com'));
-              var appStatus = String(u.approval_status || '').toLowerCase().trim();
-              var isAppr = (u.is_approved === true || u.is_approved === 'true' || u.is_approved === 1 || u.is_approved === '1' || appStatus === 'approved');
-              return !isAdm && !isAppr && appStatus !== 'rejected';
-            }).length;
+            stats.pendingApprovals = 0; // Direct connection: all accounts are active and immediately approved
           }
           return stats;
         } catch (e) {
@@ -5732,13 +5722,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       stats.totalUsers = Math.max(localMembers.length, 1);
       stats.totalPosts = localPosts.length;
       stats.totalReports = localReports.length;
-      stats.pendingApprovals = localMembers.filter(function(u) {
-        var r = (u.role || '').toLowerCase();
-        var isAdm = (r === 'admin' || u.is_admin === true || (u.email && u.email.toLowerCase() === 'taciomhae@gmail.com'));
-        var appStatus = String(u.approval_status || '').toLowerCase().trim();
-        var isAppr = (u.is_approved === true || u.is_approved === 'true' || u.is_approved === 1 || u.is_approved === '1' || appStatus === 'approved');
-        return !isAdm && !isAppr && appStatus !== 'rejected';
-      }).length;
+      stats.pendingApprovals = 0; // Direct connection: all accounts are active and immediately approved
       localReports.forEach(function(r) {
         var s = (r.status || 'Pending').toLowerCase();
         if (s === 'pending') stats.pendingReports++;
@@ -5781,7 +5765,12 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       try { idMatchMap = JSON.parse(localStorage.getItem('safe_space_student_id_matches') || '{}'); } catch(e) {}
 
       // Resolve and ensure every user account has a valid, non-empty Student ID
+      // All accounts are active and immediately approved without requiring manual admin approval
       users = (users || []).map(function(u) {
+        if (u.approval_status === 'pending' || u.is_approved === false) {
+          u.approval_status = 'approved';
+          u.is_approved = true;
+        }
         var role = (u.role || '').toLowerCase();
         var isAdmin = (role === 'admin' || u.is_admin === true || (u.email && u.email.toLowerCase() === 'taciomhae@gmail.com'));
         if (isAdmin) {

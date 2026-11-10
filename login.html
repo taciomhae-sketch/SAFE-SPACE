@@ -497,9 +497,8 @@
           try {
             var checkUser = await SafeSpaceDB.admin.getUserByEmail(email);
             if (checkUser && checkUser.role !== 'admin' && !checkUser.is_admin) {
-              var chkStatus = checkUser.approval_status || (checkUser.is_approved === false ? 'pending' : 'approved');
-              if (chkStatus === 'pending' || checkUser.is_approved === false) {
-                showFormAlert('Your registration is pending administrator approval. The admin must verify your Student ID (' + escapeHTML(checkUser.student_id || 'ID') + ') on the Admin Dashboard before verification codes can be sent to your Gmail.', 'warning');
+              if (checkUser.approval_status === 'rejected') {
+                showFormAlert('Your registration was not approved by the administrator. Please contact your guidance office.', 'warning');
                 return;
               }
             }
