@@ -1319,6 +1319,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
 
       if (SafeSpaceDB.isSupabaseActive()) {
         try {
+          var client = _dbAdmin || _db;
           var postColumns = [
             '*',
             'profiles:user_id(id, username, first_name, last_name, avatar_url)',
@@ -1327,7 +1328,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             'saved_posts(user_id)'
           ].join(', ');
 
-          var query = _db.from('posts')
+          var query = client.from('posts')
             .select(postColumns)
             .eq('archived', false)
             .order('created_at', { ascending: false });
@@ -1347,16 +1348,10 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             query = query.range(from, to);
           }
 
-          // Race query against a 7-second timeout to prevent indefinite hangs
-          var queryPromise = query;
-          var timeoutPromise = new Promise(function(_, reject) {
-            setTimeout(function() { reject(new Error('Feed query timed out')); }, 7000);
-          });
-
-          var res = await Promise.race([queryPromise, timeoutPromise]);
+          var res = await query;
           if (res && res.error) {
             console.warn('[SafeSpace] Supabase feed query warning, trying fallback:', res.error.message);
-            var fallbackQuery = _db.from('posts').select(`
+            var fallbackQuery = client.from('posts').select(`
               *,
               profiles:user_id (id, username, first_name, last_name, avatar_url),
               post_likes (user_id),
