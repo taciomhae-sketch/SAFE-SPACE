@@ -463,20 +463,8 @@
                     </button>
                   </div>
                   
-                  <div style="font-size:11.5px; color:rgba(255,255,255,0.88); line-height:1.4; margin-bottom:10px;">
+                  <div style="font-size:11.5px; color:rgba(255,255,255,0.88); line-height:1.4; margin-bottom:12px;">
                     Enter the 6-digit verification code sent to your email (<strong id="step3OtpTargetEmail" style="color:#FFFFFF;">your email</strong>) before creating your account:
-                  </div>
-
-                  <!-- Generated OTP banner / card (Matching exact design) -->
-                  <div id="step3OtpPreviewCard" style="display:block; background:#FFFFFF; border-radius:10px; padding:12px 14px; margin-bottom:14px; color:#1F2937; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
-                    <div style="font-size:13px; font-weight:800; color:#111827; margin-bottom:2px;">Welcome to Safe Space!</div>
-                    <div style="font-size:11px; color:#6B7280; margin-bottom:6px;">Your 6-digit verification code (OTP) is:</div>
-                    <div style="background:#F5F3FF; border:1px solid #DDD6FE; border-radius:8px; padding:6px; text-align:center; margin-bottom:6px;">
-                      <span id="step3OtpPreviewCode" style="font-size:24px; font-weight:900; letter-spacing:6px; color:#7C3AED; font-family:monospace;">------</span>
-                    </div>
-                    <button type="button" id="step3AutoFillOtpBtn" style="background:#7C3AED; color:#FFFFFF; border:none; border-radius:999px; padding:6px 14px; font-size:11px; font-weight:700; cursor:pointer; width:100%;">
-                      <i class="fas fa-wand-magic-sparkles"></i> Auto-fill Verification Code
-                    </button>
                   </div>
 
                   <!-- 6 Distinct Digit Box UI [1] [2] [3] [4] [5] [6] -->
@@ -2190,12 +2178,11 @@
               email: em,
               expires_at: Date.now() + 10 * 60 * 1000
             }));
+            if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.resendOtp) {
+              SafeSpaceDB.auth.resendOtp(em, 'signup').catch(function(e){ console.warn('[Auto send OTP]', e); });
+            }
           } catch(e) {}
         }
-      }
-
-      if (step3OtpPreviewCode) {
-        step3OtpPreviewCode.textContent = currentStep3OtpCode;
       }
     }
 
@@ -2268,22 +2255,6 @@
       });
     });
 
-    if (step3AutoFillOtpBtn) {
-      step3AutoFillOtpBtn.addEventListener('click', function() {
-        if (!currentStep3OtpCode) ensureStep3OtpGenerated();
-        if (currentStep3OtpCode) {
-          var digits = String(currentStep3OtpCode).split('');
-          step3OtpInputs.forEach(function(inp, i) {
-            if (digits[i]) {
-              inp.value = digits[i];
-              inp.classList.add('filled');
-            }
-          });
-          syncStep3OtpValue();
-        }
-      });
-    }
-
     if (step3ResendOtpBtn) {
       step3ResendOtpBtn.addEventListener('click', async function() {
         var em = (val('email') || '').toLowerCase();
@@ -2303,12 +2274,11 @@
           }
         } catch(e) {}
 
-        if (step3OtpPreviewCode) step3OtpPreviewCode.textContent = currentStep3OtpCode;
         if (typeof showToast === 'function') showToast('Verification code sent to ' + em + '!', 'success');
         if (step3OtpStatus) {
           step3OtpStatus.className = 'field-feedback info';
           step3OtpStatus.style.display = 'block';
-          step3OtpStatus.innerHTML = '<i class="fas fa-info-circle"></i> Verification code sent: ' + currentStep3OtpCode;
+          step3OtpStatus.innerHTML = '<i class="fas fa-paper-plane"></i> Verification code sent to ' + em + '. Please check your Gmail.';
         }
       });
     }
