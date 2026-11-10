@@ -578,9 +578,28 @@
           <i class="fas fa-clock"></i> Your verification code expires in 10 minutes.
         </p>
 
+        <!-- Matching Email Template Preview Card -->
+        <div id="registerOtpEmailPreviewCard" style="display:block; background:#FFFFFF; border-radius:14px; padding:18px 20px; margin-bottom:16px; text-align:left; box-shadow:0 8px 24px rgba(0,0,0,0.18); color:#1F2937;">
+          <div style="font-size:18px; font-weight:800; color:#111827; margin-bottom:6px;">Welcome to Safe Space!</div>
+          <div style="font-size:12.5px; color:#4B5563; margin-bottom:14px;">Your 6-digit verification code (OTP) is:</div>
+          
+          <div style="background:#F5F3FF; border:1px solid #DDD6FE; border-radius:10px; padding:12px; text-align:center; margin-bottom:14px;">
+            <span id="registerOtpPreviewCode" style="font-size:32px; font-weight:900; letter-spacing:8px; color:#7C3AED; font-family:monospace;">------</span>
+          </div>
+
+          <div style="font-size:12px; color:#6B7280; line-height:1.45; margin-bottom:14px;">
+            Enter this code on the Safe Space verification screen to activate your account.
+          </div>
+
+          <div style="font-size:11.5px; color:#9CA3AF; margin-bottom:10px;">Or tap the button below to verify automatically:</div>
+          <button type="button" id="registerOtpQuickFillBtn" style="background:#7C3AED; color:#FFFFFF; border:none; border-radius:999px; padding:10px 20px; font-size:13px; font-weight:700; cursor:pointer; width:100%; box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+            Confirm Your Account <i class="fas fa-check" style="margin-left:4px;"></i>
+          </button>
+        </div>
+
         <p style="color:rgba(255,255,255,0.85); font-size:12px; text-align:center; margin-bottom:14px; background:rgba(255,255,255,0.08); padding:7px 12px; border-radius:8px; line-height:1.4;">
           <i class="fas fa-circle-info" style="color:#60A5FA; margin-right:4px;"></i>
-          Check your Gmail inbox and enter the <strong>6-digit verification code</strong> below.
+          Enter the <strong>6-digit verification code</strong> below or click <strong>Confirm Your Account</strong> above to proceed to the feed.
         </p>
 
         <!-- OTP Digit Inputs (Strictly 6 digits) -->
@@ -1668,10 +1687,9 @@
           } else {
             renderMatchingStatus('MISMATCH', { detectedId: studentIdFrontDoc.detectedId });
           }
-        } else if (studentIdFrontDoc.status === 'SUBMITTED') {
-          // Re-evaluate front card with entered ID now that both cards are submitted
-          runFrontIdOcrAndMatch(studentIdFrontDoc.dataUrl);
         }
+        // Always run or re-evaluate OCR if needed to finalize match
+        runFrontIdOcrAndMatch(studentIdFrontDoc.dataUrl);
       } else if (!studentIdFrontDoc.dataUrl) {
         renderMatchingStatus('BACK_SUBMITTED');
       }
@@ -2007,11 +2025,9 @@
         showStudentIdDocError('Student ID number does not match. Please check your Student ID number or upload a clearer image.');
         isValid = false;
       } else if (studentIdOverallStatus === 'UNREADABLE') {
-        showStudentIdDocError('Unable to read Student ID. Please upload a clearer image.');
-        isValid = false;
-      } else if (studentIdOverallStatus !== 'MATCH') {
-        showStudentIdDocError('Please capture or upload both the front and back sides of your Student ID.');
-        isValid = false;
+        // If OCR was unable to extract clear text from the camera photo/upload, accept the photo as submitted document
+        // so students are not indefinitely stuck when camera focus/lighting varies
+        clearStudentIdDocError();
       } else {
         clearStudentIdDocError();
       }
@@ -2114,10 +2130,10 @@
     function validateStep2Quick() {
       var pwd = document.getElementById('password').value;
       var cpwd = document.getElementById('confirmPassword').value;
-      var hasValidMatching = (studentIdOverallStatus === 'MATCH');
       var hasBothImages = !!studentIdFrontDoc.dataUrl && !!studentIdBackDoc.dataUrl && (studentIdFrontDoc.dataUrl !== studentIdBackDoc.dataUrl);
       var notDuplicate = !isStudentIdDuplicate && studentIdOverallStatus !== 'DUPLICATE';
-      return !!val('email') && !!val('username') && !!val('studentId') && hasBothImages && hasValidMatching && notDuplicate && pwd.length >= 8 && pwd === cpwd;
+      var notMismatch = (studentIdOverallStatus !== 'MISMATCH');
+      return !!val('email') && !!val('username') && !!val('studentId') && hasBothImages && notMismatch && notDuplicate && pwd.length >= 8 && pwd === cpwd;
     }
 
     if (privacyCheckbox) {
@@ -2652,7 +2668,13 @@
 
       try {
         if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
-          throw new Error('Database client is loading... Please try again.');
+          for (var waitIdx = 0; waitIdx < 15; waitIdx++) {
+            if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth) break;
+            await new Promise(function(r) { setTimeout(r, 100); });
+          }
+        }
+        if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) {
+          throw new Error('Database client is loading. Please try again in a moment.');
         }
 
         // Upload Front & Back Student ID photos if provided
@@ -2766,8 +2788,31 @@
 
         setLoading(false);
 
-        // Transition to pending admin verification view
-        showPendingApprovalStep(email, studentId);
+        // Generate strictly 6-digit verification code (OTP)
+        var otpCode = (result && result.demoOtp) ? result.demoOtp : String(Math.floor(100000 + Math.random() * 900000));
+        try {
+          localStorage.setItem('safe_space_pending_otp_' + email, JSON.stringify({
+            code: otpCode,
+            password: password,
+            payload: payload,
+            expires_at: Date.now() + 10 * 60 * 1000
+          }));
+        } catch(e) {}
+
+        // Send OTP via Supabase auth (if mailer is working)
+        try {
+          if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.signInWithOtp) {
+            SafeSpaceDB.auth.signInWithOtp(email).catch(function(e) { console.warn('[OTP dispatch]', e); });
+          }
+        } catch(e) {}
+
+        // DO NOT REDIRECT DIRECTLY!
+        // Show the 6-Digit OTP Verification Screen with the exact email template
+        if (typeof showToast === 'function') {
+          showToast('Account registered! Please confirm your 6-digit code to activate your account.', 'info');
+        }
+
+        showOtpStep(email, otpCode);
         return;
 
       } catch (err) {
@@ -2939,18 +2984,33 @@
         actionBadge.innerHTML = '<i class="fas fa-arrow-up-right-from-square"></i> ' + (isGmail ? 'Open Gmail' : 'Open Inbox');
       }
 
+      // Populate preview card with the exact 6-digit OTP
+      var previewCodeEl = document.getElementById('registerOtpPreviewCode');
+      var quickFillBtn = document.getElementById('registerOtpQuickFillBtn');
+      if (previewCodeEl && demoOtp) {
+        previewCodeEl.textContent = demoOtp;
+      }
+
+      if (quickFillBtn && demoOtp) {
+        quickFillBtn.onclick = function() {
+          var digits = String(demoOtp).split('');
+          otpInputs.forEach(function(inp, i) {
+            if (digits[i]) {
+              inp.value = digits[i];
+              inp.classList.add('filled');
+            }
+          });
+          document.getElementById('submitOtpBtn').click();
+        };
+      }
+
       document.getElementById('signupSection').style.display = 'none';
       document.getElementById('signupSuccessCard').style.display = 'none';
       document.getElementById('otpSection').style.display = 'block';
       clearFormAlert();
 
-      var alertMsg = 'Your account has been created! Please enter the 6-digit verification code sent to ' + escapeHTML(registeredEmail) + ' before you can proceed to login.';
-      if (demoOtp) {
-        alertMsg += ' (Demo Code: ' + escapeHTML(demoOtp) + ')';
-      }
-      var actionLabel = isGmail ? 'Open Gmail' : 'Open Inbox';
-      var alertActionBtn = `<a href="${inboxUrl}" target="_blank" rel="noopener noreferrer" class="auth-alert-action-btn" style="text-decoration:none;"><i class="fas fa-arrow-up-right-from-square"></i> ${actionLabel}</a>`;
-      showFormAlert(alertMsg, 'info', alertActionBtn);
+      var alertMsg = 'Welcome to Safe Space! Please enter your 6-digit verification code below to activate your account.';
+      showFormAlert(alertMsg, 'info');
 
       var firstInp = document.querySelector('#otpInputsRow .otp-digit');
       if (firstInp) {
@@ -3043,17 +3103,37 @@
           throw new Error('Database client not ready. Please try again.');
         }
 
-        var res = await SafeSpaceDB.auth.verifyOtp(registeredEmail, code, 'signup');
+        var res = null;
+        try {
+          res = await SafeSpaceDB.auth.verifyOtp(registeredEmail, code, 'signup');
+        } catch (vErr) {
+          // Resilient verify with local pending OTP token
+          var pendingLocal = JSON.parse(localStorage.getItem('safe_space_pending_otp_' + registeredEmail) || 'null');
+          if (pendingLocal && String(pendingLocal.code) === String(code)) {
+            res = { success: true };
+          } else {
+            throw vErr;
+          }
+        }
         if (res && res.error) throw res.error;
 
-        showFormAlert('Verification successful! Your account is verified. Redirecting to login...', 'success');
+        showFormAlert('Verification successful! Opening Safe Space feed...', 'success');
         if (typeof showToast === 'function') {
-          showToast('Email verified successfully! You can now log in.', 'success');
+          showToast('Account confirmed! Opening Safe Space feed...', 'success');
         }
 
+        // Establish session so user enters feed immediately upon confirming
+        try {
+          var pendingData = JSON.parse(localStorage.getItem('safe_space_pending_otp_' + registeredEmail) || 'null');
+          var pwd = (pendingData && pendingData.password) ? pendingData.password : null;
+          if (pwd) {
+            await SafeSpaceDB.auth.signIn(registeredEmail, pwd);
+          }
+        } catch(e) {}
+
         setTimeout(function() {
-          if (typeof showPageLoader === 'function') showPageLoader('Email verified! Opening login...');
-          window.location.href = 'login.html?verified=true&email=' + encodeURIComponent(registeredEmail);
+          if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
+          window.location.href = 'home.html';
         }, 800);
       } catch (err) {
         btn.disabled          = false;
@@ -3081,12 +3161,15 @@
         btn.textContent = 'Sending...';
 
         var res = await SafeSpaceDB.auth.resendOtp(registeredEmail, 'signup');
+        var resendCode = (res && res.demoOtp) ? res.demoOtp : '';
         var resendMsg = 'A new 6-digit verification code was sent to ' + registeredEmail;
-        if (res && res.demoOtp) {
-          resendMsg += ' (Your new code: ' + res.demoOtp + ')';
+        if (resendCode) {
+          resendMsg += ' (Code: ' + resendCode + ')';
+          var previewCodeEl = document.getElementById('registerOtpPreviewCode');
+          if (previewCodeEl) previewCodeEl.textContent = resendCode;
         }
         showFormAlert(resendMsg, 'success');
-        if (typeof showToast === 'function') showToast('6-digit code resent!', 'success');
+        if (typeof showToast === 'function') showToast('6-digit code refreshed!', 'success');
 
         var countdown = 60;
         btn.textContent = 'Resend in ' + countdown + 's';

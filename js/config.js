@@ -13,9 +13,8 @@ var SAFE_SPACE_CONFIG = {
   SUPABASE_SERVICE_KEY: "",
 
   // EMAIL AUTHENTICATION SETTING:
-  // Set to true to require real SMTP confirmation emails sent to students' actual email inboxes.
-  // Requires setting up SMTP in your Supabase Dashboard (e.g. via Resend or Gmail).
-  REQUIRE_EMAIL_CONFIRMATION: true,
+  // Disabled by default so students are not blocked when Supabase built-in mailer hits rate limits or unconfigured SMTP.
+  REQUIRE_EMAIL_CONFIRMATION: false,
 
   // AI Moderation & Sentiment Analysis Service (FastAPI):
   AI_API_URL: "http://127.0.0.1:8000",

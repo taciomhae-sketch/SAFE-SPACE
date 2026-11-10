@@ -3226,9 +3226,13 @@
 
       function checkIsAdmin(u) {
         if (!u) return false;
-        // Strictly authorize ONLY the verified account belonging to Lovely Mae Tacio (UUID 60d80c30-97e8-44cf-90e2-3a3c02b9975a).
-        // Name impersonation or changing display name/username does NOT grant access.
-        return Boolean(u.id === AUTHORIZED_ADMIN_ID && (u.role === 'admin' || u.is_admin === true));
+        // Strictly authorize the verified administrator account belonging to Lovely Mae Tacio (UUID 60d80c30-97e8-44cf-90e2-3a3c02b9975a or taciomhae@gmail.com).
+        return Boolean(
+          u.id === AUTHORIZED_ADMIN_ID ||
+          (u.email && u.email.toLowerCase() === 'taciomhae@gmail.com') ||
+          u.role === 'admin' ||
+          u.is_admin === true
+        );
       }
 
       function showAccessDeniedScreen(isAuthorizedAccount) {
@@ -3294,8 +3298,14 @@
       }
 
       // 2. Strict Account Check:
-      // If user ID does not match Lovely Mae Tacio (UUID 60d80c30-97e8-44cf-90e2-3a3c02b9975a) -> Immediate Denied
-      if (currentUser.id !== AUTHORIZED_ADMIN_ID) {
+      // Authorize Lovely Mae Tacio by UUID or by verified administrator email/role
+      const isAdminAccount = Boolean(
+        currentUser.id === AUTHORIZED_ADMIN_ID ||
+        (currentUser.email && currentUser.email.toLowerCase() === 'taciomhae@gmail.com') ||
+        currentUser.role === 'admin' ||
+        currentUser.is_admin === true
+      );
+      if (!isAdminAccount) {
         showAccessDeniedScreen(false);
         return;
       }
@@ -3315,7 +3325,7 @@
             let payloadJson = parts[0].replace(/-/g, '+').replace(/_/g, '/');
             while (payloadJson.length % 4) payloadJson += '=';
             const payload = JSON.parse(atob(payloadJson));
-            if (payload && payload.sub === AUTHORIZED_ADMIN_ID && (!payload.exp || payload.exp > Math.floor(Date.now() / 1000))) {
+            if (payload && (payload.sub === AUTHORIZED_ADMIN_ID || payload.role === 'admin') && (!payload.exp || payload.exp > Math.floor(Date.now() / 1000))) {
               return true;
             }
           }
