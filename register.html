@@ -1819,40 +1819,47 @@
       }
     }
 
-    // File Upload Handler (Consecutive Front then Back)
+    // File Upload Handler (Consecutive Front then Back or Direct Individual Upload)
     function handleFileSelection(e, side) {
       clearStudentIdDocError();
-      var file = e.target.files && e.target.files[0];
+      var inputEl = e.target;
+      var file = inputEl.files && inputEl.files[0];
       if (!file) return;
 
       var validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type.toLowerCase())) {
         showStudentIdDocError('Invalid file type. Please upload a JPG, JPEG, PNG, or WEBP image.');
-        e.target.value = '';
+        inputEl.value = '';
         return;
       }
 
       var maxBytes = 5 * 1024 * 1024; // 5 MB
       if (file.size > maxBytes) {
         showStudentIdDocError('File size exceeds 5 MB limit. Please choose a smaller image.');
-        e.target.value = '';
+        inputEl.value = '';
         return;
       }
 
       var reader = new FileReader();
       reader.onload = function(evt) {
+        var resultDataUrl = evt.target.result;
+        inputEl.value = ''; // Reset input so re-selecting the same file triggers change
+
         if (side === 'front') {
-          setFrontDocument(evt.target.result, file);
-          // After selecting front image, automatically prompt to select the BACK image
-          setTimeout(function() {
-            if (backFileInput) backFileInput.click();
-          }, 400);
+          setFrontDocument(resultDataUrl, file);
+          // If back document is not submitted yet, prompt user to select the back side
+          if (!studentIdBackDoc.dataUrl) {
+            setTimeout(function() {
+              if (backFileInput) backFileInput.click();
+            }, 300);
+          }
         } else {
-          setBackDocument(evt.target.result, file);
+          setBackDocument(resultDataUrl, file);
         }
       };
       reader.onerror = function() {
         showStudentIdDocError('Could not read the selected image file. Please try another.');
+        inputEl.value = '';
       };
       reader.readAsDataURL(file);
     }
@@ -1860,13 +1867,40 @@
     // Attach Event Listeners for the Two Unified Action Buttons: [Take Photo] [Upload]
     if (btnStudentIdTakePhoto) {
       btnStudentIdTakePhoto.addEventListener('click', function() {
-        openCameraForSide('front');
+        // If front is already submitted and back is missing, take photo directly for back side
+        if (studentIdFrontDoc.dataUrl && !studentIdBackDoc.dataUrl) {
+          openCameraForSide('back');
+        } else {
+          openCameraForSide('front');
+        }
       });
     }
 
     if (btnStudentIdUpload) {
       btnStudentIdUpload.addEventListener('click', function() {
+        // If front is already submitted and back is missing, upload directly for back side
+        if (studentIdFrontDoc.dataUrl && !studentIdBackDoc.dataUrl) {
+          if (backFileInput) backFileInput.click();
+        } else {
+          if (frontFileInput) frontFileInput.click();
+        }
+      });
+    }
+
+    // Direct click on the preview boxes allows direct upload/replacement of that side
+    if (frontPreviewCard) {
+      frontPreviewCard.style.cursor = 'pointer';
+      frontPreviewCard.title = 'Click to replace Front ID';
+      frontPreviewCard.addEventListener('click', function(e) {
         if (frontFileInput) frontFileInput.click();
+      });
+    }
+
+    if (backPreviewCard) {
+      backPreviewCard.style.cursor = 'pointer';
+      backPreviewCard.title = 'Click to upload or replace Back ID';
+      backPreviewCard.addEventListener('click', function(e) {
+        if (backFileInput) backFileInput.click();
       });
     }
 
