@@ -1347,11 +1347,12 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           var res = await query;
           if (res && res.error) {
             console.warn('[SafeSpace] Supabase feed query warning, trying fallback:', res.error.message);
+            // Simpler fallback query without complex nested comment joins to prevent timeouts
             var fallbackQuery = client.from('posts').select(`
               *,
               profiles:user_id (id, username, first_name, last_name, avatar_url),
               post_likes (user_id),
-              post_comments (id, user_id, content, reactions, created_at, profiles:user_id(username, first_name, last_name, avatar_url)),
+              post_comments (id, user_id, content, reactions, created_at),
               saved_posts (user_id)
             `).eq('archived', false).order('created_at', { ascending: false });
 
@@ -1364,6 +1365,13 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             }
             if (limit > 0) fallbackQuery = fallbackQuery.range(from, to);
             res = await fallbackQuery;
+          }
+
+          if (res && res.error) {
+            console.warn('[SafeSpace] Supabase secondary feed query warning:', res.error.message);
+            var directQuery = client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false });
+            if (limit > 0) directQuery = directQuery.range(from, to);
+            res = await directQuery;
           }
 
           var overrides = {};

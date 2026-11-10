@@ -500,7 +500,7 @@ CREATE POLICY "Message reactions viewable by everyone" ON public.message_reactio
 -- 5.4 Posts, Likes, Comments
 DROP POLICY IF EXISTS "Posts are viewable by everyone" ON public.posts;
 CREATE POLICY "Posts are viewable by everyone" ON public.posts 
-    FOR SELECT USING ((archived = false AND deleted_at IS NULL) OR public.is_admin(auth.uid()));
+    FOR SELECT USING (archived = false OR public.is_admin(auth.uid()));
 
 DROP POLICY IF EXISTS "Users can create posts" ON public.posts;
 CREATE POLICY "Users can create posts" ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
