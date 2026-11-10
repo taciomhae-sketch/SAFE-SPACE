@@ -1345,6 +1345,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           }
 
           var res = await query;
+          console.log('[SafeSpaceDB.posts.getFeed] Primary query response:', { error: res ? res.error : null, count: (res && res.data) ? res.data.length : 0 });
           if (res && res.error) {
             console.warn('[SafeSpace] Supabase feed query warning, trying fallback:', res.error.message);
             // Simpler fallback query without complex nested comment joins to prevent timeouts

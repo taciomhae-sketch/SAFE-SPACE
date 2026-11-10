@@ -866,11 +866,13 @@
       }
 
       try {
+        console.log('[Home] Loading feed for category:', category, 'page:', page);
         const posts = await SafeSpaceDB.posts.getFeed({
           category: category,
           page: page,
           limit: PAGE_SIZE
         });
+        console.log('[Home] Received posts count:', posts ? posts.length : 0, posts);
 
         const container = document.getElementById('feedContainer');
         const hasVisiblePosts = container && container.querySelector('.post-card');
