@@ -16,6 +16,11 @@ var SAFE_SPACE_CONFIG = {
   // Disabled by default so students are not blocked when Supabase built-in mailer hits rate limits or unconfigured SMTP.
   REQUIRE_EMAIL_CONFIRMATION: false,
 
+  // EmailJS Configuration (Reliable direct-to-Gmail verification delivery)
+  EMAILJS_SERVICE_ID: "service_076h6xf",
+  EMAILJS_TEMPLATE_ID: "template_orwumvp",
+  EMAILJS_PUBLIC_KEY: "j7QY2CuNEUccNx7DD",
+
   // AI Moderation & Sentiment Analysis Service (FastAPI):
   AI_API_URL: "http://127.0.0.1:8000",
 

@@ -10,6 +10,7 @@
   <meta name="theme-color" content="#C898E9" />
   <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body class="auth-page">
   <!-- Page Loading Overlay -->
@@ -2163,6 +2164,34 @@
     var step3OtpTargetEmail = document.getElementById('step3OtpTargetEmail');
     var currentStep3OtpCode = '';
 
+    // Initialize EmailJS with your Public Key
+    (function initEmailService() {
+      try {
+        if (typeof emailjs !== 'undefined') {
+          emailjs.init({ publicKey: 'j7QY2CuNEUccNx7DD' });
+        }
+      } catch (e) {
+        console.warn('[EmailJS init error]', e);
+      }
+    })();
+
+    async function sendVerificationEmailViaEmailJS(targetEmail, code) {
+      if (!targetEmail || !code) return;
+      try {
+        if (typeof emailjs !== 'undefined') {
+          await emailjs.send('service_076h6xf', 'template_orwumvp', {
+            to_email: targetEmail,
+            otp_code: code
+          });
+          console.log('[EmailJS] Sent OTP email successfully to:', targetEmail);
+          return true;
+        }
+      } catch (err) {
+        console.warn('[EmailJS Send Exception]', err);
+      }
+      return false;
+    }
+
     function ensureStep3OtpGenerated() {
       var em = (val('email') || '').toLowerCase();
       if (!em) return;
@@ -2184,9 +2213,7 @@
               email: em,
               expires_at: Date.now() + 10 * 60 * 1000
             }));
-            if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.resendOtp) {
-              SafeSpaceDB.auth.resendOtp(em, 'signup').catch(function(e){ console.warn('[Auto send OTP]', e); });
-            }
+            sendVerificationEmailViaEmailJS(em, currentStep3OtpCode);
           } catch(e) {}
         }
       }
@@ -2295,9 +2322,7 @@
             email: em,
             expires_at: Date.now() + 10 * 60 * 1000
           }));
-          if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.auth && SafeSpaceDB.auth.resendOtp) {
-            SafeSpaceDB.auth.resendOtp(em, 'signup').catch(function(e){ console.warn('[Resend OTP]', e); });
-          }
+          sendVerificationEmailViaEmailJS(em, currentStep3OtpCode);
         } catch(e) {}
 
         if (typeof showToast === 'function') showToast('Verification code sent to ' + em + '!', 'success');
