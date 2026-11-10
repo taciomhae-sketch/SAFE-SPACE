@@ -3025,8 +3025,7 @@
           }
         } catch(e) {}
 
-        // DO NOT REDIRECT DIRECTLY!
-        // Show success and proceed straight to feed since OTP was already verified in Step 3!
+        // Show success and establish approved session so student immediately enters feed
         if (typeof showToast === 'function') {
           showToast('Account created and verified! Opening Safe Space feed...', 'success');
         }
@@ -3035,10 +3034,30 @@
           await SafeSpaceDB.auth.signIn(email, password);
         } catch(e) {}
 
+        // Ensure user session is stored with is_approved: true so requireAuth() lets them straight into feed!
+        var existingSession = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        var fullSessionUser = Object.assign({}, existingSession || {}, {
+          id: (result && result.user && result.user.id) || (existingSession && existingSession.id) || ('user-' + Date.now()),
+          email: email,
+          username: username,
+          student_id: studentId,
+          role: 'student',
+          first_name: firstName,
+          last_name: lastName,
+          birthday: birthday,
+          sex: finalGender,
+          avatar_url: avatarUrl,
+          avatar_type: avatarType,
+          avatar_value: avatarValue,
+          is_approved: true,
+          approval_status: 'approved'
+        });
+        localStorage.setItem('safe_space_user', JSON.stringify(fullSessionUser));
+
         setTimeout(function() {
           if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
           window.location.href = 'home.html';
-        }, 800);
+        }, 500);
         return;
 
       } catch (err) {
