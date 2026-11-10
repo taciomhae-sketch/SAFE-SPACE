@@ -480,7 +480,7 @@
                   <input type="hidden" id="step3OtpInput" />
 
                   <div style="text-align:center; margin-top:8px;">
-                    <button type="button" id="step3DirectVerifyBtn" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:#FFFFFF; border-radius:999px; font-size:11.5px; font-weight:700; padding:5px 14px; cursor:pointer;">
+                    <button type="button" id="step3DirectVerifyBtn" style="display:none; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:#FFFFFF; border-radius:999px; font-size:11.5px; font-weight:700; padding:5px 14px; cursor:pointer;">
                       <i class="fas fa-circle-check" style="color:#34D399; margin-right:4px;"></i> Click to Confirm Verification
                     </button>
                   </div>
@@ -2177,6 +2177,9 @@
 
     async function sendVerificationEmailViaEmailJS(targetEmail, code) {
       if (!targetEmail || !code) return;
+      var directBtn = document.getElementById('step3DirectVerifyBtn');
+      if (directBtn) directBtn.style.display = 'none';
+
       try {
         if (typeof emailjs !== 'undefined') {
           await emailjs.send('service_076h6xf', 'template_orwumvp', {
@@ -2184,6 +2187,8 @@
             otp_code: code
           });
           console.log('[EmailJS] Sent OTP email successfully to:', targetEmail);
+          // Only show the confirm button after OTP is successfully delivered/sent!
+          if (directBtn) directBtn.style.display = 'inline-block';
           return true;
         }
       } catch (err) {
