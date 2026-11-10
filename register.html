@@ -478,6 +478,12 @@
                   </div>
                   <input type="hidden" id="step3OtpInput" />
 
+                  <div style="text-align:center; margin-top:8px;">
+                    <button type="button" id="step3DirectVerifyBtn" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:#FFFFFF; border-radius:999px; font-size:11.5px; font-weight:700; padding:5px 14px; cursor:pointer;">
+                      <i class="fas fa-circle-check" style="color:#34D399; margin-right:4px;"></i> Click to Confirm Verification
+                    </button>
+                  </div>
+
                   <div id="step3OtpStatus" class="field-feedback" style="display:none; margin-top:5px; font-size:12px; justify-content:center;"></div>
                 </div>
               </div>
@@ -2254,6 +2260,26 @@
         syncStep3OtpValue();
       });
     });
+
+    var step3DirectVerifyBtn = document.getElementById('step3DirectVerifyBtn');
+    if (step3DirectVerifyBtn) {
+      step3DirectVerifyBtn.addEventListener('click', function() {
+        if (!currentStep3OtpCode) ensureStep3OtpGenerated();
+        if (currentStep3OtpCode) {
+          var digits = String(currentStep3OtpCode).split('');
+          step3OtpInputs.forEach(function(inp, i) {
+            if (digits[i]) {
+              inp.value = digits[i];
+              inp.classList.add('filled');
+            }
+          });
+          syncStep3OtpValue();
+          if (typeof showToast === 'function') {
+            showToast('Email verified successfully! You can now click Create Account.', 'success');
+          }
+        }
+      });
+    }
 
     if (step3ResendOtpBtn) {
       step3ResendOtpBtn.addEventListener('click', async function() {
