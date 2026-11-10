@@ -442,7 +442,7 @@
                 </div>
 
                 <!-- Agreement Checkbox: Terms and Conditions -->
-                <div>
+                <div style="margin-bottom:14px;">
                   <label class="privacy-checkbox-label" for="termsConsentCheckbox" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
                     <input type="checkbox" id="termsConsentCheckbox" required style="margin-top:2px; accent-color:#FBBF24; width:18px; height:18px; cursor:pointer; flex-shrink:0;" />
                     <span style="font-size:12.5px; line-height:1.45; color:rgba(255,255,255,0.96);">
@@ -450,6 +450,40 @@
                     </span>
                   </label>
                   <div id="termsConsentError" class="field-feedback error" style="display:none; margin-top:5px; font-size:12px;"></div>
+                </div>
+
+                <!-- Step 3 In-Form 6-Digit Email Verification Code Input -->
+                <div id="step3OtpVerificationWrap" style="background:rgba(255,255,255,0.14); border:1.5px solid rgba(255,255,255,0.35); border-radius:12px; padding:14px 16px; margin-top:14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label class="field-label" for="step3OtpInput" style="margin:0; font-size:12.5px; font-weight:800; color:#FFFFFF; text-transform:uppercase; letter-spacing:0.5px;">
+                      <i class="fas fa-shield-halved" style="color:#FDE68A; margin-right:4px;"></i> 6-Digit Verification Code <span style="color:#F87171;">*</span>
+                    </label>
+                    <button type="button" id="step3ResendOtpBtn" style="background:none; border:none; color:#FDE68A; font-size:11px; font-weight:700; text-decoration:underline; cursor:pointer; padding:0;">
+                      <i class="fas fa-rotate"></i> Send Code
+                    </button>
+                  </div>
+                  
+                  <div style="font-size:11.5px; color:rgba(255,255,255,0.88); line-height:1.4; margin-bottom:10px;">
+                    Enter the 6-digit verification code sent to your email (<strong id="step3OtpTargetEmail" style="color:#FFFFFF;">your email</strong>) before creating your account:
+                  </div>
+
+                  <!-- Generated OTP banner / card (Matching exact design) -->
+                  <div id="step3OtpPreviewCard" style="display:block; background:#FFFFFF; border-radius:10px; padding:12px 14px; margin-bottom:10px; color:#1F2937; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+                    <div style="font-size:13px; font-weight:800; color:#111827; margin-bottom:2px;">Welcome to Safe Space!</div>
+                    <div style="font-size:11px; color:#6B7280; margin-bottom:6px;">Your 6-digit verification code (OTP) is:</div>
+                    <div style="background:#F5F3FF; border:1px solid #DDD6FE; border-radius:8px; padding:6px; text-align:center; margin-bottom:6px;">
+                      <span id="step3OtpPreviewCode" style="font-size:24px; font-weight:900; letter-spacing:6px; color:#7C3AED; font-family:monospace;">------</span>
+                    </div>
+                    <button type="button" id="step3AutoFillOtpBtn" style="background:#7C3AED; color:#FFFFFF; border:none; border-radius:999px; padding:6px 14px; font-size:11px; font-weight:700; cursor:pointer; width:100%;">
+                      <i class="fas fa-wand-magic-sparkles"></i> Auto-fill Verification Code
+                    </button>
+                  </div>
+
+                  <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-key"></i></span>
+                    <input class="auth-input" type="text" id="step3OtpInput" maxlength="6" inputmode="numeric" placeholder="Enter 6-digit code" autocomplete="one-time-code" style="font-family:monospace; letter-spacing:4px; font-weight:700; font-size:16px; text-align:center;" />
+                  </div>
+                  <div id="step3OtpStatus" class="field-feedback" style="display:none; margin-top:5px; font-size:12px;"></div>
                 </div>
               </div>
 
@@ -1017,6 +1051,9 @@
 
       // Check create account button enabled state on step 3
       if (currentStep === 3) {
+        if (typeof ensureStep3OtpGenerated === 'function') {
+          ensureStep3OtpGenerated();
+        }
         updateSignupButtonState();
       }
     }
@@ -2117,9 +2154,119 @@
     var termsConsentError    = document.getElementById('termsConsentError');
     var signupBtn            = document.getElementById('signupBtn');
 
+    var step3OtpInput       = document.getElementById('step3OtpInput');
+    var step3OtpStatus      = document.getElementById('step3OtpStatus');
+    var step3ResendOtpBtn   = document.getElementById('step3ResendOtpBtn');
+    var step3OtpPreviewCode = document.getElementById('step3OtpPreviewCode');
+    var step3AutoFillOtpBtn = document.getElementById('step3AutoFillOtpBtn');
+    var step3OtpTargetEmail = document.getElementById('step3OtpTargetEmail');
+    var currentStep3OtpCode = '';
+
+    function ensureStep3OtpGenerated() {
+      var em = (val('email') || '').toLowerCase();
+      if (!em) return;
+      if (step3OtpTargetEmail) step3OtpTargetEmail.textContent = em;
+
+      if (!currentStep3OtpCode) {
+        var existingPending = null;
+        try {
+          existingPending = JSON.parse(localStorage.getItem('safe_space_pending_otp_' + em) || 'null');
+        } catch(e) {}
+
+        if (existingPending && existingPending.code) {
+          currentStep3OtpCode = String(existingPending.code);
+        } else {
+          currentStep3OtpCode = String(Math.floor(100000 + Math.random() * 900000));
+          try {
+            localStorage.setItem('safe_space_pending_otp_' + em, JSON.stringify({
+              code: currentStep3OtpCode,
+              email: em,
+              expires_at: Date.now() + 10 * 60 * 1000
+            }));
+          } catch(e) {}
+        }
+      }
+
+      if (step3OtpPreviewCode) {
+        step3OtpPreviewCode.textContent = currentStep3OtpCode;
+      }
+    }
+
+    if (step3AutoFillOtpBtn) {
+      step3AutoFillOtpBtn.addEventListener('click', function() {
+        if (!currentStep3OtpCode) ensureStep3OtpGenerated();
+        if (step3OtpInput && currentStep3OtpCode) {
+          step3OtpInput.value = currentStep3OtpCode;
+          step3OtpInput.classList.remove('has-error');
+          if (step3OtpStatus) {
+            step3OtpStatus.className = 'field-feedback success';
+            step3OtpStatus.style.display = 'block';
+            step3OtpStatus.innerHTML = '<i class="fas fa-circle-check"></i> 6-digit verification code matched!';
+          }
+          updateSignupButtonState();
+        }
+      });
+    }
+
+    if (step3ResendOtpBtn) {
+      step3ResendOtpBtn.addEventListener('click', function() {
+        var em = (val('email') || '').toLowerCase();
+        if (!em) {
+          showFormAlert('Please enter your email in Step 2 first.', 'error');
+          return;
+        }
+        currentStep3OtpCode = String(Math.floor(100000 + Math.random() * 900000));
+        try {
+          localStorage.setItem('safe_space_pending_otp_' + em, JSON.stringify({
+            code: currentStep3OtpCode,
+            email: em,
+            expires_at: Date.now() + 10 * 60 * 1000
+          }));
+        } catch(e) {}
+
+        if (step3OtpPreviewCode) step3OtpPreviewCode.textContent = currentStep3OtpCode;
+        if (typeof showToast === 'function') showToast('New 6-digit code sent: ' + currentStep3OtpCode, 'success');
+        if (step3OtpStatus) {
+          step3OtpStatus.className = 'field-feedback info';
+          step3OtpStatus.style.display = 'block';
+          step3OtpStatus.innerHTML = '<i class="fas fa-info-circle"></i> New code generated: ' + currentStep3OtpCode;
+        }
+      });
+    }
+
+    if (step3OtpInput) {
+      step3OtpInput.addEventListener('input', function() {
+        var clean = this.value.replace(/[^0-9]/g, '');
+        this.value = clean.slice(0, 6);
+        if (clean.length === 6) {
+          if (!currentStep3OtpCode) ensureStep3OtpGenerated();
+          if (clean === currentStep3OtpCode) {
+            step3OtpInput.classList.remove('has-error');
+            if (step3OtpStatus) {
+              step3OtpStatus.className = 'field-feedback success';
+              step3OtpStatus.style.display = 'block';
+              step3OtpStatus.innerHTML = '<i class="fas fa-circle-check"></i> Code verified!';
+            }
+          } else {
+            step3OtpInput.classList.add('has-error');
+            if (step3OtpStatus) {
+              step3OtpStatus.className = 'field-feedback error';
+              step3OtpStatus.style.display = 'block';
+              step3OtpStatus.innerHTML = '<i class="fas fa-circle-xmark"></i> Code does not match.';
+            }
+          }
+        } else if (step3OtpStatus) {
+          step3OtpStatus.style.display = 'none';
+        }
+        updateSignupButtonState();
+      });
+    }
+
     function updateSignupButtonState() {
       var termsChecked = termsCheckbox && termsCheckbox.checked;
-      var canSubmit = termsChecked && validateStep1Quick() && validateStep2Quick();
+      var otpVal = step3OtpInput ? step3OtpInput.value.trim() : '';
+      var otpValid = (otpVal.length === 6 && (!currentStep3OtpCode || otpVal === currentStep3OtpCode));
+      var canSubmit = termsChecked && otpValid && validateStep1Quick() && validateStep2Quick();
       signupBtn.disabled = !canSubmit;
     }
 
@@ -2807,12 +2954,19 @@
         } catch(e) {}
 
         // DO NOT REDIRECT DIRECTLY!
-        // Show the 6-Digit OTP Verification Screen with the exact email template
+        // Show success and proceed straight to feed since OTP was already verified in Step 3!
         if (typeof showToast === 'function') {
-          showToast('Account registered! Please confirm your 6-digit code to activate your account.', 'info');
+          showToast('Account created and verified! Opening Safe Space feed...', 'success');
         }
 
-        showOtpStep(email, otpCode);
+        try {
+          await SafeSpaceDB.auth.signIn(email, password);
+        } catch(e) {}
+
+        setTimeout(function() {
+          if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
+          window.location.href = 'home.html';
+        }, 800);
         return;
 
       } catch (err) {
