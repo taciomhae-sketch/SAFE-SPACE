@@ -3148,13 +3148,14 @@
     let activeSafetyAnonFilter = 'all';
     let currentActiveSafetyAlert = null;
 
-    // Banned keywords persistent state (32 keywords filter)
+    // Banned keywords persistent state (35 keywords filter)
     let bannedKeywords = [
       'gago', 'tarantado', 'boboka', 'bobo', 'ulol', 'tangina',
       'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you',
       'bitch', 'tado', 'yawa', 'letche', 'fuck off', 'fuck you', 'stfu', 'shit',
       'gagu', 'mamatay kana', 'bwesit', 'hell', 'esmiringhoy',
-      'inutil', 'leche', 'pakshet', 'puta', 'kupal', 'ogag', 'peste'
+      'inutil', 'leche', 'pakshet', 'puta', 'kupal', 'ogag', 'peste',
+      'kill myself', 'suicide', 'magpakamatay'
     ];
     try {
       const stored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));

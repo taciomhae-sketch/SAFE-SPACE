@@ -134,7 +134,8 @@
     'kill yourself', 'die', 'worthless', 'loser', 'stupid', 'hate you',
     'bitch', 'tado', 'yawa', 'letche', 'fuck off', 'fuck you', 'stfu', 'shit',
     'gagu', 'mamatay kana', 'bwesit', 'hell', 'esmiringhoy',
-    'inutil', 'leche', 'pakshet', 'puta', 'kupal', 'ogag', 'peste'
+    'inutil', 'leche', 'pakshet', 'puta', 'kupal', 'ogag', 'peste',
+    'kill myself', 'suicide', 'magpakamatay'
   ];
 
   function getStoredCustomKeywords() {
@@ -143,8 +144,15 @@
         var stored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
         if (Array.isArray(stored) && stored.length > 0) {
           var clean = stored.map(function(w) { return String(w || '').trim().toLowerCase(); }).filter(Boolean);
-          if (clean.indexOf('esmiringhoy') === -1) {
-            clean.push('esmiringhoy');
+          var requiredAdditions = ['esmiringhoy', 'kill myself', 'suicide', 'magpakamatay'];
+          var changed = false;
+          requiredAdditions.forEach(function(reqWord) {
+            if (clean.indexOf(reqWord) === -1) {
+              clean.push(reqWord);
+              changed = true;
+            }
+          });
+          if (changed) {
             try { localStorage.setItem('safe_space_banned_keywords', JSON.stringify(clean)); } catch (e) {}
           }
           return clean;
