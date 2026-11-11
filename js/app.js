@@ -369,9 +369,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Initial badge update & periodic synchronization with protective throttling
-  updateNavigationBadges();
-  setInterval(updateNavigationBadges, 30000);
+  // Stagger badge initialization: Wait for the main page (feed, profile, etc.) to fully load
+  // and throttle badge synchronization so it never hammers Supabase with concurrent calls
+  setTimeout(updateNavigationBadges, 3000);
+  setInterval(updateNavigationBadges, 60000);
 
   // Listen for broadcast channel updates
   try {

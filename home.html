@@ -710,7 +710,6 @@
       setupLikesModal();
       setupPostOptionsMenu();
       setupReportPostModal();
-      setupNotificationBell();
       setupInfiniteScrollObserver();
       setupModerationSync();
 
@@ -773,6 +772,9 @@
 
         // Stage 3: Load initial feed ('All' category, paginated limit 15)
         await loadCategoryFeed('all', { isBackground: false, page: 0 });
+
+        // Wire secondary UI drawers after feed finishes
+        setupNotificationBell();
       } catch (initErr) {
         console.error('[Home] Initialization error:', initErr);
         const container = document.getElementById('feedContainer');

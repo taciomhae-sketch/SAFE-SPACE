@@ -1344,40 +1344,57 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             query = query.range(from, to);
           }
 
-          var res = await query;
+          var res = null;
+          try {
+            res = await query;
+          } catch (qErr) {
+            console.warn('[SafeSpace] Primary feed query exception:', qErr);
+          }
           console.log('[SafeSpaceDB.posts.getFeed] Primary query response:', { error: res ? res.error : null, count: (res && res.data) ? res.data.length : 0 });
-          if (res && res.error) {
-            console.warn('[SafeSpace] Supabase feed query warning, trying fallback:', res.error.message);
-            // Simpler fallback query without complex nested comment joins to prevent timeouts
-            var fallbackQuery = client.from('posts').select(`
-              *,
-              profiles:user_id (id, username, first_name, last_name, avatar_url),
-              post_likes (user_id),
-              saved_posts (user_id)
-            `).eq('archived', false).order('created_at', { ascending: false });
+          if (!res || res.error) {
+            console.warn('[SafeSpace] Supabase feed query warning, trying fallback:', res && res.error ? res.error.message : 'No response');
+            try {
+              // Simpler fallback query without complex nested comment joins to prevent timeouts
+              var fallbackQuery = client.from('posts').select(`
+                *,
+                profiles:user_id (id, username, first_name, last_name, avatar_url),
+                post_likes (user_id),
+                saved_posts (user_id)
+              `).eq('archived', false).order('created_at', { ascending: false });
 
-            if (filter.mood) fallbackQuery = fallbackQuery.eq('mood', filter.mood);
-            if (filter.userId) fallbackQuery = fallbackQuery.eq('user_id', filter.userId);
-            if (filter.category && filter.category !== 'all') {
-              var c = String(filter.category).toLowerCase().trim();
-              if (c === 'story' || c === 'stories') fallbackQuery = fallbackQuery.in('category', ['story', 'stories']);
-              else fallbackQuery = fallbackQuery.eq('category', c);
+              if (filter.mood) fallbackQuery = fallbackQuery.eq('mood', filter.mood);
+              if (filter.userId) fallbackQuery = fallbackQuery.eq('user_id', filter.userId);
+              if (filter.category && filter.category !== 'all') {
+                var c = String(filter.category).toLowerCase().trim();
+                if (c === 'story' || c === 'stories') fallbackQuery = fallbackQuery.in('category', ['story', 'stories']);
+                else fallbackQuery = fallbackQuery.eq('category', c);
+              }
+              if (limit > 0) fallbackQuery = fallbackQuery.range(from, to);
+              res = await fallbackQuery;
+            } catch (fbErr) {
+              console.warn('[SafeSpace] Fallback query exception:', fbErr);
             }
-            if (limit > 0) fallbackQuery = fallbackQuery.range(from, to);
-            res = await fallbackQuery;
           }
 
-          if (res && res.error) {
-            console.warn('[SafeSpace] Supabase secondary feed query warning:', res.error.message);
-            var directQuery = client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false });
-            if (limit > 0) directQuery = directQuery.range(from, to);
-            res = await directQuery;
+          if (!res || res.error) {
+            console.warn('[SafeSpace] Supabase secondary feed query warning:', res && res.error ? res.error.message : 'No response');
+            try {
+              var directQuery = client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false });
+              if (limit > 0) directQuery = directQuery.range(from, to);
+              res = await directQuery;
+            } catch (dqErr) {
+              console.warn('[SafeSpace] Direct query exception:', dqErr);
+            }
           }
 
           // If query failed due to network reset/rate limit or returned null, retry once with backoff
           if (!res || res.error || !res.data) {
             await new Promise(function(r) { setTimeout(r, 600); });
-            res = await client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(limit || 15);
+            try {
+              res = await client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(limit || 15);
+            } catch (retryErr) {
+              console.warn('[SafeSpace] Backoff query exception:', retryErr);
+            }
           }
 
           var overrides = {};
