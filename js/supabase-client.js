@@ -655,6 +655,13 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       delete metadata.email;
       delete metadata.password;
 
+      // Ensure heavy base64 strings (like uploaded ID cards or avatars) NEVER bloat user_metadata / JWT token
+      ['id_card_url', 'id_card_front_url', 'id_card_back_url', 'student_id_front_doc', 'student_id_back_doc'].forEach(function(k) {
+        if (typeof metadata[k] === 'string' && (metadata[k].startsWith('data:image') || metadata[k].length > 1000)) {
+          delete metadata[k];
+        }
+      });
+
       // Backend Terms and Conditions acceptance validation
       if (metadata.terms_accepted !== true && metadata.terms_accepted !== 'true') {
         throw new Error('TERMS_NOT_ACCEPTED: Please agree to the Safe Space Terms and Conditions before creating your account.');
@@ -1463,6 +1470,35 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               res = await client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(limit || 15);
             } catch (retryErr) {
               console.warn('[SafeSpace] Backoff query exception:', retryErr);
+            }
+          }
+
+          // Direct public REST fetch fallback: If SDK client failed (e.g. 400 Request Header Too Large from user JWT),
+          // query using the clean anon key directly so students ALWAYS see the public community feed!
+          if ((!res || res.error || !res.data || res.data.length === 0) && typeof SAFE_SPACE_CONFIG !== 'undefined') {
+            try {
+              var anonUrl = SAFE_SPACE_CONFIG.SUPABASE_URL + '/rest/v1/posts?select=*,profiles:user_id(id,username,first_name,last_name,avatar_url),post_likes(user_id),saved_posts(user_id)&archived=eq.false&order=created_at.desc';
+              if (filter.category && filter.category !== 'all') {
+                var cRest = String(filter.category).toLowerCase().trim();
+                anonUrl += '&category=eq.' + encodeURIComponent(cRest);
+              }
+              if (limit > 0) {
+                anonUrl += '&limit=' + limit + '&offset=' + from;
+              }
+              var directResp = await fetch(anonUrl, {
+                headers: {
+                  'apikey': SAFE_SPACE_CONFIG.SUPABASE_ANON_KEY,
+                  'Authorization': 'Bearer ' + SAFE_SPACE_CONFIG.SUPABASE_ANON_KEY
+                }
+              });
+              if (directResp.ok) {
+                var directData = await directResp.json();
+                if (Array.isArray(directData) && directData.length > 0) {
+                  res = { data: directData, error: null };
+                }
+              }
+            } catch (fetchErr) {
+              console.warn('[SafeSpace] Direct anon fetch fallback error:', fetchErr);
             }
           }
 

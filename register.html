@@ -3126,9 +3126,10 @@
           password:    password,
           username:    username,
           student_id:  studentId,
-          id_card_url: uploadedFrontUrl,
-          id_card_front_url: uploadedFrontUrl,
-          id_card_back_url: uploadedBackUrl,
+          // Only pass http/https cloud URLs to user_metadata; NEVER store heavy base64 data URLs in auth metadata
+          id_card_url: (uploadedFrontUrl && uploadedFrontUrl.startsWith('http') ? uploadedFrontUrl : null),
+          id_card_front_url: (uploadedFrontUrl && uploadedFrontUrl.startsWith('http') ? uploadedFrontUrl : null),
+          id_card_back_url: (uploadedBackUrl && uploadedBackUrl.startsWith('http') ? uploadedBackUrl : null),
           student_id_detected: studentIdFrontDoc.detectedId || null,
           student_id_matching_status: 'MATCH',
           student_id_status: 'PENDING_VERIFICATION',
