@@ -2670,18 +2670,18 @@
               </div>
             </div>
 
-            <!-- Longitudinal Progression Analysis -->
+            <!-- Longitudinal Progression Analysis & User's Post History -->
             <div class="mod-content-card" style="background:#FFFFFF; border:1px solid var(--border); border-radius:14px; padding:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <span style="font-size:12px; font-weight:800; color:var(--text-dark); text-transform:uppercase; letter-spacing:0.5px;">
-                  <i class="fas fa-chart-line" style="color:var(--primary); margin-right:4px;"></i> Longitudinal Trend Analysis
+                  <i class="fas fa-history" style="color:var(--primary); margin-right:4px;"></i> User Post History &amp; Activity
                 </span>
                 <span class="status-badge" id="caseProgressionBadge" style="background:#FEE2E2; color:#DC2626; font-size:10px;">Escalation Detected</span>
               </div>
               <p style="font-size:12px; color:var(--text-mid); margin:0 0 10px; line-height:1.5;" id="caseLongitudinalSummary">
                 Evaluation of user statements over time indicates increasing distress progression from sadness to hopelessness.
               </p>
-              <div id="caseHistoricalStatementsList" style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+              <div id="caseHistoricalStatementsList" style="display:flex; flex-direction:column; gap:6px; font-size:11px; max-height:220px; overflow-y:auto; padding-right:2px;">
                 <!-- Historical items populated via JS -->
               </div>
             </div>
@@ -7453,12 +7453,66 @@
         recEl.innerHTML = `<i class="fas fa-hand-holding-heart"></i> <span>${escapeHtml(alert.recommended_action || 'Offer institutional support resources & follow up with student')}</span>`;
       }
 
-      // Longitudinal Progression
+      // Longitudinal Progression & Author Post History
       const progBadge = document.getElementById('caseProgressionBadge');
       const longSummary = document.getElementById('caseLongitudinalSummary');
       const histList = document.getElementById('caseHistoricalStatementsList');
 
-      if (alert.historical_context && alert.historical_context.progression) {
+      // Fetch all posts belonging to the target user across public and local feeds
+      let authorPosts = [];
+      const authorUserId = alert.user_id || (matchedPost ? (matchedPost.user_id || matchedPost.author_id) : null);
+      const authorUsername = (alert.author_username || (matchedAuthor ? matchedAuthor.username : (matchedPost && matchedPost.profiles ? matchedPost.profiles.username : null)) || '').toLowerCase();
+      const authorEmail = (alert.author_email || (matchedAuthor ? matchedAuthor.email : (matchedPost && matchedPost.profiles ? matchedPost.profiles.email : null)) || '').toLowerCase();
+
+      // Gather candidate posts from cachedPosts and local storage
+      let allAvailablePosts = Array.isArray(cachedPosts) ? [...cachedPosts] : [];
+      try {
+        const localP = JSON.parse(localStorage.getItem('safe_space_posts') || '[]');
+        if (Array.isArray(localP)) {
+          localP.forEach(lp => {
+            if (!allAvailablePosts.some(p => String(p.id) === String(lp.id))) {
+              allAvailablePosts.push(lp);
+            }
+          });
+        }
+      } catch(e) {}
+      try {
+        const adminCachedP = JSON.parse(localStorage.getItem('safe_space_admin_cached_posts') || '[]');
+        if (Array.isArray(adminCachedP)) {
+          adminCachedP.forEach(ap => {
+            if (!allAvailablePosts.some(p => String(p.id) === String(ap.id))) {
+              allAvailablePosts.push(ap);
+            }
+          });
+        }
+      } catch(e) {}
+
+      if (authorUserId || authorUsername || authorEmail) {
+        authorPosts = allAvailablePosts.filter(p => {
+          const pUid = String(p.user_id || p.author_id || '');
+          if (authorUserId && pUid === String(authorUserId)) return true;
+          const pUname = String(p.author_name || (p.profiles && p.profiles.username) || '').toLowerCase();
+          if (authorUsername && (pUname === authorUsername || pUname.includes(authorUsername))) return true;
+          const pMail = String(p.author_email || (p.profiles && p.profiles.email) || '').toLowerCase();
+          if (authorEmail && pMail === authorEmail) return true;
+          return false;
+        });
+      }
+
+      // Sort chronological descending
+      authorPosts.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+      // Update badge & summary
+      if (authorPosts.length > 1) {
+        if (progBadge) {
+          progBadge.textContent = `${authorPosts.length} POSTS RECORDED`;
+          progBadge.style.background = '#FEE2E2';
+          progBadge.style.color = '#DC2626';
+        }
+        if (longSummary) {
+          longSummary.textContent = `Found ${authorPosts.length} total posts authored by this student (including anonymous and public submissions). Reviewing prior statements helps establish context and emotional trends.`;
+        }
+      } else if (alert.historical_context && alert.historical_context.progression) {
         const p = alert.historical_context.progression;
         if (progBadge) {
           progBadge.textContent = p.status ? p.status.toUpperCase() : 'TREND DETECTED';
@@ -7470,7 +7524,7 @@
         }
       } else {
         if (progBadge) {
-          progBadge.textContent = 'SINGLE EVENT';
+          progBadge.textContent = authorPosts.length === 1 ? '1 POST RECORDED' : 'SINGLE EVENT';
           progBadge.style.background = '#F3F4F6';
           progBadge.style.color = '#4B5563';
         }
@@ -7480,16 +7534,42 @@
       }
 
       if (histList) {
-        const stmts = (alert.historical_context && alert.historical_context.statements) ? alert.historical_context.statements : [];
-        if (stmts.length > 0) {
-          histList.innerHTML = stmts.map(s => `
-            <div style="background:#F9FAFB; padding:6px 10px; border-radius:6px; border-left:3px solid var(--border);">
-              <span style="color:var(--text-muted); font-size:10px;">${s.time || 'Previous statement'}:</span>
-              <span style="color:var(--text-dark);">"${escapeHtml(s.text || '')}"</span>
-            </div>
-          `).join('');
+        if (authorPosts.length > 0) {
+          histList.innerHTML = authorPosts.map(p => {
+            const isFlaggedCurrent = alert.content_id && String(p.id) === String(alert.content_id);
+            const dateStr = p.created_at ? new Date(p.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Recent';
+            const anonTag = p.is_anonymous ? '<span style="font-size:9.5px; background:#EEF2FF; color:#4338CA; padding:1px 5px; border-radius:4px; font-weight:700;"><i class="fas fa-user-secret"></i> Anonymous</span>' : '<span style="font-size:9.5px; background:#F3F4F6; color:var(--text-muted); padding:1px 5px; border-radius:4px;">Public</span>';
+            const flagTag = isFlaggedCurrent ? '<span style="font-size:9.5px; background:#FEE2E2; color:#DC2626; padding:1px 5px; border-radius:4px; font-weight:700;"><i class="fas fa-triangle-exclamation"></i> Flagged Item</span>' : '';
+            const sensTag = (p.sensitive_content || (Array.isArray(p.sensitive_categories) && p.sensitive_categories.length > 0)) ? '<span style="font-size:9.5px; background:#FEF3C7; color:#B45309; padding:1px 5px; border-radius:4px; font-weight:700;"><i class="fas fa-shield-alt"></i> Sensitive</span>' : '';
+
+            return `
+              <div style="background:${isFlaggedCurrent ? '#FFF5F5' : '#F9FAFB'}; padding:8px 10px; border-radius:8px; border-left:3px solid ${isFlaggedCurrent ? '#EF4444' : '#C7D2FE'}; border:1px solid ${isFlaggedCurrent ? '#FECACA' : '#E5E7EB'};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:6px; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    ${flagTag}
+                    ${anonTag}
+                    ${sensTag}
+                  </div>
+                  <span style="color:var(--text-muted); font-size:10px;">${dateStr}</span>
+                </div>
+                <div style="color:var(--text-dark); line-height:1.45; word-break:break-word; font-size:11.5px;">
+                  "${escapeHtml(p.content || '')}"
+                </div>
+              </div>
+            `;
+          }).join('');
         } else {
-          histList.innerHTML = '';
+          const stmts = (alert.historical_context && alert.historical_context.statements) ? alert.historical_context.statements : [];
+          if (stmts.length > 0) {
+            histList.innerHTML = stmts.map(s => `
+              <div style="background:#F9FAFB; padding:6px 10px; border-radius:6px; border-left:3px solid var(--border);">
+                <span style="color:var(--text-muted); font-size:10px;">${s.time || 'Previous statement'}:</span>
+                <span style="color:var(--text-dark);">"${escapeHtml(s.text || '')}"</span>
+              </div>
+            `).join('');
+          } else {
+            histList.innerHTML = '<div style="color:var(--text-muted); font-size:11px; padding:6px 0; font-style:italic;">No other posts recorded for this user.</div>';
+          }
         }
       }
 
