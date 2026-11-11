@@ -1992,33 +1992,8 @@
             submitBtn.disabled = false;
             submitBtn.textContent = 'Post';
 
-            // Check if post violates critical safety rules
-            const cfg = aiResult.warning_config || (window.AIService && typeof window.AIService.getWarningConfig === 'function'
-              ? window.AIService.getWarningConfig(aiResult.category, aiResult.severity, aiResult.status, aiResult.reason)
-              : null);
-            // Check if post violates critical safety rules (violence threats, harassment, nudity)
-            // Allow self-harm and distress sharing with automatic Trigger Warning and blur
-            const isSelfHarmOrDistress = Boolean(
-              aiResult.category === 'SELF_HARM' ||
-              (Array.isArray(aiResult.sensitive_categories) && aiResult.sensitive_categories.some(c => String(c).toUpperCase().includes('SELF_HARM') || String(c).toUpperCase().includes('DISTRESS')))
-            );
-
-            const isCriticalSafetyViolation = !isSelfHarmOrDistress && Boolean(
-              (cfg && cfg.can_continue === false) ||
-              aiResult.category === 'THREAT' ||
-              aiResult.category === 'ENCOURAGEMENT_OF_SELF_HARM' ||
-              aiResult.category === 'NUDITY' ||
-              aiResult.category === 'SEXUAL_CONTENT' ||
-              (aiResult.severity === 'critical' && aiResult.category === 'VIOLENCE')
-            );
-
-            if (isCriticalSafetyViolation) {
-              showToast('Content that violates critical safety rules cannot be published. Please revise your content.', 'error');
-              showAiWarningModal(aiResult, 'post', null);
-              return;
-            }
-
-            // Display Content Warning confirmation modal with both Edit Post and Proceed to Post
+            // All content posts can proceed to the feed (with automatic Trigger Warning, blur, and support hotlines)
+            // Critical or high-risk posts will notify the admin in Safety Monitoring & Risk Alerts
             showAiWarningModal(aiResult, 'post', async function() {
               submitBtn.disabled = true;
               submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Publishing...';
@@ -2280,15 +2255,7 @@
 
       // Proceed to Post / Continue Post button
       if (proceedWarnBtn) {
-        // Critical safety rule: if content violates critical safety rules (violence threats, self-harm encouragement, etc.),
-        // the post cannot be published.
-        const cannotContinue = Boolean(
-          cfg && cfg.can_continue === false
-        );
-
-        if (cannotContinue) {
-          proceedWarnBtn.style.display = 'none';
-        } else if (window._pendingWarningCallback) {
+        if (window._pendingWarningCallback) {
           proceedWarnBtn.style.display = 'inline-flex';
           if (proceedWarnLabel) {
             proceedWarnLabel.textContent = activeWarningSource === 'comment' ? 'Proceed to Comment' : 'Proceed to Post';
