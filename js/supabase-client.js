@@ -1392,100 +1392,23 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       if (SafeSpaceDB.isSupabaseActive()) {
         try {
           var client = _dbAdmin || _db;
-          // Simpler, ultra-resilient primary query with direct profile join
-          var postColumns = [
-            '*',
-            'profiles:user_id(id, username, first_name, last_name, avatar_url)',
-            'post_likes(user_id)',
-            'saved_posts(user_id)'
-          ].join(', ');
-
-          var query = client.from('posts')
-            .select(postColumns)
-            .eq('archived', false)
-            .order('created_at', { ascending: false });
-
-          if (filter.mood) query = query.eq('mood', filter.mood);
-          if (filter.userId) query = query.eq('user_id', filter.userId);
-          if (filter.category && filter.category !== 'all') {
-            var cat = String(filter.category).toLowerCase().trim();
-            if (cat === 'story' || cat === 'stories') {
-              query = query.in('category', ['story', 'stories']);
-            } else {
-              query = query.eq('category', cat);
-            }
-          }
-
-          if (limit > 0) {
-            query = query.range(from, to);
-          }
-
           var res = null;
-          try {
-            res = await query;
-          } catch (qErr) {
-            console.warn('[SafeSpace] Primary feed query exception:', qErr);
-          }
-          console.log('[SafeSpaceDB.posts.getFeed] Primary query response:', { error: res ? res.error : null, count: (res && res.data) ? res.data.length : 0 });
-          if (!res || res.error) {
-            console.warn('[SafeSpace] Supabase feed query warning, trying fallback:', res && res.error ? res.error.message : 'No response');
-            try {
-              // Simpler fallback query without complex nested comment joins to prevent timeouts
-              var fallbackQuery = client.from('posts').select(`
-                *,
-                profiles:user_id (id, username, first_name, last_name, avatar_url),
-                post_likes (user_id),
-                saved_posts (user_id)
-              `).eq('archived', false).order('created_at', { ascending: false });
 
-              if (filter.mood) fallbackQuery = fallbackQuery.eq('mood', filter.mood);
-              if (filter.userId) fallbackQuery = fallbackQuery.eq('user_id', filter.userId);
-              if (filter.category && filter.category !== 'all') {
-                var c = String(filter.category).toLowerCase().trim();
-                if (c === 'story' || c === 'stories') fallbackQuery = fallbackQuery.in('category', ['story', 'stories']);
-                else fallbackQuery = fallbackQuery.eq('category', c);
-              }
-              if (limit > 0) fallbackQuery = fallbackQuery.range(from, to);
-              res = await fallbackQuery;
-            } catch (fbErr) {
-              console.warn('[SafeSpace] Fallback query exception:', fbErr);
-            }
-          }
-
-          if (!res || res.error) {
-            console.warn('[SafeSpace] Supabase secondary feed query warning:', res && res.error ? res.error.message : 'No response');
+          // FAST PATH: Direct public REST query using clean Anon key.
+          // Bypasses oversized user JWT headers, Cloudflare 400 errors, and multi-tier retry lag.
+          if (typeof SAFE_SPACE_CONFIG !== 'undefined' && SAFE_SPACE_CONFIG.SUPABASE_URL) {
             try {
-              var directQuery = client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false });
-              if (limit > 0) directQuery = directQuery.range(from, to);
-              res = await directQuery;
-            } catch (dqErr) {
-              console.warn('[SafeSpace] Direct query exception:', dqErr);
-            }
-          }
-
-          // If query failed due to network reset/rate limit or returned null, retry once with backoff
-          if (!res || res.error || !res.data) {
-            await new Promise(function(r) { setTimeout(r, 600); });
-            try {
-              res = await client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(limit || 15);
-            } catch (retryErr) {
-              console.warn('[SafeSpace] Backoff query exception:', retryErr);
-            }
-          }
-
-          // Direct public REST fetch fallback: If SDK client failed (e.g. 400 Request Header Too Large from user JWT),
-          // query using the clean anon key directly so students ALWAYS see the public community feed!
-          if ((!res || res.error || !res.data || res.data.length === 0) && typeof SAFE_SPACE_CONFIG !== 'undefined') {
-            try {
-              var anonUrl = SAFE_SPACE_CONFIG.SUPABASE_URL + '/rest/v1/posts?select=*,profiles:user_id(id,username,first_name,last_name,avatar_url),post_likes(user_id),saved_posts(user_id)&archived=eq.false&order=created_at.desc';
+              var fastUrl = SAFE_SPACE_CONFIG.SUPABASE_URL + '/rest/v1/posts?select=*,profiles:user_id(id,username,first_name,last_name,avatar_url),post_likes(user_id),saved_posts(user_id)&archived=eq.false&order=created_at.desc';
+              if (filter.mood) fastUrl += '&mood=eq.' + encodeURIComponent(filter.mood);
+              if (filter.userId) fastUrl += '&user_id=eq.' + encodeURIComponent(filter.userId);
               if (filter.category && filter.category !== 'all') {
                 var cRest = String(filter.category).toLowerCase().trim();
-                anonUrl += '&category=eq.' + encodeURIComponent(cRest);
+                fastUrl += '&category=eq.' + encodeURIComponent(cRest);
               }
               if (limit > 0) {
-                anonUrl += '&limit=' + limit + '&offset=' + from;
+                fastUrl += '&limit=' + limit + '&offset=' + from;
               }
-              var directResp = await fetch(anonUrl, {
+              var directResp = await fetch(fastUrl, {
                 headers: {
                   'apikey': SAFE_SPACE_CONFIG.SUPABASE_ANON_KEY,
                   'Authorization': 'Bearer ' + SAFE_SPACE_CONFIG.SUPABASE_ANON_KEY
@@ -1493,12 +1416,48 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               });
               if (directResp.ok) {
                 var directData = await directResp.json();
-                if (Array.isArray(directData) && directData.length > 0) {
+                if (Array.isArray(directData)) {
                   res = { data: directData, error: null };
                 }
               }
-            } catch (fetchErr) {
-              console.warn('[SafeSpace] Direct anon fetch fallback error:', fetchErr);
+            } catch (fastErr) {
+              console.warn('[SafeSpace] Fast REST query notice, using SDK:', fastErr);
+            }
+          }
+
+          // SDK Fallback: Only run if direct fast fetch did not succeed
+          if (!res || res.error || !res.data) {
+            var postColumns = [
+              '*',
+              'profiles:user_id(id, username, first_name, last_name, avatar_url)',
+              'post_likes(user_id)',
+              'saved_posts(user_id)'
+            ].join(', ');
+
+            var query = client.from('posts')
+              .select(postColumns)
+              .eq('archived', false)
+              .order('created_at', { ascending: false });
+
+            if (filter.mood) query = query.eq('mood', filter.mood);
+            if (filter.userId) query = query.eq('user_id', filter.userId);
+            if (filter.category && filter.category !== 'all') {
+              var cat = String(filter.category).toLowerCase().trim();
+              if (cat === 'story' || cat === 'stories') {
+                query = query.in('category', ['story', 'stories']);
+              } else {
+                query = query.eq('category', cat);
+              }
+            }
+
+            if (limit > 0) {
+              query = query.range(from, to);
+            }
+
+            try {
+              res = await query;
+            } catch (qErr) {
+              console.warn('[SafeSpace] Primary feed query exception:', qErr);
             }
           }
 

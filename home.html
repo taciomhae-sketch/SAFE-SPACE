@@ -713,6 +713,21 @@
       setupInfiniteScrollObserver();
       setupModerationSync();
 
+      // INSTANT RENDER: Check local persisted cache so user sees feed instantly (0ms delay)
+      try {
+        const localCachedPosts = JSON.parse(localStorage.getItem('safe_space_cached_feed_all') || 'null');
+        if (Array.isArray(localCachedPosts) && localCachedPosts.length > 0) {
+          currentFeed = localCachedPosts;
+          feedCache['all'] = {
+            posts: localCachedPosts.slice(),
+            timestamp: Date.now(),
+            page: 0,
+            hasMore: true
+          };
+          renderFeed();
+        }
+      } catch (cErr) {}
+
       try {
         // Stage 2: Essential authentication and user profile
         currentUser = await requireAuth();
@@ -875,10 +890,8 @@
           limit: PAGE_SIZE
         });
 
-        // Resilience: If initial fetch returned 0 posts (e.g. temporary network drop/handshake reset), retry once automatically
+        // Resilience: If initial fetch returned 0 posts, retry quickly once
         if ((!posts || posts.length === 0) && isInitialPage) {
-          console.log('[Home] 0 posts returned on initial load, retrying in 800ms...');
-          await new Promise(r => setTimeout(r, 800));
           try {
             const retryPosts = await SafeSpaceDB.posts.getFeed({
               category: category,
@@ -912,6 +925,12 @@
             page: 0,
             hasMore: hasMore
           };
+          // Persist first page of 'all' category so next load is instantaneous
+          if (category === 'all' && posts.length > 0) {
+            try {
+              localStorage.setItem('safe_space_cached_feed_all', JSON.stringify(posts.slice(0, 15)));
+            } catch (e) {}
+          }
           currentFeed = posts;
           renderFeed();
           renderLoadMoreState(hasMore);
