@@ -216,6 +216,77 @@ var SafeSpaceDB = window.SafeSpaceDB = {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
   },
 
+  /**
+   * Safely strip massive Base64 data URLs (e.g. uploaded ID photos) from user session
+   * before storing into localStorage, preventing "Setting the value of 'safe_space_user' exceeded the quota".
+   */
+  _sanitizeUserForStorage: function(userObj) {
+    if (!userObj || typeof userObj !== 'object') return userObj;
+    var clean = Object.assign({}, userObj);
+    var heavyKeys = [
+      'id_card_url', 'id_card_front_url', 'id_card_back_url',
+      'id_photo_url', 'student_id_front_doc', 'student_id_back_doc'
+    ];
+    heavyKeys.forEach(function(k) {
+      if (typeof clean[k] === 'string' && (clean[k].startsWith('data:image') || clean[k].length > 1000)) {
+        clean[k] = null;
+      }
+    });
+    if (clean.user_metadata && typeof clean.user_metadata === 'object') {
+      clean.user_metadata = Object.assign({}, clean.user_metadata);
+      heavyKeys.forEach(function(k) {
+        if (typeof clean.user_metadata[k] === 'string' && (clean.user_metadata[k].startsWith('data:image') || clean.user_metadata[k].length > 1000)) {
+          clean.user_metadata[k] = null;
+        }
+      });
+    }
+    return clean;
+  },
+
+  _safeStoreUser: function(userObj) {
+    if (!userObj) {
+      try { localStorage.removeItem('safe_space_user'); } catch(e) {}
+      return;
+    }
+    var clean = SafeSpaceDB._sanitizeUserForStorage(userObj);
+    try {
+      localStorage.setItem('safe_space_user', JSON.stringify(clean));
+    } catch (quotaErr) {
+      console.warn('[SafeSpace] Quota error on storing user, purging transient local keys and retrying...', quotaErr);
+      try {
+        // Clear non-critical oversized storage items
+        var keysToPrune = [
+          'safe_space_student_id_docs',
+          'safe_space_post_moderation_sync',
+          'safe_space_pending_otp_'
+        ];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && (k.startsWith('safe_space_id_card_') || k.startsWith('safe_space_pending_otp_'))) {
+            localStorage.removeItem(k);
+          }
+        }
+        keysToPrune.forEach(function(k) { localStorage.removeItem(k); });
+
+        // Ultra-minimal user object fallback
+        var minimalUser = {
+          id: clean.id,
+          email: clean.email,
+          username: clean.username,
+          first_name: clean.first_name,
+          last_name: clean.last_name,
+          role: clean.role || 'student',
+          avatar_url: (clean.avatar_url && clean.avatar_url.length < 500) ? clean.avatar_url : 'assets/avatars/clever-fox.png',
+          approval_status: clean.approval_status || 'approved',
+          is_approved: clean.is_approved !== false
+        };
+        localStorage.setItem('safe_space_user', JSON.stringify(minimalUser));
+      } catch (finalErr) {
+        console.error('[SafeSpace] Failed to store user even after pruning:', finalErr);
+      }
+    }
+  },
+
   // ==========================================
   // USERS & ONLINE STATUS
   // ==========================================
@@ -239,7 +310,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         if (stored) {
           stored.last_active = nowIso;
           stored.is_online = true;
-          localStorage.setItem('safe_space_user', JSON.stringify(stored));
+          SafeSpaceDB._safeStoreUser(stored);
         }
 
         var members = JSON.parse(localStorage.getItem('safe_space_members')) || [];
@@ -356,9 +427,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               }
             }
 
-            try {
-              localStorage.setItem('safe_space_user', JSON.stringify(fullUser));
-            } catch (e) {}
+            SafeSpaceDB._safeStoreUser(fullUser);
             return fullUser;
           } else {
             // Check if there is an active local/offline session before wiping
@@ -468,12 +537,12 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               }
             }
 
-            localStorage.setItem('safe_space_user', JSON.stringify(fullUser));
+            SafeSpaceDB._safeStoreUser(fullUser);
           } catch (e) {
             if (e.message && (e.message.includes('PENDING_APPROVAL') || e.message.includes('REJECTED_APPROVAL'))) {
               throw e;
             }
-            localStorage.setItem('safe_space_user', JSON.stringify(res.data.user));
+            SafeSpaceDB._safeStoreUser(res.data.user);
           }
           return res.data;
         }
@@ -487,7 +556,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             matchMem.role = 'admin';
             matchMem.is_admin = true;
           }
-          localStorage.setItem('safe_space_user', JSON.stringify(matchMem));
+          SafeSpaceDB._safeStoreUser(matchMem);
           return { user: matchMem, session: { access_token: 'local-session' } };
         }
 
@@ -517,7 +586,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       }
 
       baseUser.email = email;
-      localStorage.setItem('safe_space_user', JSON.stringify(baseUser));
+      SafeSpaceDB._safeStoreUser(baseUser);
       return { user: baseUser };
     },
 
@@ -759,7 +828,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         terms_version: metadata.terms_version || '1.0',
         terms_accepted_at: metadata.terms_accepted_at || null
       };
-      localStorage.setItem('safe_space_user', JSON.stringify(newUser));
+      SafeSpaceDB._safeStoreUser(newUser);
 
       // Register new user into member list for Admin Dashboard verification
       try {
@@ -858,9 +927,9 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             }
 
             var fullUser = Object.assign({}, user, meta, profile);
-            localStorage.setItem('safe_space_user', JSON.stringify(fullUser));
+            SafeSpaceDB._safeStoreUser(fullUser);
           } catch (e) {
-            localStorage.setItem('safe_space_user', JSON.stringify(user));
+            SafeSpaceDB._safeStoreUser(user);
           }
         }
         return res.data;
@@ -879,7 +948,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       var stored = JSON.parse(localStorage.getItem('safe_space_user')) || Object.assign({}, INITIAL_DEMO_DATA.currentUser);
       stored.email = email || stored.email;
       stored.email_confirmed = true;
-      localStorage.setItem('safe_space_user', JSON.stringify(stored));
+      SafeSpaceDB._safeStoreUser(stored);
       return { user: stored, session: { access_token: 'demo-session-token' } };
     },
 
@@ -1140,7 +1209,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
 
             var cur = JSON.parse(localStorage.getItem('safe_space_user')) || {};
             var merged = Object.assign({}, cur, (pRes && pRes.data) || {}, updates);
-            localStorage.setItem('safe_space_user', JSON.stringify(merged));
+            SafeSpaceDB._safeStoreUser(merged);
 
             // Synchronize members list in local storage so immediate UI lookups reflect the new avatar
             try {
@@ -1167,7 +1236,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       }
       var cur = JSON.parse(localStorage.getItem('safe_space_user')) || {};
       var updatedUser = Object.assign({}, cur, updates);
-      localStorage.setItem('safe_space_user', JSON.stringify(updatedUser));
+      SafeSpaceDB._safeStoreUser(updatedUser);
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('safespace:avatar-changed', {
@@ -1193,7 +1262,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
 
       var cur = JSON.parse(localStorage.getItem('safe_space_user')) || {};
       cur.password = newPassword;
-      localStorage.setItem('safe_space_user', JSON.stringify(cur));
+      SafeSpaceDB._safeStoreUser(cur);
       return { success: true };
     },
 
@@ -6746,7 +6815,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           curStored.student_id_verified = (status === 'VERIFIED');
           curStored.student_id_verified_at = (status === 'VERIFIED') ? now : null;
           curStored.student_id_notes = notesText;
-          localStorage.setItem('safe_space_user', JSON.stringify(curStored));
+          SafeSpaceDB._safeStoreUser(curStored);
         }
       } catch (ce) {}
 
@@ -6840,7 +6909,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         curStored.approval_status = 'approved';
         curStored.is_approved = true;
         curStored.approved_at = now;
-        localStorage.setItem('safe_space_user', JSON.stringify(curStored));
+        SafeSpaceDB._safeStoreUser(curStored);
       }
 
       if (!targetEmail) {
@@ -6901,7 +6970,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         curStored.approval_status = 'rejected';
         curStored.is_approved = false;
         curStored.reject_reason = reason;
-        localStorage.setItem('safe_space_user', JSON.stringify(curStored));
+        SafeSpaceDB._safeStoreUser(curStored);
       }
 
       return { success: true, user: updatedUser };

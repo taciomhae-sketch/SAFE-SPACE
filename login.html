@@ -193,11 +193,11 @@
     <div class="auth-wave"></div>
   </div>
 
-  <script src="js/lib/supabase.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/supabase-client.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/pwa.js"></script>
+  <script src="js/lib/supabase.js?v=2.6.1"></script>
+  <script src="js/config.js?v=2.6.1"></script>
+  <script src="js/supabase-client.js?v=2.6.1"></script>
+  <script src="js/app.js?v=2.6.1"></script>
+  <script src="js/pwa.js?v=2.6.1"></script>
   <script>
     var currentActiveUser = null;
     var otpPendingEmail = '';
@@ -737,7 +737,11 @@
                 is_approved: true,
                 approval_status: 'approved'
               };
-              localStorage.setItem('safe_space_user', JSON.stringify(localUser));
+              if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB._safeStoreUser) {
+                SafeSpaceDB._safeStoreUser(localUser);
+              } else {
+                localStorage.setItem('safe_space_user', JSON.stringify(localUser));
+              }
             }
             res = { user: localUser, session: { access_token: 'valid-session' } };
           } else {
