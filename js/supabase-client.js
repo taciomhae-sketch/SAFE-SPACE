@@ -1316,11 +1316,11 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       if (SafeSpaceDB.isSupabaseActive()) {
         try {
           var client = _dbAdmin || _db;
+          // Simpler, ultra-resilient primary query with direct profile join
           var postColumns = [
             '*',
             'profiles:user_id(id, username, first_name, last_name, avatar_url)',
             'post_likes(user_id)',
-            'post_comments(id, user_id, content, reactions, created_at, profiles:user_id(username, first_name, last_name, avatar_url))',
             'saved_posts(user_id)'
           ].join(', ');
 
@@ -1353,7 +1353,6 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               *,
               profiles:user_id (id, username, first_name, last_name, avatar_url),
               post_likes (user_id),
-              post_comments (id, user_id, content, reactions, created_at),
               saved_posts (user_id)
             `).eq('archived', false).order('created_at', { ascending: false });
 
@@ -1375,6 +1374,12 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             res = await directQuery;
           }
 
+          // If query failed due to network reset/rate limit or returned null, retry once with backoff
+          if (!res || res.error || !res.data) {
+            await new Promise(function(r) { setTimeout(r, 600); });
+            res = await client.from('posts').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(limit || 15);
+          }
+
           var overrides = {};
           try {
             overrides = JSON.parse(localStorage.getItem('safe_space_post_moderation_overrides') || '{}');
@@ -1382,7 +1387,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
 
           var sbFeed = (res.data || [])
             .filter(function(p) {
-              if (p.archived === true || p.deleted_at) return false;
+              if (p.archived === true) return false;
               if (overrides[p.id] && overrides[p.id].archived === true) return false;
               return true;
             })

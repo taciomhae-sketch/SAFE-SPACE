@@ -369,9 +369,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Initial badge update & periodic synchronization
+  // Initial badge update & periodic synchronization with protective throttling
   updateNavigationBadges();
-  setInterval(updateNavigationBadges, 4000);
+  setInterval(updateNavigationBadges, 30000);
 
   // Listen for broadcast channel updates
   try {
@@ -392,11 +392,23 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================================
 // Realtime Notification & Chat Badges System
 // ============================================================
+var _lastBadgeUpdateTime = 0;
+var _isUpdatingBadges = false;
+
 async function updateNavigationBadges() {
   if (typeof SafeSpaceDB === 'undefined' || !SafeSpaceDB.auth) return;
+  var now = Date.now();
+  // Prevent runaway storms: throttle badge updates to at most once every 10 seconds
+  if (_isUpdatingBadges || (now - _lastBadgeUpdateTime < 10000)) return;
+  _isUpdatingBadges = true;
+  _lastBadgeUpdateTime = now;
+
   try {
     var user = await SafeSpaceDB.auth.getCurrentUser();
-    if (!user) return;
+    if (!user) {
+      _isUpdatingBadges = false;
+      return;
+    }
 
     // 1. Unread Messages -> Red Dot on Chat Navigation Icons
     if (SafeSpaceDB.messages && typeof SafeSpaceDB.messages.getUnreadCount === 'function') {
@@ -430,7 +442,9 @@ async function updateNavigationBadges() {
         }
       });
     }
-  } catch (err) {}
+  } catch (err) {} finally {
+    _isUpdatingBadges = false;
+  }
 }
 
 window.SafeSpaceBadges = {
