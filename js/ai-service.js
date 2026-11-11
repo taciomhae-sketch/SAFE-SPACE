@@ -135,7 +135,7 @@
     'bitch', 'tado', 'yawa', 'letche', 'fuck off', 'fuck you', 'stfu', 'shit',
     'gagu', 'mamatay kana', 'bwesit', 'hell', 'esmiringhoy',
     'inutil', 'leche', 'pakshet', 'puta', 'kupal', 'ogag', 'peste',
-    'kill myself', 'suicide', 'magpakamatay'
+    'kill', 'kill myself', 'suicide', 'magpakamatay'
   ];
 
   function getStoredCustomKeywords() {
@@ -144,7 +144,7 @@
         var stored = JSON.parse(localStorage.getItem('safe_space_banned_keywords'));
         if (Array.isArray(stored) && stored.length > 0) {
           var clean = stored.map(function(w) { return String(w || '').trim().toLowerCase(); }).filter(Boolean);
-          var requiredAdditions = ['esmiringhoy', 'kill myself', 'suicide', 'magpakamatay'];
+          var requiredAdditions = ['esmiringhoy', 'kill', 'kill myself', 'suicide', 'magpakamatay'];
           var changed = false;
           requiredAdditions.forEach(function(reqWord) {
             if (clean.indexOf(reqWord) === -1) {
