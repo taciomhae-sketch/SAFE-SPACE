@@ -1125,14 +1125,15 @@
 
     if (category === 'SELF_HARM' || category === 'ENCOURAGEMENT_OF_SELF_HARM') {
       config.title = 'Content Warning';
-      config.message = 'Your post may contain sensitive content related to self-harm. Please review your message carefully. The platform\'s safety rules may restrict publication of content that encourages or promotes harm.';
+      config.message = 'Your post may contain sensitive content related to self-harm. Please review your message carefully. The platform\'s safety rules require an automatic Trigger Warning and blurred card to protect the community.';
       config.show_support_resources = true;
       config.show_guidelines_button = false;
-      config.is_imminent_danger = (severity === 'critical');
+      config.is_imminent_danger = false;
       config.primary_button_label = 'Edit Post';
       config.secondary_button_label = 'Cancel Posting';
       config.continue_label = 'Proceed to Post';
-      config.can_continue = (status !== 'BLOCKED' && severity !== 'critical' && category !== 'ENCOURAGEMENT_OF_SELF_HARM');
+      // Enable Proceed to Post with automatic Trigger Warning for self-harm and distress posts
+      config.can_continue = (category !== 'ENCOURAGEMENT_OF_SELF_HARM');
     } else if (category === 'BULLYING' || category === 'HARASSMENT' || category === 'HATE') {
       config.title = 'Please Review Your Post';
       config.message = 'Your post may contain language that could hurt or target another person. Consider revising it to help maintain a respectful and supportive community.';

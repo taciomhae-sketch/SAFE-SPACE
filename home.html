@@ -1972,7 +1972,14 @@
             const cfg = aiResult.warning_config || (window.AIService && typeof window.AIService.getWarningConfig === 'function'
               ? window.AIService.getWarningConfig(aiResult.category, aiResult.severity, aiResult.status, aiResult.reason)
               : null);
-            const isCriticalSafetyViolation = Boolean(
+            // Check if post violates critical safety rules (violence threats, harassment, nudity)
+            // Allow self-harm and distress sharing with automatic Trigger Warning and blur
+            const isSelfHarmOrDistress = Boolean(
+              aiResult.category === 'SELF_HARM' ||
+              (Array.isArray(aiResult.sensitive_categories) && aiResult.sensitive_categories.some(c => String(c).toUpperCase().includes('SELF_HARM') || String(c).toUpperCase().includes('DISTRESS')))
+            );
+
+            const isCriticalSafetyViolation = !isSelfHarmOrDistress && Boolean(
               (cfg && cfg.can_continue === false) ||
               aiResult.category === 'THREAT' ||
               aiResult.category === 'ENCOURAGEMENT_OF_SELF_HARM' ||
