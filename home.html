@@ -1387,6 +1387,11 @@
           window._revealedPostsSet = window._revealedPostsSet || new Set();
           const isRevealed = window._revealedPostsSet.has(post.id);
 
+          // Ensure profanity is always censored with asterisks when rendered in user feed
+          const safeDisplayContent = (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.censorProfanity)
+            ? SafeSpaceDB.censorProfanity(post.content || '')
+            : (window.SafeSpaceCensor ? window.SafeSpaceCensor.censor(post.content || '') : (post.content || ''));
+
           let postBodyHtml = '';
           if (isPostSensitive) {
             postBodyHtml = `
@@ -1413,7 +1418,7 @@
                 </div>
               </div>
               <div class="post-content-wrap ${isRevealed ? 'is-revealed' : 'is-blurred'}" id="post-content-wrap-${post.id}">
-                <div class="post-content">${escapeHTML(post.content || '')}</div>
+                <div class="post-content">${escapeHTML(safeDisplayContent)}</div>
                 ${post.photo_url ? `
                   <div class="post-image">
                     <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />
@@ -1424,7 +1429,7 @@
           } else {
             postBodyHtml = `
               <div class="post-content-wrap is-revealed" id="post-content-wrap-${post.id}">
-                <div class="post-content">${escapeHTML(post.content || '')}</div>
+                <div class="post-content">${escapeHTML(safeDisplayContent)}</div>
                 ${post.photo_url ? `
                   <div class="post-image">
                     <img src="${escapeHTML(post.photo_url)}" alt="Post attachment" loading="lazy" />

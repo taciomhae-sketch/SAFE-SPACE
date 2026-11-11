@@ -1652,6 +1652,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           resolvedAvatar = currentUser.avatar_url || null;
         }
         return Object.assign({}, p, {
+          content: SafeSpaceDB.censorProfanity(p.content),
           author_avatar: resolvedAvatar,
           category: p.category || 'general',
           saved_by: postSavedBy,
