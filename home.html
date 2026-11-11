@@ -642,14 +642,14 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/lib/supabase.js?v=2.6.0"></script>
-  <script src="js/config.js?v=2.6.0"></script>
-  <script src="js/bible-data.js?v=2.6.0"></script>
-  <script src="js/supabase-client.js?v=2.6.0"></script>
-  <script src="js/ai-service.js?v=2.6.0"></script>
-  <script src="js/cute-avatars.js?v=2.6.0"></script>
-  <script src="js/app.js?v=2.6.0"></script>
-  <script src="js/pwa.js?v=2.6.0"></script>
+  <script src="js/lib/supabase.js?v=2.6.1"></script>
+  <script src="js/config.js?v=2.6.1"></script>
+  <script src="js/bible-data.js?v=2.6.1"></script>
+  <script src="js/supabase-client.js?v=2.6.1"></script>
+  <script src="js/ai-service.js?v=2.6.1"></script>
+  <script src="js/cute-avatars.js?v=2.6.1"></script>
+  <script src="js/app.js?v=2.6.1"></script>
+  <script src="js/pwa.js?v=2.6.1"></script>
   <script>
     // ── Application & Feed State ──
     let currentUser = null;
@@ -869,11 +869,30 @@
 
       try {
         console.log('[Home] Loading feed for category:', category, 'page:', page);
-        const posts = await SafeSpaceDB.posts.getFeed({
+        let posts = await SafeSpaceDB.posts.getFeed({
           category: category,
           page: page,
           limit: PAGE_SIZE
         });
+
+        // Resilience: If initial fetch returned 0 posts (e.g. temporary network drop/handshake reset), retry once automatically
+        if ((!posts || posts.length === 0) && isInitialPage) {
+          console.log('[Home] 0 posts returned on initial load, retrying in 800ms...');
+          await new Promise(r => setTimeout(r, 800));
+          try {
+            const retryPosts = await SafeSpaceDB.posts.getFeed({
+              category: category,
+              page: page,
+              limit: PAGE_SIZE
+            });
+            if (retryPosts && retryPosts.length > 0) {
+              posts = retryPosts;
+            }
+          } catch (rErr) {
+            console.warn('[Home] Auto-retry error:', rErr);
+          }
+        }
+
         console.log('[Home] Received posts count:', posts ? posts.length : 0, posts);
 
         const container = document.getElementById('feedContainer');
