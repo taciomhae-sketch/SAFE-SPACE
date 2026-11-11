@@ -7357,9 +7357,72 @@
         tsEl.textContent = d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
       }
 
+      // Dynamic Resolution of Associated Post & Author User to ensure perfect matching
+      let matchedPost = null;
+      if (alert.content_id) {
+        matchedPost = (cachedPosts || []).find(p => String(p.id) === String(alert.content_id));
+        if (!matchedPost) {
+          try {
+            const localPosts = JSON.parse(localStorage.getItem('safe_space_posts') || '[]');
+            matchedPost = localPosts.find(p => String(p.id) === String(alert.content_id));
+          } catch(e) {}
+        }
+      }
+
+      let matchedAuthor = null;
+      const targetUserId = alert.user_id || (matchedPost ? (matchedPost.user_id || matchedPost.author_id) : null);
+      if (targetUserId) {
+        matchedAuthor = (cachedUsers || []).find(u => String(u.id) === String(targetUserId) || (u.email && String(u.email).toLowerCase() === String(targetUserId).toLowerCase()));
+        if (!matchedAuthor) {
+          try {
+            const rawUsers = localStorage.getItem('safe_space_admin_cached_users') ||
+                             localStorage.getItem('safe_space_users') ||
+                             localStorage.getItem('safe_space_members');
+            if (rawUsers) {
+              const parsedUsers = JSON.parse(rawUsers);
+              matchedAuthor = parsedUsers.find(u => String(u.id) === String(targetUserId) || (u.email && String(u.email).toLowerCase() === String(targetUserId).toLowerCase()));
+            }
+          } catch(e) {}
+        }
+      }
+
+      // If alert was missing author metadata, hydrate it dynamically from matched user or post
+      if (matchedAuthor) {
+        if (!alert.author_name || alert.author_name === 'Student User') {
+          const fn = (matchedAuthor.first_name || '') + ' ' + (matchedAuthor.last_name || '');
+          alert.author_name = fn.trim() || matchedAuthor.username || 'Student User';
+        }
+        if (!alert.author_username || alert.author_username === 'student') {
+          alert.author_username = matchedAuthor.username || (matchedAuthor.email ? matchedAuthor.email.split('@')[0] : 'student');
+        }
+        if (!alert.author_email || alert.author_email === 'student@asu.edu.ph') {
+          alert.author_email = matchedAuthor.email || 'student@asu.edu.ph';
+        }
+        if (!alert.author_avatar && matchedAuthor.avatar_url) {
+          alert.author_avatar = matchedAuthor.avatar_url;
+        }
+      } else if (matchedPost) {
+        if (!alert.author_name || alert.author_name === 'Student User') {
+          alert.author_name = matchedPost.author_name || (matchedPost.profiles ? ((matchedPost.profiles.first_name || '') + ' ' + (matchedPost.profiles.last_name || '')).trim() : 'Student User');
+        }
+        if (!alert.author_username || alert.author_username === 'student') {
+          alert.author_username = (matchedPost.profiles && matchedPost.profiles.username) ? matchedPost.profiles.username : 'student';
+        }
+        if (!alert.author_avatar && (matchedPost.author_avatar || (matchedPost.profiles && matchedPost.profiles.avatar_url))) {
+          alert.author_avatar = matchedPost.author_avatar || matchedPost.profiles.avatar_url;
+        }
+      }
+
       const textEl = document.getElementById('caseContentText');
       if (textEl) {
-        textEl.textContent = alert.content_snippet || alert.post_text || 'No text snippet recorded.';
+        let snippetText = alert.content_snippet || alert.post_text || alert.evidence_text || (matchedPost ? matchedPost.content : '') || '';
+        if ((!snippetText || snippetText === 'No text snippet recorded.') && alert.reason) {
+          const matchQuote = alert.reason.match(/"([^"]+)"/);
+          if (matchQuote && matchQuote[1]) {
+            snippetText = matchQuote[1];
+          }
+        }
+        textEl.textContent = snippetText || 'No text snippet recorded.';
       }
 
       const typeTag = document.getElementById('caseContentTypeTag');
@@ -7468,6 +7531,15 @@
           if (pHandle) pHandle.textContent = alert.author_username ? `@${alert.author_username}` : '@student';
           const pEmail = document.getElementById('casePublicEmail');
           if (pEmail) pEmail.textContent = alert.author_email || 'student@asu.edu.ph';
+          const pAvatarWrap = document.getElementById('casePublicAvatar');
+          if (pAvatarWrap) {
+            const avatarUrl = alert.author_avatar || (matchedAuthor ? matchedAuthor.avatar_url : null);
+            if (avatarUrl) {
+              pAvatarWrap.innerHTML = `<img src="${escapeHTML(avatarUrl)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.src=''; this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>';" />`;
+            } else {
+              pAvatarWrap.innerHTML = `<i class="fas fa-user"></i>`;
+            }
+          }
         }
       }
 
