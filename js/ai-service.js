@@ -1263,7 +1263,10 @@
       }
 
       // E. Self-Harm & Suicide-Related Content
-      if (/\b(self-harm|self\s*harm|cutting|slit(ting)?\s*wrists?|burned\s*myself|suicid(e|al)|ending\s*(my|one'?s)\s*life|kill(ing)?\s*myself|magpakamatay|pagpapakamatay|maglaslas|laslas|magbigti|kitilin\s*ang\s*buhay|patayin\s*ang\s*sarili|ayaw\s*ko\s*nang\s*mabuhay|gusto\s*ko\s*nang\s*mawala|recovery\s*from\s*(self-harm|cutting)|trying\s*to\s*stay\s*clean|urges\s*to\s*harm|crisis\s*hotline)\b/i.test(lower)) {
+      if (/\b(self-harm|self\s*harm|cutting|slit(ting)?\s*wrists?|burned\s*myself|suicid(e|al)|ending\s*(my|one'?s)\s*life|kill(ing)?\s*myself|magpakamatay|pagpapakamatay|maglaslas|laslas|magbigti|kitilin\s*ang\s*buhay|patayin\s*ang\s*sarili|ayaw\s*ko\s*nang\s*mabuhay|gusto\s*ko\s*nang\s*mawala|recovery\s*from\s*(self-harm|cutting)|trying\s*to\s*stay\s*clean|urges\s*to\s*harm|crisis\s*hotline)\b/i.test(lower) ||
+          /(?:s[\s*.*_~-]*u[\s*.*_~-]*i[\s*.*_~-]*c[\s*.*_~-]*i[\s*.*_~-]*d[\s*.*_~-]*e|s[\s*.*_~-]*u[\s*.*_~-]*i[\s*.*_~-]*c[\s*.*_~-]*i[\s*.*_~-]*d[\s*.*_~-]*a[\s*.*_~-]*l|s\*{3,}e|s\*{3,}d|s\*{2,}e)/i.test(lower) ||
+          /(?:k[\s*.*_~-]*i[\s*.*_~-]*l[\s*.*_~-]*l|k\*{2,}l)\s*(?:m[\s*.*_~-]*y[\s*.*_~-]*s[\s*.*_~-]*e[\s*.*_~-]*l[\s*.*_~-]*f|oneself|himself|herself|themselves)/i.test(lower) ||
+          /\b(kill|killing|die|mamatay|patayin)\b/i.test(lower)) {
         if (!detected.includes('SELF_HARM')) detected.push('SELF_HARM');
       }
 

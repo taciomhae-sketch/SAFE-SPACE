@@ -1651,6 +1651,20 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         if (!resolvedAvatar && currentUser && (p.user_id === currentUser.id || !p.user_id)) {
           resolvedAvatar = currentUser.avatar_url || null;
         }
+
+        var dynamicSens = (typeof window !== 'undefined' && window.SafeSpaceSensitiveDetector)
+          ? window.SafeSpaceSensitiveDetector.evaluate(p.content || '', Boolean(p.photo_url || pMeta.photo_url))
+          : { is_sensitive: false, categories: [], warning: null, blur_enabled: false };
+
+        var sensitiveContent = (p.sensitive_content !== undefined && p.sensitive_content !== null)
+          ? Boolean(p.sensitive_content)
+          : (pMeta.sensitive_content !== undefined ? Boolean(pMeta.sensitive_content) : dynamicSens.is_sensitive);
+        var sensitiveCategories = p.sensitive_categories || pMeta.sensitive_categories || (dynamicSens.is_sensitive ? dynamicSens.categories : []);
+        var sensitiveWarning = p.sensitive_warning || pMeta.sensitive_warning || (dynamicSens.is_sensitive ? dynamicSens.warning : null);
+        var blurEnabled = (p.blur_enabled !== undefined && p.blur_enabled !== null)
+          ? Boolean(p.blur_enabled)
+          : (pMeta.blur_enabled !== undefined ? Boolean(pMeta.blur_enabled) : sensitiveContent);
+
         return Object.assign({}, p, {
           content: SafeSpaceDB.censorProfanity(p.content),
           author_avatar: resolvedAvatar,
@@ -1658,9 +1672,13 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           saved_by: postSavedBy,
           likes: Array.isArray(p.likes) ? p.likes : [],
           comments: Array.isArray(p.comments) ? p.comments : [],
-          has_trigger_warning: hasTriggerWarning,
-          trigger_warning_category: triggerCategory,
-          trigger_warning_label: triggerLabel
+          has_trigger_warning: hasTriggerWarning || sensitiveContent,
+          trigger_warning_category: triggerCategory || (sensitiveContent ? 'SENSITIVE' : null),
+          trigger_warning_label: triggerLabel || (sensitiveContent ? 'Sensitive Content' : null),
+          sensitive_content: sensitiveContent,
+          sensitive_categories: sensitiveCategories,
+          sensitive_warning: sensitiveWarning,
+          blur_enabled: blurEnabled
         });
       });
     },

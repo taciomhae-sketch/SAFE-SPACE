@@ -2351,11 +2351,22 @@
             var localAiMeta = {};
             try { localAiMeta = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}'); } catch(e){}
             const pMeta = localAiMeta[post.id] || {};
+
+            let dynamicSens = null;
+            if (typeof window !== 'undefined' && window.SafeSpaceSensitiveDetector) {
+              dynamicSens = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
+            }
+
             const isPostSensitive = Boolean(
+              post.sensitive_content === true ||
+              post.blur_enabled === true ||
+              (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
               post.has_trigger_warning === true ||
               pMeta.has_trigger_warning === true ||
-              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(String(post.moderation_category).toUpperCase())) ||
-              (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW')
+              pMeta.sensitive_content === true ||
+              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase())) ||
+              (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW') ||
+              (dynamicSens && dynamicSens.is_sensitive)
             );
 
             let twBadgeLabel = post.trigger_warning_label || pMeta.trigger_warning_label || 'Sensitive Content';
@@ -2521,11 +2532,22 @@
             var localAiMeta = {};
             try { localAiMeta = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}'); } catch(e){}
             const pMeta = localAiMeta[post.id] || {};
+
+            let dynamicSens = null;
+            if (typeof window !== 'undefined' && window.SafeSpaceSensitiveDetector) {
+              dynamicSens = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
+            }
+
             const isPostSensitive = Boolean(
+              post.sensitive_content === true ||
+              post.blur_enabled === true ||
+              (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
               post.has_trigger_warning === true ||
               pMeta.has_trigger_warning === true ||
-              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(String(post.moderation_category).toUpperCase())) ||
-              (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW')
+              pMeta.sensitive_content === true ||
+              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase())) ||
+              (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW') ||
+              (dynamicSens && dynamicSens.is_sensitive)
             );
 
             let twBadgeLabel = post.trigger_warning_label || pMeta.trigger_warning_label || 'Sensitive Content';

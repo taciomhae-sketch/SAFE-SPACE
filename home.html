@@ -1362,7 +1362,13 @@
 
           const supportRecHtml = '';
 
-          const isPostSensitive = Boolean(
+          // ── Evaluate Sensitive Content & Warning For All Accounts (Author, Student, Admin) ──
+          let dynamicSensResult = null;
+          if (typeof window !== 'undefined' && window.SafeSpaceSensitiveDetector) {
+            dynamicSensResult = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
+          }
+
+          let isPostSensitive = Boolean(
             post.sensitive_content === true ||
             post.blur_enabled === true ||
             (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
@@ -1370,17 +1376,19 @@
             pMeta.blur_enabled === true ||
             post.has_trigger_warning === true ||
             pMeta.has_trigger_warning === true ||
-            (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
+            (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase())) ||
+            (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW') ||
+            (dynamicSensResult && dynamicSensResult.is_sensitive)
           );
 
-          let sensitiveWarning = post.sensitive_warning || pMeta.sensitive_warning;
+          let sensitiveWarning = post.sensitive_warning || pMeta.sensitive_warning || (dynamicSensResult && dynamicSensResult.warning);
           if (isPostSensitive && !sensitiveWarning && window.SafeSpaceSensitiveDetector) {
-            const evalRes = SafeSpaceSensitiveDetector.evaluate(post.content || '');
+            const evalRes = dynamicSensResult || SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
             if (evalRes && evalRes.is_sensitive) {
               sensitiveWarning = evalRes.warning;
             }
           }
-          if (!sensitiveWarning) {
+          if (!sensitiveWarning && isPostSensitive) {
             sensitiveWarning = 'Sensitive Content: This post may contain potentially distressing or sensitive material.';
           }
 
