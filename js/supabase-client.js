@@ -1794,21 +1794,28 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         }
       }
 
-      // Fallback: If content was flagged as self-harm, distress, violence, or critical by modCheck, ensure safetyRisk is populated
+      // Ensure Safety Risk detection runs and covers Critical, High, Moderate, and Low tiers
+      if (!safetyRisk && typeof window !== 'undefined' && window.SafeSpaceSafetyEngine && content) {
+        try {
+          safetyRisk = window.SafeSpaceSafetyEngine.evaluate(rawContent || content, [], { isAnonymous: is_anonymous });
+        } catch (engErr) {}
+      }
+
+      // Fallback: If content was flagged as self-harm, distress, violence, profanity, or critical/moderate/low by modCheck, ensure safetyRisk is populated
       if (!safetyRisk && typeof modCheck !== 'undefined' && modCheck) {
         var modRisk = String(modCheck.risk_level || '').toLowerCase();
         var modCat = String(modCheck.category || '').toUpperCase();
-        if (['critical', 'high', 'moderate'].includes(modRisk) || ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS'].includes(modCat)) {
+        if (['critical', 'high', 'moderate', 'low'].includes(modRisk) || ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY'].includes(modCat) || is_sensitive) {
           safetyRisk = {
-            risk_level: (modRisk === 'critical' || modRisk === 'high' || modRisk === 'moderate') ? modRisk : (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : 'moderate'),
-            concern_type: modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : (modCat === 'THREAT' ? 'CREDIBLE_VIOLENCE_OR_THREAT' : 'POSSIBLE_EMOTIONAL_DISTRESS'),
+            risk_level: (modRisk === 'critical' || modRisk === 'high' || modRisk === 'moderate' || modRisk === 'low') ? modRisk : (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : (modCat === 'DISTRESS' || modCat === 'BULLYING' || is_sensitive ? 'moderate' : 'low')),
+            concern_type: modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : (modCat === 'THREAT' || modCat === 'VIOLENCE' ? 'CREDIBLE_VIOLENCE_OR_THREAT' : (modCat === 'BULLYING' ? 'BULLYING_OR_HARASSMENT' : 'POSSIBLE_EMOTIONAL_DISTRESS')),
             moderation_category: modCat,
-            moderation_severity: modCheck.severity || 'high',
+            moderation_severity: modCheck.severity || (modRisk === 'critical' ? 'critical' : (modRisk === 'high' ? 'high' : 'medium')),
             reason: modCheck.reason || 'Flagged by content moderation system.',
             evidence_reference: rawContent || content,
             confidence: modCheck.confidence || 0.95,
-            urgency: (modRisk === 'critical' || modCat === 'SELF_HARM') ? 'immediate' : 'urgent',
-            recommended_action: 'Urgent review recommended by authorized safety administrator.',
+            urgency: (modRisk === 'critical' || modCat === 'SELF_HARM' || modCat === 'THREAT') ? 'immediate' : (modRisk === 'high' ? 'urgent' : 'routine'),
+            recommended_action: 'Review recommended by authorized safety administrator.',
             alert_required: true
           };
         }
@@ -1929,7 +1936,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           } catch (me) {}
 
           // Automatically create persistent safety alert if risk criteria are met
-          if (safetyRisk && (safetyRisk.alert_required || ['critical', 'high', 'moderate'].includes(String(safetyRisk.risk_level).toLowerCase()))) {
+          if (safetyRisk && (safetyRisk.alert_required || ['critical', 'high', 'moderate', 'low'].includes(String(safetyRisk.risk_level).toLowerCase()))) {
             SafeSpaceDB.safetyAlerts.createAlert({
               content_id: p.id,
               content_type: 'post',
@@ -2018,7 +2025,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       localStorage.setItem('safe_space_posts', JSON.stringify(posts));
 
       // Automatically create persistent safety alert in Demo Mode
-      if (safetyRisk && (safetyRisk.alert_required || ['critical', 'high', 'moderate'].includes(String(safetyRisk.risk_level).toLowerCase()))) {
+      if (safetyRisk && (safetyRisk.alert_required || ['critical', 'high', 'moderate', 'low'].includes(String(safetyRisk.risk_level).toLowerCase()))) {
         SafeSpaceDB.safetyAlerts.createAlert({
           content_id: newPost.id,
           content_type: 'post',
@@ -8084,12 +8091,15 @@ var SafeSpaceDB = window.SafeSpaceDB = {
                       if (!alertExists) {
                         var evalRes = safetyEngine.evaluate(pst.content, [], { isAnonymous: pst.is_anonymous });
                         var modCat = String(pst.moderation_category || '').toUpperCase();
-                        var isCritMod = evalRes && (
+                        var modRisk = String(pst.risk_level || (evalRes ? evalRes.risk_level : '')).toLowerCase();
+                        var isRiskOrFlagged = evalRes && (
                           evalRes.alert_required ||
-                          ['critical', 'high', 'moderate'].includes(String(evalRes.risk_level).toLowerCase()) ||
-                          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS'].includes(modCat)
+                          ['critical', 'high', 'moderate', 'low'].includes(modRisk) ||
+                          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY'].includes(modCat) ||
+                          Boolean(pst.sensitive_content) ||
+                          Boolean(pst.blur_enabled)
                         );
-                        if (isCritMod) {
+                        if (isRiskOrFlagged) {
                           fetchedAlerts.push({
                             id: 'alt-sb-' + (pst.id || pIdx),
                             alert_code: 'ALT-' + (pst.created_at ? pst.created_at.slice(0, 10).replace(/-/g, '') : '2026') + '-' + String(pIdx + 1).padStart(4, '0'),
@@ -8102,15 +8112,15 @@ var SafeSpaceDB = window.SafeSpaceDB = {
                             author_avatar: pst.is_anonymous ? null : (pst.profiles ? pst.profiles.avatar_url : null),
                             content_snippet: pst.content || '',
                             is_anonymous: Boolean(pst.is_anonymous),
-                            risk_level: evalRes.risk_level || (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : 'moderate'),
-                            concern_type: evalRes.concern_type || (modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : 'POSSIBLE_EMOTIONAL_DISTRESS'),
-                            moderation_category: evalRes.moderation_category || modCat || 'SELF_HARM',
-                            moderation_severity: evalRes.moderation_severity || 'critical',
-                            reason: evalRes.reason || 'Flagged by Safe Space AI content monitoring.',
-                            evidence_text: evalRes.evidence_reference || pst.content,
-                            confidence: evalRes.confidence || 0.95,
-                            urgency: evalRes.urgency || 'immediate',
-                            recommended_action: evalRes.recommended_action || 'Review context and provide prompt intervention.',
+                            risk_level: (evalRes && evalRes.risk_level && evalRes.risk_level !== 'none') ? evalRes.risk_level : (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : (modCat === 'DISTRESS' ? 'moderate' : 'low')),
+                            concern_type: (evalRes && evalRes.concern_type) ? evalRes.concern_type : (modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : (modCat === 'THREAT' || modCat === 'VIOLENCE' ? 'CREDIBLE_VIOLENCE_OR_THREAT' : 'POSSIBLE_EMOTIONAL_DISTRESS')),
+                            moderation_category: (evalRes && evalRes.moderation_category) || modCat || 'SAFE',
+                            moderation_severity: (evalRes && evalRes.moderation_severity) || (modRisk === 'critical' ? 'critical' : (modRisk === 'high' ? 'high' : 'medium')),
+                            reason: (evalRes && evalRes.reason) || pst.moderation_reason || 'Flagged by Safe Space AI content monitoring.',
+                            evidence_text: (evalRes && evalRes.evidence_reference) || pst.content,
+                            confidence: (evalRes && evalRes.confidence) || 0.95,
+                            urgency: (evalRes && evalRes.urgency) || (modRisk === 'critical' ? 'immediate' : (modRisk === 'high' ? 'urgent' : 'routine')),
+                            recommended_action: (evalRes && evalRes.recommended_action) || 'Review context and monitor student safety.',
                             status: 'new',
                             created_at: pst.created_at || new Date().toISOString(),
                             updated_at: pst.created_at || new Date().toISOString()
@@ -8142,7 +8152,16 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               var pst = allPosts[pIdx];
               if (pst && pst.content) {
                 var evalRes = window.SafeSpaceSafetyEngine.evaluate(pst.content, [], { isAnonymous: pst.is_anonymous });
-                if (evalRes && (evalRes.alert_required || ['critical', 'high', 'moderate'].includes(String(evalRes.risk_level).toLowerCase()))) {
+                var modCat = String(pst.moderation_category || '').toUpperCase();
+                var modRisk = String(pst.risk_level || (evalRes ? evalRes.risk_level : '')).toLowerCase();
+                var isRiskOrFlagged = evalRes && (
+                  evalRes.alert_required ||
+                  ['critical', 'high', 'moderate', 'low'].includes(modRisk) ||
+                  ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY'].includes(modCat) ||
+                  Boolean(pst.sensitive_content) ||
+                  Boolean(pst.blur_enabled)
+                );
+                if (isRiskOrFlagged) {
                   local.push({
                     id: 'alt-' + (pst.id || pIdx),
                     alert_code: 'ALT-' + String(pIdx + 1).padStart(4, '0'),
@@ -8155,15 +8174,15 @@ var SafeSpaceDB = window.SafeSpaceDB = {
                     author_avatar: pst.is_anonymous ? null : (pst.author_avatar || (pst.profiles ? pst.profiles.avatar_url : null)),
                     content_snippet: pst.content || '',
                     is_anonymous: Boolean(pst.is_anonymous),
-                    risk_level: evalRes.risk_level,
-                    concern_type: evalRes.concern_type,
-                    moderation_category: evalRes.moderation_category || 'SELF_HARM',
-                    moderation_severity: evalRes.moderation_severity || 'medium',
-                    reason: evalRes.reason,
-                    evidence_text: evalRes.evidence_reference || pst.content,
-                    confidence: evalRes.confidence || 0.92,
-                    urgency: evalRes.urgency || (evalRes.risk_level === 'critical' ? 'immediate' : 'routine'),
-                    recommended_action: evalRes.recommended_action || 'Review context and provide support.',
+                    risk_level: (evalRes && evalRes.risk_level && evalRes.risk_level !== 'none') ? evalRes.risk_level : (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : (modCat === 'DISTRESS' ? 'moderate' : 'low')),
+                    concern_type: (evalRes && evalRes.concern_type) ? evalRes.concern_type : (modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : (modCat === 'THREAT' || modCat === 'VIOLENCE' ? 'CREDIBLE_VIOLENCE_OR_THREAT' : 'POSSIBLE_EMOTIONAL_DISTRESS')),
+                    moderation_category: (evalRes && evalRes.moderation_category) || modCat || 'SAFE',
+                    moderation_severity: (evalRes && evalRes.moderation_severity) || (modRisk === 'critical' ? 'critical' : (modRisk === 'high' ? 'high' : 'medium')),
+                    reason: (evalRes && evalRes.reason) || pst.moderation_reason || 'Flagged by Safe Space AI content monitoring.',
+                    evidence_text: (evalRes && evalRes.evidence_reference) || pst.content,
+                    confidence: (evalRes && evalRes.confidence) || 0.92,
+                    urgency: (evalRes && evalRes.urgency) || (modRisk === 'critical' ? 'immediate' : (modRisk === 'high' ? 'urgent' : 'routine')),
+                    recommended_action: (evalRes && evalRes.recommended_action) || 'Review context and provide support.',
                     status: 'new',
                     created_at: pst.created_at || new Date().toISOString(),
                     updated_at: new Date().toISOString()

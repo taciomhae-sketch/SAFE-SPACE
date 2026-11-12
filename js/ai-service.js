@@ -2922,7 +2922,9 @@ Return ONLY valid JSON, no markdown fences, no extra text:
     ],
 
     VIOLENCE_PATTERNS: [
-      /\b(i('ll| will| am going to| gonna)\s*(kill|murder|shoot|stab|choke|strangle|slit\s*the\s*throat\s*of)\s*(you|him|her|them|everyone|all\s*of\s*you))\b/i,
+      /\b(i('ll| will| am going to| gonna|\s*wanna)\s*(kill|murder|shoot|stab|choke|strangle|slit\s*the\s*throat\s*of|k[\s*.*_~-]*i[\s*.*_~-]*l[\s*.*_~-]*l|k\*{2,}l)\s*(you|him|her|them|everyone|all\s*of\s*you|someone|people|the\s*bitch|b\*{2,}h))\b/i,
+      /(?:k[\s*.*_~-]*i[\s*.*_~-]*l[\s*.*_~-]*l|k\*{2,}l)\s*(?:her|him|them|you|everyone|someone|people|the\s*bitch|b\*{2,}h)/i,
+      /\b(kill|murder|shoot|stab)\s+(her|him|them|you|everyone|someone|the\s*bitch)\b/i,
       /\b(i('m| am)\s*bringing\s*(a\s*gun|a\s*knife|a\s*weapon|a\s*bomb)\s*to\s*(school|campus|class|building))\b/i,
       /\b(watch\s*your\s*back\s*.*?(gonna\s*die|beat\s*you|kill\s*you))\b/i,
       /\b(papatayin\s*kita|sasaksakin\s*kita|babarilin\s*ko\s*kayo|papatayin\s*ko\s*kayo)\b/i
