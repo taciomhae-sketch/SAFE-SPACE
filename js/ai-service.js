@@ -2861,6 +2861,8 @@ Return ONLY valid JSON, no markdown fences, no extra text:
 
     IMMINENT_PATTERNS: [
       /\b(i('m| am| will| plan to| decide to| decided to| want to| need to| ready to)?\s*(going to|gonna|will)?\s*(kill myself|end my life|commit suicide|hang myself|slit my wrists|overdose|jump off|swallow pills|take my own life)\s*(tonight|today|now|soon|this evening|after this|goodbye|right now)?)\b/i,
+      /(?:i('m| am| will)?\s*(?:going to|gonna|will)?\s*(?:s[\s*.*_~-]*u[\s*.*_~-]*i[\s*.*_~-]*c[\s*.*_~-]*i[\s*.*_~-]*d[\s*.*_~-]*e|s\*{3,}e|s\*{2,}e)\s*(?:tonight|today|now|soon)?)/i,
+      /(?:i('m| am| will)?\s*(?:going to|gonna|will)?\s*(?:k[\s*.*_~-]*i[\s*.*_~-]*l[\s*.*_~-]*l|k\*{2,}l)\s*(?:myself|my\s*self)\s*(?:tonight|today|now|soon)?)/i,
       /\b(i\s*want\s*to\s*(end\s*my\s*life|die|kill\s*myself)\s*(tonight|today|now|soon)?)\b/i,
       /\b(goodbye\s*(cruel\s*world|everyone|everybody|forever|guys|y'?all|to\s*all)\b.*?(won'?t\s*be\s*here|never\s*see\s*me|last\s*(post|message|day|night)|ending\s*it)?)\b/i,
       /\b(this\s*is\s*my\s*(last|final)\s*(post|message|note|goodbye))\b/i,

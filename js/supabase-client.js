@@ -1788,9 +1788,29 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           var userHistory = [];
           var allLocalPosts = JSON.parse(localStorage.getItem('safe_space_posts') || '[]');
           userHistory = allLocalPosts.filter(function(lp) { return lp.user_id === currentUser.id; }).slice(0, 5);
-          safetyRisk = await window.AIService.evaluateSafetyRisk(content, userHistory, { isAnonymous: is_anonymous });
+          safetyRisk = await window.AIService.evaluateSafetyRisk(rawContent || content, userHistory, { isAnonymous: is_anonymous });
         } catch (sErr) {
           console.warn('[SafetyRisk] evaluate notice:', sErr);
+        }
+      }
+
+      // Fallback: If content was flagged as self-harm, distress, violence, or critical by modCheck, ensure safetyRisk is populated
+      if (!safetyRisk && typeof modCheck !== 'undefined' && modCheck) {
+        var modRisk = String(modCheck.risk_level || '').toLowerCase();
+        var modCat = String(modCheck.category || '').toUpperCase();
+        if (['critical', 'high', 'moderate'].includes(modRisk) || ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS'].includes(modCat)) {
+          safetyRisk = {
+            risk_level: (modRisk === 'critical' || modRisk === 'high' || modRisk === 'moderate') ? modRisk : (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : 'moderate'),
+            concern_type: modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : (modCat === 'THREAT' ? 'CREDIBLE_VIOLENCE_OR_THREAT' : 'POSSIBLE_EMOTIONAL_DISTRESS'),
+            moderation_category: modCat,
+            moderation_severity: modCheck.severity || 'high',
+            reason: modCheck.reason || 'Flagged by content moderation system.',
+            evidence_reference: rawContent || content,
+            confidence: modCheck.confidence || 0.95,
+            urgency: (modRisk === 'critical' || modCat === 'SELF_HARM') ? 'immediate' : 'urgent',
+            recommended_action: 'Urgent review recommended by authorized safety administrator.',
+            alert_required: true
+          };
         }
       }
 
