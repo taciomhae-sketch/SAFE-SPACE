@@ -3824,6 +3824,7 @@
           renderPostsList();
           renderSentimentBreakdown();
           renderAiGovernanceMetrics();
+          syncSafetyAlertsFromPosts(posts);
         } else if (SafeSpaceDB.community && SafeSpaceDB.community.getPosts) {
           return SafeSpaceDB.community.getPosts().then(fb => {
             if (Array.isArray(fb) && fb.length > 0) {
@@ -3831,6 +3832,7 @@
               renderPostsList();
               renderSentimentBreakdown();
               renderAiGovernanceMetrics();
+              syncSafetyAlertsFromPosts(fb);
             }
           });
         }
@@ -3844,6 +3846,7 @@
               renderPostsList();
               renderSentimentBreakdown();
               renderAiGovernanceMetrics();
+              syncSafetyAlertsFromPosts(fb);
             }
           } catch(e) {}
         }
@@ -6983,6 +6986,66 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+
+    // Automatically scan and sync safety alerts from posts so critical/moderate content by any user is guaranteed in Safety Monitoring
+    function syncSafetyAlertsFromPosts(posts) {
+      if (!Array.isArray(posts) || posts.length === 0 || !window.SafeSpaceSafetyEngine) return;
+      let added = false;
+      cachedSafetyAlerts = cachedSafetyAlerts || [];
+
+      posts.forEach((p, idx) => {
+        if (!p || !p.content) return;
+        const alertExists = cachedSafetyAlerts.some(a => String(a.content_id) === String(p.id) || String(a.id) === String(p.id));
+        if (alertExists) return;
+
+        const evalRes = window.SafeSpaceSafetyEngine.evaluate(p.content, [], { isAnonymous: p.is_anonymous });
+        const modCat = String(p.moderation_category || '').toUpperCase();
+        const isCriticalOrModerate = evalRes && (
+          evalRes.alert_required ||
+          ['critical', 'high', 'moderate'].includes(String(evalRes.risk_level).toLowerCase()) ||
+          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS'].includes(modCat)
+        );
+
+        if (isCriticalOrModerate) {
+          const newAlert = {
+            id: 'alt-post-' + (p.id || idx),
+            alert_code: 'ALT-' + (p.created_at ? p.created_at.slice(0, 10).replace(/-/g, '') : '2026') + '-' + String(idx + 1).padStart(4, '0'),
+            content_id: p.id || 'N/A',
+            content_type: 'post',
+            user_id: p.user_id,
+            author_name: p.is_anonymous ? 'Anonymous' : (p.author_name || (p.profiles ? SafeSpaceDB._displayName(p.profiles) : 'Student')),
+            author_username: p.profiles ? p.profiles.username : (p.author_username || null),
+            author_email: p.profiles ? p.profiles.email : (p.author_email || null),
+            author_avatar: p.is_anonymous ? null : (p.author_avatar || (p.profiles ? p.profiles.avatar_url : null)),
+            content_snippet: p.content,
+            is_anonymous: Boolean(p.is_anonymous),
+            risk_level: evalRes.risk_level || 'critical',
+            concern_type: evalRes.concern_type || 'SUICIDAL_IDEATION_IMMINENT',
+            moderation_category: evalRes.moderation_category || modCat || 'SELF_HARM',
+            moderation_severity: evalRes.moderation_severity || 'critical',
+            reason: evalRes.reason || 'Flagged by Safe Space AI monitoring.',
+            evidence_text: evalRes.evidence_reference || p.content,
+            confidence: evalRes.confidence || 0.95,
+            urgency: evalRes.urgency || 'immediate',
+            recommended_action: evalRes.recommended_action || 'Review context and provide prompt intervention.',
+            status: 'new',
+            created_at: p.created_at || new Date().toISOString(),
+            updated_at: p.created_at || new Date().toISOString()
+          };
+          cachedSafetyAlerts.unshift(newAlert);
+          added = true;
+        }
+      });
+
+      if (added) {
+        try {
+          localStorage.setItem('safe_space_safety_alerts', JSON.stringify(cachedSafetyAlerts));
+        } catch (e) {}
+        updateSafetyKpiCounters();
+        renderSafetyAlertsTable();
+      }
+    }
+    window.syncSafetyAlertsFromPosts = syncSafetyAlertsFromPosts;
 
     async function loadSafetyAlertsData(forceRefresh = false) {
       try {
