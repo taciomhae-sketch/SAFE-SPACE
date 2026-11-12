@@ -1258,7 +1258,9 @@
       }
 
       // D. Violence & Graphic Content
-      if (/\b(violence|violent|assault|assaulted|beaten\s*up|punch(ed)?|stab(bed)?|shot|shooting|blood(y)?|wound(ed)?|injury|injuries|fracture|broken\s*bones|sinapak|binugbog|binaril|sinaksak|saksakan|bugbugan|duguan|sugat|karahasan|pambubugbog|napaslang|patayan|madugong|suntukan|graphic\s*content|disturbing\s*scene|graphic\s*images?|horror|gore|mutilat(ion|ed))\b/i.test(lower)) {
+      if (/\b(violence|violent|assault|assaulted|beaten\s*up|punch(ed)?|stab(bed)?|shot|shooting|blood(y)?|wound(ed)?|injury|injuries|fracture|broken\s*bones|sinapak|binugbog|binaril|sinaksak|saksakan|bugbugan|duguan|sugat|karahasan|pambubugbog|napaslang|patayan|madugong|suntukan|graphic\s*content|disturbing\s*scene|graphic\s*images?|horror|gore|mutilat(ion|ed))\b/i.test(lower) ||
+          /(?:k[\s*.*_~-]*i[\s*.*_~-]*l[\s*.*_~-]*l|k\*{2,}l)\s*(?:her|him|them|you|everyone|someone|people|the\s*bitch|b\*{2,}h)/i.test(lower) ||
+          /\b(kill|murder|shoot|stab)\s+(her|him|them|you|everyone|someone)\b/i.test(lower)) {
         if (!detected.includes('VIOLENCE')) detected.push('VIOLENCE');
       }
 
@@ -1266,17 +1268,23 @@
       if (/\b(self-harm|self\s*harm|cutting|slit(ting)?\s*wrists?|burned\s*myself|suicid(e|al)|ending\s*(my|one'?s)\s*life|kill(ing)?\s*myself|magpakamatay|pagpapakamatay|maglaslas|laslas|magbigti|kitilin\s*ang\s*buhay|patayin\s*ang\s*sarili|ayaw\s*ko\s*nang\s*mabuhay|gusto\s*ko\s*nang\s*mawala|recovery\s*from\s*(self-harm|cutting)|trying\s*to\s*stay\s*clean|urges\s*to\s*harm|crisis\s*hotline)\b/i.test(lower) ||
           /(?:s[\s*.*_~-]*u[\s*.*_~-]*i[\s*.*_~-]*c[\s*.*_~-]*i[\s*.*_~-]*d[\s*.*_~-]*e|s[\s*.*_~-]*u[\s*.*_~-]*i[\s*.*_~-]*c[\s*.*_~-]*i[\s*.*_~-]*d[\s*.*_~-]*a[\s*.*_~-]*l|s\*{3,}e|s\*{3,}d|s\*{2,}e)/i.test(lower) ||
           /(?:k[\s*.*_~-]*i[\s*.*_~-]*l[\s*.*_~-]*l|k\*{2,}l)\s*(?:m[\s*.*_~-]*y[\s*.*_~-]*s[\s*.*_~-]*e[\s*.*_~-]*l[\s*.*_~-]*f|oneself|himself|herself|themselves)/i.test(lower) ||
-          /\b(kill|killing|die|mamatay|patayin)\b/i.test(lower)) {
+          /\b(kill|killing|die|mamatay|patayin)\b/i.test(lower) ||
+          /\b(i\s*feel\s*(completely\s*)?(hopeless|empty|numb|broken|trapped|drowning))\b/i.test(lower) ||
+          /\b(burden\s*to\s*(everyone|my\s*family|my\s*friends|society|around\s*me))\b/i.test(lower) ||
+          /\b(i\s*can'?t\s*do\s*this\s*anymore|cannot\s*do\s*this\s*anymore|can'?t\s*take\s*(it|this)\s*anymore)\b/i.test(lower) ||
+          /\b(giving\s*up\s*on\s*life|want\s*to\s*disappear)\b/i.test(lower)) {
         if (!detected.includes('SELF_HARM')) detected.push('SELF_HARM');
       }
 
       // F. Trauma & Distressing Experiences
-      if (/\b(trauma|traumatic|traumatiz(ed|ing)|ptsd|abuse|abused|abusive|molest(ed|ation)|rape|raped|survivor\s*of\s*abuse|toxic\s*household|pinagmalupitan|minolestya|ginahasa|pang-aabuso|na-trauma|nakaranas\s*ng\s*trauma|masakit\s*na\s*karanasan|masamang\s*karanasan|flashbacks?|painful\s*memories|frightening\s*event|horrific\s*accident|distressing\s*experience|emotional\s*crisis|mental\s*breakdown|umiiyak\s*lang\s*(ako)?\s*gabi\s*gabi|hirap\s*na\s*hirap\s*na\s*ako\s*umiiyak)\b/i.test(lower)) {
+      if (/\b(trauma|traumatic|traumatiz(ed|ing)|ptsd|abuse|abused|abusive|molest(ed|ation)|rape|raped|survivor\s*of\s*abuse|toxic\s*household|pinagmalupitan|minolestya|ginahasa|pang-aabuso|na-trauma|nakaranas\s*ng\s*trauma|masakit\s*na\s*karanasan|masamang\s*karanasan|flashbacks?|painful\s*memories|frightening\s*event|horrific\s*accident|distressing\s*experience|emotional\s*crisis|mental\s*breakdown|umiiyak\s*lang\s*(ako)?\s*gabi\s*gabi|hirap\s*na\s*hirap\s*na\s*ako\s*umiiyak)\b/i.test(lower) ||
+          /\b(hopeless|mentally\s*exhausted|emotionally\s*drained|burden\s*to|can'?t\s*do\s*this\s*anymore)\b/i.test(lower)) {
         if (!detected.includes('TRAUMA')) detected.push('TRAUMA');
       }
 
       // G. Profanity & Offensive Language
-      if (/\b(putangina|tangina|taena|amputa|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|fuck|fucking|fucker|fucked|shit|bitch|bastard|asshole|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)\b/i.test(lower)) {
+      if (/\b(putangina|tangina|taena|amputa|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|fuck|fucking|fucker|fucked|shit|bitch|bastard|asshole|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)\b/i.test(lower) ||
+          /(?:b[\s*.*_~-]*i[\s*.*_~-]*t[\s*.*_~-]*c[\s*.*_~-]*h|b\*{2,}h|b\*{3,}h|f\*{2,}k|s\*{2,}t)/i.test(lower)) {
         if (!detected.includes('PROFANITY')) detected.push('PROFANITY');
       }
 
