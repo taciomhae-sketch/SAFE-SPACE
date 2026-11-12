@@ -7078,9 +7078,9 @@
       }
     }
 
-    // Real-time broadcast and event listener for safety alerts
+    // Real-time broadcast and event listener for safety alerts and post deletions/moderation
     function initSafetyAlertsRealtime() {
-      // 1. Cross-tab BroadcastChannel
+      // 1. Cross-tab BroadcastChannel for safety alerts
       if (typeof BroadcastChannel !== 'undefined') {
         try {
           const safetyCh = new BroadcastChannel('safespace_safety_alerts_channel');
@@ -7090,7 +7090,28 @@
             }
           };
         } catch (be) {}
+
+        try {
+          const modCh = new BroadcastChannel('safespace_moderation_channel');
+          modCh.onmessage = function(e) {
+            if (e.data && (e.data.action === 'deleted' || e.data.action === 'hidden')) {
+              handleExternalPostDeletion(e.data.postId);
+            }
+          };
+        } catch (me) {}
       }
+
+      // Storage event listener fallback for cross-tab sync
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'safe_space_post_moderation_sync' && e.newValue) {
+          try {
+            const data = JSON.parse(e.newValue);
+            if (data && (data.action === 'deleted' || data.action === 'hidden')) {
+              handleExternalPostDeletion(data.postId);
+            }
+          } catch (se) {}
+        }
+      });
 
       // 2. Window CustomEvent listener
       window.addEventListener('safe_space_safety_alert_created', function(e) {
@@ -7111,12 +7132,34 @@
                   handleIncomingSafetyAlert(payload.new);
                 }
               })
+              .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, payload => {
+                if (payload.old && payload.old.id) {
+                  handleExternalPostDeletion(payload.old.id);
+                }
+              })
               .subscribe();
           }
         }
       } catch (sbe) {
         console.warn('[Admin] Realtime subscription notice:', sbe);
       }
+    }
+
+    function handleExternalPostDeletion(postId) {
+      if (!postId) return;
+      if (Array.isArray(cachedPosts)) {
+        cachedPosts = cachedPosts.filter(p => String(p.id) !== String(postId));
+        renderPostsList();
+        renderSentimentBreakdown();
+        renderAiGovernanceMetrics();
+      }
+      try {
+        const adminPosts = JSON.parse(localStorage.getItem('safe_space_admin_cached_posts') || '[]');
+        if (Array.isArray(adminPosts)) {
+          const filtered = adminPosts.filter(p => String(p.id) !== String(postId));
+          localStorage.setItem('safe_space_admin_cached_posts', JSON.stringify(filtered));
+        }
+      } catch (e) {}
     }
 
     function handleIncomingSafetyAlert(alert) {

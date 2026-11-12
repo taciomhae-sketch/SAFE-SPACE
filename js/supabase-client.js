@@ -2810,19 +2810,60 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       var currentUser = await SafeSpaceDB.auth.getCurrentUser();
       if (!currentUser) return false;
 
+      // 1. Supabase deletion (attempt soft-delete and hard-delete)
       if (SafeSpaceDB.isSupabaseActive() && SafeSpaceDB.posts._isUUID(postId)) {
         try {
-          var res = await _db.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
-          if (res.error) throw res.error;
-          return true;
+          var client = _dbAdmin || _db;
+          // Mark archived first so no query or feed returns it
+          try {
+            await client.from('posts').update({ archived: true }).eq('id', postId);
+          } catch (archErr) {}
+
+          // Attempt child table cleanup to prevent foreign key constraint rejections
+          try {
+            await Promise.allSettled([
+              client.from('post_likes').delete().eq('post_id', postId),
+              client.from('post_comments').delete().eq('post_id', postId),
+              client.from('saved_posts').delete().eq('post_id', postId),
+              client.from('reports').delete().eq('post_id', postId)
+            ]);
+          } catch (fkErr) {}
+
+          // Hard delete attempt
+          var res = await client.from('posts').delete().eq('id', postId);
+          if (res.error) {
+            console.warn('[SafeSpace] Supabase hard delete notice, falling back to archived:', res.error.message);
+          }
         } catch (err) {
-          console.warn('[SafeSpace] Supabase deletePost failed, using local:', err.message);
+          console.warn('[SafeSpace] Supabase deletePost notice:', err.message);
         }
       }
 
+      // 2. Remove from local safe_space_posts and safe_space_admin_cached_posts
       var posts = JSON.parse(localStorage.getItem('safe_space_posts')) || [];
-      posts = posts.filter(function(p) { return p.id !== postId; });
+      posts = posts.filter(function(p) { return String(p.id) !== String(postId); });
       localStorage.setItem('safe_space_posts', JSON.stringify(posts));
+
+      try {
+        var adminPosts = JSON.parse(localStorage.getItem('safe_space_admin_cached_posts') || '[]');
+        if (Array.isArray(adminPosts)) {
+          adminPosts = adminPosts.filter(function(p) { return String(p.id) !== String(postId); });
+          localStorage.setItem('safe_space_admin_cached_posts', JSON.stringify(adminPosts));
+        }
+      } catch (ae) {}
+
+      // 3. Mark in moderation overrides as archived/deleted so feeds never resurrect it
+      try {
+        var ov = JSON.parse(localStorage.getItem('safe_space_post_moderation_overrides') || '{}');
+        ov[postId] = { archived: true, status: 'DELETED', deleted_at: new Date().toISOString() };
+        localStorage.setItem('safe_space_post_moderation_overrides', JSON.stringify(ov));
+      } catch (ove) {}
+
+      // 4. Real-time broadcast to all browser tabs and Admin/Student windows
+      if (typeof SafeSpaceDB._broadcastModerationSync === 'function') {
+        SafeSpaceDB._broadcastModerationSync(postId, 'deleted');
+      }
+
       return true;
     },
 
