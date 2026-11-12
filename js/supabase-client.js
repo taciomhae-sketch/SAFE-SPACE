@@ -8124,6 +8124,10 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('safe_space_safety_alert_created', { detail: record }));
         }
+        if (typeof BroadcastChannel !== 'undefined') {
+          var safetyCh = new BroadcastChannel('safespace_safety_alerts_channel');
+          safetyCh.postMessage({ type: 'safety_alert_created', alert: record });
+        }
       } catch (e) {}
 
       return record;

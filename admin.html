@@ -815,6 +815,11 @@
           <i class="fas fa-book-medical"></i>
           <span>Resources &amp; Bible</span>
         </div>
+        <div class="admin-nav-item" data-tab="community-preview" style="border-left: 3px solid #10B981; padding-left: 11px;">
+          <i class="fas fa-street-view" style="color:#10B981;"></i>
+          <span>Community Preview</span>
+          <span class="badge-count" style="background:#DCFCE7; color:#15803D; font-size:9.5px; font-weight:800; padding:2px 6px;">STUDENT UI</span>
+        </div>
 
         <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border);">
           <a href="home.html" class="admin-nav-item" style="color:var(--primary);">
@@ -859,6 +864,11 @@
             <div class="ai-status-dot" id="topbarAiDot"></div>
             <span id="topbarAiLabel">AI Moderation Active</span>
           </div>
+
+          <button type="button" class="admin-btn admin-btn-outline" style="border-color:#10B981; color:#047857; background:#ECFDF5; font-weight:700;" onclick="switchAdminTab('community-preview')" title="View Live Student Interface">
+            <i class="fas fa-street-view" style="color:#10B981;"></i>
+            <span>Community Preview</span>
+          </button>
 
           <button type="button" class="admin-btn admin-btn-outline" id="refreshDataBtn" title="Refresh Live Database">
             <i class="fas fa-rotate"></i>
@@ -2000,6 +2010,61 @@
                 <div style="font-size:11px; color:var(--text-mid);"><i class="fas fa-sun"></i> Dynamic daily verse card</div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 7: COMMUNITY PREVIEW (LIVE STUDENT INTERFACE)
+             ========================================== -->
+        <section id="tab-community-preview" class="admin-tab-pane" style="display:none;">
+          <!-- Administrative Preview Notice Banner -->
+          <div style="background:linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%); border:1px solid #A7F3D0; border-radius:12px; padding:12px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:36px; height:36px; border-radius:10px; background:#10B981; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px;">
+                <i class="fas fa-street-view"></i>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:800; color:#065F46;">
+                  Community Preview · Student Interface Experience
+                </div>
+                <div style="font-size:11.5px; color:#047857; margin-top:1px;">
+                  Observing live student feed, real posts, reactions, content warnings, and blur states directly from the student's perspective.
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="status-badge" style="background:#DCFCE7; color:#15803D; font-size:11px; font-weight:700;">
+                <i class="fas fa-shield-halved"></i> Read-Only Monitor Mode
+              </span>
+              <button type="button" class="admin-btn admin-btn-outline" style="font-size:11px; padding:5px 10px; background:#fff;" onclick="refreshCommunityPreviewIframe()">
+                <i class="fas fa-rotate"></i> Reload Preview
+              </button>
+              <a href="home.html" target="_blank" class="admin-btn admin-btn-outline" style="font-size:11px; padding:5px 10px; background:#fff; text-decoration:none; color:var(--text-dark);">
+                <i class="fas fa-arrow-up-right-from-square"></i> Open in New Tab
+              </a>
+            </div>
+          </div>
+
+          <!-- Community Preview Live Frame Container -->
+          <div style="background:#fff; border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,0.04); display:flex; flex-direction:column; height:calc(100vh - 210px); min-height:640px;">
+            <!-- Browser Chrome Simulation Header -->
+            <div style="background:#F8F9FA; border-bottom:1px solid #E5E7EB; padding:8px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:10px; height:10px; border-radius:50%; background:#EF4444; display:inline-block;"></span>
+                <span style="width:10px; height:10px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
+                <span style="width:10px; height:10px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+              </div>
+              <div style="flex:1; max-width:540px; background:#FFFFFF; border:1px solid #D1D5DB; border-radius:6px; padding:4px 12px; font-size:11px; color:#4B5563; font-family:monospace; display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                <i class="fas fa-lock" style="color:#10B981; font-size:10px;"></i>
+                <span>safespace.asu.edu.ph/home.html (Live Community Feed)</span>
+              </div>
+              <div style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-database" style="color:var(--primary);"></i> Connected to Live Supabase DB
+              </div>
+            </div>
+
+            <!-- Embedded Live Student Feed Frame -->
+            <iframe id="communityPreviewFrame" src="home.html" style="width:100%; height:100%; border:none; flex:1; background:#F8F6FD;" title="Live Safe Space Community Interface"></iframe>
           </div>
         </section>
 
@@ -3514,10 +3579,13 @@
       // Listen to browser hash changes (e.g. back/forward buttons or direct links)
       window.addEventListener('hashchange', () => {
         const hashTab = (window.location.hash || '').replace('#', '');
-        if (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'safety-alerts', 'resources'].includes(hashTab)) {
+        if (hashTab && ['overview', 'users', 'posts', 'reports', 'ai-governance', 'safety-alerts', 'resources', 'community-preview'].includes(hashTab)) {
           switchAdminTab(hashTab);
         }
       });
+
+      // Initialize Realtime Listener for Safety Alerts across tabs and Supabase
+      initSafetyAlertsRealtime();
 
       // Mobile Menu
       const mobileToggle = document.getElementById('mobileMenuToggle');
@@ -3691,7 +3759,8 @@
         reports: ['Safety Reports Triage', 'Resolve Harassment & Emergency Flags'],
         'ai-governance': ['AI Governance & Control Center', 'Configure BART Zero-Shot & RoBERTa Sensitivity'],
         'safety-alerts': ['Safety Monitoring & Risk Alerts', 'AI Risk Detection, Escalation Triage & Secure Identity Review'],
-        resources: ['Campus Helplines & Bible', 'Institutional Emergency Services & Scriptures']
+        resources: ['Campus Helplines & Bible', 'Institutional Emergency Services & Scriptures'],
+        'community-preview': ['Community Preview (Live Student Interface)', 'Experience Actual Student Community Feed, Content Warnings & Tone']
       };
 
       if (titleMap[tabName]) {
@@ -3715,12 +3784,26 @@
         renderAiGovernanceMetrics();
       } else if (tabName === 'safety-alerts') {
         loadSafetyAlertsData(false);
+      } else if (tabName === 'community-preview') {
+        refreshCommunityPreviewIframe();
       }
 
       const sidebar = document.getElementById('adminSidebar');
       if (sidebar) sidebar.classList.remove('open');
     }
     window.switchAdminTab = switchAdminTab;
+
+    function refreshCommunityPreviewIframe() {
+      const frame = document.getElementById('communityPreviewFrame');
+      if (frame) {
+        try {
+          frame.src = 'home.html?admin_preview=1&t=' + Date.now();
+        } catch (e) {
+          frame.src = 'home.html';
+        }
+      }
+    }
+    window.refreshCommunityPreviewIframe = refreshCommunityPreviewIframe;
 
     // ========================================================
     // LOAD LIVE DATA FROM SUPABASE
@@ -7007,6 +7090,77 @@
         console.error('[Admin] loadSafetyAlertsData error:', err);
         showToast('Error loading safety alerts: ' + err.message, 'error');
       }
+    }
+
+    // Real-time broadcast and event listener for safety alerts
+    function initSafetyAlertsRealtime() {
+      // 1. Cross-tab BroadcastChannel
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const safetyCh = new BroadcastChannel('safespace_safety_alerts_channel');
+          safetyCh.onmessage = function(e) {
+            if (e.data && e.data.type === 'safety_alert_created') {
+              handleIncomingSafetyAlert(e.data.alert);
+            }
+          };
+        } catch (be) {}
+      }
+
+      // 2. Window CustomEvent listener
+      window.addEventListener('safe_space_safety_alert_created', function(e) {
+        if (e.detail) {
+          handleIncomingSafetyAlert(e.detail);
+        }
+      });
+
+      // 3. Supabase Realtime channel subscription if active
+      try {
+        if (typeof SafeSpaceDB !== 'undefined' && SafeSpaceDB.isSupabaseActive && SafeSpaceDB.isSupabaseActive()) {
+          const sbClient = SafeSpaceDB._getDb ? SafeSpaceDB._getDb() : (window.supabase || null);
+          if (sbClient && typeof sbClient.channel === 'function') {
+            sbClient
+              .channel('admin_safety_alerts_realtime')
+              .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'safety_alerts' }, payload => {
+                if (payload.new) {
+                  handleIncomingSafetyAlert(payload.new);
+                }
+              })
+              .subscribe();
+          }
+        }
+      } catch (sbe) {
+        console.warn('[Admin] Realtime subscription notice:', sbe);
+      }
+    }
+
+    function handleIncomingSafetyAlert(alert) {
+      if (!alert) return;
+
+      // Avoid duplicate insertions
+      if (Array.isArray(cachedSafetyAlerts)) {
+        const exists = cachedSafetyAlerts.some(a => String(a.id) === String(alert.id) || (alert.alert_code && a.alert_code === alert.alert_code));
+        if (!exists) {
+          cachedSafetyAlerts.unshift(alert);
+        } else {
+          const idx = cachedSafetyAlerts.findIndex(a => String(a.id) === String(alert.id));
+          if (idx !== -1) cachedSafetyAlerts[idx] = Object.assign({}, cachedSafetyAlerts[idx], alert);
+        }
+      } else {
+        cachedSafetyAlerts = [alert];
+      }
+
+      // Update counters and badges immediately
+      updateSafetyKpiCounters();
+      renderSafetyAlertsTable();
+
+      // High/Critical notification alert banner and toast
+      const isHighOrCritical = alert.risk_level === 'critical' || alert.risk_level === 'high';
+      const authorLabel = alert.is_anonymous ? 'Anonymous Student' : (alert.author_name || alert.author_username || 'Student');
+      const toastMsg = isHighOrCritical 
+        ? `🚨 URGENT SAFETY ALERT: ${authorLabel} flagged for ${alert.concern_type || 'Safety Concern'}!`
+        : `⚠️ New Safety Alert: ${authorLabel} flagged for review.`;
+
+      showToast(toastMsg, isHighOrCritical ? 'error' : 'warning');
     }
 
     function updateSafetyKpiCounters() {
