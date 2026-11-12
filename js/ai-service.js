@@ -3333,6 +3333,7 @@ Return ONLY valid JSON, no markdown fences, no extra text:
   AIService.containsProfanity = function(t) { return SafeSpaceCensor.hasProfanity(t); };
   window.SafeSpaceSupportRecommender = SafeSpaceSupportRecommender;
   window.SafeSpaceSensitiveDetector = SafeSpaceSensitiveDetector;
+  window.SafeSpaceSafetyEngine = SafeSpaceSafetyEngine;
   AIService.evaluateSensitive = function(t, p) { return SafeSpaceSensitiveDetector.evaluate(t, p); };
 
   window.AIService = AIService;

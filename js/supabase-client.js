@@ -8030,42 +8030,51 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           var sbRes = await q;
           if (sbRes && !sbRes.error && sbRes.data) {
             var fetchedAlerts = sbRes.data;
-            // Scan posts directly from Supabase if safety_alerts table in database doesn't have rows yet
-            if (fetchedAlerts.length === 0 && window.SafeSpaceSafetyEngine) {
+            // Always merge in any critical, high, or moderate posts directly from Supabase so alerts are 100% comprehensive
+            var safetyEngine = (typeof window !== 'undefined' && (window.SafeSpaceSafetyEngine || (window.AIService && window.AIService.SafetyEngine))) ? (window.SafeSpaceSafetyEngine || window.AIService.SafetyEngine) : null;
+            if (safetyEngine) {
               try {
                 var pClient = (typeof _dbAdmin !== 'undefined' && _dbAdmin) ? _dbAdmin : _db;
-                var pRes = await pClient.from('posts').select('*, profiles:user_id(id, username, first_name, last_name, avatar_url, email)').order('created_at', { ascending: false }).limit(60);
+                var pRes = await pClient.from('posts').select('*, profiles:user_id(id, username, first_name, last_name, avatar_url, email)').order('created_at', { ascending: false }).limit(100);
                 if (pRes && !pRes.error && Array.isArray(pRes.data)) {
                   pRes.data.forEach(function(pst, pIdx) {
                     if (pst && pst.content) {
-                      var evalRes = window.SafeSpaceSafetyEngine.evaluate(pst.content, [], { isAnonymous: pst.is_anonymous });
-                      var isCritMod = evalRes && (evalRes.alert_required || ['critical', 'high', 'moderate'].includes(String(evalRes.risk_level).toLowerCase()) || ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS'].includes(String(pst.moderation_category || '').toUpperCase()));
-                      if (isCritMod) {
-                        fetchedAlerts.push({
-                          id: 'alt-sb-' + (pst.id || pIdx),
-                          alert_code: 'ALT-' + (pst.created_at ? pst.created_at.slice(0, 10).replace(/-/g, '') : '2026') + '-' + String(pIdx + 1).padStart(4, '0'),
-                          content_id: pst.id || 'N/A',
-                          content_type: 'post',
-                          user_id: pst.user_id,
-                          author_name: pst.is_anonymous ? 'Anonymous' : (pst.profiles ? SafeSpaceDB._displayName(pst.profiles) : (pst.author_name || 'Student')),
-                          author_username: pst.profiles ? pst.profiles.username : (pst.author_username || null),
-                          author_email: pst.profiles ? pst.profiles.email : (pst.author_email || null),
-                          author_avatar: pst.is_anonymous ? null : (pst.profiles ? pst.profiles.avatar_url : null),
-                          content_snippet: pst.content || '',
-                          is_anonymous: Boolean(pst.is_anonymous),
-                          risk_level: evalRes.risk_level || 'critical',
-                          concern_type: evalRes.concern_type || 'SUICIDAL_IDEATION_IMMINENT',
-                          moderation_category: evalRes.moderation_category || pst.moderation_category || 'SELF_HARM',
-                          moderation_severity: evalRes.moderation_severity || 'critical',
-                          reason: evalRes.reason || 'Flagged by Safe Space AI content monitoring.',
-                          evidence_text: evalRes.evidence_reference || pst.content,
-                          confidence: evalRes.confidence || 0.95,
-                          urgency: evalRes.urgency || 'immediate',
-                          recommended_action: evalRes.recommended_action || 'Review context and provide prompt intervention.',
-                          status: 'new',
-                          created_at: pst.created_at || new Date().toISOString(),
-                          updated_at: pst.created_at || new Date().toISOString()
-                        });
+                      var alertExists = fetchedAlerts.some(function(a) { return String(a.content_id) === String(pst.id) || String(a.id) === String(pst.id); });
+                      if (!alertExists) {
+                        var evalRes = safetyEngine.evaluate(pst.content, [], { isAnonymous: pst.is_anonymous });
+                        var modCat = String(pst.moderation_category || '').toUpperCase();
+                        var isCritMod = evalRes && (
+                          evalRes.alert_required ||
+                          ['critical', 'high', 'moderate'].includes(String(evalRes.risk_level).toLowerCase()) ||
+                          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS'].includes(modCat)
+                        );
+                        if (isCritMod) {
+                          fetchedAlerts.push({
+                            id: 'alt-sb-' + (pst.id || pIdx),
+                            alert_code: 'ALT-' + (pst.created_at ? pst.created_at.slice(0, 10).replace(/-/g, '') : '2026') + '-' + String(pIdx + 1).padStart(4, '0'),
+                            content_id: pst.id || 'N/A',
+                            content_type: 'post',
+                            user_id: pst.user_id,
+                            author_name: pst.is_anonymous ? 'Anonymous' : (pst.profiles ? SafeSpaceDB._displayName(pst.profiles) : (pst.author_name || 'Student')),
+                            author_username: pst.profiles ? pst.profiles.username : (pst.author_username || null),
+                            author_email: pst.profiles ? pst.profiles.email : (pst.author_email || null),
+                            author_avatar: pst.is_anonymous ? null : (pst.profiles ? pst.profiles.avatar_url : null),
+                            content_snippet: pst.content || '',
+                            is_anonymous: Boolean(pst.is_anonymous),
+                            risk_level: evalRes.risk_level || (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : 'moderate'),
+                            concern_type: evalRes.concern_type || (modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : 'POSSIBLE_EMOTIONAL_DISTRESS'),
+                            moderation_category: evalRes.moderation_category || modCat || 'SELF_HARM',
+                            moderation_severity: evalRes.moderation_severity || 'critical',
+                            reason: evalRes.reason || 'Flagged by Safe Space AI content monitoring.',
+                            evidence_text: evalRes.evidence_reference || pst.content,
+                            confidence: evalRes.confidence || 0.95,
+                            urgency: evalRes.urgency || 'immediate',
+                            recommended_action: evalRes.recommended_action || 'Review context and provide prompt intervention.',
+                            status: 'new',
+                            created_at: pst.created_at || new Date().toISOString(),
+                            updated_at: pst.created_at || new Date().toISOString()
+                          });
+                        }
                       }
                     }
                   });

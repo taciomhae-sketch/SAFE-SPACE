@@ -6989,7 +6989,8 @@
 
     // Automatically scan and sync safety alerts from posts so critical/moderate content by any user is guaranteed in Safety Monitoring
     function syncSafetyAlertsFromPosts(posts) {
-      if (!Array.isArray(posts) || posts.length === 0 || !window.SafeSpaceSafetyEngine) return;
+      const safetyEngine = (typeof window !== 'undefined' && (window.SafeSpaceSafetyEngine || (window.AIService && window.AIService.SafetyEngine))) ? (window.SafeSpaceSafetyEngine || window.AIService.SafetyEngine) : null;
+      if (!Array.isArray(posts) || posts.length === 0 || !safetyEngine) return;
       let added = false;
       cachedSafetyAlerts = cachedSafetyAlerts || [];
 
@@ -6998,7 +6999,7 @@
         const alertExists = cachedSafetyAlerts.some(a => String(a.content_id) === String(p.id) || String(a.id) === String(p.id));
         if (alertExists) return;
 
-        const evalRes = window.SafeSpaceSafetyEngine.evaluate(p.content, [], { isAnonymous: p.is_anonymous });
+        const evalRes = safetyEngine.evaluate(p.content, [], { isAnonymous: p.is_anonymous });
         const modCat = String(p.moderation_category || '').toUpperCase();
         const isCriticalOrModerate = evalRes && (
           evalRes.alert_required ||
@@ -7019,8 +7020,8 @@
             author_avatar: p.is_anonymous ? null : (p.author_avatar || (p.profiles ? p.profiles.avatar_url : null)),
             content_snippet: p.content,
             is_anonymous: Boolean(p.is_anonymous),
-            risk_level: evalRes.risk_level || 'critical',
-            concern_type: evalRes.concern_type || 'SUICIDAL_IDEATION_IMMINENT',
+            risk_level: evalRes.risk_level || (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : 'moderate'),
+            concern_type: evalRes.concern_type || (modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : 'POSSIBLE_EMOTIONAL_DISTRESS'),
             moderation_category: evalRes.moderation_category || modCat || 'SELF_HARM',
             moderation_severity: evalRes.moderation_severity || 'critical',
             reason: evalRes.reason || 'Flagged by Safe Space AI monitoring.',
