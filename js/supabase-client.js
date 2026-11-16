@@ -733,7 +733,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
 
         try {
           var client = _dbAdmin || _db;
-          await client.from('profiles').upsert({
+          var profilePayload = {
             id: sbUser.id,
             email: email,
             username: metadata.username || (email ? email.split('@')[0] : 'user'),
@@ -746,8 +746,24 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             avatar_value: metadata.avatar_value || 'default',
             approval_status: 'approved',
             is_approved: true,
+            id_card_url: metadata.id_card_url || metadata.id_card_front_url || null,
+            id_card_front_url: metadata.id_card_front_url || metadata.id_card_url || null,
+            id_card_back_url: metadata.id_card_back_url || null,
+            student_id_detected: metadata.student_id_detected || null,
+            student_id_matching_status: metadata.student_id_matching_status || 'MATCH',
+            student_id_status: metadata.student_id_status || 'PENDING_VERIFICATION',
             created_at: new Date().toISOString()
-          });
+          };
+          var upRes = await client.from('profiles').upsert(profilePayload);
+          if (upRes && upRes.error && (upRes.error.message && upRes.error.message.includes('column'))) {
+            // Fallback for legacy tables without the front/back ID columns
+            delete profilePayload.id_card_front_url;
+            delete profilePayload.id_card_back_url;
+            delete profilePayload.student_id_detected;
+            delete profilePayload.student_id_matching_status;
+            delete profilePayload.student_id_status;
+            await client.from('profiles').upsert(profilePayload);
+          }
         } catch (pErr) {
           console.warn('[SafeSpace] Profile upsert notice:', pErr);
         }
@@ -5995,18 +6011,42 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           }
         }
 
-        // Resolve ID card image and status
-        var idDoc = u.id_card_url || (u.user_metadata && u.user_metadata.id_card_url) || null;
-        if (!idDoc && emailKey && docMap[emailKey]) idDoc = docMap[emailKey];
-        if (!idDoc && u.id && docMap[u.id]) idDoc = docMap[u.id];
-        if (!idDoc && emailKey) idDoc = localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
-        if (!idDoc) {
+        // Resolve ID card images (front & back) and status
+        var idFrontDoc = u.id_card_front_url || u.id_card_url || (u.user_metadata && (u.user_metadata.id_card_front_url || u.user_metadata.id_card_url)) || null;
+        var idBackDoc = u.id_card_back_url || (u.user_metadata && u.user_metadata.id_card_back_url) || null;
+
+        if (emailKey && docMap[emailKey]) {
+          if (typeof docMap[emailKey] === 'object' && docMap[emailKey] !== null) {
+            if (!idFrontDoc && docMap[emailKey].front) idFrontDoc = docMap[emailKey].front;
+            if (!idBackDoc && docMap[emailKey].back) idBackDoc = docMap[emailKey].back;
+          } else if (typeof docMap[emailKey] === 'string' && !idFrontDoc) {
+            idFrontDoc = docMap[emailKey];
+          }
+        }
+        if (u.id && docMap[u.id]) {
+          if (typeof docMap[u.id] === 'object' && docMap[u.id] !== null) {
+            if (!idFrontDoc && docMap[u.id].front) idFrontDoc = docMap[u.id].front;
+            if (!idBackDoc && docMap[u.id].back) idBackDoc = docMap[u.id].back;
+          } else if (typeof docMap[u.id] === 'string' && !idFrontDoc) {
+            idFrontDoc = docMap[u.id];
+          }
+        }
+
+        if (!idFrontDoc && emailKey) idFrontDoc = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
+        if (!idBackDoc && emailKey) idBackDoc = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
+
+        if (!idFrontDoc || !idBackDoc) {
           var mMem = localMembers.find(function(m) {
             return (m.id && u.id && m.id === u.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey);
           });
-          if (mMem && mMem.id_card_url) idDoc = mMem.id_card_url;
+          if (mMem) {
+            if (!idFrontDoc) idFrontDoc = mMem.id_card_front_url || mMem.id_card_url || null;
+            if (!idBackDoc) idBackDoc = mMem.id_card_back_url || null;
+          }
         }
-        u.id_card_url = idDoc;
+        u.id_card_url = idFrontDoc;
+        u.id_card_front_url = idFrontDoc;
+        u.id_card_back_url = idBackDoc;
 
         var idStatus = u.student_id_status || (u.user_metadata && u.user_metadata.student_id_status) || null;
         if (!idStatus && emailKey && idStatusMap[emailKey]) idStatus = idStatusMap[emailKey];

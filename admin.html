@@ -2220,7 +2220,10 @@
           <!-- Front Side -->
           <div style="flex:1; min-width:240px; background:#0F172A; border-radius:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); min-height:180px; max-height:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
             <div style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.7); color:#60A5FA; font-size:10px; font-weight:800; padding:2px 8px; border-radius:4px; z-index:2;">FRONT SIDE</div>
-            <img id="studentIdModalImage" src="" alt="Front Student ID" style="max-width:100%; max-height:280px; object-fit:contain; display:block;" />
+            <button type="button" class="admin-btn admin-btn-outline" style="position:absolute; top:8px; right:8px; z-index:3; padding:2px 6px; font-size:10px; background:rgba(15,23,42,0.85); color:#F8FAFC; border-color:rgba(255,255,255,0.2);" onclick="zoomIdImage('studentIdModalImage')" title="Open full size">
+              <i class="fas fa-expand"></i>
+            </button>
+            <img id="studentIdModalImage" src="" alt="Front Student ID" style="max-width:100%; max-height:280px; object-fit:contain; display:block; cursor:zoom-in;" onclick="zoomIdImage('studentIdModalImage')" />
             <div id="studentIdModalNoImage" style="display:none; color:#94A3B8; font-size:12px; text-align:center; padding:20px;">
               <i class="fas fa-id-badge" style="font-size:28px; margin-bottom:6px; display:block; opacity:0.5;"></i>
               No Front ID photo submitted.
@@ -2230,7 +2233,10 @@
           <!-- Back Side -->
           <div style="flex:1; min-width:240px; background:#0F172A; border-radius:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); min-height:180px; max-height:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
             <div style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.7); color:#34D399; font-size:10px; font-weight:800; padding:2px 8px; border-radius:4px; z-index:2;">BACK SIDE</div>
-            <img id="studentIdModalBackImage" src="" alt="Back Student ID" style="max-width:100%; max-height:280px; object-fit:contain; display:block;" />
+            <button type="button" class="admin-btn admin-btn-outline" style="position:absolute; top:8px; right:8px; z-index:3; padding:2px 6px; font-size:10px; background:rgba(15,23,42,0.85); color:#F8FAFC; border-color:rgba(255,255,255,0.2);" onclick="zoomIdImage('studentIdModalBackImage')" title="Open full size">
+              <i class="fas fa-expand"></i>
+            </button>
+            <img id="studentIdModalBackImage" src="" alt="Back Student ID" style="max-width:100%; max-height:280px; object-fit:contain; display:block; cursor:zoom-in;" onclick="zoomIdImage('studentIdModalBackImage')" />
             <div id="studentIdModalNoBackImage" style="display:none; color:#94A3B8; font-size:12px; text-align:center; padding:20px;">
               <i class="fas fa-barcode" style="font-size:28px; margin-bottom:6px; display:block; opacity:0.5;"></i>
               No Back ID photo submitted.
@@ -4810,7 +4816,19 @@
         }
       }
 
-      const idDocUrl = user.id_card_front_url || user.id_card_url || null;
+      const emailKey = (user.email || '').toLowerCase().trim();
+      let docMap = {};
+      try { docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}'); } catch(e) {}
+      let userDocObj = (emailKey && docMap[emailKey]) ? docMap[emailKey] : ((user.id && docMap[user.id]) ? docMap[user.id] : null);
+
+      let idDocUrl = user.id_card_front_url || user.id_card_url || null;
+      if (!idDocUrl && userDocObj) {
+        idDocUrl = (typeof userDocObj === 'object') ? (userDocObj.front || userDocObj.front_url || null) : userDocObj;
+      }
+      if (!idDocUrl && emailKey) {
+        idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
+      }
+
       if (idDocUrl) {
         imgEl.src = idDocUrl;
         imgEl.style.display = 'block';
@@ -4823,7 +4841,14 @@
 
       const backImgEl = document.getElementById('studentIdModalBackImage');
       const noBackImgEl = document.getElementById('studentIdModalNoBackImage');
-      const backDocUrl = user.id_card_back_url || null;
+      let backDocUrl = user.id_card_back_url || null;
+      if (!backDocUrl && userDocObj && typeof userDocObj === 'object') {
+        backDocUrl = userDocObj.back || userDocObj.back_url || null;
+      }
+      if (!backDocUrl && emailKey) {
+        backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
+      }
+
       if (backImgEl && noBackImgEl) {
         if (backDocUrl) {
           backImgEl.src = backDocUrl;
@@ -4843,6 +4868,14 @@
       if (modal) modal.style.display = 'flex';
     }
     window.openStudentIdReviewModal = openStudentIdReviewModal;
+
+    function zoomIdImage(imgElementId) {
+      const el = document.getElementById(imgElementId);
+      if (el && el.src && el.style.display !== 'none') {
+        window.open(el.src, '_blank');
+      }
+    }
+    window.zoomIdImage = zoomIdImage;
 
     function closeStudentIdReviewModal() {
       const modal = document.getElementById('studentIdReviewModal');
