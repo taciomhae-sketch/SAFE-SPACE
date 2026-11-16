@@ -1759,32 +1759,23 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           }
 
           if (options.is_user_confirmed) {
-            // Check whether content violates critical safety rules
-            var cannotContinue = Boolean(
-              (modCheck.warning_config && modCheck.warning_config.can_continue === false) ||
-              modCheck.category === 'THREAT' ||
-              modCheck.category === 'ENCOURAGEMENT_OF_SELF_HARM' ||
-              modCheck.category === 'NUDITY' ||
-              modCheck.category === 'SEXUAL_CONTENT' ||
-              (modCheck.severity === 'critical' && modCheck.category === 'VIOLENCE')
-            );
-            if (cannotContinue) {
-              throw new Error('Content that violates critical safety rules cannot be published. Please revise your content.');
-            }
-
             // User explicitly confirmed Proceed to Post:
-            // Ensure off words are censored with asterisks, content is blurred and hidden in the feed,
-            // and moderation status is set to REVIEW so it proceeds to feed safely.
+            // All posts can proceed to the feed.
+            // Offensive words are censored with asterisks, content is blurred/hidden in the feed with a content warning,
+            // and moderation status is set to REVIEW so it appears in the feed while being monitored by the admin.
             content = SafeSpaceDB.censorProfanity(content);
             moderation_status = 'REVIEW';
             is_sensitive = true;
             blur_enabled = true;
             has_trigger_warning = true;
           } else {
-            // Direct submission without confirmation
-            if ((modCheck.allowed === false && modCheck.status === 'BLOCKED') || (modCheck.warning_config && modCheck.warning_config.can_continue === false)) {
-              throw new Error('Content that violates critical safety rules cannot be published. Please revise your content.');
-            }
+            // Direct submission without confirmation:
+            // Allow post to proceed with review/sensitive flags
+            content = SafeSpaceDB.censorProfanity(content);
+            moderation_status = 'REVIEW';
+            is_sensitive = true;
+            blur_enabled = true;
+            has_trigger_warning = true;
           }
         }
 
