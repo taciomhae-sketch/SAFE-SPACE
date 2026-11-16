@@ -1957,6 +1957,19 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             localStorage.setItem('safe_space_post_ai_meta', JSON.stringify(aiStore));
           } catch (me) {}
 
+          // Automatically record statement sentiment analysis
+          if (SafeSpaceDB.sentiment && SafeSpaceDB.sentiment.recordSentiment && content) {
+            SafeSpaceDB.sentiment.recordSentiment({
+              content_id: p.id,
+              content_type: 'post',
+              user_id: currentUser.id,
+              text: rawContent || content,
+              sentiment: resolvedPostSentiment,
+              sentiment_score: resolvedPostScore,
+              confidence: moderation_confidence || 0.90
+            }).catch(function() {});
+          }
+
           // Automatically create persistent safety alert if risk criteria are met
           if (safetyRisk && (safetyRisk.alert_required || ['critical', 'high', 'moderate', 'low'].includes(String(safetyRisk.risk_level).toLowerCase()))) {
             SafeSpaceDB.safetyAlerts.createAlert({
@@ -2072,6 +2085,20 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           longitudinal_context: safetyRisk.longitudinal_risk || {}
         }).catch(function() {});
       }
+
+      try {
+        if (SafeSpaceDB.sentiment && SafeSpaceDB.sentiment.recordSentiment && content) {
+          SafeSpaceDB.sentiment.recordSentiment({
+            content_id: newPost.id,
+            content_type: 'post',
+            user_id: currentUser.id,
+            text: rawContent || content,
+            sentiment: newPost.sentiment,
+            sentiment_score: newPost.sentiment_score,
+            confidence: moderation_confidence || 0.90
+          }).catch(function() {});
+        }
+      } catch (sentErr) {}
 
       try {
         var aiStoreDemo = JSON.parse(localStorage.getItem('safe_space_post_ai_meta') || '{}');
@@ -2471,6 +2498,18 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             }
           } catch (ne) {}
 
+          // Automatically record statement sentiment analysis for comment
+          try {
+            if (SafeSpaceDB.sentiment && SafeSpaceDB.sentiment.recordSentiment && content) {
+              SafeSpaceDB.sentiment.recordSentiment({
+                content_id: c.id,
+                content_type: 'comment',
+                user_id: currentUser.id,
+                text: content
+              }).catch(function() {});
+            }
+          } catch(sentErr) {}
+
           return {
             id: c.id,
             post_id: c.post_id || postId,
@@ -2509,6 +2548,18 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         if (!Array.isArray(post.comments)) post.comments = [];
         post.comments.push(comment);
         localStorage.setItem('safe_space_posts', JSON.stringify(posts));
+
+        // Record statement sentiment analysis for demo comment
+        try {
+          if (SafeSpaceDB.sentiment && SafeSpaceDB.sentiment.recordSentiment && content) {
+            SafeSpaceDB.sentiment.recordSentiment({
+              content_id: comment.id,
+              content_type: 'comment',
+              user_id: currentUser.id,
+              text: content
+            }).catch(function() {});
+          }
+        } catch(sentErr) {}
 
         if (post.user_id && post.user_id !== currentUser.id) {
           var actorName = SafeSpaceDB._displayName(currentUser);
@@ -7708,9 +7759,16 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       var contentId = String(options.content_id);
       var contentType = String(options.content_type || 'post').toLowerCase();
       var text = options.text || options.content || '';
-      var sent = SafeSpaceDB.sentiment.standardizeSentiment(options.sentiment, text);
-      var score = (typeof options.sentiment_score === 'number') ? options.sentiment_score : (sent === 'Positive' ? 0.85 : (sent === 'Negative' ? 0.20 : 0.50));
-      var conf = (typeof options.confidence === 'number') ? options.confidence : 0.90;
+
+      var analysis = (typeof window !== 'undefined' && window.SafeSpaceSentiment)
+        ? window.SafeSpaceSentiment.analyze(text)
+        : null;
+
+      var sent = SafeSpaceDB.sentiment.standardizeSentiment(options.sentiment || (analysis ? analysis.sentiment : null), text);
+      var score = (typeof options.sentiment_score === 'number') ? options.sentiment_score : ((analysis && typeof analysis.sentiment_score === 'number') ? analysis.sentiment_score : (sent === 'Positive' ? 0.85 : (sent === 'Negative' ? 0.20 : 0.50)));
+      var conf = (typeof options.confidence === 'number') ? options.confidence : ((analysis && typeof analysis.confidence === 'number') ? analysis.confidence : 0.90);
+      var emotionalTone = options.emotional_tone || (analysis ? analysis.emotional_tone : (sent === 'Positive' ? 'Positive emotional outlook' : (sent === 'Negative' ? 'Distress and negative sentiment' : 'Neutral factual tone')));
+      var explanation = options.explanation || options.analysis_explanation || (analysis ? analysis.explanation : 'Contextually evaluated by Safe Space AI Sentiment model.');
       var userId = options.user_id || null;
       var now = new Date().toISOString();
 
@@ -7719,11 +7777,15 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         content_id: contentId,
         content_type: contentType,
         user_id: userId,
-        text_content: text.substring(0, 500),
+        text_content: text.substring(0, 1000),
         sentiment: sent,
+        emotional_tone: emotionalTone,
+        analysis_explanation: explanation,
         sentiment_score: score,
         confidence: conf,
+        analysis_status: 'COMPLETED',
         method: options.method || 'ai_contextual',
+        analyzed_at: now,
         created_at: options.created_at || now,
         updated_at: now
       };
@@ -7754,16 +7816,31 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             content_id: contentId,
             content_type: contentType,
             user_id: userId,
-            text_content: text.substring(0, 500),
+            text_content: text.substring(0, 1000),
             sentiment: sent,
+            emotional_tone: emotionalTone,
+            analysis_explanation: explanation,
             sentiment_score: score,
             confidence: conf,
+            analysis_status: 'COMPLETED',
             method: record.method,
+            analyzed_at: now,
             updated_at: now
           };
           var res = await client.from('sentiment_analysis_logs').upsert(dbPayload, {
             onConflict: 'content_id,content_type'
           }).select().single();
+
+          if (res.error && (res.error.message && res.error.message.includes('column'))) {
+            delete dbPayload.emotional_tone;
+            delete dbPayload.analysis_explanation;
+            delete dbPayload.analysis_status;
+            delete dbPayload.analyzed_at;
+            res = await client.from('sentiment_analysis_logs').upsert(dbPayload, {
+              onConflict: 'content_id,content_type'
+            }).select().single();
+          }
+
           if (!res.error && res.data) {
             return res.data;
           }
@@ -7855,6 +7932,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           if (filterRange === 'today' && diffHours > 24) return false;
           if (filterRange === '7d' && diffHours > (7 * 24)) return false;
           if (filterRange === '30d' && diffHours > (30 * 24)) return false;
+          if (filterRange === 'monthly' && diffHours > (30 * 24)) return false;
         }
 
         return true;

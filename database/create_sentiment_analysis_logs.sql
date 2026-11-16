@@ -11,13 +11,23 @@ CREATE TABLE IF NOT EXISTS public.sentiment_analysis_logs (
     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     text_content TEXT,
     sentiment TEXT NOT NULL CHECK (sentiment IN ('Positive', 'Neutral', 'Negative')),
+    emotional_tone TEXT,
+    analysis_explanation TEXT,
     sentiment_score NUMERIC(5, 4) DEFAULT 0.5000,
     confidence NUMERIC(5, 4) DEFAULT 0.8500,
+    analysis_status TEXT DEFAULT 'COMPLETED',
     method TEXT DEFAULT 'ai_contextual',
+    analyzed_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT unique_content_sentiment UNIQUE (content_id, content_type)
 );
+
+-- Backward compatibility for existing tables
+ALTER TABLE public.sentiment_analysis_logs ADD COLUMN IF NOT EXISTS emotional_tone TEXT;
+ALTER TABLE public.sentiment_analysis_logs ADD COLUMN IF NOT EXISTS analysis_explanation TEXT;
+ALTER TABLE public.sentiment_analysis_logs ADD COLUMN IF NOT EXISTS analysis_status TEXT DEFAULT 'COMPLETED';
+ALTER TABLE public.sentiment_analysis_logs ADD COLUMN IF NOT EXISTS analyzed_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Enable RLS
 ALTER TABLE public.sentiment_analysis_logs ENABLE ROW LEVEL SECURITY;

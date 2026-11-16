@@ -1037,45 +1037,115 @@
         };
       }
 
-      // 4. Decision Thresholds & Dominant Balancing
+      // 4. Sarcasm, Negation & Complex Contextual Heuristics
+      // Sarcastic disappointment e.g. "Great, another failed examination. Just what I needed."
+      var isSarcastic = (/\b(great|awesome|wonderful|just what i needed|nice)\b/i.test(lower) && /\b(failed|fail|failure|broken|ruined|worst|problem|trouble)\b/i.test(lower));
+      if (isSarcastic) {
+        negScore += 3.5;
+      }
+
+      // Contrastive clauses e.g. "..., but deep inside I am still hurting"
+      var contrastMatch = lower.match(/\b(but|however|yet|kahit|pero)\b([\s\S]+)/);
+      if (contrastMatch && contrastMatch[2]) {
+        var clauseText = contrastMatch[2];
+        if (/\b(hurting|sad|lonely|depressed|hopeless|dying|pain|crying|bagsak|pagod|hirap)\b/i.test(clauseText)) {
+          negScore += 3.0; // The second clause dominates emotionally
+        } else if (/\b(grateful|happy|thankful|better|hope|proud|trying my best|blessed)\b/i.test(clauseText)) {
+          posScore += 2.5;
+        }
+      }
+
+      // Mixed sentiments: "happy that I passed, but sad that my best friend failed"
+      var hasPassedAndFailed = /\b(happy|glad)\b/i.test(lower) && /\b(sad|upset|failed|fail)\b/i.test(lower);
+      if (hasPassedAndFailed && !isSarcastic) {
+        // Evaluate dominant clause or empathetic concern
+        if (lower.indexOf('sad') > lower.indexOf('happy')) {
+          negScore += 1.0;
+        }
+      }
+
+      // 5. Decision Thresholds & Dominant Balancing
       var diff = posScore - negScore;
       var total = posScore + negScore;
 
+      var sentiment = this.LABEL_NEUTRAL;
+      var conf = 0.82;
+      var score = 0.50;
+
       if (total === 0) {
-        return {
-          sentiment: this.LABEL_NEUTRAL,
-          confidence: 0.85,
-          sentiment_score: 0.50,
-          details: { pos: 0, neg: 0 }
-        };
+        sentiment = this.LABEL_NEUTRAL;
+        conf = 0.85;
+        score = 0.50;
+      } else if (diff >= 0.7) {
+        sentiment = this.LABEL_POSITIVE;
+        conf = Math.min(0.98, 0.75 + (diff / 10.0));
+        score = Math.min(0.98, 0.65 + (diff / 10.0));
+      } else if (diff <= -0.7) {
+        sentiment = this.LABEL_NEGATIVE;
+        conf = Math.min(0.98, 0.75 + (Math.abs(diff) / 10.0));
+        score = Math.max(0.02, 0.35 - (Math.abs(diff) / 10.0));
+      } else {
+        sentiment = this.LABEL_NEUTRAL;
+        conf = 0.82;
+        score = 0.50;
       }
 
-      if (diff >= 0.7) {
-        var conf = Math.min(0.98, 0.75 + (diff / 10.0));
-        var score = Math.min(0.98, 0.65 + (diff / 10.0));
-        return {
-          sentiment: this.LABEL_POSITIVE,
-          confidence: Math.round(conf * 100) / 100,
-          sentiment_score: Math.round(score * 100) / 100,
-          details: { pos: posScore, neg: negScore }
-        };
-      } else if (diff <= -0.7) {
-        var conf = Math.min(0.98, 0.75 + (Math.abs(diff) / 10.0));
-        var score = Math.max(0.02, 0.35 - (Math.abs(diff) / 10.0));
-        return {
-          sentiment: this.LABEL_NEGATIVE,
-          confidence: Math.round(conf * 100) / 100,
-          sentiment_score: Math.round(score * 100) / 100,
-          details: { pos: posScore, neg: negScore }
-        };
+      // Derive human-readable emotional tone and contextual explanation
+      var emotionalTone = 'Neutral';
+      var explanation = 'The statement expresses factual information, general inquiries, or an emotionally neutral tone.';
+
+      if (sentiment === this.LABEL_POSITIVE) {
+        if (/\b(thank|grateful|gratitude|appreciate|blessed|salamat)\b/i.test(lower)) {
+          emotionalTone = 'Happiness and gratitude';
+          explanation = 'The student expresses happiness, gratitude, and appreciation for support and positive outcomes.';
+        } else if (/\b(proud|believe|succeed|success|overcome|accomplish)\b/i.test(lower)) {
+          emotionalTone = 'Confidence and encouragement';
+          explanation = 'The student reflects motivation, personal pride, and confidence in overcoming difficulties.';
+        } else if (/\b(wonderful|awesome|excited|love|peace|joy)\b/i.test(lower)) {
+          emotionalTone = 'Joy and satisfaction';
+          explanation = 'The student shares a positive and uplifting personal experience with a joyful disposition.';
+        } else {
+          emotionalTone = 'Positive and encouraging';
+          explanation = 'The statement conveys an optimistic emotional tone, satisfaction, and constructive outlook.';
+        }
+      } else if (sentiment === this.LABEL_NEGATIVE) {
+        if (isSarcastic) {
+          emotionalTone = 'Frustration and sarcasm';
+          explanation = 'The statement uses sarcastic phrasing to express dissatisfaction and disappointment with a negative outcome.';
+        } else if (/\b(exhausted|tired|stress|stressed|pressure|requirements|trying my best|pagod)\b/i.test(lower)) {
+          emotionalTone = 'Stress and exhaustion, with determination';
+          explanation = 'The statement expresses academic stress and exhaustion, while acknowledging the emotional toll of ongoing demands.';
+        } else if (/\b(sad|lonely|alone|nobody|crying|depressed|heart|hurt|hurting|pain)\b/i.test(lower)) {
+          emotionalTone = 'Sadness, loneliness, or emotional hurt';
+          explanation = 'The student expresses feelings of sadness, isolation, or internal hurt that call for empathy and understanding.';
+        } else if (/\b(disappointed|fail|failed|failure|frustrated|frustration)\b/i.test(lower)) {
+          emotionalTone = 'Disappointment and frustration';
+          explanation = 'The student communicates frustration or disappointment regarding examinations, expectations, or personal setbacks.';
+        } else {
+          emotionalTone = 'Distress and negative sentiment';
+          explanation = 'The statement communicates negative emotions, stress, or challenges experienced by the student.';
+        }
       } else {
-        return {
-          sentiment: this.LABEL_NEUTRAL,
-          confidence: 0.82,
-          sentiment_score: 0.50,
-          details: { pos: posScore, neg: negScore }
-        };
+        if (isQuestion) {
+          emotionalTone = 'Inquiry and objective curiosity';
+          explanation = 'The student is asking a standard informational question without emotional distress or strong positive affect.';
+        } else if (tokens.length <= 2) {
+          emotionalTone = 'Neutral or casual acknowledgement';
+          explanation = 'The statement is very brief or neutral, expressing no explicit positive or negative emotional polarity.';
+        } else {
+          emotionalTone = 'Informational and balanced';
+          explanation = 'The statement discusses routine events, study activities, or balanced sentiments without a clear positive or negative leaning.';
+        }
       }
+
+      return {
+        sentiment: sentiment,
+        emotional_tone: emotionalTone,
+        explanation: explanation,
+        confidence: Math.round(conf * 100) / 100,
+        sentiment_score: Math.round(score * 100) / 100,
+        details: { pos: posScore, neg: negScore, is_sarcastic: isSarcastic, has_contrast: Boolean(contrastMatch) }
+      };
     }
   };
 

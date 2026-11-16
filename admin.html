@@ -1025,6 +1025,7 @@
                     <option value="today">Today (24h)</option>
                     <option value="7d" selected>Last 7 Days</option>
                     <option value="30d">Last 30 Days</option>
+                    <option value="monthly">Monthly</option>
                   </select>
                 </div>
                 <div style="font-size:11px; color:var(--text-muted); font-weight:600;">
@@ -1090,6 +1091,46 @@
                   <div style="background:#E2E8F0; height:8px; border-radius:4px; overflow:hidden;">
                     <div id="sentimentNegBar" style="background:#F97316; width:0%; height:100%; transition:width 0.5s;"></div>
                   </div>
+                </div>
+              </div>
+
+              <!-- Sentiment Distribution Table (Thesis Specification) -->
+              <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">
+                  <i class="fas fa-table-list"></i> Sentiment Classification Breakdown
+                </div>
+                <div style="overflow-x:auto;">
+                  <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+                    <thead>
+                      <tr style="background:var(--bg-hover); border-bottom:1px solid var(--border); color:var(--text-muted); font-size:11px;">
+                        <th style="padding:6px 10px; font-weight:700;">Sentiment</th>
+                        <th style="padding:6px 10px; font-weight:700; text-align:right;">Number of Statements</th>
+                        <th style="padding:6px 10px; font-weight:700; text-align:right;">Percentage</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:8px 10px; color:#15803D; font-weight:700;"><i class="fas fa-circle-check" style="margin-right:5px;"></i> Positive</td>
+                        <td style="padding:8px 10px; text-align:right; font-weight:600;" id="tablePosCount">0</td>
+                        <td style="padding:8px 10px; text-align:right; font-weight:700; color:#15803D;" id="tablePosPct">0%</td>
+                      </tr>
+                      <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:8px 10px; color:#475569; font-weight:700;"><i class="fas fa-circle-minus" style="margin-right:5px;"></i> Neutral</td>
+                        <td style="padding:8px 10px; text-align:right; font-weight:600;" id="tableNeuCount">0</td>
+                        <td style="padding:8px 10px; text-align:right; font-weight:700; color:#475569;" id="tableNeuPct">0%</td>
+                      </tr>
+                      <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:8px 10px; color:#C2410C; font-weight:700;"><i class="fas fa-circle-exclamation" style="margin-right:5px;"></i> Negative</td>
+                        <td style="padding:8px 10px; text-align:right; font-weight:600;" id="tableNegCount">0</td>
+                        <td style="padding:8px 10px; text-align:right; font-weight:700; color:#C2410C;" id="tableNegPct">0%</td>
+                      </tr>
+                      <tr style="background:var(--bg-hover); font-weight:800;">
+                        <td style="padding:8px 10px; color:var(--text-dark);">Total Analyzed</td>
+                        <td style="padding:8px 10px; text-align:right;" id="tableTotalCount">0</td>
+                        <td style="padding:8px 10px; text-align:right; color:var(--primary);">100%</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -3985,6 +4026,25 @@
         const negBar = document.getElementById('sentimentNegBar');
         if (negBar) negBar.style.width = `${negPct}%`;
 
+        // Update Thesis Sentiment Breakdown Table
+        const tablePosCount = document.getElementById('tablePosCount');
+        if (tablePosCount) tablePosCount.textContent = pos;
+        const tablePosPct = document.getElementById('tablePosPct');
+        if (tablePosPct) tablePosPct.textContent = `${posPct}%`;
+
+        const tableNeuCount = document.getElementById('tableNeuCount');
+        if (tableNeuCount) tableNeuCount.textContent = neu;
+        const tableNeuPct = document.getElementById('tableNeuPct');
+        if (tableNeuPct) tableNeuPct.textContent = `${neuPct}%`;
+
+        const tableNegCount = document.getElementById('tableNegCount');
+        if (tableNegCount) tableNegCount.textContent = neg;
+        const tableNegPct = document.getElementById('tableNegPct');
+        if (tableNegPct) tableNegPct.textContent = `${negPct}%`;
+
+        const tableTotalCount = document.getElementById('tableTotalCount');
+        if (tableTotalCount) tableTotalCount.textContent = total;
+
         const timelineContainer = document.getElementById('sentimentTimelineContainer');
         if (timelineContainer) {
           const days = stats.timeline && stats.timeline.length > 0 ? stats.timeline : [];
@@ -5605,6 +5665,23 @@
       const riskLevel = p.risk_level || (['BLOCKED', 'CRITICAL'].includes(modStatus) ? 'High' : (isSensitive || modStatus === 'REVIEW' ? 'Moderate' : 'Low'));
       const reviewStatus = isArchived ? 'Archived' : (hasReports ? 'Action Required' : (modStatus === 'REVIEW' ? 'Pending Review' : 'Reviewed / Passed'));
 
+      const rawText = p.content || '';
+      const sentimentAnalysis = (typeof SafeSpaceSentiment !== 'undefined')
+        ? SafeSpaceSentiment.analyze(rawText)
+        : {
+            sentiment: (p.sentiment || 'Neutral'),
+            emotional_tone: 'Neutral',
+            explanation: 'The statement has been processed contextually for general affect.',
+            confidence: 0.85
+          };
+
+      const resolvedSentiment = (p.sentiment || sentimentAnalysis.sentiment || 'Neutral');
+      const sentimentUpper = resolvedSentiment.toUpperCase();
+      const emotionalTone = p.emotional_tone || sentimentAnalysis.emotional_tone || (sentimentUpper === 'POSITIVE' ? 'Positive and encouraging' : (sentimentUpper === 'NEGATIVE' ? 'Stress and emotional concern' : 'Informational and balanced'));
+      const sentimentExplanation = p.analysis_explanation || sentimentAnalysis.explanation || 'Contextually evaluated by Safe Space AI Sentiment model.';
+      const sentimentBadgeBg = sentimentUpper === 'POSITIVE' ? '#DCFCE7' : (sentimentUpper === 'NEGATIVE' ? '#FEE2E2' : '#F1F5F9');
+      const sentimentBadgeColor = sentimentUpper === 'POSITIVE' ? '#15803D' : (sentimentUpper === 'NEGATIVE' ? '#DC2626' : '#475569');
+
       body.innerHTML = `
         <!-- Author Profile Row -->
         <div style="display:flex; justify-content:space-between; align-items:center; background:#F8F6FD; border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:16px;">
@@ -5622,6 +5699,55 @@
               ${p.author_deactivated ? 'Suspended' : 'Active Account'}
             </span>
             <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Role: ${escapeHTML(p.author_role || 'student')}</div>
+          </div>
+        </div>
+
+        <!-- AI STATEMENT ANALYSIS & SENTIMENT CLASSIFICATION CARD (Thesis Specification) -->
+        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:14px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <div style="font-size:13px; font-weight:800; color:#1E293B; margin-bottom:12px;">
+            <i class="fas fa-brain" style="color:var(--primary); margin-right:6px;"></i> AI Statement Analysis
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px; font-weight:800; color:#64748B; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+              STUDENT STATEMENT
+            </div>
+            <div style="font-size:13px; color:#1E293B; font-weight:500; font-style:normal; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid #E2E8F0; line-height:1.5;">
+              "${escapeHTML(rawText)}"
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:13px; color:#1E293B;">AI Sentiment</strong>
+            <span style="font-size:11px; font-weight:800; background:${sentimentBadgeBg}; color:${sentimentBadgeColor}; padding:3px 10px; border-radius:999px;">
+              ${escapeHTML(resolvedSentiment)}
+            </span>
+          </div>
+
+          <div style="font-size:12px; color:#475569; margin-bottom:4px;">
+            <strong>Emotional tone:</strong> ${escapeHTML(emotionalTone)}
+          </div>
+          <div style="font-size:12px; color:#475569; margin-bottom:14px; line-height:1.4;">
+            <strong>Explanation:</strong> ${escapeHTML(sentimentExplanation)}
+          </div>
+
+          <!-- 3-Button Sentiment Visualizer Tabs -->
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <!-- Positive -->
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; border-radius:10px; font-size:12px; font-weight:700; transition:all 0.2s; ${sentimentUpper === 'POSITIVE' ? 'background:#E8F5E9; border:2px solid #81C784; color:#2E7D32;' : 'background:#F8FAFC; border:1px solid #E2E8F0; color:#94A3B8;'}">
+              <i class="far fa-smile" style="font-size:18px; margin-bottom:4px; ${sentimentUpper === 'POSITIVE' ? 'color:#2E7D32;' : 'color:#94A3B8;'}"></i>
+              Positive
+            </div>
+            <!-- Neutral -->
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; border-radius:10px; font-size:12px; font-weight:700; transition:all 0.2s; ${sentimentUpper === 'NEUTRAL' ? 'background:#F1F5F9; border:2px solid #CBD5E1; color:#334155;' : 'background:#F8FAFC; border:1px solid #E2E8F0; color:#94A3B8;'}">
+              <i class="far fa-meh" style="font-size:18px; margin-bottom:4px; ${sentimentUpper === 'NEUTRAL' ? 'color:#334155;' : 'color:#94A3B8;'}"></i>
+              Neutral
+            </div>
+            <!-- Negative -->
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; border-radius:10px; font-size:12px; font-weight:700; transition:all 0.2s; ${sentimentUpper === 'NEGATIVE' ? 'background:#FFEBEE; border:2px solid #E57373; color:#C62828;' : 'background:#F8FAFC; border:1px solid #E2E8F0; color:#94A3B8;'}">
+              <i class="far fa-frown" style="font-size:18px; margin-bottom:4px; ${sentimentUpper === 'NEGATIVE' ? 'color:#C62828;' : 'color:#94A3B8;'}"></i>
+              Negative
+            </div>
           </div>
         </div>
 

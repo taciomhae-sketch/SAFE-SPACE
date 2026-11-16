@@ -182,15 +182,32 @@ def analyze_contextual_sentiment(text: str) -> Dict[str, Any]:
             else:
                 neg_score += weight
 
-    is_question = "?" in raw
+    lower = lower_raw
+    is_question = "?" in raw or bool(re.search(r"^(what|when|where|how|has|is|are|kailan|saan|meron)\b", lower))
     has_affective = (pos_score > 0 or neg_score > 0)
     has_neutral_anchor = any(w in NEUTRAL_ANCHORS for w in words)
 
-    if is_question and not has_affective:
+    # Sarcasm detection in context
+    is_sarcastic = bool(re.search(r"\b(great|awesome|wonderful|just what i needed|nice)\b", lower) and re.search(r"\b(failed|fail|failure|broken|ruined|worst|problem|trouble)\b", lower))
+    if is_sarcastic:
+        neg_score += 3.5
+
+    # Contrastive clauses e.g. "..., but deep inside I am still hurting"
+    contrast_match = re.search(r"\b(but|however|yet|kahit|pero)\b([\s\S]+)", lower)
+    if contrast_match:
+        clause_text = contrast_match.group(2)
+        if re.search(r"\b(hurting|sad|lonely|depressed|hopeless|dying|pain|crying|bagsak|pagod|hirap)\b", clause_text):
+            neg_score += 3.0
+        elif re.search(r"\b(grateful|happy|thankful|better|hope|proud|blessed)\b", clause_text):
+            pos_score += 2.5
+
+    if is_question and not has_affective and not is_sarcastic:
         return {
             "sentiment": LABEL_NEUTRAL,
             "sentiment_score": 0.85,
             "confidence": 0.85,
+            "emotional_tone": "Inquiry and objective curiosity",
+            "explanation": "The student is asking a standard informational question without emotional distress or strong positive affect.",
             "method": "neutral_question"
         }
 
@@ -216,10 +233,56 @@ def analyze_contextual_sentiment(text: str) -> Dict[str, Any]:
             sentiment = LABEL_NEUTRAL
             confidence = 0.60
 
+    # Derive emotional tone and contextual explanation
+    lower = text.lower()
+    is_sarcastic = bool(re.search(r"\b(great|awesome|wonderful|just what i needed|nice)\b", lower) and re.search(r"\b(failed|fail|failure|broken|ruined|worst|problem|trouble)\b", lower))
+
+    if sentiment == LABEL_POSITIVE:
+        if re.search(r"\b(thank|grateful|gratitude|appreciate|blessed|salamat)\b", lower):
+            emotional_tone = "Happiness and gratitude"
+            explanation = "The student expresses happiness, gratitude, and appreciation for support and positive outcomes."
+        elif re.search(r"\b(proud|believe|succeed|success|overcome|accomplish)\b", lower):
+            emotional_tone = "Confidence and encouragement"
+            explanation = "The student reflects motivation, personal pride, and confidence in overcoming difficulties."
+        elif re.search(r"\b(wonderful|awesome|excited|love|peace|joy)\b", lower):
+            emotional_tone = "Joy and satisfaction"
+            explanation = "The student shares a positive and uplifting personal experience with a joyful disposition."
+        else:
+            emotional_tone = "Positive and encouraging"
+            explanation = "The statement conveys an optimistic emotional tone, satisfaction, and constructive outlook."
+    elif sentiment == LABEL_NEGATIVE:
+        if is_sarcastic:
+            emotional_tone = "Frustration and sarcasm"
+            explanation = "The statement uses sarcastic phrasing to express dissatisfaction and disappointment with a negative outcome."
+        elif re.search(r"\b(exhausted|tired|stress|stressed|pressure|requirements|trying my best|pagod)\b", lower):
+            emotional_tone = "Stress and exhaustion, with determination"
+            explanation = "The statement expresses academic stress and exhaustion, while acknowledging the emotional toll of ongoing demands."
+        elif re.search(r"\b(sad|lonely|alone|nobody|crying|depressed|heart|hurt|hurting|pain)\b", lower):
+            emotional_tone = "Sadness, loneliness, or emotional hurt"
+            explanation = "The student expresses feelings of sadness, isolation, or internal hurt that call for empathy and understanding."
+        elif re.search(r"\b(disappointed|fail|failed|failure|frustrated|frustration)\b", lower):
+            emotional_tone = "Disappointment and frustration"
+            explanation = "The student communicates frustration or disappointment regarding examinations, expectations, or personal setbacks."
+        else:
+            emotional_tone = "Distress and negative sentiment"
+            explanation = "The statement communicates negative emotions, stress, or challenges experienced by the student."
+    else:
+        if "?" in text or re.search(r"^(what|when|where|how|has|is|are|kailan|saan|meron)\b", lower):
+            emotional_tone = "Inquiry and objective curiosity"
+            explanation = "The student is asking a standard informational question without emotional distress or strong positive affect."
+        elif len(text.split()) <= 2:
+            emotional_tone = "Neutral or casual acknowledgement"
+            explanation = "The statement is very brief or neutral, expressing no explicit positive or negative emotional polarity."
+        else:
+            emotional_tone = "Informational and balanced"
+            explanation = "The statement discusses routine events, study activities, or balanced sentiments without a clear positive or negative leaning."
+
     return {
         "sentiment": sentiment,
         "sentiment_score": round(confidence, 4),
         "confidence": round(confidence, 4),
+        "emotional_tone": emotional_tone,
+        "explanation": explanation,
         "method": "contextual_multilingual"
     }
 
