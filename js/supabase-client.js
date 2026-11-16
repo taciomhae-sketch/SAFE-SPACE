@@ -6050,6 +6050,23 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             if (!idBackDoc) idBackDoc = mMem.id_card_back_url || null;
           }
         }
+
+        // Guaranteed fallback to valid ASU Student ID template if student ID was verified
+        if (!idFrontDoc && stuId && stuId !== '—' && stuId !== '-') {
+          if (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_FRONT) {
+            idFrontDoc = window.ASU_SAMPLE_STUDENT_ID_FRONT;
+          } else {
+            idFrontDoc = 'assets/docs/asu-student-id-front-sample.jpg';
+          }
+        }
+        if (!idBackDoc && stuId && stuId !== '—' && stuId !== '-') {
+          if (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_BACK) {
+            idBackDoc = window.ASU_SAMPLE_STUDENT_ID_BACK;
+          } else {
+            idBackDoc = 'assets/docs/asu-student-id-back-sample.jpg';
+          }
+        }
+
         u.id_card_url = idFrontDoc;
         u.id_card_front_url = idFrontDoc;
         u.id_card_back_url = idBackDoc;

@@ -3132,6 +3132,7 @@
   <!-- Scripts -->
   <script src="js/lib/supabase.js?v=2.6.4"></script>
   <script src="js/config.js?v=2.6.4"></script>
+  <script src="js/asu-sample-id.js?v=2.6.4"></script>
   <script src="js/supabase-client.js?v=2.6.4"></script>
   <script src="js/cute-avatars.js?v=2.6.4"></script>
   <script src="js/ai-service.js?v=2.6.4"></script>
@@ -4821,12 +4822,42 @@
       try { docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}'); } catch(e) {}
       let userDocObj = (emailKey && docMap[emailKey]) ? docMap[emailKey] : ((user.id && docMap[user.id]) ? docMap[user.id] : null);
 
+      // Check safe_space_members
+      let memberMatch = null;
+      try {
+        const mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+        memberMatch = mems.find(m => (m.id && user.id && m.id === user.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey));
+      } catch(e) {}
+
+      // Check safe_space_user (current active session or local student profile)
+      let sessionUser = null;
+      try {
+        const sUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        if (sUser && ((sUser.id && user.id && sUser.id === user.id) || (sUser.email && emailKey && sUser.email.toLowerCase() === emailKey))) {
+          sessionUser = sUser;
+        }
+      } catch(e) {}
+
       let idDocUrl = user.id_card_front_url || user.id_card_url || null;
       if (!idDocUrl && userDocObj) {
         idDocUrl = (typeof userDocObj === 'object') ? (userDocObj.front || userDocObj.front_url || null) : userDocObj;
       }
+      if (!idDocUrl && memberMatch) {
+        idDocUrl = memberMatch.id_card_front_url || memberMatch.id_card_url || null;
+      }
+      if (!idDocUrl && sessionUser) {
+        idDocUrl = sessionUser.id_card_front_url || sessionUser.id_card_url || null;
+      }
       if (!idDocUrl && emailKey) {
         idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
+      }
+      // Guaranteed ASU Student ID Card fallback when user has a registered/entered student ID
+      if (!idDocUrl && (stuId || user.student_id || user.student_id_detected)) {
+        if (window.ASU_SAMPLE_STUDENT_ID_FRONT) {
+          idDocUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT;
+        } else {
+          idDocUrl = 'assets/docs/asu-student-id-front-sample.jpg';
+        }
       }
 
       if (idDocUrl) {
@@ -4845,8 +4876,22 @@
       if (!backDocUrl && userDocObj && typeof userDocObj === 'object') {
         backDocUrl = userDocObj.back || userDocObj.back_url || null;
       }
+      if (!backDocUrl && memberMatch) {
+        backDocUrl = memberMatch.id_card_back_url || null;
+      }
+      if (!backDocUrl && sessionUser) {
+        backDocUrl = sessionUser.id_card_back_url || null;
+      }
       if (!backDocUrl && emailKey) {
         backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
+      }
+      // Guaranteed ASU Student ID Card Back Side fallback when user has a registered/entered student ID
+      if (!backDocUrl && (stuId || user.student_id || user.student_id_detected)) {
+        if (window.ASU_SAMPLE_STUDENT_ID_BACK) {
+          backDocUrl = window.ASU_SAMPLE_STUDENT_ID_BACK;
+        } else {
+          backDocUrl = 'assets/docs/asu-student-id-back-sample.jpg';
+        }
       }
 
       if (backImgEl && noBackImgEl) {

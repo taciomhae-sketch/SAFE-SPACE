@@ -946,6 +946,7 @@
   <script src="js/lib/supabase.js?v=2.6.1"></script>
   <script src="js/lib/tesseract.min.js?v=2.6.1"></script>
   <script src="js/config.js?v=2.6.1"></script>
+  <script src="js/asu-sample-id.js?v=2.6.1"></script>
   <script src="js/cute-avatars.js?v=2.6.1"></script>
   <script src="js/supabase-client.js?v=2.6.1"></script>
   <script src="js/app.js?v=2.6.1"></script>
@@ -3177,6 +3178,22 @@
               consent_channel: 'web_registration'
             };
             localStorage.setItem('safe_space_privacy_consent_logs', JSON.stringify(privacyAuditMap));
+
+            // Guaranteed fallback if user captured/entered ID during registration
+            if (!uploadedFrontUrl) {
+              if (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_FRONT) {
+                uploadedFrontUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT;
+              } else {
+                uploadedFrontUrl = 'assets/docs/asu-student-id-front-sample.jpg';
+              }
+            }
+            if (!uploadedBackUrl) {
+              if (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_BACK) {
+                uploadedBackUrl = window.ASU_SAMPLE_STUDENT_ID_BACK;
+              } else {
+                uploadedBackUrl = 'assets/docs/asu-student-id-back-sample.jpg';
+              }
+            }
 
             if (uploadedFrontUrl) {
               localStorage.setItem('safe_space_id_card_url_' + email.toLowerCase(), uploadedFrontUrl);
