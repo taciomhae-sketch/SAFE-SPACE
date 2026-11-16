@@ -789,12 +789,12 @@
         </div>
         <div class="admin-nav-item" data-tab="users">
           <i class="fas fa-users-gear"></i>
-          <span>Users &amp; Roles</span>
+          <span>Administrator</span>
           <span class="badge-count" id="navUsersBadge" style="display:none; background:#E0E7FF; color:var(--primary);">0</span>
         </div>
         <div class="admin-nav-item" data-tab="posts">
           <i class="fas fa-newspaper"></i>
-          <span>Community Posts</span>
+          <span>Moderator</span>
         </div>
         <div class="admin-nav-item" data-tab="reports">
           <i class="fas fa-shield-halved"></i>
@@ -1159,7 +1159,7 @@
           <div class="admin-panel">
             <div class="panel-header">
               <div>
-                <h4 class="panel-title"><i class="fas fa-users-gear" style="color:var(--primary);"></i> User Accounts &amp; Permissions</h4>
+                <h4 class="panel-title"><i class="fas fa-users-gear" style="color:var(--primary);"></i> Administrator</h4>
                 <span style="font-size:12px; color:var(--text-muted);">Search, filter, assign roles (Student, Counselor, Admin), and suspend/reactivate accounts</span>
               </div>
 
@@ -1212,7 +1212,7 @@
           <div class="admin-panel">
             <div class="panel-header">
               <div>
-                <h4 class="panel-title"><i class="fas fa-newspaper" style="color:var(--primary);"></i> Community Posts &amp; Moderation</h4>
+                <h4 class="panel-title"><i class="fas fa-newspaper" style="color:var(--primary);"></i> Moderator</h4>
                 <span style="font-size:12px; color:var(--text-muted);">Manage real student feed submissions, inspect comments, and handle content safety</span>
               </div>
 
@@ -2568,7 +2568,7 @@
             Close
           </button>
           <button type="button" class="admin-btn admin-btn-primary" style="font-size: 12px; padding: 6px 14px; background: var(--primary);" onclick="goToUsersTabWithActiveFilter()">
-            <i class="fas fa-users-gear"></i> Manage in Users &amp; Roles
+            <i class="fas fa-users-gear"></i> Manage in Administrator
           </button>
         </div>
       </div>
@@ -3698,8 +3698,8 @@
 
       const titleMap = {
         overview: ['Dashboard Overview', 'Safe Space System, Community & AI Health'],
-        users: ['User Accounts & Roles', 'Manage Student & Counselor Credentials'],
-        posts: ['Community Posts & Moderation', 'Inspect Submissions, Comments & Sentiment'],
+        users: ['Administrator', 'Manage Student & Counselor Credentials'],
+        posts: ['Moderator', 'Inspect Submissions, Comments & Sentiment'],
         reports: ['Safety Reports Triage', 'Resolve Harassment & Emergency Flags'],
         'ai-governance': ['AI Governance & Control Center', 'Configure BART Zero-Shot & RoBERTa Sensitivity'],
         'safety-alerts': ['Safety Monitoring & Risk Alerts', 'AI Risk Detection, Escalation Triage & Secure Identity Review'],
