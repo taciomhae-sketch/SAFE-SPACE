@@ -689,6 +689,12 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       metadata.is_approved = true;
 
       if (SafeSpaceDB.isSupabaseActive()) {
+        // Prepare metadata for Supabase Auth: omit giant data URLs from raw_user_meta_data to prevent auth header overflows
+        var authMetadata = Object.assign({}, metadata);
+        if (authMetadata.id_card_url && !authMetadata.id_card_url.startsWith('http')) authMetadata.id_card_url = null;
+        if (authMetadata.id_card_front_url && !authMetadata.id_card_front_url.startsWith('http')) authMetadata.id_card_front_url = null;
+        if (authMetadata.id_card_back_url && !authMetadata.id_card_back_url.startsWith('http')) authMetadata.id_card_back_url = null;
+
         // Standard Supabase signup
         var res = null;
         var supaError = null;
@@ -697,7 +703,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             email: email,
             password: password,
             options: {
-              data: metadata
+              data: authMetadata
             }
           });
         } catch (supaErr) {
@@ -8007,23 +8013,46 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       bucket = bucket || 'post-photos';
       if (!file) return null;
 
-      if (typeof file === 'string') return file;
+      // If it's a data URL string, convert it into blob for cloud upload
+      var uploadBlob = null;
+      var fallbackDataUrl = null;
 
-      // 1. Generate client-side optimized photo first
-      var optimized = await this.compressImage(file, 1280, 0.82);
-      var uploadBlob = optimized.blob || file;
-      var fallbackDataUrl = optimized.dataUrl;
+      if (typeof file === 'string') {
+        fallbackDataUrl = file;
+        try {
+          if (file.startsWith('data:')) {
+            var parts = file.split(',');
+            var mimeMatch = parts[0].match(/:(.*?);/);
+            var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+            var bstr = atob(parts[1]);
+            var n = bstr.length;
+            var u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            uploadBlob = new Blob([u8arr], { type: mime });
+          }
+        } catch (convErr) {
+          uploadBlob = null;
+        }
+      } else {
+        // 1. Generate client-side optimized photo first
+        var optimized = await this.compressImage(file, 1280, 0.82);
+        uploadBlob = optimized.blob || file;
+        fallbackDataUrl = optimized.dataUrl;
+      }
 
       // 2. Attempt Supabase cloud storage upload if client is active
-      if (SafeSpaceDB.isSupabaseActive() && typeof _db !== 'undefined' && _db && _db.storage) {
+      if (SafeSpaceDB.isSupabaseActive() && typeof _db !== 'undefined' && _db && _db.storage && uploadBlob) {
         var bucketsToTry = [bucket];
+        if (bucket !== 'post-photos') bucketsToTry.push('post-photos');
         if (bucket !== 'avatars') bucketsToTry.push('avatars');
 
         for (var i = 0; i < bucketsToTry.length; i++) {
           var targetBucket = bucketsToTry[i];
           try {
             var fileExt = 'jpg';
-            if (file.name && file.name.includes('.')) {
+            if (file && file.name && file.name.includes('.')) {
               fileExt = file.name.split('.').pop().toLowerCase();
             }
             var fileName = Date.now() + '_' + Math.random().toString(36).substring(2, 9) + '.' + fileExt;
