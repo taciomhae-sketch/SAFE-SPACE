@@ -1368,18 +1368,30 @@
             dynamicSensResult = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
           }
 
-          let isPostSensitive = Boolean(
+          const hasExplicitSensitiveFlag = Boolean(
             post.sensitive_content === true ||
             post.blur_enabled === true ||
             (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
             pMeta.sensitive_content === true ||
             pMeta.blur_enabled === true ||
-            post.has_trigger_warning === true ||
-            pMeta.has_trigger_warning === true ||
-            (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase())) ||
-            (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW') ||
-            (dynamicSensResult && dynamicSensResult.is_sensitive)
+            (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
           );
+
+          const isPostTriggering = Boolean(
+            (dynamicSensResult && dynamicSensResult.is_sensitive) ||
+            hasExplicitSensitiveFlag
+          );
+
+          // Content rule: If the content is positive or safe without genuine sensitive/triggering/nudity/alarming material, do NOT blur or hide content
+          const isPosSentiment = String(currentSentiment).toUpperCase() === 'POSITIVE' || currentScore >= 0.60;
+          let isPostSensitive = false;
+          if (isPostTriggering) {
+            if (isPosSentiment && (!dynamicSensResult || !dynamicSensResult.is_sensitive)) {
+              isPostSensitive = false;
+            } else {
+              isPostSensitive = true;
+            }
+          }
 
           let sensitiveWarning = post.sensitive_warning || pMeta.sensitive_warning || (dynamicSensResult && dynamicSensResult.warning);
           if (isPostSensitive && !sensitiveWarning && window.SafeSpaceSensitiveDetector) {
@@ -1814,16 +1826,24 @@
             }
           }
 
-          var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || aiResult.status === 'REVIEW' || (aiResult.category && aiResult.category !== 'SAFE');
+          var isFlagged = !aiResult.allowed || aiResult.status === 'BLOCKED' || (aiResult.status === 'REVIEW' && (!aiResult.sentiment || String(aiResult.sentiment).toUpperCase() !== 'POSITIVE')) || (aiResult.category && aiResult.category !== 'SAFE');
 
           const cfg = aiResult.warning_config || {};
-          const isSensitive = Boolean(aiResult.sensitive_content || (aiResult.sensitive_categories && aiResult.sensitive_categories.length > 0) || cfg.has_trigger_warning || isFlagged);
-          const hasTriggerWarning = Boolean(isFlagged || isSensitive || cfg.has_trigger_warning);
-          const twCategory = cfg.trigger_warning_category || (aiResult.sensitive_categories && aiResult.sensitive_categories[0]) || aiResult.category || (isFlagged ? 'SENSITIVE' : null);
-          const twLabel = cfg.trigger_warning_label || (isSensitive ? 'Sensitive Content' : null);
-          const sensitiveCategories = aiResult.sensitive_categories || (twCategory ? [twCategory] : []);
-          let sensitiveWarning = aiResult.sensitive_warning || null;
-          if (!sensitiveWarning) {
+          const isActuallySensitive = Boolean(
+            aiResult.sensitive_content ||
+            (Array.isArray(aiResult.sensitive_categories) && aiResult.sensitive_categories.length > 0) ||
+            (aiResult.category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(aiResult.category).toUpperCase()))
+          );
+
+          // If content is positive and free of sensitive triggers, do not force sensitive/blur flags
+          const isPos = String(aiResult.sentiment || '').toUpperCase() === 'POSITIVE' || (typeof aiResult.sentiment_score === 'number' && aiResult.sentiment_score >= 0.60);
+          const isSensitive = isActuallySensitive && (!isPos || (aiResult.sensitive_categories && aiResult.sensitive_categories.length > 0));
+          const hasTriggerWarning = Boolean(isSensitive);
+          const twCategory = isSensitive ? (cfg.trigger_warning_category || (aiResult.sensitive_categories && aiResult.sensitive_categories[0]) || aiResult.category || 'SENSITIVE') : null;
+          const twLabel = isSensitive ? (cfg.trigger_warning_label || 'Sensitive Content') : null;
+          const sensitiveCategories = isSensitive ? (aiResult.sensitive_categories || (twCategory ? [twCategory] : [])) : [];
+          let sensitiveWarning = isSensitive ? (aiResult.sensitive_warning || null) : null;
+          if (isSensitive && !sensitiveWarning) {
             if (aiResult.category === 'SELF_HARM' || (sensitiveCategories && sensitiveCategories.includes('SELF_HARM'))) {
               sensitiveWarning = 'Sensitive Content: This post discusses self-harm, suicide-related experiences, or emotional distress.';
             } else if (aiResult.category === 'BULLYING') {
@@ -1838,8 +1858,8 @@
               sensitiveWarning = 'Sensitive Content: This post may contain material that some users find distressing.';
             }
           }
-          const blurEnabled = Boolean(isSensitive || isFlagged);
-          const resolvedModStatus = (isSensitive || isFlagged) ? 'REVIEW' : (aiResult.status || 'APPROVED');
+          const blurEnabled = Boolean(isSensitive);
+          const resolvedModStatus = isSensitive ? 'REVIEW' : (aiResult.status || 'APPROVED');
 
           // ── Save Post with AI Metadata & Sensitive Content Fields ──
           const newPost = await SafeSpaceDB.posts.createPost({
@@ -1876,7 +1896,7 @@
               moderation_status: resolvedModStatus,
               moderation_category: newPost.moderation_category || (isSensitive ? 'SENSITIVE' : 'SAFE'),
               ai_recommendation: newPost.ai_recommendation || aiResult.support_recommendation,
-              has_trigger_warning: true,
+              has_trigger_warning: hasTriggerWarning,
               trigger_warning_category: twCategory,
               trigger_warning_label: twLabel,
               sensitive_content: isSensitive,

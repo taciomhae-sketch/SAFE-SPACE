@@ -2357,17 +2357,26 @@
               dynamicSens = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
             }
 
-            const isPostSensitive = Boolean(
+            const postSent = String(post.sentiment || (pMeta && pMeta.sentiment) || '').toUpperCase();
+            const isPosSent = postSent === 'POSITIVE' || ((typeof post.sentiment_score === 'number' ? post.sentiment_score : (pMeta && pMeta.sentiment_score)) >= 0.60);
+
+            const hasExplicitSens = Boolean(
               post.sensitive_content === true ||
               post.blur_enabled === true ||
               (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
-              post.has_trigger_warning === true ||
-              pMeta.has_trigger_warning === true ||
               pMeta.sensitive_content === true ||
-              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase())) ||
-              (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW') ||
-              (dynamicSens && dynamicSens.is_sensitive)
+              pMeta.blur_enabled === true ||
+              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
             );
+
+            let isPostSensitive = false;
+            if ((dynamicSens && dynamicSens.is_sensitive) || hasExplicitSens) {
+              if (isPosSent && (!dynamicSens || !dynamicSens.is_sensitive)) {
+                isPostSensitive = false;
+              } else {
+                isPostSensitive = true;
+              }
+            }
 
             let twBadgeLabel = post.trigger_warning_label || pMeta.trigger_warning_label || 'Sensitive Content';
             const rawTwCat = String(post.trigger_warning_category || pMeta.trigger_warning_category || post.moderation_category || '').toUpperCase();
@@ -2538,17 +2547,26 @@
               dynamicSens = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
             }
 
-            const isPostSensitive = Boolean(
+            const postSent = String(post.sentiment || (pMeta && pMeta.sentiment) || '').toUpperCase();
+            const isPosSent = postSent === 'POSITIVE' || ((typeof post.sentiment_score === 'number' ? post.sentiment_score : (pMeta && pMeta.sentiment_score)) >= 0.60);
+
+            const hasExplicitSens = Boolean(
               post.sensitive_content === true ||
               post.blur_enabled === true ||
               (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
-              post.has_trigger_warning === true ||
-              pMeta.has_trigger_warning === true ||
               pMeta.sensitive_content === true ||
-              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase())) ||
-              (post.moderation_status && String(post.moderation_status).toUpperCase() === 'REVIEW') ||
-              (dynamicSens && dynamicSens.is_sensitive)
+              pMeta.blur_enabled === true ||
+              (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
             );
+
+            let isPostSensitive = false;
+            if ((dynamicSens && dynamicSens.is_sensitive) || hasExplicitSens) {
+              if (isPosSent && (!dynamicSens || !dynamicSens.is_sensitive)) {
+                isPostSensitive = false;
+              } else {
+                isPostSensitive = true;
+              }
+            }
 
             let twBadgeLabel = post.trigger_warning_label || pMeta.trigger_warning_label || 'Sensitive Content';
             const rawTwCat = String(post.trigger_warning_category || pMeta.trigger_warning_category || post.moderation_category || '').toUpperCase();

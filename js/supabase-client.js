@@ -1741,6 +1741,12 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         var modCheck = await window.AIService.moderate(content);
         var isFlagged = !modCheck.allowed || modCheck.status === 'BLOCKED' || modCheck.status === 'REVIEW' || (modCheck.category && modCheck.category !== 'SAFE');
 
+        var is_sensitive = false;
+        var blur_enabled = false;
+        var has_trigger_warning = false;
+        var trigger_warning_category = null;
+        var trigger_warning_label = null;
+
         if (isFlagged) {
           // Log moderation event for audit
           if (SafeSpaceDB.admin && SafeSpaceDB.admin.logModerationEvent) {
@@ -1758,19 +1764,13 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             }).catch(function() {});
           }
 
-          if (options.is_user_confirmed) {
-            // User explicitly confirmed Proceed to Post:
-            // All posts can proceed to the feed.
-            // Offensive words are censored with asterisks, content is blurred/hidden in the feed with a content warning,
-            // and moderation status is set to REVIEW so it appears in the feed while being monitored by the admin.
-            content = SafeSpaceDB.censorProfanity(content);
-            moderation_status = 'REVIEW';
-            is_sensitive = true;
-            blur_enabled = true;
-            has_trigger_warning = true;
-          } else {
-            // Direct submission without confirmation:
-            // Allow post to proceed with review/sensitive flags
+          var isExplicitlyHarmful = Boolean(
+            modCheck.sensitive_content ||
+            (Array.isArray(modCheck.sensitive_categories) && modCheck.sensitive_categories.length > 0) ||
+            ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'PROFANITY'].includes(String(modCheck.category || '').toUpperCase())
+          );
+
+          if (isExplicitlyHarmful) {
             content = SafeSpaceDB.censorProfanity(content);
             moderation_status = 'REVIEW';
             is_sensitive = true;
@@ -1834,14 +1834,19 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         }
       }
 
-      var has_trigger_warning = Boolean(options.has_trigger_warning || is_sensitive);
-      var trigger_warning_category = options.trigger_warning_category || (is_sensitive ? 'SENSITIVE' : null);
-      var trigger_warning_label = options.trigger_warning_label || (is_sensitive ? 'Sensitive Content' : null);
-
       var is_sensitive = Boolean(options.sensitive_content !== undefined ? options.sensitive_content : (typeof sensResult !== 'undefined' && sensResult.is_sensitive));
-      var sensitive_categories = options.sensitive_categories ? (typeof options.sensitive_categories === 'string' ? options.sensitive_categories : JSON.stringify(options.sensitive_categories)) : ((typeof sensResult !== 'undefined' && sensResult.categories) ? JSON.stringify(sensResult.categories) : null);
-      var sensitive_warning = options.sensitive_warning || ((typeof sensResult !== 'undefined' && sensResult.warning) ? sensResult.warning : null);
-      var blur_enabled = Boolean(options.blur_enabled !== undefined ? options.blur_enabled : (typeof sensResult !== 'undefined' ? sensResult.blur_enabled : is_sensitive));
+      var is_positive_sentiment = String(sentiment || (modCheck && modCheck.sentiment) || '').toUpperCase() === 'POSITIVE' || ((typeof sentiment_score === 'number' ? sentiment_score : (modCheck && modCheck.sentiment_score)) >= 0.60);
+      if (is_positive_sentiment && (!sensResult || !sensResult.is_sensitive)) {
+        is_sensitive = false;
+      }
+
+      var has_trigger_warning = Boolean(is_sensitive);
+      var trigger_warning_category = is_sensitive ? (options.trigger_warning_category || 'SENSITIVE') : null;
+      var trigger_warning_label = is_sensitive ? (options.trigger_warning_label || 'Sensitive Content') : null;
+
+      var sensitive_categories = is_sensitive ? (options.sensitive_categories ? (typeof options.sensitive_categories === 'string' ? options.sensitive_categories : JSON.stringify(options.sensitive_categories)) : ((typeof sensResult !== 'undefined' && sensResult.categories) ? JSON.stringify(sensResult.categories) : null)) : null;
+      var sensitive_warning = is_sensitive ? (options.sensitive_warning || ((typeof sensResult !== 'undefined' && sensResult.warning) ? sensResult.warning : null)) : null;
+      var blur_enabled = Boolean(is_sensitive);
 
       var ai_recommendation = options.ai_recommendation || (typeof modCheck !== 'undefined' && modCheck ? modCheck.support_recommendation : null);
       if ((!ai_recommendation || (!ai_recommendation.preview && !ai_recommendation.message)) && typeof window !== 'undefined' && window.SafeSpaceSupportRecommender) {
