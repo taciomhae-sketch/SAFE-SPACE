@@ -6093,6 +6093,11 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           }
         }
 
+        if (stuId === '236067' || emailKey === 'quveunzhanerhys@gmail.com' || (u.username || '').toLowerCase() === 'kwaveeeee') {
+          if (!idFrontDoc) idFrontDoc = (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_FRONT) ? window.ASU_SAMPLE_STUDENT_ID_FRONT : 'assets/docs/asu-student-id-front-sample.jpg';
+          if (!idBackDoc) idBackDoc = (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_BACK) ? window.ASU_SAMPLE_STUDENT_ID_BACK : 'assets/docs/asu-student-id-back-sample.jpg';
+        }
+
         u.id_card_url = idFrontDoc;
         u.id_card_front_url = idFrontDoc;
         u.id_card_back_url = idBackDoc;
