@@ -3179,22 +3179,7 @@
             };
             localStorage.setItem('safe_space_privacy_consent_logs', JSON.stringify(privacyAuditMap));
 
-            // Guaranteed fallback if user captured/entered ID during registration
-            if (!uploadedFrontUrl) {
-              if (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_FRONT) {
-                uploadedFrontUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT;
-              } else {
-                uploadedFrontUrl = 'assets/docs/asu-student-id-front-sample.jpg';
-              }
-            }
-            if (!uploadedBackUrl) {
-              if (typeof window !== 'undefined' && window.ASU_SAMPLE_STUDENT_ID_BACK) {
-                uploadedBackUrl = window.ASU_SAMPLE_STUDENT_ID_BACK;
-              } else {
-                uploadedBackUrl = 'assets/docs/asu-student-id-back-sample.jpg';
-              }
-            }
-
+            // Save uploaded student ID cards if provided during registration
             if (uploadedFrontUrl) {
               localStorage.setItem('safe_space_id_card_url_' + email.toLowerCase(), uploadedFrontUrl);
               localStorage.setItem('safe_space_id_card_front_url_' + email.toLowerCase(), uploadedFrontUrl);

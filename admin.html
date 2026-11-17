@@ -4911,14 +4911,6 @@
       if (!idDocUrl && emailKey) {
         idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
       }
-      // Guaranteed ASU Student ID Card fallback when user has a registered/entered student ID
-      if (!idDocUrl && (stuId || user.student_id || user.student_id_detected)) {
-        if (window.ASU_SAMPLE_STUDENT_ID_FRONT) {
-          idDocUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT;
-        } else {
-          idDocUrl = 'assets/docs/asu-student-id-front-sample.jpg';
-        }
-      }
 
       if (idDocUrl) {
         imgEl.src = idDocUrl;
@@ -4944,14 +4936,6 @@
       }
       if (!backDocUrl && emailKey) {
         backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
-      }
-      // Guaranteed ASU Student ID Card Back Side fallback when user has a registered/entered student ID
-      if (!backDocUrl && (stuId || user.student_id || user.student_id_detected)) {
-        if (window.ASU_SAMPLE_STUDENT_ID_BACK) {
-          backDocUrl = window.ASU_SAMPLE_STUDENT_ID_BACK;
-        } else {
-          backDocUrl = 'assets/docs/asu-student-id-back-sample.jpg';
-        }
       }
 
       if (backImgEl && noBackImgEl) {
