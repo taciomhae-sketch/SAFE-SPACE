@@ -3252,10 +3252,25 @@
           avatar_url: avatarUrl,
           avatar_type: avatarType,
           avatar_value: avatarValue,
+          id_card_url: uploadedFrontUrl || null,
+          id_card_front_url: uploadedFrontUrl || null,
+          id_card_back_url: uploadedBackUrl || null,
+          student_id_detected: studentIdFrontDoc.detectedId || studentId || null,
+          student_id_matching_status: 'MATCH',
+          student_id_status: 'PENDING_VERIFICATION',
           is_approved: true,
           approval_status: 'approved'
         });
         localStorage.setItem('safe_space_user', JSON.stringify(fullSessionUser));
+
+        // Update safe_space_members with the new account's ID photos
+        try {
+          var curMemsList = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+          var mIdx = curMemsList.findIndex(function(m) { return (m.id && m.id === fullSessionUser.id) || (m.email && m.email.toLowerCase() === email.toLowerCase()); });
+          if (mIdx >= 0) curMemsList[mIdx] = Object.assign({}, curMemsList[mIdx], fullSessionUser);
+          else curMemsList.unshift(fullSessionUser);
+          localStorage.setItem('safe_space_members', JSON.stringify(curMemsList));
+        } catch(me) {}
 
         if (typeof showPageLoader === 'function') showPageLoader('Opening Safe Space feed...');
         window.location.replace('home.html');
@@ -3281,6 +3296,12 @@
             avatar_url: avatarUrl,
             avatar_type: avatarType,
             avatar_value: avatarValue,
+            id_card_url: uploadedFrontUrl || null,
+            id_card_front_url: uploadedFrontUrl || null,
+            id_card_back_url: uploadedBackUrl || null,
+            student_id_detected: studentIdFrontDoc.detectedId || studentId || null,
+            student_id_matching_status: 'MATCH',
+            student_id_status: 'PENDING_VERIFICATION',
             is_approved: true,
             approval_status: 'approved'
           };
@@ -3341,6 +3362,12 @@
             avatar_url: avatarUrl,
             avatar_type: avatarType,
             avatar_value: avatarValue,
+            id_card_url: uploadedFrontUrl || null,
+            id_card_front_url: uploadedFrontUrl || null,
+            id_card_back_url: uploadedBackUrl || null,
+            student_id_detected: studentIdFrontDoc.detectedId || studentId || null,
+            student_id_matching_status: 'MATCH',
+            student_id_status: 'PENDING_VERIFICATION',
             is_approved: true,
             approval_status: 'approved'
           });
