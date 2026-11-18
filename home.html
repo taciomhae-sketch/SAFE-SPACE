@@ -1368,12 +1368,19 @@
             dynamicSensResult = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
           }
 
+          // Check for vulgarities, profanity, or asterisk-censored offensive words (e.g. a*****e, f*****g)
+          const hasCensoredProfanity = Boolean(
+            /(?<![a-zA-Z0-9])[a-zA-Z][*]{2,}[a-zA-Z]?(?![a-zA-Z0-9])/i.test(post.content || '') ||
+            (window.SafeSpaceCensor && SafeSpaceCensor.hasProfanity && SafeSpaceCensor.hasProfanity(post.content || ''))
+          );
+
           const hasExplicitSensitiveFlag = Boolean(
             post.sensitive_content === true ||
             post.blur_enabled === true ||
             (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
             pMeta.sensitive_content === true ||
             pMeta.blur_enabled === true ||
+            hasCensoredProfanity ||
             (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
           );
 
@@ -1382,11 +1389,12 @@
             hasExplicitSensitiveFlag
           );
 
-          // Content rule: If the content is positive or safe without genuine sensitive/triggering/nudity/alarming material, do NOT blur or hide content
+          // Content rule: If the content is positive without genuine sensitive/triggering/nudity/alarming/offensive material, do NOT blur or hide content.
+          // Triggering, sensitive, alarming, nudity, or offensive posts are ALWAYS blurred/hidden on everyone's feed.
           const isPosSentiment = String(currentSentiment).toUpperCase() === 'POSITIVE' || currentScore >= 0.60;
           let isPostSensitive = false;
           if (isPostTriggering) {
-            if (isPosSentiment && (!dynamicSensResult || !dynamicSensResult.is_sensitive)) {
+            if (isPosSentiment && (!dynamicSensResult || !dynamicSensResult.is_sensitive) && !hasCensoredProfanity) {
               isPostSensitive = false;
             } else {
               isPostSensitive = true;
@@ -1399,6 +1407,9 @@
             if (evalRes && evalRes.is_sensitive) {
               sensitiveWarning = evalRes.warning;
             }
+          }
+          if (!sensitiveWarning && hasCensoredProfanity) {
+            sensitiveWarning = 'Sensitive Content: This post may contain profanity or offensive language.';
           }
           if (!sensitiveWarning && isPostSensitive) {
             sensitiveWarning = 'Sensitive Content: This post may contain potentially distressing or sensitive material.';

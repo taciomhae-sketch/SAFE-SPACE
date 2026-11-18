@@ -2357,6 +2357,11 @@
               dynamicSens = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
             }
 
+            const hasCensoredProfanity = Boolean(
+              /(?<![a-zA-Z0-9])[a-zA-Z][*]{2,}[a-zA-Z]?(?![a-zA-Z0-9])/i.test(post.content || '') ||
+              (window.SafeSpaceCensor && SafeSpaceCensor.hasProfanity && SafeSpaceCensor.hasProfanity(post.content || ''))
+            );
+
             const postSent = String(post.sentiment || (pMeta && pMeta.sentiment) || '').toUpperCase();
             const isPosSent = postSent === 'POSITIVE' || ((typeof post.sentiment_score === 'number' ? post.sentiment_score : (pMeta && pMeta.sentiment_score)) >= 0.60);
 
@@ -2366,12 +2371,13 @@
               (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
               pMeta.sensitive_content === true ||
               pMeta.blur_enabled === true ||
+              hasCensoredProfanity ||
               (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
             );
 
             let isPostSensitive = false;
             if ((dynamicSens && dynamicSens.is_sensitive) || hasExplicitSens) {
-              if (isPosSent && (!dynamicSens || !dynamicSens.is_sensitive)) {
+              if (isPosSent && (!dynamicSens || !dynamicSens.is_sensitive) && !hasCensoredProfanity) {
                 isPostSensitive = false;
               } else {
                 isPostSensitive = true;
@@ -2547,6 +2553,11 @@
               dynamicSens = window.SafeSpaceSensitiveDetector.evaluate(post.content || '', Boolean(post.photo_url));
             }
 
+            const hasCensoredProfanity = Boolean(
+              /(?<![a-zA-Z0-9])[a-zA-Z][*]{2,}[a-zA-Z]?(?![a-zA-Z0-9])/i.test(post.content || '') ||
+              (window.SafeSpaceCensor && SafeSpaceCensor.hasProfanity && SafeSpaceCensor.hasProfanity(post.content || ''))
+            );
+
             const postSent = String(post.sentiment || (pMeta && pMeta.sentiment) || '').toUpperCase();
             const isPosSent = postSent === 'POSITIVE' || ((typeof post.sentiment_score === 'number' ? post.sentiment_score : (pMeta && pMeta.sentiment_score)) >= 0.60);
 
@@ -2556,12 +2567,13 @@
               (Array.isArray(post.sensitive_categories) && post.sensitive_categories.length > 0) ||
               pMeta.sensitive_content === true ||
               pMeta.blur_enabled === true ||
+              hasCensoredProfanity ||
               (post.moderation_category && ['SELF_HARM', 'DISTRESS', 'ALARMING', 'TRAUMA', 'ABUSE', 'VIOLENCE', 'BULLYING', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT', 'PROFANITY'].includes(String(post.moderation_category).toUpperCase()))
             );
 
             let isPostSensitive = false;
             if ((dynamicSens && dynamicSens.is_sensitive) || hasExplicitSens) {
-              if (isPosSent && (!dynamicSens || !dynamicSens.is_sensitive)) {
+              if (isPosSent && (!dynamicSens || !dynamicSens.is_sensitive) && !hasCensoredProfanity) {
                 isPostSensitive = false;
               } else {
                 isPostSensitive = true;

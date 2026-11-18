@@ -1352,9 +1352,11 @@
         if (!detected.includes('TRAUMA')) detected.push('TRAUMA');
       }
 
-      // G. Profanity & Offensive Language
+      // G. Profanity & Offensive Language (including censored / asterisk-masked vulgarities like a*****e, f*****g, h**l, b***h)
       if (/\b(putangina|tangina|taena|amputa|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|fuck|fucking|fucker|fucked|shit|bitch|bastard|asshole|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)\b/i.test(lower) ||
-          /(?:b[\s*.*_~-]*i[\s*.*_~-]*t[\s*.*_~-]*c[\s*.*_~-]*h|b\*{2,}h|b\*{3,}h|f\*{2,}k|s\*{2,}t)/i.test(lower)) {
+          /(?:b[\s*.*_~-]*i[\s*.*_~-]*t[\s*.*_~-]*c[\s*.*_~-]*h|b\*{2,}h|b\*{3,}h|f\*{2,}k|s\*{2,}t)/i.test(lower) ||
+          /(?<![a-zA-Z0-9])[a-zA-Z][*]{2,}[a-zA-Z]?(?![a-zA-Z0-9])/i.test(lower) ||
+          (typeof SafeSpaceCensor !== 'undefined' && SafeSpaceCensor.hasProfanity && SafeSpaceCensor.hasProfanity(text))) {
         if (!detected.includes('PROFANITY')) detected.push('PROFANITY');
       }
 
