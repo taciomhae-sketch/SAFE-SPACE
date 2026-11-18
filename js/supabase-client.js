@@ -651,6 +651,10 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       payload = payload || {};
       var email = payload.email;
       var password = payload.password;
+      // Preserve full front and back ID card URLs/data for profile storage
+      var idFrontForProfile = payload.id_card_front_url || payload.id_card_url || null;
+      var idBackForProfile = payload.id_card_back_url || null;
+
       var metadata = Object.assign({}, payload);
       delete metadata.email;
       delete metadata.password;
@@ -752,9 +756,9 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             avatar_value: metadata.avatar_value || 'default',
             approval_status: 'approved',
             is_approved: true,
-            id_card_url: metadata.id_card_url || metadata.id_card_front_url || null,
-            id_card_front_url: metadata.id_card_front_url || metadata.id_card_url || null,
-            id_card_back_url: metadata.id_card_back_url || null,
+            id_card_url: idFrontForProfile || metadata.id_card_url || metadata.id_card_front_url || null,
+            id_card_front_url: idFrontForProfile || metadata.id_card_front_url || metadata.id_card_url || null,
+            id_card_back_url: idBackForProfile || metadata.id_card_back_url || null,
             student_id_detected: metadata.student_id_detected || null,
             student_id_matching_status: metadata.student_id_matching_status || 'MATCH',
             student_id_status: metadata.student_id_status || 'PENDING_VERIFICATION',
@@ -789,9 +793,9 @@ var SafeSpaceDB = window.SafeSpaceDB = {
               id: sbUser ? sbUser.id : ('user-' + Date.now()),
               email: email,
               student_id: metadata.student_id,
-              id_card_url: metadata.id_card_url || metadata.id_card_front_url || null,
-              id_card_front_url: metadata.id_card_front_url || metadata.id_card_url || null,
-              id_card_back_url: metadata.id_card_back_url || null,
+              id_card_url: idFrontForProfile || metadata.id_card_url || metadata.id_card_front_url || null,
+              id_card_front_url: idFrontForProfile || metadata.id_card_front_url || metadata.id_card_url || null,
+              id_card_back_url: idBackForProfile || metadata.id_card_back_url || null,
               student_id_detected: metadata.student_id_detected || null,
               student_id_matching_status: metadata.student_id_matching_status || 'MATCH',
               student_id_status: metadata.student_id_status || 'VERIFIED',
@@ -831,9 +835,9 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         id: 'user-' + Date.now(),
         email: email,
         student_id: metadata.student_id || null,
-        id_card_url: metadata.id_card_url || metadata.id_card_front_url || null,
-        id_card_front_url: metadata.id_card_front_url || metadata.id_card_url || null,
-        id_card_back_url: metadata.id_card_back_url || null,
+        id_card_url: idFrontForProfile || metadata.id_card_url || metadata.id_card_front_url || null,
+        id_card_front_url: idFrontForProfile || metadata.id_card_front_url || metadata.id_card_url || null,
+        id_card_back_url: idBackForProfile || metadata.id_card_back_url || null,
         student_id_detected: metadata.student_id_detected || null,
         student_id_matching_status: metadata.student_id_matching_status || 'MATCH',
         student_id_status: metadata.student_id_status || 'VERIFIED',
@@ -6017,6 +6021,8 @@ var SafeSpaceDB = window.SafeSpaceDB = {
       try { sMap = JSON.parse(localStorage.getItem('safe_space_student_ids') || '{}'); } catch(e) {}
       var localMembers = [];
       try { localMembers = JSON.parse(localStorage.getItem('safe_space_members') || '[]'); } catch(e) {}
+      var localCachedUsers = [];
+      try { localCachedUsers = JSON.parse(localStorage.getItem('safe_space_admin_cached_users') || '[]'); } catch(e) {}
 
       var docMap = {};
       try { docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}'); } catch(e) {}
@@ -6095,6 +6101,16 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           if (mMem) {
             if (!idFrontDoc) idFrontDoc = mMem.id_card_front_url || mMem.id_card_url || null;
             if (!idBackDoc) idBackDoc = mMem.id_card_back_url || null;
+          }
+        }
+
+        if (!idFrontDoc || !idBackDoc) {
+          var aMem = localCachedUsers.find(function(m) {
+            return (m.id && u.id && m.id === u.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey);
+          });
+          if (aMem) {
+            if (!idFrontDoc) idFrontDoc = aMem.id_card_front_url || aMem.id_card_url || null;
+            if (!idBackDoc) idBackDoc = aMem.id_card_back_url || null;
           }
         }
 

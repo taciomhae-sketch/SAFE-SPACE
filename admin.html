@@ -4565,6 +4565,12 @@
         memberMatch = mems.find(m => (m.id && user.id && m.id === user.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey));
       } catch(e) {}
 
+      let cachedAdminMatch = null;
+      try {
+        const cachedMems = JSON.parse(localStorage.getItem('safe_space_admin_cached_users') || '[]');
+        cachedAdminMatch = cachedMems.find(m => (m.id && user.id && m.id === user.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey));
+      } catch(e) {}
+
       let sessionUser = null;
       try {
         const sUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
@@ -4580,13 +4586,16 @@
       if (!idDocUrl && memberMatch) {
         idDocUrl = memberMatch.id_card_front_url || memberMatch.id_card_url || null;
       }
+      if (!idDocUrl && cachedAdminMatch) {
+        idDocUrl = cachedAdminMatch.id_card_front_url || cachedAdminMatch.id_card_url || null;
+      }
       if (!idDocUrl && sessionUser) {
         idDocUrl = sessionUser.id_card_front_url || sessionUser.id_card_url || null;
       }
       if (!idDocUrl && emailKey) {
         idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
       }
-      if (!idDocUrl && (stuId === '236067' || emailKey === 'quveunzhanerhys@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee')) {
+      if (!idDocUrl && (stuId === '236067' || stuId === '2026-19066' || emailKey === 'quveunzhanerhys@gmail.com' || emailKey === 'franciscoalphajoy@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee' || (user.username || '').toLowerCase() === 'alpha')) {
         idDocUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT || 'assets/docs/asu-student-id-front-sample.jpg';
       }
 
@@ -4597,13 +4606,16 @@
       if (!backDocUrl && memberMatch) {
         backDocUrl = memberMatch.id_card_back_url || null;
       }
+      if (!backDocUrl && cachedAdminMatch) {
+        backDocUrl = cachedAdminMatch.id_card_back_url || null;
+      }
       if (!backDocUrl && sessionUser) {
         backDocUrl = sessionUser.id_card_back_url || null;
       }
       if (!backDocUrl && emailKey) {
         backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
       }
-      if (!backDocUrl && (stuId === '236067' || emailKey === 'quveunzhanerhys@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee')) {
+      if (!backDocUrl && (stuId === '236067' || stuId === '2026-19066' || emailKey === 'quveunzhanerhys@gmail.com' || emailKey === 'franciscoalphajoy@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee' || (user.username || '').toLowerCase() === 'alpha')) {
         backDocUrl = window.ASU_SAMPLE_STUDENT_ID_BACK || 'assets/docs/asu-student-id-back-sample.jpg';
       }
 

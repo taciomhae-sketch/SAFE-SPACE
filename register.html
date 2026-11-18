@@ -1807,6 +1807,19 @@
       studentIdFrontDoc.file = file || null;
       studentIdFrontDoc.status = 'SUBMITTED';
 
+      // Immediate session caching of uploaded Front ID
+      try {
+        var enteredEmail = (val('email') || '').toLowerCase().trim();
+        if (enteredEmail && dataUrl) {
+          localStorage.setItem('safe_space_id_card_front_url_' + enteredEmail, dataUrl);
+          localStorage.setItem('safe_space_id_card_url_' + enteredEmail, dataUrl);
+          var docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}');
+          docMap[enteredEmail] = docMap[enteredEmail] || {};
+          docMap[enteredEmail].front = dataUrl;
+          localStorage.setItem('safe_space_student_id_docs', JSON.stringify(docMap));
+        }
+      } catch (cErr) {}
+
       clearStudentIdDocError();
       syncCombinedIdPreviewUI();
       runFrontIdOcrAndMatch(dataUrl);
@@ -1842,6 +1855,18 @@
       studentIdBackDoc.dataUrl = dataUrl;
       studentIdBackDoc.file = file || null;
       studentIdBackDoc.status = 'SUBMITTED';
+
+      // Immediate session caching of uploaded Back ID
+      try {
+        var enteredEmail = (val('email') || '').toLowerCase().trim();
+        if (enteredEmail && dataUrl) {
+          localStorage.setItem('safe_space_id_card_back_url_' + enteredEmail, dataUrl);
+          var docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}');
+          docMap[enteredEmail] = docMap[enteredEmail] || {};
+          docMap[enteredEmail].back = dataUrl;
+          localStorage.setItem('safe_space_student_id_docs', JSON.stringify(docMap));
+        }
+      } catch (cErr) {}
 
       clearStudentIdDocError();
       syncCombinedIdPreviewUI();
