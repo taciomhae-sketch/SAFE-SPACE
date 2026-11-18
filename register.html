@@ -3123,8 +3123,25 @@
         }
 
         // Upload Front & Back Student ID photos if provided
-        var uploadedFrontUrl = studentIdFrontDoc.dataUrl || null;
-        var uploadedBackUrl = studentIdBackDoc.dataUrl || null;
+        var uploadedFrontUrl = studentIdFrontDoc.dataUrl || registrationState.idCardFrontUrl || null;
+        var uploadedBackUrl = studentIdBackDoc.dataUrl || registrationState.idCardBackUrl || null;
+
+        // If not in memory, check if cached in safe_space_student_id_docs or local storage for this email
+        try {
+          if (!uploadedFrontUrl && email) {
+            uploadedFrontUrl = localStorage.getItem('safe_space_id_card_front_url_' + email.toLowerCase()) || localStorage.getItem('safe_space_id_card_url_' + email.toLowerCase()) || null;
+            if (!uploadedFrontUrl) {
+              var preDocMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}');
+              if (preDocMap[email.toLowerCase()]) {
+                uploadedFrontUrl = preDocMap[email.toLowerCase()].front || null;
+                if (!uploadedBackUrl) uploadedBackUrl = preDocMap[email.toLowerCase()].back || null;
+              }
+            }
+          }
+          if (!uploadedBackUrl && email) {
+            uploadedBackUrl = localStorage.getItem('safe_space_id_card_back_url_' + email.toLowerCase()) || null;
+          }
+        } catch(fe) {}
 
         if (studentIdFrontDoc.file || studentIdFrontDoc.dataUrl) {
           try {

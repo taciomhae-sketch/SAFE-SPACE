@@ -4595,9 +4595,6 @@
       if (!idDocUrl && emailKey) {
         idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
       }
-      if (!idDocUrl && (stuId === '236067' || stuId === '2026-19066' || emailKey === 'quveunzhanerhys@gmail.com' || emailKey === 'franciscoalphajoy@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee' || (user.username || '').toLowerCase() === 'alpha')) {
-        idDocUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT || 'assets/docs/asu-student-id-front-sample.jpg';
-      }
 
       let backDocUrl = user.id_card_back_url || null;
       if (!backDocUrl && userDocObj && typeof userDocObj === 'object') {
@@ -4614,9 +4611,6 @@
       }
       if (!backDocUrl && emailKey) {
         backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
-      }
-      if (!backDocUrl && (stuId === '236067' || stuId === '2026-19066' || emailKey === 'quveunzhanerhys@gmail.com' || emailKey === 'franciscoalphajoy@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee' || (user.username || '').toLowerCase() === 'alpha')) {
-        backDocUrl = window.ASU_SAMPLE_STUDENT_ID_BACK || 'assets/docs/asu-student-id-back-sample.jpg';
       }
 
       return { front: idDocUrl, back: backDocUrl };
