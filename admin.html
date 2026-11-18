@@ -4557,24 +4557,37 @@
       const emailKey = (user.email || '').toLowerCase().trim();
       let docMap = {};
       try { docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}'); } catch(e) {}
-      let userDocObj = (emailKey && docMap[emailKey]) ? docMap[emailKey] : ((user.id && docMap[user.id]) ? docMap[user.id] : null);
+      
+      // Check docMap by email, user id, and student ID (with and without hyphens)
+      const cleanStuId = stuId ? stuId.toLowerCase().trim() : '';
+      const noHyphenStuId = cleanStuId ? cleanStuId.replace(/-/g, '') : '';
+      let userDocObj = (emailKey && docMap[emailKey]) ? docMap[emailKey] : 
+                       ((user.id && docMap[user.id]) ? docMap[user.id] : 
+                       ((cleanStuId && docMap[cleanStuId]) ? docMap[cleanStuId] : 
+                       ((noHyphenStuId && docMap[noHyphenStuId]) ? docMap[noHyphenStuId] : null)));
 
       let memberMatch = null;
       try {
         const mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
-        memberMatch = mems.find(m => (m.id && user.id && m.id === user.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey));
+        memberMatch = mems.find(m => (m.id && user.id && m.id === user.id) || 
+                                     (m.email && emailKey && m.email.toLowerCase() === emailKey) ||
+                                     (cleanStuId && m.student_id && String(m.student_id).toLowerCase().trim() === cleanStuId));
       } catch(e) {}
 
       let cachedAdminMatch = null;
       try {
         const cachedMems = JSON.parse(localStorage.getItem('safe_space_admin_cached_users') || '[]');
-        cachedAdminMatch = cachedMems.find(m => (m.id && user.id && m.id === user.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey));
+        cachedAdminMatch = cachedMems.find(m => (m.id && user.id && m.id === user.id) || 
+                                                (m.email && emailKey && m.email.toLowerCase() === emailKey) ||
+                                                (cleanStuId && m.student_id && String(m.student_id).toLowerCase().trim() === cleanStuId));
       } catch(e) {}
 
       let sessionUser = null;
       try {
         const sUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
-        if (sUser && ((sUser.id && user.id && sUser.id === user.id) || (sUser.email && emailKey && sUser.email.toLowerCase() === emailKey))) {
+        if (sUser && ((sUser.id && user.id && sUser.id === user.id) || 
+                      (sUser.email && emailKey && sUser.email.toLowerCase() === emailKey) ||
+                      (cleanStuId && sUser.student_id && String(sUser.student_id).toLowerCase().trim() === cleanStuId))) {
           sessionUser = sUser;
         }
       } catch(e) {}
@@ -4595,6 +4608,9 @@
       if (!idDocUrl && emailKey) {
         idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
       }
+      if (!idDocUrl && cleanStuId) {
+        idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + cleanStuId) || localStorage.getItem('safe_space_id_card_url_' + cleanStuId) || null;
+      }
 
       let backDocUrl = user.id_card_back_url || null;
       if (!backDocUrl && userDocObj && typeof userDocObj === 'object') {
@@ -4611,6 +4627,9 @@
       }
       if (!backDocUrl && emailKey) {
         backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
+      }
+      if (!backDocUrl && cleanStuId) {
+        backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + cleanStuId) || null;
       }
 
       return { front: idDocUrl, back: backDocUrl };

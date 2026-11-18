@@ -3262,8 +3262,18 @@
           } catch(e) {}
         }
 
+        // Cache this student's own ID photos under their email AND Student ID number
+        try {
+          if (SafeSpaceDB.studentIdDocs) {
+            SafeSpaceDB.studentIdDocs.cacheLocally({ email: email, student_id: studentId }, uploadedFrontUrl, uploadedBackUrl);
+          }
+        } catch (cacheErr) {}
+
         var result = await SafeSpaceDB.auth.signUp(payload);
         if (result && result.error) throw result.error;
+        if (result && result.idDocsCloudSaved === false) {
+          console.warn('[Register] Student ID photos were not saved to the database yet; they will sync automatically on sign-in.');
+        }
 
         setLoading(false);
 

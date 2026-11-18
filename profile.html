@@ -2094,6 +2094,7 @@
       function renderAccountInfoView() {
         const fullName = [currentUser.first_name, currentUser.middle_name, currentUser.last_name].filter(Boolean).join(' ') || 'Safe Space Member';
         const avatarPreview = getUserAvatarHtml(currentUser, 64);
+        const isStudentAccount = !(String(currentUser.role || '').toLowerCase() === 'admin' || currentUser.is_admin === true);
 
         subContent.innerHTML = `
           <!-- View Account Information Card -->
@@ -2157,6 +2158,39 @@
               </div>
             </div>
           </div>
+
+          ${isStudentAccount ? `
+          <!-- Student ID Verification: Re-submit Front & Back ID -->
+          <div id="studentIdResubmitCard" style="background:var(--card-bg); border-radius:var(--radius-lg); padding:22px; border:1px solid var(--border); margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <i class="fas fa-id-card" style="color:var(--primary);"></i>
+              <h3 style="font-size:17px; font-weight:800; color:var(--text-dark); margin:0;">Student ID Verification</h3>
+            </div>
+            <p id="studentIdResubmitStatus" style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px; line-height:1.5;">
+              <i class="fas fa-circle-notch fa-spin"></i> Checking your submitted Student ID...
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+              <label for="resubmitFrontInput" style="cursor:pointer; display:block;">
+                <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Front ID</div>
+                <div style="height:130px; border:2px dashed var(--border); border-radius:12px; background:var(--bg-hover); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  <img id="resubmitFrontPreview" alt="Front ID" style="width:100%; height:100%; object-fit:contain; display:none;" />
+                  <span id="resubmitFrontPlaceholder" style="font-size:12px; color:var(--text-muted); text-align:center; padding:8px;"><i class="fas fa-camera" style="display:block; font-size:20px; margin-bottom:6px;"></i>Tap to choose Front ID</span>
+                </div>
+                <input type="file" id="resubmitFrontInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
+              </label>
+              <label for="resubmitBackInput" style="cursor:pointer; display:block;">
+                <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Back ID</div>
+                <div style="height:130px; border:2px dashed var(--border); border-radius:12px; background:var(--bg-hover); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  <img id="resubmitBackPreview" alt="Back ID" style="width:100%; height:100%; object-fit:contain; display:none;" />
+                  <span id="resubmitBackPlaceholder" style="font-size:12px; color:var(--text-muted); text-align:center; padding:8px;"><i class="fas fa-barcode" style="display:block; font-size:20px; margin-bottom:6px;"></i>Tap to choose Back ID</span>
+                </div>
+                <input type="file" id="resubmitBackInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" />
+              </label>
+            </div>
+            <button type="button" class="btn-save" id="submitStudentIdDocsBtn" style="width:100%; height:44px; border-radius:var(--radius-full);">
+              <i class="fas fa-cloud-arrow-up" style="margin-right:6px;"></i> Submit Student ID
+            </button>
+          </div>` : ''}
 
           <!-- Edit Account Information Form (Hidden by default) -->
           <div id="editInfoSection" style="display:none; background:var(--card-bg); border-radius:var(--radius-lg); padding:22px; border:1px solid var(--border); margin-bottom:16px;">
@@ -2222,6 +2256,118 @@
         const cancelBtn = document.getElementById('cancelEditInfoBtn');
         const form = document.getElementById('editAccountInfoForm');
         const changeAvatarLink = document.getElementById('changeAvatarFromInfoLink');
+
+        if (isStudentAccount) setupStudentIdResubmit();
+
+        function setupStudentIdResubmit() {
+          const statusEl = document.getElementById('studentIdResubmitStatus');
+          const frontInput = document.getElementById('resubmitFrontInput');
+          const backInput = document.getElementById('resubmitBackInput');
+          const submitBtn = document.getElementById('submitStudentIdDocsBtn');
+          if (!statusEl || !frontInput || !backInput || !submitBtn || !window.SafeSpaceDB || !SafeSpaceDB.studentIdDocs) return;
+
+          let existingFront = null;
+          let existingBack = null;
+          let pendingFront = null;
+          let pendingBack = null;
+
+          const showPreview = (side, src) => {
+            const img = document.getElementById(side === 'front' ? 'resubmitFrontPreview' : 'resubmitBackPreview');
+            const ph = document.getElementById(side === 'front' ? 'resubmitFrontPlaceholder' : 'resubmitBackPlaceholder');
+            if (!img || !ph) return;
+            if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none'; }
+            else { img.removeAttribute('src'); img.style.display = 'none'; ph.style.display = 'block'; }
+          };
+
+          const setStatus = (html, color) => {
+            statusEl.innerHTML = html;
+            statusEl.style.color = color || 'var(--text-muted)';
+          };
+
+          (async () => {
+            const cloud = await SafeSpaceDB.studentIdDocs.fetchFromCloud(currentUser.id);
+            const local = SafeSpaceDB.studentIdDocs.findLocalDocs(currentUser);
+            existingFront = cloud.front || local.front || null;
+            existingBack = cloud.back || local.back || null;
+            showPreview('front', existingFront);
+            showPreview('back', existingBack);
+
+            if (cloud.front && cloud.back) {
+              setStatus('<i class="fas fa-circle-check"></i> Your Front ID and Back ID are on file and visible to the administrator for verification. You can replace them below.', '#15803D');
+            } else if (cloud.error === 'missing_columns') {
+              setStatus('<i class="fas fa-triangle-exclamation"></i> The database is not yet set up to store Student ID photos. Your photos ' + (existingFront || existingBack ? 'are saved on this device only' : 'cannot be saved yet') + '. Please ask the administrator to run the Student ID database update.', '#B45309');
+            } else {
+              setStatus('<i class="fas fa-circle-exclamation"></i> No Student ID is on file for your account. Please submit clear photos of the <strong>front and back</strong> of your official ASU Student ID so the administrator can verify you.', '#B91C1C');
+            }
+          })();
+
+          const handleFile = async (e, side) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(String(file.type).toLowerCase())) {
+              showToast('Please choose a JPG, PNG, or WEBP image.', 'error');
+              e.target.value = '';
+              return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+              showToast('Image is larger than 5 MB. Please choose a smaller photo.', 'error');
+              e.target.value = '';
+              return;
+            }
+            const optimized = await SafeSpaceDB.storage.compressImage(file, 1280, 0.82);
+            const dataUrl = optimized && optimized.dataUrl;
+            if (!dataUrl) { showToast('Could not read that image. Please try another.', 'error'); return; }
+            if (side === 'front') pendingFront = dataUrl; else pendingBack = dataUrl;
+            if (pendingFront && pendingBack && pendingFront === pendingBack) {
+              showToast('The front and back cannot be the same photo.', 'error');
+              if (side === 'front') pendingFront = null; else pendingBack = null;
+              return;
+            }
+            showPreview(side, dataUrl);
+          };
+
+          frontInput.addEventListener('change', (e) => handleFile(e, 'front'));
+          backInput.addEventListener('change', (e) => handleFile(e, 'back'));
+
+          submitBtn.addEventListener('click', async () => {
+            const finalFront = pendingFront || existingFront;
+            const finalBack = pendingBack || existingBack;
+            if (!finalFront || !finalBack) {
+              showToast('Please choose both your Front ID and Back ID photos.', 'error');
+              return;
+            }
+            if (!pendingFront && !pendingBack) {
+              showToast('Choose a new Front or Back photo to replace your current Student ID.', 'info');
+              return;
+            }
+            const originalHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin" style="margin-right:6px;"></i> Saving...';
+            try {
+              const result = await SafeSpaceDB.studentIdDocs.saveForUser(currentUser, finalFront, finalBack);
+              if (result.success && result.cloudSaved) {
+                existingFront = result.front || finalFront;
+                existingBack = result.back || finalBack;
+                pendingFront = null;
+                pendingBack = null;
+                setStatus('<i class="fas fa-circle-check"></i> Your Front ID and Back ID are on file and visible to the administrator for verification.', '#15803D');
+                showToast('✓ Student ID submitted. The administrator can now review it.', 'success');
+              } else if (result.success) {
+                setStatus('<i class="fas fa-triangle-exclamation"></i> Saved on this device only. It will be uploaded to your account automatically once the database is available.', '#B45309');
+                showToast('Saved on this device only — not yet visible to the administrator.', 'warning');
+              } else {
+                setStatus('<i class="fas fa-circle-exclamation"></i> ' + escapeHTML(result.error || 'Could not save your Student ID.'), '#B91C1C');
+                showToast(result.error || 'Could not save your Student ID.', 'error');
+              }
+            } catch (err) {
+              showToast('Could not save your Student ID: ' + (err.message || err), 'error');
+            } finally {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalHtml;
+            }
+          });
+        }
 
         if (changeAvatarLink) {
           changeAvatarLink.addEventListener('click', () => {

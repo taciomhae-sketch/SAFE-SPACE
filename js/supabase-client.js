@@ -538,6 +538,13 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             }
 
             SafeSpaceDB._safeStoreUser(fullUser);
+
+            // Push this student's registration ID photos (if still held in this browser) to the database
+            try {
+              SafeSpaceDB.studentIdDocs.syncLocalToCloud(fullUser).catch(function(syncErr) {
+                console.warn('[StudentIdDocs] Sign-in sync error:', syncErr);
+              });
+            } catch (syncErr) {}
           } catch (e) {
             if (e.message && (e.message.includes('PENDING_APPROVAL') || e.message.includes('REJECTED_APPROVAL'))) {
               throw e;
@@ -741,6 +748,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           };
         }
 
+        var idDocsCloudSaved = false;
         try {
           var client = _dbAdmin || _db;
           var profilePayload = {
@@ -765,18 +773,29 @@ var SafeSpaceDB = window.SafeSpaceDB = {
             created_at: new Date().toISOString()
           };
           var upRes = await client.from('profiles').upsert(profilePayload);
-          if (upRes && upRes.error && (upRes.error.message && upRes.error.message.includes('column'))) {
-            // Fallback for legacy tables without the front/back ID columns
-            delete profilePayload.id_card_front_url;
-            delete profilePayload.id_card_back_url;
-            delete profilePayload.student_id_detected;
-            delete profilePayload.student_id_matching_status;
-            delete profilePayload.student_id_status;
-            await client.from('profiles').upsert(profilePayload);
+          if (upRes && upRes.error && SafeSpaceDB.studentIdDocs._isMissingColumnError(upRes.error)) {
+            // The database is missing the Student ID photo columns. Do NOT silently discard the photos:
+            // keep them cached locally under this user's email / ID / Student ID so they are synced
+            // to the database automatically on the next sign-in once the migration has been run.
+            console.error('[SafeSpace] ' + SafeSpaceDB.studentIdDocs.MISSING_COLUMNS_MESSAGE, upRes.error);
+            idDocsCloudSaved = false;
+            var basePayload = Object.assign({}, profilePayload);
+            ['id_card_url', 'id_card_front_url', 'id_card_back_url', 'student_id', 'student_id_detected', 'student_id_matching_status', 'student_id_status'].forEach(function(k) { delete basePayload[k]; });
+            await client.from('profiles').upsert(basePayload);
+          } else if (upRes && upRes.error) {
+            console.warn('[SafeSpace] Profile upsert error (Student ID photos will sync on sign-in):', upRes.error);
+            idDocsCloudSaved = false;
+          } else {
+            idDocsCloudSaved = Boolean(idFrontForProfile || idBackForProfile);
           }
         } catch (pErr) {
+          idDocsCloudSaved = false;
           console.warn('[SafeSpace] Profile upsert notice:', pErr);
         }
+
+        try {
+          SafeSpaceDB.studentIdDocs.cacheLocally({ id: sbUser.id, email: email, student_id: metadata.student_id }, idFrontForProfile, idBackForProfile);
+        } catch (cacheErr) {}
 
         // Persist Student ID and registration record immediately
         if (email && metadata.student_id) {
@@ -826,7 +845,8 @@ var SafeSpaceDB = window.SafeSpaceDB = {
           needsEmailConfirmation: false,
           needsOtp: false,
           email: email,
-          studentId: metadata.student_id
+          studentId: metadata.student_id,
+          idDocsCloudSaved: idDocsCloudSaved
         };
       }
 
@@ -8020,6 +8040,219 @@ var SafeSpaceDB = window.SafeSpaceDB = {
     }
   },
 
+  // ─────────────────────────────────────────────────────────────────
+  // Student ID Documents (Front & Back) — persistent cloud storage
+  // Saves each student's own submitted ID photos to their profiles row
+  // so the administrator dossier can read them from any device.
+  // ─────────────────────────────────────────────────────────────────
+  studentIdDocs: {
+    MISSING_COLUMNS_MESSAGE: 'The database is missing the Student ID photo columns (id_card_front_url / id_card_back_url). Please ask the administrator to run the Student ID database migration in Supabase.',
+
+    _isMissingColumnError: function(err) {
+      if (!err) return false;
+      var msg = String(err.message || err.details || err.hint || '').toLowerCase();
+      return String(err.code || '') === 'PGRST204' || String(err.code || '') === '42703' || msg.indexOf('column') !== -1;
+    },
+
+    _keysForUser: function(user) {
+      var keys = [];
+      if (!user) return keys;
+      var email = String(user.email || '').toLowerCase().trim();
+      var sid = String(user.student_id || user.studentId || '').toLowerCase().trim();
+      if (email) keys.push(email);
+      if (user.id) keys.push(String(user.id));
+      if (sid && sid !== '—' && sid !== '-') {
+        keys.push(sid);
+        if (sid.replace(/-/g, '') !== sid) keys.push(sid.replace(/-/g, ''));
+      }
+      return keys;
+    },
+
+    /**
+     * Find this user's own submitted Front/Back ID photos in local browser caches
+     * (matched strictly by the user's email, user ID, or Student ID number).
+     */
+    findLocalDocs: function(user) {
+      var result = { front: null, back: null };
+      if (!user) return result;
+      var keys = this._keysForUser(user);
+      var email = String(user.email || '').toLowerCase().trim();
+
+      try {
+        var docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}');
+        keys.forEach(function(k) {
+          var d = docMap[k];
+          if (!d) return;
+          if (typeof d === 'string') { if (!result.front) result.front = d; return; }
+          if (!result.front) result.front = d.front || d.front_url || null;
+          if (!result.back) result.back = d.back || d.back_url || null;
+        });
+      } catch (e) {}
+
+      keys.forEach(function(k) {
+        try {
+          if (!result.front) result.front = localStorage.getItem('safe_space_id_card_front_url_' + k) || localStorage.getItem('safe_space_id_card_url_' + k) || null;
+          if (!result.back) result.back = localStorage.getItem('safe_space_id_card_back_url_' + k) || null;
+        } catch (e) {}
+      });
+
+      ['safe_space_members', 'safe_space_admin_cached_users'].forEach(function(listKey) {
+        if (result.front && result.back) return;
+        try {
+          var list = JSON.parse(localStorage.getItem(listKey) || '[]');
+          var m = list.find(function(x) {
+            return x && ((x.id && user.id && x.id === user.id) || (x.email && email && String(x.email).toLowerCase() === email));
+          });
+          if (m) {
+            if (!result.front) result.front = m.id_card_front_url || m.id_card_url || null;
+            if (!result.back) result.back = m.id_card_back_url || null;
+          }
+        } catch (e) {}
+      });
+
+      return result;
+    },
+
+    /**
+     * Cache this user's ID photos locally under their email, user ID and Student ID number.
+     */
+    cacheLocally: function(user, front, back) {
+      if (!user || (!front && !back)) return;
+      var keys = this._keysForUser(user);
+      try {
+        var docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}');
+        keys.forEach(function(k) {
+          var cur = (docMap[k] && typeof docMap[k] === 'object') ? docMap[k] : {};
+          docMap[k] = { front: front || cur.front || null, back: back || cur.back || null };
+        });
+        localStorage.setItem('safe_space_student_id_docs', JSON.stringify(docMap));
+      } catch (e) {
+        console.warn('[StudentIdDocs] Local cache skipped (storage full):', e);
+      }
+      var docFields = {};
+      if (front) { docFields.id_card_url = front; docFields.id_card_front_url = front; }
+      if (back) docFields.id_card_back_url = back;
+      ['safe_space_members', 'safe_space_admin_cached_users'].forEach(function(listKey) {
+        try {
+          var list = JSON.parse(localStorage.getItem(listKey) || '[]');
+          var email = String(user.email || '').toLowerCase().trim();
+          var idx = list.findIndex(function(x) {
+            return x && ((x.id && user.id && x.id === user.id) || (x.email && email && String(x.email).toLowerCase() === email));
+          });
+          if (idx >= 0) {
+            list[idx] = Object.assign({}, list[idx], docFields);
+            localStorage.setItem(listKey, JSON.stringify(list));
+          }
+        } catch (e) {}
+      });
+    },
+
+    /**
+     * Read a student's Front/Back ID photos directly from the Supabase profiles row.
+     */
+    fetchFromCloud: async function(userId) {
+      if (!SafeSpaceDB.isSupabaseActive() || !SafeSpaceDB._isUUID(userId)) return { front: null, back: null, error: null };
+      try {
+        var client = _dbAdmin || _db;
+        var res = await client.from('profiles').select('id_card_url, id_card_front_url, id_card_back_url').eq('id', userId).maybeSingle();
+        if (res.error) {
+          return { front: null, back: null, error: this._isMissingColumnError(res.error) ? 'missing_columns' : res.error };
+        }
+        var row = res.data || {};
+        return { front: row.id_card_front_url || row.id_card_url || null, back: row.id_card_back_url || null, error: null };
+      } catch (e) {
+        return { front: null, back: null, error: e };
+      }
+    },
+
+    /**
+     * Upload a student's own Front & Back ID photos and save them on their profiles row.
+     * front/back may be File objects, data URLs, or existing URLs.
+     * Returns { success, cloudSaved, front, back, error }
+     */
+    saveForUser: async function(user, front, back) {
+      if (!user || !user.id) return { success: false, cloudSaved: false, error: 'You must be signed in to submit your Student ID.' };
+      if (!front && !back) return { success: false, cloudSaved: false, error: 'Please choose your Front ID and Back ID photos.' };
+
+      var frontUrl = front || null;
+      var backUrl = back || null;
+      try {
+        if (front && !(typeof front === 'string' && /^https?:/i.test(front))) {
+          frontUrl = await SafeSpaceDB.storage.uploadImage(front, 'post-photos');
+        }
+        if (back && !(typeof back === 'string' && /^https?:/i.test(back))) {
+          backUrl = await SafeSpaceDB.storage.uploadImage(back, 'post-photos');
+        }
+      } catch (upErr) {
+        console.warn('[StudentIdDocs] Photo upload error:', upErr);
+      }
+
+      // Always keep a local copy keyed strictly to this user
+      this.cacheLocally(user, frontUrl, backUrl);
+
+      if (!SafeSpaceDB.isSupabaseActive() || !SafeSpaceDB._isUUID(user.id)) {
+        return { success: true, cloudSaved: false, front: frontUrl, back: backUrl, error: null };
+      }
+
+      var updates = { student_id_status: 'PENDING_VERIFICATION' };
+      if (frontUrl) { updates.id_card_url = frontUrl; updates.id_card_front_url = frontUrl; }
+      if (backUrl) updates.id_card_back_url = backUrl;
+      if (user.student_id) updates.student_id = user.student_id;
+
+      try {
+        var client = _dbAdmin || _db;
+        var res = await client.from('profiles').update(updates).eq('id', user.id).select('id');
+        if (res.error && this._isMissingColumnError(res.error)) {
+          // Retry with only the essential photo columns (older schema without status/student_id)
+          var minimal = {};
+          if (frontUrl) { minimal.id_card_url = frontUrl; minimal.id_card_front_url = frontUrl; }
+          if (backUrl) minimal.id_card_back_url = backUrl;
+          res = await client.from('profiles').update(minimal).eq('id', user.id).select('id');
+        }
+        if (res.error) {
+          var missing = this._isMissingColumnError(res.error);
+          console.warn('[StudentIdDocs] Cloud save failed:', res.error);
+          return { success: false, cloudSaved: false, front: frontUrl, back: backUrl, error: missing ? this.MISSING_COLUMNS_MESSAGE : (res.error.message || 'Could not save your Student ID to the database.') };
+        }
+        if (!res.data || res.data.length === 0) {
+          return { success: false, cloudSaved: false, front: frontUrl, back: backUrl, error: 'Your Student ID could not be saved to your account (permission denied). Please sign in again and retry.' };
+        }
+        return { success: true, cloudSaved: true, front: frontUrl, back: backUrl, error: null };
+      } catch (e) {
+        return { success: false, cloudSaved: false, front: frontUrl, back: backUrl, error: e.message || String(e) };
+      }
+    },
+
+    /**
+     * If this browser still holds the signed-in student's registration ID photos
+     * but their profiles row does not, push them up to Supabase.
+     * Returns { synced, alreadyStored, skipped, error }
+     */
+    syncLocalToCloud: async function(user) {
+      if (!user || !user.id) return { skipped: 'no_user' };
+      var role = String(user.role || '').toLowerCase();
+      if (role === 'admin' || user.is_admin === true) return { skipped: 'admin' };
+      if (!SafeSpaceDB.isSupabaseActive() || !SafeSpaceDB._isUUID(user.id)) return { skipped: 'offline' };
+
+      var cloud = await this.fetchFromCloud(user.id);
+      if (cloud.error === 'missing_columns') {
+        console.warn('[StudentIdDocs] ' + this.MISSING_COLUMNS_MESSAGE);
+        return { skipped: 'missing_columns', error: this.MISSING_COLUMNS_MESSAGE };
+      }
+      if (cloud.error) return { skipped: 'fetch_error', error: cloud.error };
+      if (cloud.front && cloud.back) return { alreadyStored: true };
+
+      var local = this.findLocalDocs(user);
+      var front = cloud.front ? null : local.front;
+      var back = cloud.back ? null : local.back;
+      if (!front && !back) return { skipped: 'no_local_docs' };
+
+      var saved = await this.saveForUser(user, front, back);
+      if (saved.cloudSaved) console.log('[StudentIdDocs] Synced locally stored Student ID photos to the database for', user.email);
+      return { synced: Boolean(saved.cloudSaved), error: saved.error || null };
+    }
+  },
+
   storage: {
     /**
      * Client-side responsive image compression
@@ -8754,4 +8987,22 @@ var SafeSpaceDB = window.SafeSpaceDB = {
 
 if (typeof window !== 'undefined') {
   window.SafeSpaceDB = SafeSpaceDB;
+}
+
+// Background sync: if a signed-in student's own registration ID photos are still held in this
+// browser but missing from their database profile, upload them once per browser session.
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(async function() {
+      try {
+        if (sessionStorage.getItem('safe_space_id_docs_synced') === '1') return;
+        var sUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        if (!sUser || !sUser.id) return;
+        var r = await SafeSpaceDB.studentIdDocs.syncLocalToCloud(sUser);
+        if (r && (r.synced || r.alreadyStored || r.skipped === 'no_local_docs' || r.skipped === 'admin')) {
+          sessionStorage.setItem('safe_space_id_docs_synced', '1');
+        }
+      } catch (e) {}
+    }, 2500);
+  });
 }
