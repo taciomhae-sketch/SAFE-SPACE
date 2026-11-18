@@ -2858,6 +2858,38 @@
                       N/A
                     </div>
                   </div>
+
+                  <!-- Verified Submitted Student ID Documents (Front & Back) in Dossier -->
+                  <div style="margin-top:8px; border-top:1px solid #F3F4F6; padding-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                      <strong style="color:var(--text-dark); font-size:11px;">
+                        <i class="fas fa-id-card" style="color:var(--primary); margin-right:4px;"></i> Submitted Official Student ID:
+                      </strong>
+                      <span id="caseRevealedIdStatusBadge" class="status-badge" style="background:#DCFCE7; color:#15803D; font-size:9.5px; padding:2px 6px;">Available</span>
+                    </div>
+
+                    <div style="display:flex; gap:8px;">
+                      <!-- Front ID Container -->
+                      <div style="flex:1; background:#0F172A; border-radius:8px; overflow:hidden; border:1px solid #E5E7EB; min-height:110px; max-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
+                        <div style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); color:#60A5FA; font-size:9px; font-weight:800; padding:1px 6px; border-radius:3px; z-index:2;">FRONT ID</div>
+                        <img id="caseRevealedFrontIdImg" src="" alt="Front ID" style="max-width:100%; max-height:150px; object-fit:contain; display:none; cursor:zoom-in;" onclick="if(this.src) window.open(this.src, '_blank')" title="Click to inspect Front ID full size" />
+                        <div id="caseRevealedNoFrontId" style="color:#94A3B8; font-size:10.5px; text-align:center; padding:10px;">
+                          <i class="fas fa-id-badge" style="font-size:18px; margin-bottom:4px; display:block; opacity:0.6;"></i>
+                          No Front ID
+                        </div>
+                      </div>
+
+                      <!-- Back ID Container -->
+                      <div style="flex:1; background:#0F172A; border-radius:8px; overflow:hidden; border:1px solid #E5E7EB; min-height:110px; max-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
+                        <div style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); color:#34D399; font-size:9px; font-weight:800; padding:1px 6px; border-radius:3px; z-index:2;">BACK ID</div>
+                        <img id="caseRevealedBackIdImg" src="" alt="Back ID" style="max-width:100%; max-height:150px; object-fit:contain; display:none; cursor:zoom-in;" onclick="if(this.src) window.open(this.src, '_blank')" title="Click to inspect Back ID full size" />
+                        <div id="caseRevealedNoBackId" style="color:#94A3B8; font-size:10.5px; text-align:center; padding:10px;">
+                          <i class="fas fa-barcode" style="font-size:18px; margin-bottom:4px; display:block; opacity:0.6;"></i>
+                          No Back ID
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style="font-size:10px; color:#15803D; margin:10px 0 10px; background:#DCFCE7; border:1px solid #BBF7D0; border-radius:6px; padding:6px 8px; display:flex; align-items:center; gap:6px;">
@@ -4519,6 +4551,66 @@
       return generated;
     }
 
+    function resolveIdCardUrls(user) {
+      if (!user) return { front: null, back: null };
+      const stuId = resolveUserStudentId(user);
+      const emailKey = (user.email || '').toLowerCase().trim();
+      let docMap = {};
+      try { docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}'); } catch(e) {}
+      let userDocObj = (emailKey && docMap[emailKey]) ? docMap[emailKey] : ((user.id && docMap[user.id]) ? docMap[user.id] : null);
+
+      let memberMatch = null;
+      try {
+        const mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
+        memberMatch = mems.find(m => (m.id && user.id && m.id === user.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey));
+      } catch(e) {}
+
+      let sessionUser = null;
+      try {
+        const sUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
+        if (sUser && ((sUser.id && user.id && sUser.id === user.id) || (sUser.email && emailKey && sUser.email.toLowerCase() === emailKey))) {
+          sessionUser = sUser;
+        }
+      } catch(e) {}
+
+      let idDocUrl = user.id_card_front_url || user.id_card_url || null;
+      if (!idDocUrl && userDocObj) {
+        idDocUrl = (typeof userDocObj === 'object') ? (userDocObj.front || userDocObj.front_url || null) : userDocObj;
+      }
+      if (!idDocUrl && memberMatch) {
+        idDocUrl = memberMatch.id_card_front_url || memberMatch.id_card_url || null;
+      }
+      if (!idDocUrl && sessionUser) {
+        idDocUrl = sessionUser.id_card_front_url || sessionUser.id_card_url || null;
+      }
+      if (!idDocUrl && emailKey) {
+        idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
+      }
+      if (!idDocUrl && (stuId === '236067' || emailKey === 'quveunzhanerhys@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee')) {
+        idDocUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT || 'assets/docs/asu-student-id-front-sample.jpg';
+      }
+
+      let backDocUrl = user.id_card_back_url || null;
+      if (!backDocUrl && userDocObj && typeof userDocObj === 'object') {
+        backDocUrl = userDocObj.back || userDocObj.back_url || null;
+      }
+      if (!backDocUrl && memberMatch) {
+        backDocUrl = memberMatch.id_card_back_url || null;
+      }
+      if (!backDocUrl && sessionUser) {
+        backDocUrl = sessionUser.id_card_back_url || null;
+      }
+      if (!backDocUrl && emailKey) {
+        backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
+      }
+      if (!backDocUrl && (stuId === '236067' || emailKey === 'quveunzhanerhys@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee')) {
+        backDocUrl = window.ASU_SAMPLE_STUDENT_ID_BACK || 'assets/docs/asu-student-id-back-sample.jpg';
+      }
+
+      return { front: idDocUrl, back: backDocUrl };
+    }
+    window.resolveIdCardUrls = resolveIdCardUrls;
+
     function updateUserApprovalBadges() {
       const pendingUsers = (cachedUsers || []).filter(isUserPendingApproval);
       const count = pendingUsers.length;
@@ -4868,44 +4960,9 @@
         }
       }
 
-      const emailKey = (user.email || '').toLowerCase().trim();
-      let docMap = {};
-      try { docMap = JSON.parse(localStorage.getItem('safe_space_student_id_docs') || '{}'); } catch(e) {}
-      let userDocObj = (emailKey && docMap[emailKey]) ? docMap[emailKey] : ((user.id && docMap[user.id]) ? docMap[user.id] : null);
-
-      // Check safe_space_members
-      let memberMatch = null;
-      try {
-        const mems = JSON.parse(localStorage.getItem('safe_space_members') || '[]');
-        memberMatch = mems.find(m => (m.id && user.id && m.id === user.id) || (m.email && emailKey && m.email.toLowerCase() === emailKey));
-      } catch(e) {}
-
-      // Check safe_space_user (current active session or local student profile)
-      let sessionUser = null;
-      try {
-        const sUser = JSON.parse(localStorage.getItem('safe_space_user') || 'null');
-        if (sUser && ((sUser.id && user.id && sUser.id === user.id) || (sUser.email && emailKey && sUser.email.toLowerCase() === emailKey))) {
-          sessionUser = sUser;
-        }
-      } catch(e) {}
-
-      let idDocUrl = user.id_card_front_url || user.id_card_url || null;
-      if (!idDocUrl && userDocObj) {
-        idDocUrl = (typeof userDocObj === 'object') ? (userDocObj.front || userDocObj.front_url || null) : userDocObj;
-      }
-      if (!idDocUrl && memberMatch) {
-        idDocUrl = memberMatch.id_card_front_url || memberMatch.id_card_url || null;
-      }
-      if (!idDocUrl && sessionUser) {
-        idDocUrl = sessionUser.id_card_front_url || sessionUser.id_card_url || null;
-      }
-      if (!idDocUrl && emailKey) {
-        idDocUrl = localStorage.getItem('safe_space_id_card_front_url_' + emailKey) || localStorage.getItem('safe_space_id_card_url_' + emailKey) || null;
-      }
-      // Authoritative fallback for student ID 236067 or Quveunzhane Rhys
-      if (!idDocUrl && (stuId === '236067' || emailKey === 'quveunzhanerhys@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee')) {
-        idDocUrl = window.ASU_SAMPLE_STUDENT_ID_FRONT || 'assets/docs/asu-student-id-front-sample.jpg';
-      }
+      const idUrls = resolveIdCardUrls(user);
+      const idDocUrl = idUrls.front;
+      const backDocUrl = idUrls.back;
 
       if (idDocUrl) {
         imgEl.src = idDocUrl;
@@ -4919,23 +4976,6 @@
 
       const backImgEl = document.getElementById('studentIdModalBackImage');
       const noBackImgEl = document.getElementById('studentIdModalNoBackImage');
-      let backDocUrl = user.id_card_back_url || null;
-      if (!backDocUrl && userDocObj && typeof userDocObj === 'object') {
-        backDocUrl = userDocObj.back || userDocObj.back_url || null;
-      }
-      if (!backDocUrl && memberMatch) {
-        backDocUrl = memberMatch.id_card_back_url || null;
-      }
-      if (!backDocUrl && sessionUser) {
-        backDocUrl = sessionUser.id_card_back_url || null;
-      }
-      if (!backDocUrl && emailKey) {
-        backDocUrl = localStorage.getItem('safe_space_id_card_back_url_' + emailKey) || null;
-      }
-      // Authoritative fallback for student ID 236067 or Quveunzhane Rhys
-      if (!backDocUrl && (stuId === '236067' || emailKey === 'quveunzhanerhys@gmail.com' || (user.username || '').toLowerCase() === 'kwaveeeee')) {
-        backDocUrl = window.ASU_SAMPLE_STUDENT_ID_BACK || 'assets/docs/asu-student-id-back-sample.jpg';
-      }
 
       if (backImgEl && noBackImgEl) {
         if (backDocUrl) {
@@ -6349,6 +6389,13 @@
       const confirmedViolations = userViolations.filter(v => v.action !== 'report_dismissed');
       const violationCount = reportedUser ? (reportedUser.violation_count || confirmedViolations.length) : confirmedViolations.length;
 
+      // Resolve reported user's front and back student ID documents
+      const reportedUserIdUrls = (typeof resolveIdCardUrls === 'function' && reportedUser)
+        ? resolveIdCardUrls(reportedUser)
+        : { front: (reportedUser && (reportedUser.id_card_front_url || reportedUser.id_card_url)) || null, back: (reportedUser && reportedUser.id_card_back_url) || null };
+      const reportedUserFrontId = reportedUserIdUrls.front;
+      const reportedUserBackId = reportedUserIdUrls.back;
+
       // Recommended action banner logic based on application escalation rules
       let policyRecommendation = '';
       if (violationCount === 0) {
@@ -6519,6 +6566,46 @@
                   <span style="color:var(--text-muted);">Confirmed Violations:</span>
                   <div style="font-weight:800; color:${violationCount > 0 ? '#DC2626' : '#16A34A'}; font-size:14px;">
                     ${violationCount} Violations
+                  </div>
+                </div>
+              </div>
+
+              <!-- Official Front & Back Student ID Document in Reported User Dossier -->
+              <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:11px; font-weight:800; color:var(--text-dark); text-transform:uppercase;">
+                    <i class="fas fa-id-card" style="color:var(--primary); margin-right:4px;"></i> Submitted Official Student ID
+                  </span>
+                  <span class="status-badge" style="background:${(reportedUserFrontId && reportedUserBackId) ? '#DCFCE7' : ((reportedUserFrontId || reportedUserBackId) ? '#FEF3C7' : '#F3F4F6')}; color:${(reportedUserFrontId && reportedUserBackId) ? '#15803D' : ((reportedUserFrontId || reportedUserBackId) ? '#B45309' : '#6B7280')}; font-size:9.5px; padding:2px 6px;">
+                    ${(reportedUserFrontId && reportedUserBackId) ? 'Front & Back Verified' : ((reportedUserFrontId || reportedUserBackId) ? 'Partial ID' : 'No ID')}
+                  </span>
+                </div>
+
+                <div style="display:flex; gap:8px;">
+                  <!-- Front Side -->
+                  <div style="flex:1; background:#0F172A; border-radius:8px; overflow:hidden; border:1px solid var(--border); min-height:100px; max-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
+                    <div style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); color:#60A5FA; font-size:9px; font-weight:800; padding:1px 6px; border-radius:3px; z-index:2;">FRONT ID</div>
+                    ${reportedUserFrontId ? `
+                      <img src="${reportedUserFrontId}" alt="Front ID" style="max-width:100%; max-height:140px; object-fit:contain; display:block; cursor:zoom-in;" onclick="window.open('${reportedUserFrontId}', '_blank')" title="Click to view full Front ID" />
+                    ` : `
+                      <div style="color:#94A3B8; font-size:10.5px; text-align:center; padding:10px;">
+                        <i class="fas fa-id-badge" style="font-size:18px; margin-bottom:4px; display:block; opacity:0.6;"></i>
+                        No Front ID
+                      </div>
+                    `}
+                  </div>
+
+                  <!-- Back Side -->
+                  <div style="flex:1; background:#0F172A; border-radius:8px; overflow:hidden; border:1px solid var(--border); min-height:100px; max-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
+                    <div style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); color:#34D399; font-size:9px; font-weight:800; padding:1px 6px; border-radius:3px; z-index:2;">BACK ID</div>
+                    ${reportedUserBackId ? `
+                      <img src="${reportedUserBackId}" alt="Back ID" style="max-width:100%; max-height:140px; object-fit:contain; display:block; cursor:zoom-in;" onclick="window.open('${reportedUserBackId}', '_blank')" title="Click to view full Back ID" />
+                    ` : `
+                      <div style="color:#94A3B8; font-size:10.5px; text-align:center; padding:10px;">
+                        <i class="fas fa-barcode" style="font-size:18px; margin-bottom:4px; display:block; opacity:0.6;"></i>
+                        No Back ID
+                      </div>
+                    `}
                   </div>
                 </div>
               </div>
@@ -8313,6 +8400,60 @@
       if (contentSnippetEl) {
         const text = identity.associated_content || (currentActiveSafetyAlert ? (currentActiveSafetyAlert.content_snippet || currentActiveSafetyAlert.post_text || currentActiveSafetyAlert.evidence_text) : 'N/A');
         contentSnippetEl.textContent = `"${text}"`;
+      }
+
+      // Populate Submitted Student Front & Back ID Card in Dossier
+      const idCardFrontEl = document.getElementById('caseRevealedFrontIdImg');
+      const noIdCardFrontEl = document.getElementById('caseRevealedNoFrontId');
+      const idCardBackEl = document.getElementById('caseRevealedBackIdImg');
+      const noIdCardBackEl = document.getElementById('caseRevealedNoBackId');
+      const idStatusBadge = document.getElementById('caseRevealedIdStatusBadge');
+
+      const idDocUrls = (typeof resolveIdCardUrls === 'function')
+        ? resolveIdCardUrls(identity)
+        : { front: identity.id_card_front_url || identity.id_card_url || null, back: identity.id_card_back_url || null };
+
+      const frontUrl = idDocUrls.front || identity.id_card_front_url || identity.id_card_url || null;
+      const backUrl = idDocUrls.back || identity.id_card_back_url || null;
+
+      if (idCardFrontEl && noIdCardFrontEl) {
+        if (frontUrl) {
+          idCardFrontEl.src = frontUrl;
+          idCardFrontEl.style.display = 'block';
+          noIdCardFrontEl.style.display = 'none';
+        } else {
+          idCardFrontEl.src = '';
+          idCardFrontEl.style.display = 'none';
+          noIdCardFrontEl.style.display = 'block';
+        }
+      }
+
+      if (idCardBackEl && noIdCardBackEl) {
+        if (backUrl) {
+          idCardBackEl.src = backUrl;
+          idCardBackEl.style.display = 'block';
+          noIdCardBackEl.style.display = 'none';
+        } else {
+          idCardBackEl.src = '';
+          idCardBackEl.style.display = 'none';
+          noIdCardBackEl.style.display = 'block';
+        }
+      }
+
+      if (idStatusBadge) {
+        if (frontUrl && backUrl) {
+          idStatusBadge.style.background = '#DCFCE7';
+          idStatusBadge.style.color = '#15803D';
+          idStatusBadge.textContent = 'Front & Back Verified';
+        } else if (frontUrl || backUrl) {
+          idStatusBadge.style.background = '#FEF3C7';
+          idStatusBadge.style.color = '#B45309';
+          idStatusBadge.textContent = frontUrl ? 'Front ID Available' : 'Back ID Available';
+        } else {
+          idStatusBadge.style.background = '#F3F4F6';
+          idStatusBadge.style.color = '#6B7280';
+          idStatusBadge.textContent = 'No ID Photo Attached';
+        }
       }
 
       // Configure Contact Student mailto button

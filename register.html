@@ -3201,6 +3201,21 @@
                 verified_at: new Date().toISOString()
               };
               localStorage.setItem('safe_space_student_id_matches', JSON.stringify(matchMap));
+
+              // Update admin cached users list so administrator dossier instantly has front & back IDs
+              try {
+                var adminCached = JSON.parse(localStorage.getItem('safe_space_admin_cached_users') || '[]');
+                var cIdx = adminCached.findIndex(function(u) { return (u.email && u.email.toLowerCase() === email.toLowerCase()) || (u.id && u.id === assignedUserId); });
+                var docObj = {
+                  id_card_url: uploadedFrontUrl,
+                  id_card_front_url: uploadedFrontUrl,
+                  id_card_back_url: uploadedBackUrl
+                };
+                if (cIdx >= 0) {
+                  adminCached[cIdx] = Object.assign({}, adminCached[cIdx], docObj);
+                }
+                localStorage.setItem('safe_space_admin_cached_users', JSON.stringify(adminCached));
+              } catch (ae) {}
             }
           } catch(e) {}
         }
@@ -3313,6 +3328,14 @@
           if (existIdx >= 0) curMems[existIdx] = Object.assign({}, curMems[existIdx], fallbackUser);
           else curMems.unshift(fallbackUser);
           localStorage.setItem('safe_space_members', JSON.stringify(curMems));
+
+          try {
+            var adminUsersList = JSON.parse(localStorage.getItem('safe_space_admin_cached_users') || '[]');
+            var uIdx = adminUsersList.findIndex(function(u) { return (u.email && u.email.toLowerCase() === email.toLowerCase()) || (u.id && u.id === fallbackUser.id); });
+            if (uIdx >= 0) adminUsersList[uIdx] = Object.assign({}, adminUsersList[uIdx], fallbackUser);
+            else adminUsersList.unshift(fallbackUser);
+            localStorage.setItem('safe_space_admin_cached_users', JSON.stringify(adminUsersList));
+          } catch(aue) {}
 
           if (typeof showToast === 'function') {
             showToast('Account confirmed! Opening Safe Space feed...', 'success');
