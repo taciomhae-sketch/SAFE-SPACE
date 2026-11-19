@@ -1838,21 +1838,21 @@ var SafeSpaceDB = window.SafeSpaceDB = {
         } catch (engErr) {}
       }
 
-      // Fallback: If content was flagged as self-harm, distress, violence, profanity, or critical/moderate/low by modCheck, ensure safetyRisk is populated
+      // Fallback: If content was flagged as self-harm, distress, violence, profanity, bullying, nudity, or critical/moderate/low by modCheck, ensure safetyRisk is populated
       if (!safetyRisk && typeof modCheck !== 'undefined' && modCheck) {
         var modRisk = String(modCheck.risk_level || '').toLowerCase();
         var modCat = String(modCheck.category || '').toUpperCase();
-        if (['critical', 'high', 'moderate', 'low'].includes(modRisk) || ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY'].includes(modCat) || is_sensitive) {
+        if (['critical', 'high', 'moderate', 'low'].includes(modRisk) || ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(modCat) || is_sensitive) {
           safetyRisk = {
-            risk_level: (modRisk === 'critical' || modRisk === 'high' || modRisk === 'moderate' || modRisk === 'low') ? modRisk : (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : (modCat === 'DISTRESS' || modCat === 'BULLYING' || is_sensitive ? 'moderate' : 'low')),
-            concern_type: modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : (modCat === 'THREAT' || modCat === 'VIOLENCE' ? 'CREDIBLE_VIOLENCE_OR_THREAT' : (modCat === 'BULLYING' ? 'BULLYING_OR_HARASSMENT' : 'POSSIBLE_EMOTIONAL_DISTRESS')),
+            risk_level: (modRisk === 'critical' || modRisk === 'high' || modRisk === 'moderate' || modRisk === 'low') ? modRisk : (modCat === 'SELF_HARM' || modCat === 'THREAT' ? 'critical' : (modCat === 'DISTRESS' || modCat === 'BULLYING' || modCat === 'NUDITY' || modCat === 'SEXUAL_CONTENT' || is_sensitive ? 'moderate' : 'low')),
+            concern_type: modCat === 'SELF_HARM' ? 'SUICIDAL_IDEATION_IMMINENT' : (modCat === 'THREAT' || modCat === 'VIOLENCE' ? 'CREDIBLE_VIOLENCE_OR_THREAT' : (modCat === 'BULLYING' ? 'BULLYING_OR_HARASSMENT' : (modCat === 'NUDITY' || modCat === 'SEXUAL_CONTENT' ? 'NUDITY_OR_EXPLICIT_CONTENT' : (modCat === 'PROFANITY' ? 'PROFANITY_OFFENSIVE_LANGUAGE' : 'POSSIBLE_EMOTIONAL_DISTRESS')))),
             moderation_category: modCat,
             moderation_severity: modCheck.severity || (modRisk === 'critical' ? 'critical' : (modRisk === 'high' ? 'high' : 'medium')),
             reason: modCheck.reason || 'Flagged by content moderation system.',
             evidence_reference: rawContent || content,
             confidence: modCheck.confidence || 0.95,
             urgency: (modRisk === 'critical' || modCat === 'SELF_HARM' || modCat === 'THREAT') ? 'immediate' : (modRisk === 'high' ? 'urgent' : 'routine'),
-            recommended_action: 'Review recommended by authorized safety administrator.',
+            recommended_action: 'Review recommended by authorized safety administrator in Safety Monitoring & Alerts.',
             alert_required: true
           };
         }
@@ -8488,7 +8488,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
                         var isRiskOrFlagged = evalRes && (
                           evalRes.alert_required ||
                           ['critical', 'high', 'moderate', 'low'].includes(modRisk) ||
-                          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY'].includes(modCat) ||
+                          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(modCat) ||
                           Boolean(pst.sensitive_content) ||
                           Boolean(pst.blur_enabled)
                         );
@@ -8550,7 +8550,7 @@ var SafeSpaceDB = window.SafeSpaceDB = {
                 var isRiskOrFlagged = evalRes && (
                   evalRes.alert_required ||
                   ['critical', 'high', 'moderate', 'low'].includes(modRisk) ||
-                  ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY'].includes(modCat) ||
+                  ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(modCat) ||
                   Boolean(pst.sensitive_content) ||
                   Boolean(pst.blur_enabled)
                 );

@@ -7299,12 +7299,12 @@
         if (alertExists) return;
 
         const evalRes = safetyEngine.evaluate(p.content, [], { isAnonymous: p.is_anonymous });
-        const modCat = String(p.moderation_category || '').toUpperCase();
+        const modCat = String(p.moderation_category || (evalRes ? evalRes.moderation_category : '')).toUpperCase();
         const modRisk = String(p.risk_level || (evalRes ? evalRes.risk_level : '')).toLowerCase();
         const isRiskOrFlagged = evalRes && (
           evalRes.alert_required ||
           ['critical', 'high', 'moderate', 'low'].includes(modRisk) ||
-          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY'].includes(modCat) ||
+          ['SELF_HARM', 'THREAT', 'VIOLENCE', 'DISTRESS', 'BULLYING', 'PROFANITY', 'NUDITY', 'SEXUAL_CONTENT', 'SEXUAL_HARASSMENT'].includes(modCat) ||
           Boolean(p.sensitive_content) ||
           Boolean(p.blur_enabled)
         );

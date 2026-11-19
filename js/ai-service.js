@@ -3002,6 +3002,27 @@ Return ONLY valid JSON, no markdown fences, no extra text:
       /\b(papatayin\s*kita|sasaksakin\s*kita|babarilin\s*ko\s*kayo|papatayin\s*ko\s*kayo)\b/i
     ],
 
+    BULLYING_PATTERNS: [
+      /\b(bullied|bullying|cyberbullied|cyberbullying|harassed|harassment|teased|humiliated|name-calling|picked\s*on|gang(ed)?\s*up\s*on|mocked|mocking|make\s*fun\s*of|making\s*fun\s*of|ridiculed|ridiculing|belittled|belittling|ostracized|na-bully|binully|nambu-bully|pang-aapi|inapi|inaapi|tinutukso|hinahamak|pinapahiya|pinahiya|pangungutya|pang-aasar|tinatawanan|pinagtatawanan)\b/i,
+      /\b(everyone\s*(should|must|let'?s)?\s*(hate|avoid|ignore|mock|bully|make\s*fun\s*of))\b/i,
+      /\b(bobo|boba|bobong|boplaks|bopols|kabobohan|tanga|tangang|katangahan|gago|gaga|gagong|kagaguhan|ulol|inutil|tarantado|tarantada|salot|siraulo|sira-ulo|sira\s*ulo|walanghiya|walang\s*hiya|walang\s*kwenta|walang\s*silbi|abnoy|mongoloid|timang|ungas|hinayupak)\b/i,
+      /\b(stupid|idiot|idiotic|moron|moronic|retard|retarded|imbecile|dumbass|jackass|dipshit|fatass|scumbag|piece\s*of\s*shit|waste\s*of\s*space|fuck\s*(you|u|off)|fck\s*u|stfu|gtfo)\b/i,
+      /\b(you\s*are\s*so\s*(bobo|tanga|inutil|gago|panget|kupal)|sobrang\s*(stupid|loser|idiot|pathetic|ugly)\s*mo|napaka-(stupid|toxic|loser|idiot)\s*mo|ang\s*(stupid|loser|idiot|toxic)\s*mo)\b/i
+    ],
+
+    NUDITY_PATTERNS: [
+      /\b(nudity|nude|nudes|naked|topless|bottomless|undressed|stripping|exposed\s*(body|skin|chest|private\s*parts)|hubad|nakahubad|walang\s*damit|bold|paghuhubad|maselang\s*bahagi)\b/i,
+      /\b(dick|penis|vagina|pussy|clitoris|boobs|boob|boobies|tits|tit|dildo|tite|puke|puki|kiki|burat|bayag|pepe)\b/i,
+      /\b(sexual|sexuality|intercourse|horny|orgasm|erotic|sensual|intimate\s*encounter|hookup|hooking\s*up|making\s*out|foreplay|kantot|kantutan|chupain|tsupain|pakikipagtalik|pagnanasa|libog|malibog|porn|porno|pornography|pornographic|nsfw|striptease|masturbat(?:e|ion|ing)|jakol|magjakol|iyot|iyutan|pokpok)\b/i
+    ],
+
+    PROFANITY_PATTERNS: [
+      /\b(putangina|putang\s*ina|tangina|tang\s*ina|taena|tayna|tangena|kingina|amputa|ampota|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|hudas)\b/i,
+      /\b(motherfucker|motherfucking|asshole|bitch|bastard|fuck|fucking|fucker|fucked|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)\b/i,
+      /(?:b[\s*.*_~-]*i[\s*.*_~-]*t[\s*.*_~-]*c[\s*.*_~-]*h|b\*{2,}h|b\*{3,}h|f\*{2,}k|s\*{2,}t)/i,
+      /(?<![a-zA-Z0-9])[a-zA-Z][*]{2,}[a-zA-Z]?(?![a-zA-Z0-9])/i
+    ],
+
     EDUCATIONAL_PATTERNS: [
       /\b(in\s*(our|my|the)?\s*(psychology|guidance|ethics|philosophy|science|health|values|pe)\s*(class|lecture|subject|course|seminar|webinar))\b/i,
       /\b(we\s*(discussed|studied|talked\s*about|learned\s*about)\s*(suicide\s*prevention|depression|mental\s*health|anxiety))\b/i,
@@ -3286,6 +3307,95 @@ Return ONLY valid JSON, no markdown fences, no extra text:
             is_anonymous: Boolean(options.isAnonymous)
           };
         }
+      }
+
+      // 9. Bullying and Harassment Patterns
+      for (var b = 0; b < this.BULLYING_PATTERNS.length; b++) {
+        var mb = lower.match(this.BULLYING_PATTERNS[b]);
+        if (mb) {
+          return {
+            success: true,
+            risk_level: this.RISK_MODERATE,
+            concern_type: this.CONCERN_BULLYING_HARASSMENT,
+            moderation_category: 'BULLYING',
+            moderation_severity: 'medium',
+            reason: 'Bullying, harassment, or derogatory personal attack identified.',
+            evidence_reference: mb[0],
+            confidence: 0.94,
+            urgency: 'routine',
+            recommended_action: 'Flagged for counselor or administrator review in Safety Monitoring.',
+            language_detected: this._detectLang(text),
+            requires_human_review: true,
+            alert_required: true,
+            is_imminent_danger: false,
+            distress_indicators: ['Bullying or Harassment Attack'],
+            longitudinal_risk: longitudinalData,
+            is_anonymous: Boolean(options.isAnonymous)
+          };
+        }
+      }
+
+      // 10. Nudity and Explicit Content Patterns
+      for (var n = 0; n < this.NUDITY_PATTERNS.length; n++) {
+        var mn = lower.match(this.NUDITY_PATTERNS[n]);
+        if (mn) {
+          return {
+            success: true,
+            risk_level: this.RISK_MODERATE,
+            concern_type: this.CONCERN_NUDITY_VIOLATION,
+            moderation_category: 'NUDITY',
+            moderation_severity: 'high',
+            reason: 'Nudity, sexually explicit language, or solicitation detected.',
+            evidence_reference: mn[0],
+            confidence: 0.96,
+            urgency: 'urgent',
+            recommended_action: 'Enforce sensitive content blur shield and queue for administrative safety audit.',
+            language_detected: this._detectLang(text),
+            requires_human_review: true,
+            alert_required: true,
+            is_imminent_danger: false,
+            distress_indicators: ['Nudity / Sexually Explicit Content'],
+            longitudinal_risk: longitudinalData,
+            is_anonymous: Boolean(options.isAnonymous)
+          };
+        }
+      }
+
+      // 11. Profanity and Offensive Language Patterns
+      var hasProfanityMatch = false;
+      var profEvidence = '';
+      for (var pr = 0; pr < this.PROFANITY_PATTERNS.length; pr++) {
+        var mpr = lower.match(this.PROFANITY_PATTERNS[pr]);
+        if (mpr) {
+          hasProfanityMatch = true;
+          profEvidence = mpr[0];
+          break;
+        }
+      }
+      if (!hasProfanityMatch && typeof SafeSpaceCensor !== 'undefined' && SafeSpaceCensor.hasProfanity && SafeSpaceCensor.hasProfanity(text)) {
+        hasProfanityMatch = true;
+        profEvidence = 'Profanity detected in text';
+      }
+      if (hasProfanityMatch) {
+        return {
+          success: true,
+          risk_level: this.RISK_LOW,
+          concern_type: 'PROFANITY_OFFENSIVE_LANGUAGE',
+          moderation_category: 'PROFANITY',
+          moderation_severity: 'medium',
+          reason: 'Profanity or offensive language detected. Content Warning shield enforced and logged for monitoring.',
+          evidence_reference: profEvidence,
+          confidence: 0.92,
+          urgency: 'routine',
+          recommended_action: 'Mask profanity on feed with asterisks and record in Administrator Safety Monitoring & Alerts.',
+          language_detected: this._detectLang(text),
+          requires_human_review: true,
+          alert_required: true,
+          is_imminent_danger: false,
+          distress_indicators: ['Profanity / Offensive Language'],
+          longitudinal_risk: longitudinalData,
+          is_anonymous: Boolean(options.isAnonymous)
+        };
       }
 
       if (isAcademic) {
