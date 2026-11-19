@@ -31,34 +31,34 @@
   // ─────────────────────────────────────────────────────────────
   var BASE_PROFANITY_PATTERNS = [
     // Filipino Multiword Expressions
-    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])p+u+k+[i1!]+n+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])p+u+k+[i1!]+[\\s\\-_]+n+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[\\s\\-_]+[i1!e3]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])t+[a@4]+[\\s\\-_]+[e3]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])a+n+[a@4]+k+[\\s\\-_]+n+g+[\\s\\-_]+p+[uUoO*]+t+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?:[\\s\\-_]*(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+))?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+k+[i1!]+n+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?:[\\s\\-_]*(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+))?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+k+[i1!]+[\\s\\-_]+n+[a@4]+n+g+[\\s\\-_]+[i1!]+n+[a@4]+(?:[\\s\\-_]*(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+))?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[\\s\\-_]+[i1!e3]+n+[a@4]+(?:[\\s\\-_]*(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+))?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+[\\s\\-_]+[e3]+n+[a@4]+(?:[\\s\\-_]*(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+))?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])a+n+[a@4]+k+[\\s\\-_]+n+g+[\\s\\-_]+p+[uUoO*]+t+[a@4]+(?:[\\s\\-_]*(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+))?(?![a-zA-Z0-9])',
     '(?<![a-zA-Z0-9])h+[a@4]+y+[uUoO]+p+[\\s\\-_]+k+[a@4]+(?![a-zA-Z0-9])',
     '(?<![a-zA-Z0-9])l+[e3]+[ct]+s?h+[e3]+[\\s\\-_]+k+[a@4]+(?![a-zA-Z0-9])',
     '(?<![a-zA-Z0-9])p+[a@4]+k+[\\s\\-_]+y+[uU]+(?![a-zA-Z0-9])',
     '(?<![a-zA-Z0-9])f+[a@4]+k+[\\s\\-_]+y+[uU]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[\\s\\-_]*i+n+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[\\s\\-_]*i+n+[a@4]+(?:[\\s\\-_]*(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+))?(?![a-zA-Z0-9])',
 
     // Filipino Single Profanities & Local Variations
-    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])p+u+k+[i1!]+n+[a@4]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[e3]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])t+[a@4]+[e3]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])t+[a@4]+y+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])k+[i1!]+n+g+[i1!]+n+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])a+m+p+[uUoO*]+t+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])p+u+n+y+[e3]+t+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])l+[e3]+[ct]+s?h+[e3]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])p+[ei]+s+t+[e3]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])y+[a@4]+w+[a@4]+(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])k+u+p+[a@4]+l+(?:s)?(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])o+g+[a@4]+g+(?:s)?(?![a-zA-Z0-9])',
-    '(?<![a-zA-Z0-9])p+[uUoO*]+t+[a@4]+(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+t+[a@4]+n+g+[i1!]+n+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+k+[i1!]+n+[a@4]+n+g+[i1!]+n+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[i1!]+n+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+n+g+[e3]+n+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+[e3]+n+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])t+[a@4]+y+n+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+[i1!]+n+g+[i1!]+n+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])a+m+p+[uUoO*]+t+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+u+n+y+[e3]+t+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])l+[e3]+[ct]+s?h+[e3]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+[ei]+s+t+[e3]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])y+[a@4]+w+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])k+u+p+[a@4]+l+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])o+g+[a@4]+g+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|s)?(?![a-zA-Z0-9])',
+    '(?<![a-zA-Z0-9])p+[uUoO*]+t+[a@4]+(?:m+[oO0]+|k+[a@4]+|n+y+[oO0]+|n+i+n+y+[oO0]+)?(?![a-zA-Z0-9])',
     '(?<![a-zA-Z0-9])l+[i1!]+n+t+[i1!]+k+(?:s)?(?![a-zA-Z0-9])',
     '(?<![a-zA-Z0-9])h+u+d+[a@4]+s+(?:s)?(?![a-zA-Z0-9])',
     '(?<![a-zA-Z0-9])g+[a@4]+g+[oO0uU]+(?:ng)?(?![a-zA-Z0-9])',
@@ -810,7 +810,7 @@
       category: 'PROFANITY',
       severity: 'medium',
       action: 'warn',
-      pattern: /\b(putangina|putang\s*ina|tangina|tang\s*ina|taena|tayna|tangena|kingina|amputa|ampota|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|hudas)\b/i,
+      pattern: /\b(putangina|putang\s*ina|tangina|tang\s*ina|taena|tayna|tangena|kingina|amputa|ampota|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|hudas)(?:(?:mo|ka|nyo|ninyo)\b)?/i,
       confidence: 0.88,
       reason: 'Strong vulgar profanity in Filipino.'
     },
@@ -1353,7 +1353,8 @@
       }
 
       // G. Profanity & Offensive Language (including censored / asterisk-masked vulgarities like a*****e, f*****g, h**l, b***h)
-      if (/\b(putangina|tangina|taena|amputa|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|fuck|fucking|fucker|fucked|shit|bitch|bastard|asshole|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)\b/i.test(lower) ||
+      if (/\b(putangina|tangina|taena|amputa|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|fuck|fucking|fucker|fucked|shit|bitch|bastard|asshole|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)(?:(?:mo|ka|nyo|ninyo)\b)?/i.test(lower) ||
+          /(?:putangina|tangina|pukinangina|amputa|punyeta|leche|letse|kupal|ogag)(?:mo|ka|nyo|ninyo)?/i.test(lower) ||
           /(?:b[\s*.*_~-]*i[\s*.*_~-]*t[\s*.*_~-]*c[\s*.*_~-]*h|b\*{2,}h|b\*{3,}h|f\*{2,}k|s\*{2,}t)/i.test(lower) ||
           /(?<![a-zA-Z0-9])[a-zA-Z][*]{2,}[a-zA-Z]?(?![a-zA-Z0-9])/i.test(lower) ||
           (typeof SafeSpaceCensor !== 'undefined' && SafeSpaceCensor.hasProfanity && SafeSpaceCensor.hasProfanity(text))) {
@@ -3017,7 +3018,8 @@ Return ONLY valid JSON, no markdown fences, no extra text:
     ],
 
     PROFANITY_PATTERNS: [
-      /\b(putangina|putang\s*ina|tangina|tang\s*ina|taena|tayna|tangena|kingina|amputa|ampota|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|hudas)\b/i,
+      /\b(putangina|putang\s*ina|tangina|tang\s*ina|taena|tayna|tangena|kingina|amputa|ampota|pukinangina|punyeta|leche|letse|piste|peste|yawa|kupal|ogag|pota|puta|lintik|hudas)(?:(?:mo|ka|nyo|ninyo)\b)?/i,
+      /(?:putangina|tangina|pukinangina|amputa|punyeta|leche|letse|kupal|ogag)(?:mo|ka|nyo|ninyo)?/i,
       /\b(motherfucker|motherfucking|asshole|bitch|bastard|fuck|fucking|fucker|fucked|cunt|dickhead|cocksucker|bullshit|twat|wanker|slut|whore)\b/i,
       /(?:b[\s*.*_~-]*i[\s*.*_~-]*t[\s*.*_~-]*c[\s*.*_~-]*h|b\*{2,}h|b\*{3,}h|f\*{2,}k|s\*{2,}t)/i,
       /(?<![a-zA-Z0-9])[a-zA-Z][*]{2,}[a-zA-Z]?(?![a-zA-Z0-9])/i
